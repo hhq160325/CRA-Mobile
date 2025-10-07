@@ -1,7 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { authService, type User } from "./api"
+import { authService } from "./api"
+import type { User } from "@/lib/mock-data/users"
 
 interface AuthContextType {
   user: User | null
@@ -23,7 +24,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    // eslint-disable-next-line no-console
+    console.log('auth-context: calling authService.login', { email })
     const { data, error } = await authService.login({ email, password })
+    // eslint-disable-next-line no-console
+    console.log('auth-context: authService.login result', { data, error })
 
     if (data && !error) {
       setUser(data)

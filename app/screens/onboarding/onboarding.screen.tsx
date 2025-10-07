@@ -4,10 +4,24 @@ import assets from '../../assets';
 import Button from '../../components/button/component';
 import {createStyles} from './onboarding.styles';
 import {navigate} from '../../navigators/navigation-utilities';
+import {useAuth} from '@/lib/auth-context';
 
 const OnBoardingScreen = () => {
   const styles = createStyles();
   const {logo, overlayBg, whiteCar} = assets;
+  const {isAuthenticated} = useAuth();
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      // already signed in -> go to main tab stack
+      // cast to any because 'tabStack' is not a NavigatorParamList key here
+      navigate('tabStack' as any);
+    } else {
+      // not signed in -> continue onboarding
+      navigate('OnBoardingScreenTwo');
+    }
+  };
+
   return (
     <ImageBackground
       resizeMode="cover"
@@ -27,7 +41,7 @@ const OnBoardingScreen = () => {
           </View>
         </View>
         <Button
-          onPress={() => navigate('OnBoardingScreenTwo')}
+          onPress={handleGetStarted}
           text="Get Started"
           buttonStyles={styles.buttonStyle}
           textStyles={styles.buttonText}

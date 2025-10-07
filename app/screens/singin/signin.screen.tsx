@@ -1,5 +1,5 @@
-import React from 'react';
-import {Image, ScrollView, Text, View} from 'react-native';
+import React, {useState} from 'react';
+import {Image, ScrollView, Text, View, Alert} from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import assets from '../../assets';
@@ -9,12 +9,65 @@ import InputComponent from '../../components/input/component';
 import {scale} from '../../theme/scale';
 import {createStyles} from './signin.styles';
 import {useSignin} from './signin.hook';
-import {renderMarginBottom} from '../../utils/ui-utils';
+import {useAuth} from '../../../lib/auth-context';
 import {navigate} from '../../navigators/navigation-utilities';
+import {renderMarginBottom} from '../../utils/ui-utils';
 
 const SignInScreen = () => {
   const styles = createStyles();
   const {isSecure, setIsSecure} = useSignin();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const {login} = useAuth();
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    // eslint-disable-next-line no-console
+    console.log('mobile sign in attempt', email, password);
+    try {
+      const success = await login(email, password);
+      // eslint-disable-next-line no-console
+      console.log('mobile login result success', success);
+      if (success) {
+        // After successful login, explicitly reset navigation into the auth stack
+        // and activate OnBoardingScreenTwo so the user lands there.
+        try {
+          const {navigationRef} = require('../../navigators/navigation-utilities');
+          if (navigationRef && navigationRef.reset) {
+            navigationRef.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'auth',
+                  state: {
+                    index: 0,
+                    routes: [
+                      { name: 'OnBoardingScreen' },
+                    ],
+                  },
+                },
+              ],
+            });
+          }
+        } catch (e) {
+          // fallback: no-op
+          // eslint-disable-next-line no-console
+          console.log('reset after login failed', e);
+        }
+      } else {
+        // visible feedback on failure
+        Alert.alert('Login failed', 'Invalid credentials');
+      }
+    } catch (err: any) {
+      // network or unexpected error
+      // eslint-disable-next-line no-console
+      console.log('login exception', err);
+      Alert.alert('Login error', err?.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const {logo_black} = assets;
   return (
     <ScrollView style={styles.container}>
@@ -28,14 +81,14 @@ const SignInScreen = () => {
       </View>
       <View style={styles.inputContainer}>
         <InputComponent
-          onChangeText={e => console.log(e)}
+          onChangeText={e => setEmail(e)}
           placeholder={'Email/Phone Number'}
         />
 
         <InputComponent
           isSecure
           secureTextEntry={isSecure}
-          onChangeText={e => console.log(e)}
+          onChangeText={e => setPassword(e)}
           placeholder={'Password'}
           onSecurePress={() => setIsSecure(!isSecure)}
         />
@@ -53,7 +106,12 @@ const SignInScreen = () => {
         <Text style={styles.textRemember}>Forgot Password</Text>
       </View>
       <View style={styles.buttonContainer}>
-        <Button text="Login" textStyles={styles.buttonText} />
+  <Button
+    text={isLoading ? 'Signing in...' : 'Login'}
+    textStyles={styles.buttonText}
+    onPress={handleLogin}
+    buttonStyles={isLoading ? {opacity: 0.7} : undefined}
+  />
         <Button
           onPress={() => navigate('SignUpScreen')}
           text="Sign Up"

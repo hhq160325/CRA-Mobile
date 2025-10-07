@@ -15,6 +15,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {NavigatorParamList} from './navigation-route';
 import {navigationRef} from './navigation-utilities';
+import {useAuth} from '../../lib/auth-context';
 
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
@@ -23,11 +24,19 @@ import {colors} from '../theme/colors';
 import {scale} from '../theme/scale';
 import {createStyle} from './navigation.styles';
 import OnBoardingScreenTwo from '../screens/onboarding/onboardingTwo.screen';
+import HomeScreen from '../screens/home/home.screen';
+import BookingsScreen from '../screens/bookings/bookings.screen';
+import BookingsListScreen from '../screens/bookings/bookings-list.screen';
+import ProfileScreen from '../screens/profile/profile.screen';
 import SignInScreen from '../screens/singin/signin.screen';
 import SignUpScreen from '../screens/signup/signup.screen';
 import ResetScreen from '../screens/reset/reset.screen';
 import VerifyScreen from '../screens/verify/verify.screen';
 import OtpScreen from '../screens/otp/otp.screen';
+import CarListScreen from '../screens/cars/car-list.screen';
+import CarDetailScreen from '../screens/cars/car-detail.screen';
+import BookingDetailScreen from '../screens/bookings/booking-detail.screen';
+import BookingFormScreen from '../screens/bookings/booking-form.screen';
 
 type NavigationProps = Partial<
   React.ComponentProps<typeof NavigationContainer>
@@ -90,11 +99,27 @@ const TabStack = () => {
           backgroundColor: colors.black,
         },
       })}
-      initialRouteName={'OnBoardingScreen'}>
+      initialRouteName={'Home'}>
+      {/* MainTab: replace with real home screens for the authenticated user */}
       <Tab.Screen
-        name="OnBoardingScreen"
-        component={OnBoardingScreen}
-        options={{tabBarLabel: 'Onboarding', tabBarShowLabel: false}}
+        name="Home"
+        component={HomeScreen}
+        options={{tabBarLabel: 'Home', tabBarShowLabel: false}}
+      />
+      <Tab.Screen
+        name="Bookings"
+        component={BookingsListScreen}
+        options={{tabBarLabel: 'Bookings', tabBarShowLabel: false}}
+      />
+      <Tab.Screen
+        name="Cars"
+        component={CarListScreen}
+        options={{tabBarLabel: 'Cars', tabBarShowLabel: false}}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{tabBarLabel: 'Profile', tabBarShowLabel: false}}
       />
     </Tab.Navigator>
   );
@@ -171,7 +196,8 @@ const RootStack = () => {
 };
 
 const CombinedStack = () => {
-  const isAuthenticated = false;
+  // use auth state to determine which stack to show
+  const {isAuthenticated} = useAuth();
   return (
     <Stack.Navigator
       screenOptions={{headerShown: false, animationEnabled: true}}>
@@ -181,6 +207,27 @@ const CombinedStack = () => {
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
         component={isAuthenticated ? TabStack : AuthStack}
+      />
+      <Stack.Screen
+        name="CarDetail"
+        component={CarDetailScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="BookingForm"
+        component={BookingFormScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="BookingDetail"
+        component={BookingDetailScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
       />
       <Stack.Screen
         name="tabStack"
@@ -209,7 +256,7 @@ const CombinedStack = () => {
 
 export function AppNavigator(props: NavigationProps) {
   return (
-    <NavigationContainer ref={navigationRef} {...props}>
+    <NavigationContainer ref={navigationRef as any} {...props}>
       {CombinedStack()}
     </NavigationContainer>
   );

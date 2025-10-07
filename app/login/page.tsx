@@ -24,6 +24,9 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // debug: log when submit is triggered
+    // eslint-disable-next-line no-console
+    console.log('handleSubmit called', { email, password })
     setIsLoading(true)
 
     try {
@@ -106,7 +109,15 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+              onClick={() => {
+                // eslint-disable-next-line no-console
+                console.log('Sign in button clicked')
+              }}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

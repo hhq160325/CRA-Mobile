@@ -27,8 +27,14 @@ export const authService = {
         return { data: null, error: new Error("Invalid email or password") }
       }
 
-      // Store user in localStorage
-      localStorage.setItem("user", JSON.stringify(user))
+      // Store user if localStorage is available (web). On native, localStorage is undefined.
+      try {
+        if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
+          localStorage.setItem("user", JSON.stringify(user))
+        }
+      } catch (e) {
+        // ignore storage errors on native
+      }
       return { data: user, error: null }
     }
 
@@ -41,9 +47,15 @@ export const authService = {
       return { data: null, error: result.error }
     }
 
-    // Store token and user
-    localStorage.setItem("token", result.data.token)
-    localStorage.setItem("user", JSON.stringify(result.data.user))
+    // Store token and user if localStorage is available
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
+        localStorage.setItem("token", result.data.token)
+        localStorage.setItem("user", JSON.stringify(result.data.user))
+      }
+    } catch (e) {
+      // ignore storage errors on native
+    }
 
     return { data: result.data.user, error: null }
   },
@@ -65,11 +77,17 @@ export const authService = {
         password: data.password,
         phone: data.phone || "",
         avatar: "/male-avatar.png",
-        role: "user",
+        createdAt: new Date(),
       }
 
       mockUsers.push(newUser)
-      localStorage.setItem("user", JSON.stringify(newUser))
+      try {
+        if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
+          localStorage.setItem("user", JSON.stringify(newUser))
+        }
+      } catch (e) {
+        // ignore on native
+      }
 
       return { data: newUser, error: null }
     }
@@ -83,8 +101,14 @@ export const authService = {
       return { data: null, error: result.error }
     }
 
-    localStorage.setItem("token", result.data.token)
-    localStorage.setItem("user", JSON.stringify(result.data.user))
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
+        localStorage.setItem("token", result.data.token)
+        localStorage.setItem("user", JSON.stringify(result.data.user))
+      }
+    } catch (e) {
+      // ignore on native
+    }
 
     return { data: result.data.user, error: null }
   },
@@ -92,20 +116,39 @@ export const authService = {
   // Logout
   async logout(): Promise<{ error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
-      localStorage.removeItem("user")
+      try {
+        if (typeof localStorage !== 'undefined' && localStorage?.removeItem) {
+          localStorage.removeItem("user")
+        }
+      } catch (e) {
+        // ignore on native
+      }
       return { error: null }
     }
 
     await apiClient(API_ENDPOINTS.LOGOUT, { method: "POST" })
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage?.removeItem) {
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+      }
+    } catch (e) {
+      // ignore on native
+    }
 
     return { error: null }
   },
 
   // Get current user
   getCurrentUser(): User | null {
-    const userStr = localStorage.getItem("user")
-    return userStr ? JSON.parse(userStr) : null
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+        const userStr = localStorage.getItem("user")
+        return userStr ? JSON.parse(userStr) : null
+      }
+    } catch (e) {
+      // ignore on native
+    }
+    return null
   },
 }

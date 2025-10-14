@@ -1,7 +1,6 @@
-// API Configuration
-// Toggle between mock and real API by changing USE_MOCK_DATA
+
 export const API_CONFIG = {
-  USE_MOCK_DATA: true, // Set to true to use local mock data for testing
+  USE_MOCK_DATA: true, 
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || "https://api.yourdomain.com",
   TIMEOUT: 10000,
 }

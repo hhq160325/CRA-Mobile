@@ -1,38 +1,26 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { GeistSans } from "geist/font/sans"
-import { GeistMono } from "geist/font/mono"
-import { Analytics } from "@vercel/analytics/next"
-import { AuthProvider } from "@/lib/auth-context"
-import { ThemeProvider } from "next-themes"
-import { Toaster } from "react-hot-toast"
-import { Suspense } from "react"
+import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+})
+
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.app",
+  title: "MORENT - Car Rental",
+  description: "The best platform for car rental",
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <Suspense fallback={null}>
-              {children}
-              <Toaster />
-            </Suspense>
-          </ThemeProvider>
-        </AuthProvider>
-        <Analytics />
-      </body>
+    <html lang="en">
+      <body className={`${plusJakarta.variable} font-sans antialiased`}>{children}</body>
     </html>
   )
 }

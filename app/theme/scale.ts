@@ -15,10 +15,7 @@ const guidelineBaseHeight =
     : height <= 550
     ? 667
     : 812;
-/**
- * Function to scale a value based on the size of the screen size and the original
- * size used on the design.
- */
+
 const scale = (sizeValue: number) =>
   Math.ceil((width / guidelineBaseWidth) * sizeValue);
 const verticalScale = (sizeValue: number) =>

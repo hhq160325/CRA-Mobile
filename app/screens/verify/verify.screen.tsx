@@ -17,7 +17,7 @@ const VerifyScreen = () => {
       <View style={styles.flex}>
         <View style={styles.flexRow}>
           <Image source={logo_black} style={styles.carLogo} />
-          <Text style={styles.titleStyle}>Qent</Text>
+          <Text style={styles.titleStyle}>MORENT</Text>
         </View>
         <View style={styles.main}>
           <View style={styles.textContainer}>

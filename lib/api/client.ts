@@ -1,4 +1,4 @@
-// API Client with error handling and interceptors
+
 import { API_CONFIG } from "./config"
 
 export class APIError extends Error {

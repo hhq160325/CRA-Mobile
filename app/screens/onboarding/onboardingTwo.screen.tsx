@@ -27,7 +27,7 @@ const OnBoardingScreenTwo = () => {
         <View>
           <View style={styles.infoTextContainer}>
             <Text style={[styles.infoText]}>
-              Discover your next adventure with Qent. we’re here to
+              Discover your next adventure with MORENT. we’re here to
             </Text>
             <Text style={[styles.infoText]}>
               provide you with a seamless car rental experience.

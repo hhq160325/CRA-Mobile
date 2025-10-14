@@ -3,7 +3,7 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      // Required for react-native-vector-icons
+     
       [
         'react-native-reanimated/plugin',
         {

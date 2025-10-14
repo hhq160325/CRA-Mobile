@@ -13,11 +13,10 @@ const OnBoardingScreen = () => {
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
-      // already signed in -> go to main tab stack
-      // cast to any because 'tabStack' is not a NavigatorParamList key here
+    
       navigate('tabStack' as any);
     } else {
-      // not signed in -> continue onboarding
+ 
       navigate('OnBoardingScreenTwo');
     }
   };
@@ -37,7 +36,7 @@ const OnBoardingScreen = () => {
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.title}>Welcome to</Text>
-            <Text style={styles.title}>Qent</Text>
+            <Text style={styles.title}>MORENT</Text>
           </View>
         </View>
         <Button

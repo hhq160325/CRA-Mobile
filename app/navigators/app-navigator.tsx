@@ -57,11 +57,11 @@ const TabStack = () => {
         tabBarHideOnKeyboard: true,
         keyboardHidesTabBar: true,
         tabBarIcon: ({focused, size}) => {
-          let iconName: string = 'camera';
+          let iconName: string = 'booking';
           let tabName: string = 'Home';
           if (route.name == 'OnBoardingScreen') {
             iconName = focused ? 'camera' : 'camera';
-            tabName = 'Camera';
+            tabName = 'profile';
           }
           return (
             <View style={styles.tabContainer}>
@@ -196,7 +196,7 @@ const RootStack = () => {
 };
 
 const CombinedStack = () => {
-  // use auth state to determine which stack to show
+  
   const {isAuthenticated} = useAuth();
   return (
     <Stack.Navigator

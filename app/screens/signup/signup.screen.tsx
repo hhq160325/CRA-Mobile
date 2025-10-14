@@ -19,7 +19,7 @@ const SignUpScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.flexRow}>
         <Image source={logo_black} style={styles.carLogo} />
-        <Text style={styles.titleStyle}>Qent</Text>
+        <Text style={styles.titleStyle}>MORENT</Text>
       </View>
       <View style={styles.textContainer}>
         <Text style={[styles.textStyle, styles.textCenter]}>Sign Up</Text>

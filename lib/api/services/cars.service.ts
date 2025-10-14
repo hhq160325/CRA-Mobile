@@ -1,10 +1,10 @@
-// Cars API Service - Easy to switch between mock and real API
+
 import { API_CONFIG, API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
 import { mockCars, getCarById, searchCars, type Car } from "@/lib/mock-data/cars"
 
 export const carsService = {
-  // Get all cars with optional filters
+ 
   async getCars(filters?: {
     category?: string
     minPrice?: number
@@ -12,7 +12,7 @@ export const carsService = {
     search?: string
   }): Promise<{ data: Car[] | null; error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 500)) 
       let cars = [...mockCars]
 
       if (filters?.category && filters.category !== "all") {
@@ -38,7 +38,7 @@ export const carsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Get single car by ID
+
   async getCarById(id: string): Promise<{ data: Car | null; error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 300))
@@ -53,7 +53,7 @@ export const carsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Search cars
+  
   async searchCars(query: string): Promise<{ data: Car[] | null; error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 300))

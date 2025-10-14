@@ -10,7 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ChevronLeft, CreditCard, Lock, Check } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, CreditCard, Lock, Check, Shield, Tag, Apple, Smartphone, Wallet } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 const bookingSummary = {
   car: {
@@ -35,11 +37,56 @@ const bookingSummary = {
   total: 478.5,
 }
 
+const savedCards = [
+  { id: "1", last4: "4242", brand: "Visa", expiry: "12/25", isDefault: true },
+  { id: "2", last4: "5555", brand: "Mastercard", expiry: "08/26", isDefault: false },
+]
+
 export default function PaymentPage() {
   const router = useRouter()
   const [paymentMethod, setPaymentMethod] = useState("card")
+  const [selectedSavedCard, setSelectedSavedCard] = useState(savedCards[0].id)
+  const [useNewCard, setUseNewCard] = useState(false)
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [cardNumber, setCardNumber] = useState("")
+  const [cardName, setCardName] = useState("")
+  const [cardExpiry, setCardExpiry] = useState("")
+  const [cardCvv, setCardCvv] = useState("")
+  const [promoCode, setPromoCode] = useState("")
+  const [promoApplied, setPromoApplied] = useState(false)
+  const [discount, setDiscount] = useState(0)
+
+  const formatCardNumber = (value: string) => {
+    const cleaned = value.replace(/\s/g, "")
+    const formatted = cleaned.match(/.{1,4}/g)?.join(" ") || cleaned
+    return formatted.slice(0, 19)
+  }
+
+  const formatExpiry = (value: string) => {
+    const cleaned = value.replace(/\D/g, "")
+    if (cleaned.length >= 2) {
+      return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`
+    }
+    return cleaned
+  }
+
+  const getCardBrand = (number: string) => {
+    const cleaned = number.replace(/\s/g, "")
+    if (cleaned.startsWith("4")) return "Visa"
+    if (cleaned.startsWith("5")) return "Mastercard"
+    if (cleaned.startsWith("3")) return "Amex"
+    return "Card"
+  }
+
+  const applyPromoCode = () => {
+    if (promoCode.toUpperCase() === "SAVE10") {
+      setDiscount(bookingSummary.total * 0.1)
+      setPromoApplied(true)
+    } else {
+      alert("Invalid promo code")
+    }
+  }
 
   const handlePayment = async () => {
     if (!agreeToTerms) {
@@ -48,11 +95,12 @@ export default function PaymentPage() {
     }
 
     setIsProcessing(true)
-    // Simulate payment processing
     await new Promise((resolve) => setTimeout(resolve, 2000))
     setIsProcessing(false)
     router.push("/confirmation")
   }
+
+  const finalTotal = bookingSummary.total - discount
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,34 +169,77 @@ export default function PaymentPage() {
               <CardContent className="space-y-4">
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div
-                    className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      paymentMethod === "card" ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"
-                    }`}
+                    className={cn(
+                      "flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                      paymentMethod === "card"
+                        ? "border-accent bg-accent/5 shadow-sm"
+                        : "border-border hover:border-accent/50",
+                    )}
                     onClick={() => setPaymentMethod("card")}
                   >
                     <RadioGroupItem value="card" id="card" />
                     <Label htmlFor="card" className="flex items-center gap-3 cursor-pointer flex-1">
-                      <CreditCard className="size-5" />
+                      <CreditCard className="size-5 text-accent" />
                       <div>
                         <div className="font-semibold">Credit / Debit Card</div>
                         <div className="text-sm text-muted-foreground">Visa, Mastercard, Amex</div>
                       </div>
                     </Label>
                   </div>
+
                   <div
-                    className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      paymentMethod === "paypal" ? "border-accent bg-accent/5" : "border-border hover:border-accent/50"
-                    }`}
+                    className={cn(
+                      "flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                      paymentMethod === "apple"
+                        ? "border-accent bg-accent/5 shadow-sm"
+                        : "border-border hover:border-accent/50",
+                    )}
+                    onClick={() => setPaymentMethod("apple")}
+                  >
+                    <RadioGroupItem value="apple" id="apple" />
+                    <Label htmlFor="apple" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <Apple className="size-5" />
+                      <div>
+                        <div className="font-semibold">Apple Pay</div>
+                        <div className="text-sm text-muted-foreground">Fast and secure checkout</div>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div
+                    className={cn(
+                      "flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                      paymentMethod === "google"
+                        ? "border-accent bg-accent/5 shadow-sm"
+                        : "border-border hover:border-accent/50",
+                    )}
+                    onClick={() => setPaymentMethod("google")}
+                  >
+                    <RadioGroupItem value="google" id="google" />
+                    <Label htmlFor="google" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <Smartphone className="size-5 text-accent" />
+                      <div>
+                        <div className="font-semibold">Google Pay</div>
+                        <div className="text-sm text-muted-foreground">Quick payment with Google</div>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div
+                    className={cn(
+                      "flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                      paymentMethod === "paypal"
+                        ? "border-accent bg-accent/5 shadow-sm"
+                        : "border-border hover:border-accent/50",
+                    )}
                     onClick={() => setPaymentMethod("paypal")}
                   >
                     <RadioGroupItem value="paypal" id="paypal" />
                     <Label htmlFor="paypal" className="flex items-center gap-3 cursor-pointer flex-1">
-                      <div className="size-5 rounded bg-[#0070ba] flex items-center justify-center text-white text-xs font-bold">
-                        P
-                      </div>
+                      <Wallet className="size-5 text-[#0070ba]" />
                       <div>
                         <div className="font-semibold">PayPal</div>
-                        <div className="text-sm text-muted-foreground">Fast and secure</div>
+                        <div className="text-sm text-muted-foreground">Pay with your PayPal account</div>
                       </div>
                     </Label>
                   </div>
@@ -156,42 +247,169 @@ export default function PaymentPage() {
               </CardContent>
             </Card>
 
-            {/* Card Details */}
             {paymentMethod === "card" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Saved Cards</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <RadioGroup
+                    value={useNewCard ? "new" : selectedSavedCard}
+                    onValueChange={(value) => {
+                      if (value === "new") {
+                        setUseNewCard(true)
+                      } else {
+                        setUseNewCard(false)
+                        setSelectedSavedCard(value)
+                      }
+                    }}
+                  >
+                    {savedCards.map((card) => (
+                      <div
+                        key={card.id}
+                        className={cn(
+                          "flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                          !useNewCard && selectedSavedCard === card.id
+                            ? "border-accent bg-accent/5 shadow-sm"
+                            : "border-border hover:border-accent/50",
+                        )}
+                        onClick={() => {
+                          setUseNewCard(false)
+                          setSelectedSavedCard(card.id)
+                        }}
+                      >
+                        <RadioGroupItem value={card.id} id={card.id} />
+                        <Label htmlFor={card.id} className="flex items-center gap-3 cursor-pointer flex-1">
+                          <div className="size-10 rounded bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+                            <CreditCard className="size-5 text-accent" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">
+                                {card.brand} •••• {card.last4}
+                              </span>
+                              {card.isDefault && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Default
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Expires {card.expiry}</div>
+                          </div>
+                        </Label>
+                      </div>
+                    ))}
+
+                    <div
+                      className={cn(
+                        "flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                        useNewCard ? "border-accent bg-accent/5 shadow-sm" : "border-border hover:border-accent/50",
+                      )}
+                      onClick={() => setUseNewCard(true)}
+                    >
+                      <RadioGroupItem value="new" id="new" />
+                      <Label htmlFor="new" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="size-10 rounded bg-muted flex items-center justify-center">
+                          <CreditCard className="size-5" />
+                        </div>
+                        <div>
+                          <div className="font-semibold">Use a new card</div>
+                          <div className="text-sm text-muted-foreground">Add a new payment method</div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+            )}
+
+            {paymentMethod === "card" && useNewCard && (
               <Card>
                 <CardHeader>
                   <CardTitle>Card Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="card-number">
-                      Card Number <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Input id="card-number" placeholder="1234 5678 9012 3456" className="h-11 pr-12" maxLength={19} />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-                        <div className="size-6 rounded bg-gradient-to-br from-blue-600 to-blue-400" />
+                <CardContent className="space-y-6">
+                  <div className="relative h-48 rounded-xl bg-gradient-to-br from-accent via-accent/80 to-accent/60 p-6 text-white shadow-lg">
+                    <div className="flex justify-between items-start mb-8">
+                      <div className="size-12 rounded-full bg-white/20 backdrop-blur-sm" />
+                      <div className="text-sm font-semibold">{getCardBrand(cardNumber)}</div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="text-xl tracking-wider font-mono">{cardNumber || "•••• •••• •••• ••••"}</div>
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <div className="text-xs opacity-70 mb-1">Cardholder Name</div>
+                          <div className="font-semibold">{cardName || "YOUR NAME"}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs opacity-70 mb-1">Expires</div>
+                          <div className="font-semibold">{cardExpiry || "MM/YY"}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="card-name">
-                      Cardholder Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input id="card-name" placeholder="John Doe" className="h-11" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="expiry">
-                        Expiry Date <span className="text-destructive">*</span>
+                      <Label htmlFor="card-number">
+                        Card Number <span className="text-destructive">*</span>
                       </Label>
-                      <Input id="expiry" placeholder="MM/YY" className="h-11" maxLength={5} />
+                      <Input
+                        id="card-number"
+                        placeholder="1234 5678 9012 3456"
+                        className="h-11"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                        maxLength={19}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="cvv">
-                        CVV <span className="text-destructive">*</span>
+                      <Label htmlFor="card-name">
+                        Cardholder Name <span className="text-destructive">*</span>
                       </Label>
-                      <Input id="cvv" placeholder="123" className="h-11" maxLength={4} type="password" />
+                      <Input
+                        id="card-name"
+                        placeholder="John Doe"
+                        className="h-11"
+                        value={cardName}
+                        onChange={(e) => setCardName(e.target.value.toUpperCase())}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="expiry">
+                          Expiry Date <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="expiry"
+                          placeholder="MM/YY"
+                          className="h-11"
+                          value={cardExpiry}
+                          onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                          maxLength={5}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cvv">
+                          CVV <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="cvv"
+                          placeholder="123"
+                          className="h-11"
+                          value={cardCvv}
+                          onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ""))}
+                          maxLength={4}
+                          type="password"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <Checkbox id="save-card" />
+                      <Label htmlFor="save-card" className="text-sm cursor-pointer">
+                        Save this card for future purchases
+                      </Label>
                     </div>
                   </div>
                 </CardContent>
@@ -313,6 +531,38 @@ export default function PaymentPage() {
 
                 <Separator />
 
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <Tag className="size-4" />
+                    Promo Code
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      disabled={promoApplied}
+                      className="h-10"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={applyPromoCode}
+                      disabled={promoApplied || !promoCode}
+                      className="shrink-0 bg-transparent"
+                    >
+                      {promoApplied ? "Applied" : "Apply"}
+                    </Button>
+                  </div>
+                  {promoApplied && (
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <Check className="size-4" />
+                      <span>Promo code applied successfully!</span>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Price Breakdown */}
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -331,19 +581,34 @@ export default function PaymentPage() {
                     <span className="text-muted-foreground">Tax & Fees</span>
                     <span className="font-medium">${bookingSummary.tax}</span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount</span>
+                      <span className="font-medium">-${discount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-accent">${bookingSummary.total}</span>
+                    <span className="text-accent">${finalTotal.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <Separator />
 
-                {/* Security Badge */}
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Lock className="size-4" />
-                  <span>Secure payment with 256-bit SSL encryption</span>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Lock className="size-4 text-accent" />
+                    <span>256-bit SSL encryption</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Shield className="size-4 text-accent" />
+                    <span>PCI DSS compliant</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Check className="size-4 text-accent" />
+                    <span>Money-back guarantee</span>
+                  </div>
                 </div>
 
                 <Button
@@ -352,7 +617,14 @@ export default function PaymentPage() {
                   onClick={handlePayment}
                   disabled={isProcessing || !agreeToTerms}
                 >
-                  {isProcessing ? "Processing..." : `Pay $${bookingSummary.total}`}
+                  {isProcessing ? (
+                    <span className="flex items-center gap-2">
+                      <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    `Pay $${finalTotal.toFixed(2)}`
+                  )}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">

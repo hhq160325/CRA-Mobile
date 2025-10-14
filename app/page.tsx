@@ -1,316 +1,415 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Search, MapPin, Calendar, Star, Zap, Shield, Clock } from "lucide-react"
-import { UserNav } from "@/components/user-nav"
-import { mockCars } from "@/lib/mock-data/cars"
+import Image from "next/image"
+import { Search, SlidersHorizontal, Heart, Fuel, Settings2, Users, ArrowUpDown } from "lucide-react"
 
 export default function HomePage() {
-  const featuredCars = mockCars.slice(0, 3)
+  const popularCars = [
+    {
+      id: 1,
+      name: "Koenigsegg",
+      type: "Sport",
+      image: "/car-app/app/assets/images/white_ferrari.png",
+      fuel: "90L",
+      transmission: "Manual",
+      capacity: "2 People",
+      price: 99,
+      liked: true,
+    },
+    {
+      id: 2,
+      name: "Nissan GT-R",
+      type: "Sport",
+      image: "/car-app/app/assets/images/whitecar.png",
+      fuel: "80L",
+      transmission: "Manual",
+      capacity: "2 People",
+      price: 80,
+      originalPrice: 100,
+      liked: false,
+    },
+  ]
+
+  const recommendedCars = [
+    {
+      id: 3,
+      name: "All New Rush",
+      type: "SUV",
+      image: "/car-app/app/assets/images/whitecar.png",
+      fuel: "70L",
+      transmission: "Manual",
+      capacity: "6 People",
+      price: 72,
+      originalPrice: 80,
+      liked: false,
+    },
+    {
+      id: 4,
+      name: "CR-V",
+      type: "SUV",
+      image: "/car-app/app/assets/images/whitecar.png",
+      fuel: "80L",
+      transmission: "Manual",
+      capacity: "6 People",
+      price: 80,
+      liked: true,
+    },
+    {
+      id: 5,
+      name: "All New Terios",
+      type: "SUV",
+      image: "/car-app/app/assets/images/whitecar.png",
+      fuel: "90L",
+      transmission: "Manual",
+      capacity: "6 People",
+      price: 74,
+      liked: false,
+    },
+    {
+      id: 6,
+      name: "MG ZX Excite",
+      type: "Hatchback",
+      image: "/car-app/app/assets/images/whitecar.png",
+      fuel: "90L",
+      transmission: "Manual",
+      capacity: "4 People",
+      price: 74,
+      liked: false,
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="text-2xl font-bold">
-              DriveNow
-            </Link>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="/cars" className="text-sm font-medium hover:text-accent transition-colors">
-                Browse Cars
-              </Link>
-              <Link href="/deals" className="text-sm font-medium hover:text-accent transition-colors">
-                Deals
-              </Link>
-              <Link href="/about" className="text-sm font-medium hover:text-accent transition-colors">
-                How it Works
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/bookings">My Bookings</Link>
-            </Button>
-            <UserNav />
+      <header className="bg-card border-b border-border px-6 py-4 md:px-16">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <Link href="/" className="text-2xl md:text-3xl font-bold text-primary">
+            MORENT
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-muted">
+              <Image src="/assets/admin-avatar.png" alt="Profile" fill className="object-cover" />
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-primary-foreground overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/luxury-car-silhouette.jpg')] opacity-10 bg-cover bg-center" />
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="max-w-3xl">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-balance leading-tight">
-              Premium Car Rentals Made Simple
-            </h1>
-            <p className="text-xl text-primary-foreground/90 mb-8 text-pretty leading-relaxed">
-              Experience luxury and convenience with our curated selection of premium vehicles. Book in minutes, drive
-              in style.
+      <main className="px-6 py-8 md:px-16 max-w-7xl mx-auto">
+        {/* Search Bar */}
+        <div className="flex gap-3 mb-8">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search something here"
+              className="w-full h-12 pl-12 pr-4 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <Link
+            href="/catalog"
+            className="flex items-center justify-center w-12 h-12 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+          </Link>
+        </div>
+
+        {/* Hero Banner */}
+        <div className="bg-primary text-primary-foreground rounded-xl p-6 mb-8 relative overflow-hidden">
+          <div className="relative z-10 max-w-md">
+            <h2 className="text-2xl md:text-3xl font-semibold mb-4 leading-tight">The Best Platform for Car Rental</h2>
+            <p className="text-primary-foreground/90 text-sm mb-6">
+              Ease of doing a car rental safely and reliably. Of course at a low price.
             </p>
-          </div>
-
-          {/* Search Card */}
-          <Card className="max-w-4xl shadow-2xl">
-            <CardContent className="p-6">
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <MapPin className="size-4" />
-                    Pickup Location
-                  </label>
-                  <Input placeholder="City or Airport" className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="size-4" />
-                    Pickup Date
-                  </label>
-                  <Input type="date" className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="size-4" />
-                    Return Date
-                  </label>
-                  <Input type="date" className="h-11" />
-                </div>
-              </div>
-              <Button className="w-full mt-6 h-12 text-base" size="lg" asChild>
-                <Link href="/cars">
-                  <Search className="mr-2 size-5" />
-                  Search Available Cars
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-16 bg-secondary/30">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="size-16 rounded-full bg-accent/10 flex items-center justify-center">
-                <Zap className="size-8 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold">Instant Booking</h3>
-              <p className="text-muted-foreground text-pretty">
-                Book your perfect car in under 2 minutes with our streamlined process
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="size-16 rounded-full bg-accent/10 flex items-center justify-center">
-                <Shield className="size-8 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold">Fully Insured</h3>
-              <p className="text-muted-foreground text-pretty">
-                All rentals include comprehensive insurance coverage for peace of mind
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="size-16 rounded-full bg-accent/10 flex items-center justify-center">
-                <Clock className="size-8 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold">24/7 Support</h3>
-              <p className="text-muted-foreground text-pretty">
-                Our dedicated team is always available to assist you on your journey
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Cars */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <h2 className="text-4xl font-bold mb-3">Featured Vehicles</h2>
-              <p className="text-muted-foreground text-lg">Handpicked premium cars for your next adventure</p>
-            </div>
-            <Button variant="outline" asChild>
-              <Link href="/cars">View All</Link>
-            </Button>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredCars.map((car) => (
-              <Link href={`/cars/${car.id}`} key={car.id}>
-                <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                    <img
-                      src={car.image || "/placeholder.svg"}
-                      alt={car.name}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <Badge className="absolute top-4 right-4 bg-card text-card-foreground border">
-                      <Star className="size-3 fill-accent text-accent mr-1" />
-                      {car.rating}
-                    </Badge>
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-1">{car.name}</h3>
-                        <p className="text-sm text-muted-foreground">{car.category}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold">${car.price}</div>
-                        <div className="text-xs text-muted-foreground">per day</div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {car.features.slice(0, 3).map((feature, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {feature}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-20 bg-secondary/30">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold mb-12 text-center">Browse by Category</h2>
-          <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { name: "Luxury Sedans", count: 24, image: "/luxury-sedan.png" },
-              { name: "SUVs", count: 18, image: "/luxury-suv.png" },
-              { name: "Sports Cars", count: 12, image: "/sleek-red-sports-car.png" },
-              { name: "Electric", count: 15, image: "/modern-electric-car.png" },
-            ].map((category, index) => (
-              <Link href={`/cars?category=${category.name}`} key={index}>
-                <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                    <img
-                      src={category.image || "/placeholder.svg"}
-                      alt={category.name}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-xl font-bold mb-1">{category.name}</h3>
-                      <p className="text-sm text-white/90">{category.count} vehicles</p>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-balance">Ready to Hit the Road?</h2>
-          <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto text-pretty">
-            Join thousands of satisfied customers who trust us for their car rental needs
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="h-12 px-8 text-base" asChild>
-              <Link href="/cars">Browse All Cars</Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-12 px-8 text-base bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-              asChild
+            <Link
+              href="/catalog"
+              className="inline-block bg-[#54A6FF] hover:bg-[#4595EE] text-white px-6 py-3 rounded-md font-semibold text-sm transition-colors"
             >
-              <Link href="/signup">Create Account</Link>
-            </Button>
+              Rental Car
+            </Link>
+          </div>
+          <div className="absolute right-0 bottom-0 w-64 h-32 md:w-96 md:h-48">
+            <Image
+              src="/car-app/app/assets/images/white_ferrari.png"
+              alt="Sports car"
+              fill
+              className="object-contain"
+            />
           </div>
         </div>
-      </section>
+
+        {/* Pick-Up Section */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+            </div>
+            <span className="font-semibold text-base">Pick - Up</span>
+          </div>
+          <div className="bg-card rounded-lg p-6 border border-border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-base font-bold mb-2">Locations</label>
+                <select className="w-full text-sm text-muted-foreground bg-transparent border-0 focus:outline-none">
+                  <option>Select your city</option>
+                  <option>Semarang</option>
+                  <option>Jakarta</option>
+                  <option>Bandung</option>
+                </select>
+              </div>
+              <div className="border-l border-border pl-6">
+                <label className="block text-base font-bold mb-2">Date</label>
+                <select className="w-full text-sm text-muted-foreground bg-transparent border-0 focus:outline-none">
+                  <option>Select your date</option>
+                  <option>20 July 2022</option>
+                  <option>21 July 2022</option>
+                </select>
+              </div>
+              <div className="border-l border-border pl-6">
+                <label className="block text-base font-bold mb-2">Time</label>
+                <select className="w-full text-sm text-muted-foreground bg-transparent border-0 focus:outline-none">
+                  <option>Select your time</option>
+                  <option>07:00</option>
+                  <option>08:00</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Swap Button */}
+        <div className="flex justify-center -my-3 relative z-10">
+          <button className="w-14 h-14 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg flex items-center justify-center transition-colors">
+            <ArrowUpDown className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Drop-Off Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-4 h-4 rounded-full bg-[#54A6FF]/20 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-[#54A6FF]" />
+            </div>
+            <span className="font-semibold text-base">Drop - Off</span>
+          </div>
+          <div className="bg-card rounded-lg p-6 border border-border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-base font-bold mb-2">Locations</label>
+                <select className="w-full text-sm text-muted-foreground bg-transparent border-0 focus:outline-none">
+                  <option>Select your city</option>
+                  <option>Semarang</option>
+                  <option>Jakarta</option>
+                </select>
+              </div>
+              <div className="border-l border-border pl-6">
+                <label className="block text-base font-bold mb-2">Date</label>
+                <select className="w-full text-sm text-muted-foreground bg-transparent border-0 focus:outline-none">
+                  <option>Select your date</option>
+                  <option>21 July 2022</option>
+                </select>
+              </div>
+              <div className="border-l border-border pl-6">
+                <label className="block text-base font-bold mb-2">Time</label>
+                <select className="w-full text-sm text-muted-foreground bg-transparent border-0 focus:outline-none">
+                  <option>Select your time</option>
+                  <option>01:00</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Popular Car Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-muted-foreground text-base">Popular Car</h3>
+            <Link href="/catalog" className="text-primary text-base font-semibold hover:underline">
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {popularCars.map((car) => (
+              <CarCard key={car.id} car={car} />
+            ))}
+          </div>
+        </div>
+
+        {/* Recommendation Car Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-muted-foreground text-base">Recomendation Car</h3>
+            <Link href="/catalog" className="text-primary text-base font-semibold hover:underline">
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {recommendedCars.map((car) => (
+              <CarCard key={car.id} car={car} />
+            ))}
+          </div>
+        </div>
+
+        {/* Show More Button */}
+        <div className="flex justify-center mt-8">
+          <Link
+            href="/catalog"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-md font-semibold text-sm transition-colors"
+          >
+            Show More Car
+          </Link>
+        </div>
+      </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-card border-t border-border mt-16 px-6 py-12 md:px-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
             <div>
-              <h3 className="font-bold text-lg mb-4">DriveNow</h3>
-              <p className="text-sm text-muted-foreground text-pretty">
-                Premium car rentals for the modern traveler. Experience luxury, convenience, and reliability.
+              <Link href="/" className="text-2xl font-bold text-primary mb-4 block">
+                MORENT
+              </Link>
+              <p className="text-muted-foreground text-sm">
+                Our vision is to provide convenience and help increase your sales business.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h4 className="font-semibold text-lg mb-4">About</h4>
+              <ul className="space-y-3 text-muted-foreground text-sm">
                 <li>
-                  <Link href="/about" className="hover:text-foreground transition-colors">
-                    About Us
+                  <Link href="#" className="hover:text-foreground">
+                    How it works
                   </Link>
                 </li>
                 <li>
-                  <Link href="/careers" className="hover:text-foreground transition-colors">
-                    Careers
+                  <Link href="#" className="hover:text-foreground">
+                    Featured
                   </Link>
                 </li>
                 <li>
-                  <Link href="/press" className="hover:text-foreground transition-colors">
-                    Press
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/help" className="hover:text-foreground transition-colors">
-                    Help Center
+                  <Link href="#" className="hover:text-foreground">
+                    Partnership
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="hover:text-foreground transition-colors">
-                    Contact Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/faq" className="hover:text-foreground transition-colors">
-                    FAQ
+                  <Link href="#" className="hover:text-foreground">
+                    Bussiness Relation
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h4 className="font-semibold text-lg mb-4">Community</h4>
+              <ul className="space-y-3 text-muted-foreground text-sm">
                 <li>
-                  <Link href="/terms" className="hover:text-foreground transition-colors">
-                    Terms of Service
+                  <Link href="#" className="hover:text-foreground">
+                    Events
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="hover:text-foreground transition-colors">
-                    Privacy Policy
+                  <Link href="#" className="hover:text-foreground">
+                    Blog
                   </Link>
                 </li>
                 <li>
-                  <Link href="/insurance" className="hover:text-foreground transition-colors">
-                    Insurance
+                  <Link href="#" className="hover:text-foreground">
+                    Podcast
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Invite a friend
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-lg mb-4">Socials</h4>
+              <ul className="space-y-3 text-muted-foreground text-sm">
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Discord
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Instagram
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Twitter
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Facebook
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t pt-8 text-center text-sm text-muted-foreground">
-            <p>2025 DriveNow. All rights reserved.</p>
+          <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm font-semibold">©2022 MORENT. All rights reserved</p>
+            <div className="flex gap-8 text-sm font-semibold">
+              <Link href="#" className="hover:text-primary">
+                Privacy & Policy
+              </Link>
+              <Link href="#" className="hover:text-primary">
+                Terms & Condition
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
+    </div>
+  )
+}
+
+function CarCard({ car }: { car: any }) {
+  return (
+    <div className="bg-card rounded-lg p-6 border border-border hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h4 className="font-bold text-lg">{car.name}</h4>
+          <p className="text-sm text-muted-foreground">{car.type}</p>
+        </div>
+        <button className="p-1">
+          <Heart className={`w-5 h-5 ${car.liked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+        </button>
+      </div>
+      <div className="my-8 flex justify-center">
+        <div className="relative w-full h-24">
+          <Image src={car.image || "/placeholder.svg"} alt={car.name} fill className="object-contain" />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mb-6 text-sm text-muted-foreground">
+        <div className="flex items-center gap-1">
+          <Fuel className="w-4 h-4" />
+          <span>{car.fuel}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Settings2 className="w-4 h-4" />
+          <span>{car.transmission}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Users className="w-4 h-4" />
+          <span>{car.capacity}</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-xl font-bold">${car.price}.00/</span>
+          <span className="text-sm text-muted-foreground">day</span>
+          {car.originalPrice && (
+            <div className="text-sm text-muted-foreground line-through">${car.originalPrice}.00</div>
+          )}
+        </div>
+        <Link
+          href={`/car/${car.id}`}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-md font-semibold text-sm transition-colors"
+        >
+          Rental Now
+        </Link>
+      </div>
     </div>
   )
 }

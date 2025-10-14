@@ -1,4 +1,4 @@
-// Bookings API Service
+
 import { API_CONFIG, API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
 import { mockBookings, type Booking } from "@/lib/mock-data/bookings"
@@ -19,7 +19,7 @@ export interface CreateBookingData {
 }
 
 export const bookingsService = {
-  // Get user bookings
+
   async getBookings(userId: string): Promise<{ data: Booking[] | null; error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
@@ -34,7 +34,6 @@ export const bookingsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Get booking by ID
   async getBookingById(id: string): Promise<{ data: Booking | null; error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 300))
@@ -49,16 +48,16 @@ export const bookingsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Create booking
+
   async createBooking(data: CreateBookingData): Promise<{ data: Booking | null; error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       const newBooking: Booking = {
         id: String(mockBookings.length + 1),
-        userId: "1", // Current user
+        userId: "1", 
         carId: data.carId,
-        carName: "Tesla Model S", // Would come from car data
+        carName: "Tesla Model S", 
         carImage: "/tesla-model-s-luxury.png",
         startDate: data.startDate,
         endDate: data.endDate,
@@ -81,7 +80,7 @@ export const bookingsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Cancel booking
+ 
   async cancelBooking(id: string): Promise<{ error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))

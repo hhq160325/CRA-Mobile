@@ -24,8 +24,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // debug: log when submit is triggered
-    // eslint-disable-next-line no-console
+    
     console.log('handleSubmit called', { email, password })
     setIsLoading(true)
 
@@ -114,7 +113,7 @@ export default function LoginPage() {
               className="w-full"
               disabled={isLoading}
               onClick={() => {
-                // eslint-disable-next-line no-console
+               
                 console.log('Sign in button clicked')
               }}
             >

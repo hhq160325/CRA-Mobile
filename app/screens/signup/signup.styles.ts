@@ -1,8 +1,8 @@
-import {StyleSheet} from 'react-native';
-import {colors} from '../../theme/colors';
-import {scale} from '../../theme/scale';
-import {FontSize} from '../../theme/font-size';
-import {typography} from '../../theme/typography';
+import { StyleSheet } from "react-native"
+import { colors } from "../../theme/colors"
+import { scale } from "../../theme/scale"
+import { FontSize } from "../../theme/font-size"
+import { typography } from "../../theme/typography"
 
 export const createStyles = () =>
   StyleSheet.create({
@@ -18,14 +18,14 @@ export const createStyles = () =>
       width: scale(38),
     },
     flexRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       columnGap: scale(12),
       paddingVertical: scale(12),
     },
     titleStyle: {
       fontSize: FontSize.FONT_24Px,
-      color: colors.black,
+      color: colors.morentBlue, // Updated title color to MORENT blue
       flex: 1,
       fontFamily: typography.bold,
     },
@@ -39,36 +39,40 @@ export const createStyles = () =>
       fontFamily: typography.semiBold,
     },
     textCenter: {
-      textAlign: 'center',
+      textAlign: "center",
     },
     textRemember: {
       fontSize: FontSize.FONT_12Px,
       color: colors.placeholder,
       fontFamily: typography.regular,
     },
+    loginLinkText: {
+      color: colors.morentBlue, // Added style for Login link with MORENT blue
+      fontFamily: typography.semiBold,
+    },
     inputContainer: {
       rowGap: scale(6),
     },
     colG2: {
       columnGap: scale(2),
-      justifyContent: 'space-between',
-      flexDirection: 'row',
-      alignItems: 'center',
+      justifyContent: "space-between",
+      flexDirection: "row",
+      alignItems: "center",
       marginTop: scale(16),
     },
     forgotContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: 'red',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: "red",
     },
     outlineButton: {
       backgroundColor: colors.outlineButtonBg,
       borderWidth: 1,
-      borderColor: colors.button,
+      borderColor: colors.morentBlue, // Updated outline button border to MORENT blue
     },
     outlineButtonSignUpText: {
-      color: colors.black,
+      color: colors.morentBlue, // Updated Login button text to MORENT blue
       fontFamily: typography.bold,
       fontSize: FontSize.FONT_18Px,
     },
@@ -86,9 +90,9 @@ export const createStyles = () =>
       marginTop: scale(12),
     },
     borderContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       columnGap: scale(12),
       marginTop: scale(18),
     },
@@ -105,15 +109,15 @@ export const createStyles = () =>
       marginVertical: scale(18),
     },
     buttonStyle: {
-      flexDirection: 'row',
+      flexDirection: "row",
       columnGap: scale(12),
     },
     iconButtonStyle: {
       backgroundColor: colors.outlineButtonBg,
       borderWidth: 1,
       borderColor: colors.btnBorder,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       columnGap: scale(8),
       paddingVertical: scale(10),
     },
@@ -121,7 +125,7 @@ export const createStyles = () =>
       marginTop: scale(14),
     },
     haveAccountContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       marginTop: scale(28),
       paddingBottom: scale(28),
     },
@@ -129,4 +133,4 @@ export const createStyles = () =>
       color: colors.placeholder,
       fontFamily: typography.regular,
     },
-  });
+  })

@@ -1,56 +1,46 @@
-import React from 'react';
-import {Image, ScrollView, Text, View} from 'react-native';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import assets from '../../assets';
-import Button from '../../components/button/component';
-import InputComponent from '../../components/input/component';
-import {goBack, navigate} from '../../navigators/navigation-utilities';
-import {scale} from '../../theme/scale';
-import {renderMarginTop} from '../../utils/ui-utils';
-import {useSignup} from './signup.hook';
-import {createStyles} from './signup.styles';
+import { Image, ScrollView, Text, View } from "react-native"
+import AntDesign from "react-native-vector-icons/AntDesign"
+import MaterialIcons from "react-native-vector-icons/MaterialIcons"
+import assets from "../../assets"
+import Button from "../../components/button/component"
+import InputComponent from "../../components/input/component"
+import { goBack } from "../../navigators/navigation-utilities"
+import { scale } from "../../theme/scale"
+import { renderMarginTop } from "../../utils/ui-utils"
+import { useSignup } from "./signup.hook"
+import { createStyles } from "./signup.styles"
 
 const SignUpScreen = () => {
-  const styles = createStyles();
-  const {isSecure, setIsSecure} = useSignup();
-  const {logo_black} = assets;
+  const styles = createStyles()
+  const { isSecure, setIsSecure } = useSignup()
+  const { logo_black } = assets
   return (
     <ScrollView style={styles.container}>
       <View style={styles.flexRow}>
         <Image source={logo_black} style={styles.carLogo} />
-        <Text style={styles.titleStyle}>MORENT</Text>
+        <Text style={[styles.titleStyle, { color: "blue" }]}>MORENT</Text>
       </View>
       <View style={styles.textContainer}>
         <Text style={[styles.textStyle, styles.textCenter]}>Sign Up</Text>
       </View>
       <View style={styles.inputContainer}>
-        <InputComponent
-          onChangeText={e => console.log(e)}
-          placeholder={'Full Name'}
-        />
-        <InputComponent
-          onChangeText={e => console.log(e)}
-          placeholder={'Email Address'}
-        />
+        <InputComponent onChangeText={(e) => console.log(e)} placeholder={"Full Name"} />
+        <InputComponent onChangeText={(e) => console.log(e)} placeholder={"Email Address"} />
         <InputComponent
           isSecure
           secureTextEntry={isSecure}
-          onChangeText={e => console.log(e)}
-          placeholder={'Password'}
+          onChangeText={(e) => console.log(e)}
+          placeholder={"Password"}
           onSecurePress={() => setIsSecure(!isSecure)}
         />
-        <InputComponent
-          onChangeText={e => console.log(e)}
-          placeholder={'Country'}
-        />
+        <InputComponent onChangeText={(e) => console.log(e)} placeholder={"Country"} />
       </View>
       {renderMarginTop(12)}
       <View style={styles.buttonContainer}>
-        <Button text="Login" textStyles={styles.buttonText} />
+        <Button text="Sign Up" textStyles={styles.buttonText} />
         <Button
-          onPress={() => navigate('ResetScreen')}
-          text="Sign Up"
+          onPress={goBack}
+          text="Login"
           textStyles={styles.outlineButtonSignUpText}
           buttonStyles={styles.outlineButton}
         />
@@ -76,14 +66,14 @@ const SignUpScreen = () => {
       </View>
       <View style={styles.haveAccountContainer}>
         <Text style={styles.dontHaveText}>
-          Already have an account? {'\t'}
-          <Text onPress={goBack} style={styles.dontHaveText}>
+          Already have an account? {"\t"}
+          <Text onPress={goBack} style={[styles.dontHaveText, { color: "blue" }]}>
             Login
           </Text>
         </Text>
       </View>
     </ScrollView>
-  );
-};
+  )
+}
 
-export default SignUpScreen;
+export default SignUpScreen

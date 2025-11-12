@@ -13,7 +13,7 @@ import { getAsset } from "../../../lib/getAsset"
 import { mockBookings } from "../../../lib/mock-data/bookings"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import Ionicons from "react-native-vector-icons/Ionicons"
-import { useAuth } from "../../../lib/auth-context"
+import Header from "../../components/Header/Header"
 
 const DonutChart = () => {
   const chartData = [
@@ -77,8 +77,12 @@ export default function HomeScreen() {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
   const [cars, setCars] = useState<Car[]>([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [menuVisible, setMenuVisible] = useState(false)
-  const { logout } = useAuth()
+  const [filterVisible, setFilterVisible] = useState(false)
+
+  // Filter states
+  const [maxPrice, setMaxPrice] = useState<number | null>(null)
+  const [selectedType, setSelectedType] = useState<string | null>(null)
+  const [selectedSeats, setSelectedSeats] = useState<number | null>(null)
 
   useEffect(() => {
     async function loadCars() {
@@ -88,26 +92,43 @@ export default function HomeScreen() {
     loadCars()
   }, [])
 
-  const popularCars = cars.slice(0, 3)
-  const recommendedCars = cars.slice(3)
+  // Filter cars based on search and filters
+  const filteredCars = cars.filter((car) => {
+    // Search by name
+    if (searchQuery && !car.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false
+    }
+
+    // Filter by price
+    if (maxPrice && car.price > maxPrice) {
+      return false
+    }
+
+    // Filter by type
+    if (selectedType && car.category.toLowerCase() !== selectedType.toLowerCase()) {
+      return false
+    }
+
+    // Filter by seats
+    if (selectedSeats && car.specs.seats !== selectedSeats) {
+      return false
+    }
+
+    return true
+  })
+
+  const popularCars = filteredCars.slice(0, 3)
+  const recommendedCars = filteredCars.slice(3)
   const recentBookings = mockBookings.slice(0, 4)
 
-  const handleLogout = async () => {
-    setMenuVisible(false)
-    await logout()
-    navigation.navigate("authStack" as any)
+  const clearFilters = () => {
+    setMaxPrice(null)
+    setSelectedType(null)
+    setSelectedSeats(null)
+    setSearchQuery("")
   }
 
-  const handleMenuNavigation = (screen: string) => {
-    setMenuVisible(false)
-    if (screen === "Profile") {
-      navigation.navigate("Profile" as any)
-    } else if (screen === "Bookings") {
-      navigation.navigate("Bookings" as any)
-    } else if (screen === "Cars") {
-      navigation.navigate("Cars" as any)
-    }
-  }
+  const hasActiveFilters = maxPrice !== null || selectedType !== null || selectedSeats !== null
 
   const renderCarCard = (car: Car, isHorizontal = false) => (
     <Pressable
@@ -194,121 +215,7 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* MORENT header with logo and avatar */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          paddingHorizontal: scale(20),
-          paddingTop: scale(50),
-          paddingBottom: scale(16),
-          backgroundColor: colors.white,
-        }}
-      >
-        <Text style={{ fontSize: scale(28), fontWeight: "700", color: colors.morentBlue, letterSpacing: 1 }}>
-          MORENT
-        </Text>
-        <Pressable onPress={() => setMenuVisible(true)}>
-          <Image
-            source={require("../../../assets/admin-avatar.png")}
-            style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
-          />
-        </Pressable>
-      </View>
-
-      <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
-        <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          }}
-          onPress={() => setMenuVisible(false)}
-        >
-          <View
-            style={{
-              position: "absolute",
-              top: scale(90),
-              right: scale(20),
-              backgroundColor: colors.white,
-              borderRadius: 12,
-              padding: scale(8),
-              minWidth: scale(180),
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 8,
-              elevation: 8,
-            }}
-          >
-            <Pressable
-              onPress={() => handleMenuNavigation("Profile")}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: scale(12),
-                paddingHorizontal: scale(12),
-                borderRadius: 8,
-              }}
-            >
-              <MaterialIcons name="person" size={scale(20)} color={colors.primary} />
-              <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                Profile
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => handleMenuNavigation("Bookings")}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: scale(12),
-                paddingHorizontal: scale(12),
-                borderRadius: 8,
-              }}
-            >
-              <MaterialIcons name="event-note" size={scale(20)} color={colors.primary} />
-              <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                Bookings
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => handleMenuNavigation("Cars")}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: scale(12),
-                paddingHorizontal: scale(12),
-                borderRadius: 8,
-              }}
-            >
-              <MaterialIcons name="directions-car" size={scale(20)} color={colors.primary} />
-              <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                Cars
-              </Text>
-            </Pressable>
-
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: scale(4) }} />
-
-            <Pressable
-              onPress={handleLogout}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: scale(12),
-                paddingHorizontal: scale(12),
-                borderRadius: 8,
-              }}
-            >
-              <MaterialIcons name="logout" size={scale(20)} color="#EF4444" />
-              <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: "#EF4444", fontWeight: "500" }}>
-                Logout
-              </Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
+      <Header />
 
       <ScrollView style={{ flex: 1 }}>
         {/* Search Bar */}
@@ -334,17 +241,98 @@ export default function HomeScreen() {
               style={{ flex: 1, marginLeft: scale(12), fontSize: scale(14), color: colors.primary }}
             />
             <Pressable
+              onPress={() => setFilterVisible(true)}
               style={{
                 padding: scale(8),
                 borderRadius: 8,
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: hasActiveFilters ? colors.morentBlue : colors.border,
+                backgroundColor: hasActiveFilters ? colors.morentBlue : colors.white,
               }}
             >
-              <MaterialIcons name="tune" size={scale(20)} color={colors.primary} />
+              <MaterialIcons name="tune" size={scale(20)} color={hasActiveFilters ? colors.white : colors.primary} />
             </Pressable>
           </View>
         </View>
+
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <View style={{ paddingHorizontal: scale(16), paddingBottom: scale(12), backgroundColor: colors.white }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: "row", gap: scale(8) }}>
+                {maxPrice && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: colors.morentBlue,
+                      paddingHorizontal: scale(12),
+                      paddingVertical: scale(6),
+                      borderRadius: scale(16),
+                    }}
+                  >
+                    <Text style={{ fontSize: scale(12), color: colors.white, marginRight: scale(6) }}>
+                      Max ${maxPrice}
+                    </Text>
+                    <Pressable onPress={() => setMaxPrice(null)}>
+                      <MaterialIcons name="close" size={scale(14)} color={colors.white} />
+                    </Pressable>
+                  </View>
+                )}
+                {selectedType && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: colors.morentBlue,
+                      paddingHorizontal: scale(12),
+                      paddingVertical: scale(6),
+                      borderRadius: scale(16),
+                    }}
+                  >
+                    <Text style={{ fontSize: scale(12), color: colors.white, marginRight: scale(6) }}>
+                      {selectedType}
+                    </Text>
+                    <Pressable onPress={() => setSelectedType(null)}>
+                      <MaterialIcons name="close" size={scale(14)} color={colors.white} />
+                    </Pressable>
+                  </View>
+                )}
+                {selectedSeats && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: colors.morentBlue,
+                      paddingHorizontal: scale(12),
+                      paddingVertical: scale(6),
+                      borderRadius: scale(16),
+                    }}
+                  >
+                    <Text style={{ fontSize: scale(12), color: colors.white, marginRight: scale(6) }}>
+                      {selectedSeats} Seats
+                    </Text>
+                    <Pressable onPress={() => setSelectedSeats(null)}>
+                      <MaterialIcons name="close" size={scale(14)} color={colors.white} />
+                    </Pressable>
+                  </View>
+                )}
+                <Pressable
+                  onPress={clearFilters}
+                  style={{
+                    paddingHorizontal: scale(12),
+                    paddingVertical: scale(6),
+                    borderRadius: scale(16),
+                    borderWidth: 1,
+                    borderColor: colors.morentBlue,
+                  }}
+                >
+                  <Text style={{ fontSize: scale(12), color: colors.morentBlue }}>Clear All</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        )}
 
         {/* Pick-Up Section */}
         <View style={{ paddingHorizontal: scale(16), marginBottom: scale(16) }}>
@@ -584,6 +572,174 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal visible={filterVisible} transparent animationType="slide" onRequestClose={() => setFilterVisible(false)}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            justifyContent: "flex-end",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.white,
+              borderTopLeftRadius: scale(20),
+              borderTopRightRadius: scale(20),
+              padding: scale(20),
+              maxHeight: "80%",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: scale(20),
+              }}
+            >
+              <Text style={{ fontSize: scale(18), fontWeight: "700", color: colors.primary }}>Filters</Text>
+              <Pressable onPress={() => setFilterVisible(false)}>
+                <MaterialIcons name="close" size={scale(24)} color={colors.primary} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Price Filter */}
+              <View style={{ marginBottom: scale(24) }}>
+                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary, marginBottom: scale(12) }}>
+                  Max Price per Day
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: scale(8) }}>
+                  {[50, 100, 150, 200, 300].map((price) => (
+                    <Pressable
+                      key={price}
+                      onPress={() => setMaxPrice(maxPrice === price ? null : price)}
+                      style={{
+                        paddingHorizontal: scale(16),
+                        paddingVertical: scale(10),
+                        borderRadius: scale(8),
+                        borderWidth: 1,
+                        borderColor: maxPrice === price ? colors.morentBlue : colors.border,
+                        backgroundColor: maxPrice === price ? colors.morentBlue : colors.white,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: scale(13),
+                          color: maxPrice === price ? colors.white : colors.primary,
+                          fontWeight: maxPrice === price ? "600" : "400",
+                        }}
+                      >
+                        ${price}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {/* Car Type Filter */}
+              <View style={{ marginBottom: scale(24) }}>
+                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary, marginBottom: scale(12) }}>
+                  Car Type
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: scale(8) }}>
+                  {["Sports", "SUV", "Sedan", "Luxury", "Electric"].map((type) => (
+                    <Pressable
+                      key={type}
+                      onPress={() => setSelectedType(selectedType === type ? null : type)}
+                      style={{
+                        paddingHorizontal: scale(16),
+                        paddingVertical: scale(10),
+                        borderRadius: scale(8),
+                        borderWidth: 1,
+                        borderColor: selectedType === type ? colors.morentBlue : colors.border,
+                        backgroundColor: selectedType === type ? colors.morentBlue : colors.white,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: scale(13),
+                          color: selectedType === type ? colors.white : colors.primary,
+                          fontWeight: selectedType === type ? "600" : "400",
+                        }}
+                      >
+                        {type}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {/* Seats Filter */}
+              <View style={{ marginBottom: scale(24) }}>
+                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary, marginBottom: scale(12) }}>
+                  Number of Seats
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: scale(8) }}>
+                  {[2, 4, 5, 6, 7, 8].map((seats) => (
+                    <Pressable
+                      key={seats}
+                      onPress={() => setSelectedSeats(selectedSeats === seats ? null : seats)}
+                      style={{
+                        paddingHorizontal: scale(16),
+                        paddingVertical: scale(10),
+                        borderRadius: scale(8),
+                        borderWidth: 1,
+                        borderColor: selectedSeats === seats ? colors.morentBlue : colors.border,
+                        backgroundColor: selectedSeats === seats ? colors.morentBlue : colors.white,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: scale(13),
+                          color: selectedSeats === seats ? colors.white : colors.primary,
+                          fontWeight: selectedSeats === seats ? "600" : "400",
+                        }}
+                      >
+                        {seats} Seats
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Action Buttons */}
+            <View style={{ flexDirection: "row", gap: scale(12), marginTop: scale(16) }}>
+              <Pressable
+                onPress={() => {
+                  clearFilters()
+                  setFilterVisible(false)
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: scale(14),
+                  borderRadius: scale(8),
+                  borderWidth: 1,
+                  borderColor: colors.morentBlue,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.morentBlue }}>Clear All</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setFilterVisible(false)}
+                style={{
+                  flex: 1,
+                  paddingVertical: scale(14),
+                  borderRadius: scale(8),
+                  backgroundColor: colors.morentBlue,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.white }}>Apply Filters</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }

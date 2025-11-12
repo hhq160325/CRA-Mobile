@@ -20,6 +20,10 @@ const assetMap: Record<string, any> = {
   '/luxury-suv.png': require('../assets/luxury-suv.png'),
   '/range-rover-interior.jpg': require('../assets/range-rover-interior.jpg'),
   '/range-rover-offroad.jpg': require('../assets/range-rover-offroad.jpg'),
+  '/admin-avatar.png': require('../assets/admin-avatar.png'),
+  '/male-avatar.png': require('../assets/male-avatar.png'),
+  '/diverse-female-avatar.png': require('../assets/diverse-female-avatar.png'),
+  
 }
 
 export function getAsset(path?: string) {

@@ -9,7 +9,9 @@ import type { RouteProp } from "@react-navigation/native"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import { colors } from "../../theme/colors"
+import { scale } from "../../theme/scale"
 import { Car360View } from "../../components/car-360-view/car-360-view.component"
+import Header from "../../components/Header/Header"
 
 export default function CarDetailScreen() {
   const route = useRoute<RouteProp<{ params: { id: string } }, "params">>()
@@ -32,25 +34,55 @@ export default function CarDetailScreen() {
     }
   }, [id])
 
-  if (loading) return <ActivityIndicator />
-  if (!car) return <Text>Car not found</Text>
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.morentBlue} />
+        </View>
+      </View>
+    )
+  }
+
+  if (!car) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: scale(16), color: colors.placeholder }}>Car not found</Text>
+        </View>
+      </View>
+    )
+  }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ padding: 12 }}>
-      <Car360View images={car.images} carName={car.name} />
-      <View style={{ marginTop: 12 }}>
-        <Text style={{ fontSize: 18, fontWeight: "700" }}>{car.name}</Text>
-        <Text style={{ color: colors.placeholder }}>
-          {car.brand} • {car.year}
-        </Text>
-        <Text style={{ marginTop: 8 }}>{car.description}</Text>
-      </View>
-      <Pressable
-        onPress={() => navigation.navigate("BookingForm" as any, { id: car.id })}
-        style={{ backgroundColor: colors.button, padding: 12, borderRadius: 8, alignItems: "center", marginTop: 16 }}
-      >
-        <Text style={{ color: colors.white }}>Book Now</Text>
-      </Pressable>
-    </ScrollView>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Header />
+      <ScrollView contentContainerStyle={{ padding: scale(16) }}>
+        <Car360View images={car.images} carName={car.name} />
+        <View style={{ marginTop: scale(16) }}>
+          <Text style={{ fontSize: scale(20), fontWeight: "700", color: colors.primary }}>{car.name}</Text>
+          <Text style={{ fontSize: scale(14), color: colors.placeholder, marginTop: scale(4) }}>
+            {car.brand} • {car.year}
+          </Text>
+          <Text style={{ fontSize: scale(14), color: colors.primary, marginTop: scale(12), lineHeight: scale(20) }}>
+            {car.description}
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => navigation.navigate("BookingForm" as any, { id: car.id })}
+          style={{
+            backgroundColor: colors.morentBlue,
+            padding: scale(14),
+            borderRadius: scale(8),
+            alignItems: "center",
+            marginTop: scale(24)
+          }}
+        >
+          <Text style={{ color: colors.white, fontSize: scale(16), fontWeight: "600" }}>Book Now</Text>
+        </Pressable>
+      </ScrollView>
+    </View>
   )
 }

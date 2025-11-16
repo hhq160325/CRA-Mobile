@@ -32,18 +32,50 @@ const SignInScreen = () => {
       // eslint-disable-next-line no-console
       console.log("mobile login result success", success)
       if (success) {
-        // After successful login, reset to the main tab stack (lands on Home)
+        // Small delay to ensure auth context is updated
+        await new Promise(resolve => setTimeout(resolve, 150))
+
+        // Get user directly from mockUsers to ensure we have the role
+        const { mockUsers } = require("../../../lib/mock-data/users")
+        const currentUser = mockUsers.find((u: any) => u.email === email)
+
+        // eslint-disable-next-line no-console
+        console.log("Current user after login:", currentUser)
+        // eslint-disable-next-line no-console
+        console.log("User role:", currentUser?.role)
+
+        // After successful login, redirect based on role
         try {
           const { navigationRef } = require("../../navigators/navigation-utilities")
-          if (navigationRef && navigationRef.reset) {
-            navigationRef.reset({
-              index: 0,
-              routes: [
-                {
-                  name: "tabStack",
-                },
-              ],
-            })
+          if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
+            // If user is staff, redirect to staff screen
+            if (currentUser?.role === "staff") {
+              // eslint-disable-next-line no-console
+              console.log("Redirecting to StaffScreen for staff user")
+              navigationRef.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: "StaffScreen",
+                  },
+                ],
+              })
+            } else {
+              // For admin and customer, go to main tab stack
+              // eslint-disable-next-line no-console
+              console.log("Redirecting to tabStack for non-staff user")
+              navigationRef.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: "tabStack",
+                  },
+                ],
+              })
+            }
+          } else {
+            // eslint-disable-next-line no-console
+            console.log("Navigation not ready yet")
           }
         } catch (e) {
           // fallback: no-op

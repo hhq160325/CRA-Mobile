@@ -7,11 +7,14 @@ import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import { useAuth } from "../../../lib/auth-context"
+import { useLanguage } from "../../../lib/language-context"
 
 export default function Header() {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [menuVisible, setMenuVisible] = useState(false)
+    const [languageModalVisible, setLanguageModalVisible] = useState(false)
     const { logout } = useAuth()
+    const { language, setLanguage, t } = useLanguage()
 
     const handleLogout = async () => {
         setMenuVisible(false)
@@ -94,7 +97,7 @@ export default function Header() {
                         >
                             <MaterialIcons name="home" size={scale(20)} color={colors.primary} />
                             <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                                Home
+                                {t("home")}
                             </Text>
                         </Pressable>
 
@@ -110,7 +113,7 @@ export default function Header() {
                         >
                             <MaterialIcons name="person" size={scale(20)} color={colors.primary} />
                             <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                                Profile
+                                {t("profile")}
                             </Text>
                         </Pressable>
 
@@ -126,7 +129,7 @@ export default function Header() {
                         >
                             <MaterialIcons name="event-note" size={scale(20)} color={colors.primary} />
                             <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                                Bookings
+                                {t("bookings")}
                             </Text>
                         </Pressable>
 
@@ -142,7 +145,31 @@ export default function Header() {
                         >
                             <MaterialIcons name="directions-car" size={scale(20)} color={colors.primary} />
                             <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                                Cars
+                                {t("cars")}
+                            </Text>
+                        </Pressable>
+
+                        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: scale(4) }} />
+
+                        <Pressable
+                            onPress={() => {
+                                setMenuVisible(false)
+                                setLanguageModalVisible(true)
+                            }}
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                paddingVertical: scale(12),
+                                paddingHorizontal: scale(12),
+                                borderRadius: 8,
+                            }}
+                        >
+                            <MaterialIcons name="language" size={scale(20)} color={colors.primary} />
+                            <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
+                                {t("language")}
+                            </Text>
+                            <Text style={{ marginLeft: scale(8), fontSize: scale(12), color: colors.placeholder }}>
+                                ({language === "en" ? "EN" : "VI"})
                             </Text>
                         </Pressable>
 
@@ -160,8 +187,89 @@ export default function Header() {
                         >
                             <MaterialIcons name="logout" size={scale(20)} color="#EF4444" />
                             <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: "#EF4444", fontWeight: "500" }}>
-                                Logout
+                                {t("logout")}
                             </Text>
+                        </Pressable>
+                    </View>
+                </Pressable>
+            </Modal>
+
+            {/* Language Selection Modal */}
+            <Modal visible={languageModalVisible} transparent animationType="fade" onRequestClose={() => setLanguageModalVisible(false)}>
+                <Pressable
+                    style={{
+                        flex: 1,
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }}
+                    onPress={() => setLanguageModalVisible(false)}
+                >
+                    <View
+                        style={{
+                            backgroundColor: colors.white,
+                            borderRadius: 16,
+                            padding: scale(20),
+                            width: "80%",
+                            maxWidth: scale(300),
+                        }}
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <Text style={{ fontSize: scale(18), fontWeight: "700", color: colors.primary, marginBottom: scale(16) }}>
+                            {t("language")}
+                        </Text>
+
+                        <Pressable
+                            onPress={() => {
+                                setLanguage("en")
+                                setLanguageModalVisible(false)
+                            }}
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                paddingVertical: scale(14),
+                                paddingHorizontal: scale(12),
+                                borderRadius: 8,
+                                backgroundColor: language === "en" ? colors.morentBlue + "20" : colors.background,
+                                marginBottom: scale(8),
+                            }}
+                        >
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                <Text style={{ fontSize: scale(24), marginRight: scale(12) }}>🇬🇧</Text>
+                                <Text style={{ fontSize: scale(16), color: colors.primary, fontWeight: language === "en" ? "600" : "400" }}>
+                                    English
+                                </Text>
+                            </View>
+                            {language === "en" && (
+                                <MaterialIcons name="check-circle" size={scale(20)} color={colors.morentBlue} />
+                            )}
+                        </Pressable>
+
+                        <Pressable
+                            onPress={() => {
+                                setLanguage("vi")
+                                setLanguageModalVisible(false)
+                            }}
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                paddingVertical: scale(14),
+                                paddingHorizontal: scale(12),
+                                borderRadius: 8,
+                                backgroundColor: language === "vi" ? colors.morentBlue + "20" : colors.background,
+                            }}
+                        >
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                <Text style={{ fontSize: scale(24), marginRight: scale(12) }}>🇻🇳</Text>
+                                <Text style={{ fontSize: scale(16), color: colors.primary, fontWeight: language === "vi" ? "600" : "400" }}>
+                                    Tiếng Việt
+                                </Text>
+                            </View>
+                            {language === "vi" && (
+                                <MaterialIcons name="check-circle" size={scale(20)} color={colors.morentBlue} />
+                            )}
                         </Pressable>
                     </View>
                 </Pressable>

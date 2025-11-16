@@ -6,37 +6,31 @@ export interface User {
   name: string
   phone: string
   avatar?: string
+  role: "admin" | "staff" | "customer"
   createdAt: Date
 }
 
 export const mockUsers: User[] = [
   {
     id: "1",
-    email: "admin@carental.com",
-    password: "admin123",
+    email: "Admin@carental.com",
+    password: "Admin123",
     name: "Admin User",
     phone: "+1234567890",
     avatar: "/admin-avatar.png",
+    role: "admin",
     createdAt: new Date("2024-01-01"),
   },
   {
     id: "2",
-    email: "john@example.com",
-    password: "password123",
+    email: "Staff@carental.com",
+    password: "Staff123",
     name: "John Doe",
     phone: "+1234567891",
     avatar: "/male-avatar.png",
+    role: "staff",
     createdAt: new Date("2024-02-15"),
-  },
-  {
-    id: "3",
-    email: "jane@example.com",
-    password: "password123",
-    name: "Jane Smith",
-    phone: "+1234567892",
-    avatar: "/diverse-female-avatar.png",
-    createdAt: new Date("2024-03-20"),
-  },
+  }
 ]
 
 // Helper function to validate login

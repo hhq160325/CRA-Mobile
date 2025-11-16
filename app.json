@@ -16,14 +16,25 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.carapp.app"
+      "bundleIdentifier": "com.carapp.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "We need access to your camera to take photos of the car for pickup and return confirmation.",
+        "NSPhotoLibraryUsageDescription": "We need access to your photo library to select photos for pickup and return confirmation.",
+        "NSPhotoLibraryAddUsageDescription": "We need access to save photos to your photo library."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.carapp.app"
+      "package": "com.carapp.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "favicon": "./favicon.ico"

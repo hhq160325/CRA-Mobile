@@ -30,6 +30,8 @@ import CarListScreen from "../screens/cars/car-list.screen"
 import CarDetailScreen from "../screens/cars/car-detail.screen"
 import BookingDetailScreen from "../screens/bookings/booking-detail.screen"
 import BookingFormScreen from "../screens/bookings/booking-form.screen"
+import StaffScreen from "../screens/staff/staff.screen"
+import PickupReturnConfirmScreen from "../screens/staff/pickup-return-confirm.screen"
 
 type NavigationProps = Partial<React.ComponentProps<typeof NavigationContainer>>
 
@@ -146,10 +148,10 @@ const RootStack = () => {
 }
 
 const CombinedStack = () => {
- 
+
   const { isAuthenticated } = useAuth()
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, animationEnabled: true }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name="auth"
         options={{
@@ -195,6 +197,20 @@ const CombinedStack = () => {
       <Stack.Screen
         name="rootStack"
         component={RootStack}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="StaffScreen"
+        component={StaffScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="PickupReturnConfirm"
+        component={PickupReturnConfirmScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

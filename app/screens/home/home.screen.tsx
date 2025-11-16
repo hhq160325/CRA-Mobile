@@ -14,6 +14,7 @@ import { mockBookings } from "../../../lib/mock-data/bookings"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import Ionicons from "react-native-vector-icons/Ionicons"
 import Header from "../../components/Header/Header"
+import { useLanguage } from "../../../lib/language-context"
 
 const DonutChart = () => {
   const chartData = [
@@ -78,6 +79,7 @@ export default function HomeScreen() {
   const [cars, setCars] = useState<Car[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [filterVisible, setFilterVisible] = useState(false)
+  const { t } = useLanguage()
 
   // Filter states
   const [maxPrice, setMaxPrice] = useState<number | null>(null)
@@ -140,7 +142,7 @@ export default function HomeScreen() {
         padding: scale(16),
         marginRight: isHorizontal ? scale(12) : 0,
         marginBottom: scale(16),
-        width: isHorizontal ? scale(240) : "100%",
+        width: isHorizontal ? scale(280) : "100%",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -195,7 +197,7 @@ export default function HomeScreen() {
         <View>
           <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary }}>
             ${car.price}.00
-            <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>/day</Text>
+            <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>{t("perDay")}</Text>
           </Text>
         </View>
         <Pressable
@@ -207,7 +209,7 @@ export default function HomeScreen() {
             borderRadius: 4,
           }}
         >
-          <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600" }}>Rent Now</Text>
+          <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600" }}>{t("rentNow")}</Text>
         </Pressable>
       </View>
     </Pressable>
@@ -234,7 +236,7 @@ export default function HomeScreen() {
           >
             <MaterialIcons name="search" size={scale(22)} color={colors.placeholder} />
             <TextInput
-              placeholder="Search something here"
+              placeholder={t("searchPlaceholder")}
               placeholderTextColor={colors.placeholder}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -327,7 +329,7 @@ export default function HomeScreen() {
                     borderColor: colors.morentBlue,
                   }}
                 >
-                  <Text style={{ fontSize: scale(12), color: colors.morentBlue }}>Clear All</Text>
+                  <Text style={{ fontSize: scale(12), color: colors.morentBlue }}>{t("clearAll")}</Text>
                 </Pressable>
               </View>
             </ScrollView>
@@ -348,7 +350,7 @@ export default function HomeScreen() {
                   marginRight: scale(8),
                 }}
               />
-              <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>Pick - Up</Text>
+              <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>{t("pickUp")}</Text>
             </View>
 
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -410,7 +412,7 @@ export default function HomeScreen() {
                   marginRight: scale(8),
                 }}
               />
-              <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>Drop - Off</Text>
+              <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>{t("dropOff")}</Text>
             </View>
 
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -449,9 +451,9 @@ export default function HomeScreen() {
               marginBottom: scale(12),
             }}
           >
-            <Text style={{ fontSize: scale(14), color: colors.placeholder }}>Popular Car</Text>
+            <Text style={{ fontSize: scale(14), color: colors.placeholder }}>{t("popularCar")}</Text>
             <Pressable onPress={() => navigation.navigate("Cars" as any)}>
-              <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>View All</Text>
+              <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>{t("viewAll")}</Text>
             </Pressable>
           </View>
 
@@ -461,6 +463,8 @@ export default function HomeScreen() {
             data={popularCars}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingHorizontal: scale(16) }}
+            snapToInterval={scale(280)}
+            decelerationRate="fast"
             renderItem={({ item }) => renderCarCard(item, true)}
           />
         </View>
@@ -475,9 +479,9 @@ export default function HomeScreen() {
               marginBottom: scale(12),
             }}
           >
-            <Text style={{ fontSize: scale(14), color: colors.placeholder }}>Recomendation Car</Text>
+            <Text style={{ fontSize: scale(14), color: colors.placeholder }}>{t("recommendationCar")}</Text>
             <Pressable onPress={() => navigation.navigate("Cars" as any)}>
-              <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>View All</Text>
+              <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>{t("viewAll")}</Text>
             </Pressable>
           </View>
 
@@ -505,7 +509,7 @@ export default function HomeScreen() {
                 marginBottom: scale(16),
               }}
             >
-              <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>Top 5 Car Rental</Text>
+              <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>{t("topCarRental")}</Text>
               <MaterialIcons name="more-vert" size={scale(20)} color={colors.placeholder} />
             </View>
 
@@ -522,9 +526,9 @@ export default function HomeScreen() {
               marginBottom: scale(12),
             }}
           >
-            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>Recent Transaction</Text>
+            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>{t("recentTransaction")}</Text>
             <Pressable onPress={() => navigation.navigate("Bookings" as any)}>
-              <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>View All</Text>
+              <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>{t("viewAll")}</Text>
             </Pressable>
           </View>
 
@@ -553,7 +557,7 @@ export default function HomeScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>{booking.carName}</Text>
                 <Text style={{ fontSize: scale(11), color: colors.placeholder, marginTop: scale(2) }}>
-                  {booking.status === "completed" ? "Completed" : "Upcoming"}
+                  {booking.status === "completed" ? t("completed") : t("upcoming")}
                 </Text>
               </View>
 
@@ -599,7 +603,7 @@ export default function HomeScreen() {
                 marginBottom: scale(20),
               }}
             >
-              <Text style={{ fontSize: scale(18), fontWeight: "700", color: colors.primary }}>Filters</Text>
+              <Text style={{ fontSize: scale(18), fontWeight: "700", color: colors.primary }}>{t("filters")}</Text>
               <Pressable onPress={() => setFilterVisible(false)}>
                 <MaterialIcons name="close" size={scale(24)} color={colors.primary} />
               </Pressable>
@@ -609,7 +613,7 @@ export default function HomeScreen() {
               {/* Price Filter */}
               <View style={{ marginBottom: scale(24) }}>
                 <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary, marginBottom: scale(12) }}>
-                  Max Price per Day
+                  {t("maxPrice")}
                 </Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: scale(8) }}>
                   {[50, 100, 150, 200, 300].map((price) => (
@@ -642,7 +646,7 @@ export default function HomeScreen() {
               {/* Car Type Filter */}
               <View style={{ marginBottom: scale(24) }}>
                 <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary, marginBottom: scale(12) }}>
-                  Car Type
+                  {t("carType")}
                 </Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: scale(8) }}>
                   {["Sports", "SUV", "Sedan", "Luxury", "Electric"].map((type) => (
@@ -675,7 +679,7 @@ export default function HomeScreen() {
               {/* Seats Filter */}
               <View style={{ marginBottom: scale(24) }}>
                 <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary, marginBottom: scale(12) }}>
-                  Number of Seats
+                  {t("numberOfSeats")}
                 </Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: scale(8) }}>
                   {[2, 4, 5, 6, 7, 8].map((seats) => (
@@ -722,7 +726,7 @@ export default function HomeScreen() {
                   alignItems: "center",
                 }}
               >
-                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.morentBlue }}>Clear All</Text>
+                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.morentBlue }}>{t("clearAll")}</Text>
               </Pressable>
               <Pressable
                 onPress={() => setFilterVisible(false)}
@@ -734,7 +738,7 @@ export default function HomeScreen() {
                   alignItems: "center",
                 }}
               >
-                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.white }}>Apply Filters</Text>
+                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.white }}>{t("applyFilters")}</Text>
               </Pressable>
             </View>
           </View>

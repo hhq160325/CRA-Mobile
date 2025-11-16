@@ -13,6 +13,13 @@ export type NavigatorParamList = {
   ['CarDetail']: { id: string };
   ['BookingDetail']: { id: string };
   ['BookingForm']: { id: string } | undefined;
+  ['Staff']: undefined;
+  ['StaffScreen']: undefined;
+  ['PickupReturnConfirm']: { paymentId: string };
+  ['auth']: undefined;
+  ['tabStack']: undefined;
+  ['authStack']: undefined;
+  ['rootStack']: undefined;
 };
 
 export type ScreenName = keyof NavigatorParamList;

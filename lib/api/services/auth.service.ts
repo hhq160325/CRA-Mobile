@@ -16,7 +16,7 @@ export interface RegisterData {
 }
 
 export const authService = {
- 
+
   async login(credentials: LoginCredentials): Promise<{ data: User | null; error: Error | null }> {
     if (API_CONFIG.USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 800))
@@ -27,13 +27,13 @@ export const authService = {
         return { data: null, error: new Error("Invalid email or password") }
       }
 
-      
+
       try {
         if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
           localStorage.setItem("user", JSON.stringify(user))
         }
       } catch (e) {
-     
+
       }
       return { data: user, error: null }
     }
@@ -47,14 +47,14 @@ export const authService = {
       return { data: null, error: result.error }
     }
 
-   
+
     try {
       if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
         localStorage.setItem("token", result.data.token)
         localStorage.setItem("user", JSON.stringify(result.data.user))
       }
     } catch (e) {
- 
+
     }
 
     return { data: result.data.user, error: null }
@@ -75,6 +75,7 @@ export const authService = {
         password: data.password,
         phone: data.phone || "",
         avatar: "/male-avatar.png",
+        role: "customer",
         createdAt: new Date(),
       }
 
@@ -84,7 +85,7 @@ export const authService = {
           localStorage.setItem("user", JSON.stringify(newUser))
         }
       } catch (e) {
-      
+
       }
 
       return { data: newUser, error: null }
@@ -105,7 +106,7 @@ export const authService = {
         localStorage.setItem("user", JSON.stringify(result.data.user))
       }
     } catch (e) {
-     
+
     }
 
     return { data: result.data.user, error: null }
@@ -119,7 +120,7 @@ export const authService = {
           localStorage.removeItem("user")
         }
       } catch (e) {
-        
+
       }
       return { error: null }
     }
@@ -131,13 +132,13 @@ export const authService = {
         localStorage.removeItem("user")
       }
     } catch (e) {
-    
+
     }
 
     return { error: null }
   },
 
-  
+
   getCurrentUser(): User | null {
     try {
       if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
@@ -145,7 +146,7 @@ export const authService = {
         return userStr ? JSON.parse(userStr) : null
       }
     } catch (e) {
-     
+
     }
     return null
   },

@@ -9,7 +9,7 @@ import * as ImagePicker from "expo-image-picker"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
-import { confirmationService } from "../../../lib/mock-data/confirmations"
+import { confirmationService } from "../../../lib/api"
 
 type ConfirmationType = "pickup" | "return"
 

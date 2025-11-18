@@ -1,8 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { authService } from "./api"
-import type { User } from "@/lib/mock-data/users"
+import { authService, type User } from "./api"
 
 interface AuthContextType {
   user: User | null

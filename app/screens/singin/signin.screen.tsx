@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Image, ScrollView, Text, View, Alert } from "react-native"
 import AntDesign from "react-native-vector-icons/AntDesign"
-import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import assets from "../../assets"
 import Button from "../../components/button/component"
 import CheckBoxComponent from "../../components/checkbox/component"
@@ -35,9 +34,9 @@ const SignInScreen = () => {
         // Small delay to ensure auth context is updated
         await new Promise(resolve => setTimeout(resolve, 150))
 
-        // Get user directly from mockUsers to ensure we have the role
-        const { mockUsers } = require("../../../lib/mock-data/users")
-        const currentUser = mockUsers.find((u: any) => u.email === email)
+        // Get current user from auth context
+        const { authService } = require("../../../lib/api")
+        const currentUser = authService.getCurrentUser()
 
         // eslint-disable-next-line no-console
         console.log("Current user after login:", currentUser)
@@ -61,7 +60,7 @@ const SignInScreen = () => {
                 ],
               })
             } else {
-              // For admin and customer, go to main tab stack
+              // For customer and car-owner, go to main tab stack
               // eslint-disable-next-line no-console
               console.log("Redirecting to tabStack for non-staff user")
               navigationRef.reset({
@@ -91,6 +90,43 @@ const SignInScreen = () => {
       // eslint-disable-next-line no-console
       console.log("login exception", err)
       Alert.alert("Login error", err?.message || "Something went wrong")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true)
+    try {
+      // TODO: Implement Google Sign-In
+      // You'll need to:
+      // 1. Install: expo install expo-auth-session expo-crypto
+      // 2. Set up Google OAuth credentials in Google Cloud Console
+      // 3. Configure app.json with Google client IDs
+      // 4. Implement the OAuth flow
+
+      Alert.alert(
+        "Google Sign-In",
+        "Google Sign-In will be implemented here. This requires:\n\n" +
+        "1. Google OAuth credentials\n" +
+        "2. expo-auth-session package\n" +
+        "3. Backend API endpoint for Google authentication"
+      )
+
+      // Example implementation structure:
+      // const response = await googleAuthRequest()
+      // if (response?.type === 'success') {
+      //   const { authentication } = response
+      //   // Send token to your backend
+      //   const result = await apiClient('/auth/google', {
+      //     method: 'POST',
+      //     body: JSON.stringify({ token: authentication.accessToken })
+      //   })
+      //   // Handle successful login
+      // }
+    } catch (err: any) {
+      console.log("Google login error", err)
+      Alert.alert("Google Sign-In Error", err?.message || "Something went wrong")
     } finally {
       setIsLoading(false)
     }
@@ -150,16 +186,11 @@ const SignInScreen = () => {
       </View>
       <View style={[styles.buttonContainer, styles.mt14]}>
         <Button
-          text="Apple Pay"
-          textStyles={styles.outlineButtonText}
-          buttonStyles={styles.iconButtonStyle}
-          component={<MaterialIcons name="apple" size={scale(26)} />}
-        />
-        <Button
-          text="Google Pay"
+          text="Sign in with Google"
           textStyles={styles.outlineButtonText}
           buttonStyles={styles.iconButtonStyle}
           component={<AntDesign name="google" size={scale(20)} />}
+          onPress={handleGoogleLogin}
         />
       </View>
       <View style={styles.haveAccountContainer}>

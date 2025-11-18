@@ -9,7 +9,7 @@ import { colors } from "../../theme/colors"
 import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../../lib/auth-context"
-import { confirmationService } from "../../../lib/mock-data/confirmations"
+import { confirmationService } from "../../../lib/api"
 
 // Mock payment data
 const mockPayments = [

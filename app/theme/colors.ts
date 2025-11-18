@@ -8,6 +8,7 @@ export const colors = {
   darkBlue: "rgb(58,63,80)",
   green: "rgb(0,255,0)",
   red: "red",
+  destructive: "#DC2626",
   icon: "rgb(156,156,156)",
   search: "rgb(51,52,56)",
   button: "#21292B",

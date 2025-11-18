@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { View, Text, FlatList, Pressable, Image } from "react-native"
-import { mockBookings } from "../../../lib/mock-data/bookings"
+import { useState, useEffect } from "react"
+import { View, Text, FlatList, Pressable, Image, ActivityIndicator } from "react-native"
+import { bookingsService, type Booking } from "../../../lib/api"
+import { useAuth } from "../../../lib/auth-context"
 import { useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
-import { useAuth } from "../../../lib/auth-context"
 import { colors } from "../../theme/colors"
 import { scale, verticalScale } from "../../theme/scale"
 import getAsset from "../../../lib/getAsset"
@@ -16,12 +16,23 @@ type StatusFilter = "all" | "upcoming" | "completed" | "cancelled"
 
 export default function BookingsListScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [loading, setLoading] = useState(true)
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
   const { user } = useAuth()
 
-  const userBookings = mockBookings.filter((b) => b.userId === (user?.id ?? "2"))
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!user?.id) return
+      setLoading(true)
+      const { data } = await bookingsService.getBookings(user.id)
+      if (data) setBookings(data)
+      setLoading(false)
+    }
+    fetchBookings()
+  }, [user?.id])
 
-  const filteredBookings = statusFilter === "all" ? userBookings : userBookings.filter((b) => b.status === statusFilter)
+  const filteredBookings = statusFilter === "all" ? bookings : bookings.filter((b: Booking) => b.status === statusFilter)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -49,12 +60,12 @@ export default function BookingsListScreen() {
     }
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
     const d = new Date(date)
     return `${d.getDate()} ${d.toLocaleString("default", { month: "short" })}`
   }
 
-  const renderBookingCard = ({ item }: { item: typeof mockBookings[0] }) => (
+  const renderBookingCard = ({ item }: { item: Booking }) => (
     <Pressable
       onPress={() => navigation.navigate("BookingDetail" as any, { id: item.id })}
       style={{
@@ -160,13 +171,13 @@ export default function BookingsListScreen() {
       </View>
 
       {/* Add-ons */}
-      {item.addOns && item.addOns.length > 0 && (
+      {item.addons && item.addons.length > 0 && (
         <View>
           <Text style={{ fontSize: scale(10), color: "#6b7280", fontWeight: "600", marginBottom: verticalScale(4) }}>
             ADD-ONS
           </Text>
           <Text style={{ fontSize: scale(12), color: colors.primary }}>
-            {item.addOns.join(", ")}
+            {item.addons.join(", ")}
           </Text>
         </View>
       )}
@@ -180,6 +191,17 @@ export default function BookingsListScreen() {
       </View>
     </Pressable>
   )
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#f9fafb" }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f9fafb" }}>

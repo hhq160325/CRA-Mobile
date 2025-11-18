@@ -1,29 +1,51 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, TextInput, Pressable, Alert, ScrollView, Image, ActivityIndicator } from "react-native"
-import { bookingsService } from "../../../lib/api"
+import { bookingsService, carsService, type Car } from "../../../lib/api"
 import { useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 import { colors } from "../../theme/colors"
-import { getCarById } from "../../../lib/mock-data/cars"
 import getAsset from "../../../lib/getAsset"
 import Header from "../../components/Header/Header"
+import { useAuth } from "../../../lib/auth-context"
 
 export default function BookingFormScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
+  const { user } = useAuth()
   const carId = route?.params?.id
-  const car = getCarById(carId)
+  const [car, setCar] = useState<Car | null>(null)
+  const [carLoading, setCarLoading] = useState(true)
 
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
 
-  // Billing Info
-  const [name, setName] = useState("")
-  const [address, setAddress] = useState("")
-  const [phone, setPhone] = useState("")
+  useEffect(() => {
+    const fetchCar = async () => {
+      if (!carId) return
+      setCarLoading(true)
+      const { data } = await carsService.getCarById(carId)
+      if (data) setCar(data)
+      setCarLoading(false)
+    }
+    fetchCar()
+  }, [carId])
+
+  // Billing Info - Auto-fill from user profile
+  const [name, setName] = useState(user?.name || "")
+  const [address, setAddress] = useState(user?.address || "")
+  const [phone, setPhone] = useState(user?.phone || "")
   const [city, setCity] = useState("")
+
+  // Auto-fill user data when user changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "")
+      setAddress(user.address || "")
+      setPhone(user.phone || "")
+    }
+  }, [user])
 
   // Rental Info
   const [pickupLocation, setPickupLocation] = useState("Semarang")
@@ -120,10 +142,24 @@ export default function BookingFormScreen({ route }: any) {
     }
   }
 
+  if (carLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </View>
+    )
+  }
+
   if (!car) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Car not found</Text>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text>Car not found</Text>
+        </View>
       </View>
     )
   }

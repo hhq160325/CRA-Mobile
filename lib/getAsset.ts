@@ -1,4 +1,4 @@
-// Helper to map mock-data image paths (string) to require() references for React Native
+// Helper to map image paths (string) to require() references for React Native
 const assetMap: Record<string, any> = {
   '/tesla-model-s-luxury.png': require('../assets/tesla-model-s-luxury.png'),
   '/tesla-interior.jpg': require('../assets/tesla-interior.jpg'),
@@ -23,7 +23,7 @@ const assetMap: Record<string, any> = {
   '/admin-avatar.png': require('../assets/admin-avatar.png'),
   '/male-avatar.png': require('../assets/male-avatar.png'),
   '/diverse-female-avatar.png': require('../assets/diverse-female-avatar.png'),
-  
+
 }
 
 export function getAsset(path?: string) {

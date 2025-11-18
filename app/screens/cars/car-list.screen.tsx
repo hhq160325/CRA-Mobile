@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Pressable, Image, ActivityIndicator } from 'react-native';
-import { carsService } from '../../../lib/api';
-import type { Car } from '../../../lib/mock-data/cars';
+import { carsService, type Car } from '../../../lib/api';
 import { getAsset } from '../../../lib/getAsset';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';

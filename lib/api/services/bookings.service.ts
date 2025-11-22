@@ -25,18 +25,16 @@ export interface Booking {
 }
 
 export interface CreateBookingData {
+  customerId: string
   carId: string
-  startDate: string
-  endDate: string
-  pickupLocation: string
-  dropoffLocation: string
-  driverInfo: {
-    name: string
-    email: string
-    phone: string
-    licenseNumber: string
-  }
-  addons?: string[]
+  pickupPlace: string
+  pickupTime: string // ISO date string
+  dropoffPlace: string
+  dropoffTime: string // ISO date string
+  bookingFee: number
+  carRentPrice: number
+  rentime: number // rental duration in days
+  rentType: string // "daily", "weekly", "monthly"
 }
 
 export interface UpdateBookingData {

@@ -1,6 +1,6 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { View, Text, Pressable, Image, Modal } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useFocusEffect } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
@@ -8,17 +8,71 @@ import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import { useAuth } from "../../../lib/auth-context"
 import { useLanguage } from "../../../lib/language-context"
+import { userService } from "../../../lib/api/services/user.service"
+import getAsset from "@/lib/getAsset"
 
 export default function Header() {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [menuVisible, setMenuVisible] = useState(false)
     const [languageModalVisible, setLanguageModalVisible] = useState(false)
-    const { logout } = useAuth()
+    const [userAvatar, setUserAvatar] = useState<string | null>(null)
+    const [refreshKey, setRefreshKey] = useState(0)
+    const { user, logout } = useAuth()
     const { language, setLanguage, t } = useLanguage()
 
-    const handleLogout = async () => {
+    // Load user avatar
+    const loadUserAvatar = async () => {
+        if (!user?.id) return
+
+        console.log("Header: Loading user avatar for user", user.id)
+        try {
+            const { data, error } = await userService.getUserById(user.id)
+            if (error) {
+                // If user not found (404), they may have been deleted - log them out
+                const isNotFound = (error as any).status === 404 ||
+                    error.message?.includes("404") ||
+                    error.message?.toLowerCase().includes("not found")
+
+                if (isNotFound) {
+                    console.log("Header: User account not found (404), logging out")
+                    logout()
+                    navigation.navigate("authStack" as any)
+                    return
+                }
+                console.log("Header: Failed to load user data, using default avatar")
+                setUserAvatar(null)
+                return
+            }
+            if (data && data.imageAvatar) {
+                console.log("Header: Avatar loaded:", data.imageAvatar)
+                setUserAvatar(data.imageAvatar)
+                setRefreshKey(Date.now()) // Force image refresh
+            } else {
+                console.log("Header: No avatar found in user data")
+            }
+        } catch (err) {
+            console.error("Failed to load user avatar:", err)
+            setUserAvatar(null)
+        }
+    }
+
+    // Load avatar once when user logs in
+    useEffect(() => {
+        if (user?.id) {
+            loadUserAvatar()
+        }
+    }, [user?.id])
+
+    // Determine avatar source with cache busting
+    const avatarSource = userAvatar
+        ? { uri: `${userAvatar}?t=${refreshKey}`, cache: 'reload' as any }
+        : user?.avatar
+            ? getAsset(user.avatar)
+            : require("../../../assets/admin-avatar.png")
+
+    const handleLogout = () => {
         setMenuVisible(false)
-        await logout()
+        logout()
         navigation.navigate("authStack" as any)
     }
 
@@ -55,7 +109,8 @@ export default function Header() {
                 </Pressable>
                 <Pressable onPress={() => setMenuVisible(true)}>
                     <Image
-                        source={require("../../../assets/admin-avatar.png")}
+                        key={`avatar-${refreshKey}`}
+                        source={avatarSource}
                         style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
                     />
                 </Pressable>

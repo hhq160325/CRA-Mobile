@@ -1,17 +1,25 @@
 
 export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api",
-  TIMEOUT: 30000,
+  TIMEOUT: 60000, // Increased to 60 seconds for Azure cold starts
+  RETRY_ATTEMPTS: 2,
+  RETRY_DELAY: 1000,
 }
 
 // API endpoints
 export const API_ENDPOINTS = {
   // Auth
-  LOGIN: "/User/authenticate",
-  REGISTER: "/User/Signup",
-  LOGOUT: "/auth/logout",
-  VERIFY_OTP: "/auth/verify-otp",
-  RESET_PASSWORD: "/auth/reset-password",
+  LOGIN: "/Authen/authenticate",
+  REGISTER: "/Authen/SignUp",
+  LOGOUT: "/Authen/Logout",
+  VERIFY_OTP: "/Authen/verify-otp",
+  // Note: These endpoints may need to be implemented on the backend
+  // Alternative paths to try: /Authen/forgotPassword, /Authen/request-reset, /User/forgot-password
+  FORGOT_PASSWORD: "/Authen/ForgotPassword",
+  RESET_PASSWORD: "/Authen/ResetPassword",
+  VERIFY_RESET_CODE: "/Authen/VerifyResetCode",
+  LOGIN_GOOGLE: "/Authen/login/google",
+  REFRESH_TOKEN: "/Authen/refresh-token",
 
   // Cars
   CARS: "/Car/AllCars",
@@ -38,9 +46,12 @@ export const API_ENDPOINTS = {
   // User
   USER_PROFILE: "/user/profile",
   UPDATE_PROFILE: "/user/profile/update",
+  GET_ALL_USERS: "/User/GetAllUsers",
+  UPDATE_USER_INFO: "/User/UpdateUserInfo",
+  UPLOAD_AVATAR: "/User/UploadAvatar",
 
   // Payments & Invoices
-  GET_USER: (userId: string) => `/User/${userId}`,
+  GET_USER: (userId: string) => `/User/GetUserById?userId=${userId}`,
 
   // Invoice endpoints
   ALL_INVOICES: "/api/Invoice/AllInvoices",

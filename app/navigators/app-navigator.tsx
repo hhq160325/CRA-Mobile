@@ -26,10 +26,14 @@ import SignUpScreen from "../screens/signup/signup.screen"
 import ResetScreen from "../screens/reset/reset.screen"
 import VerifyScreen from "../screens/verify/verify.screen"
 import OtpScreen from "../screens/otp/otp.screen"
+import GoogleLoginWebView from "../screens/singin/google-login-webview.screen"
+import GoogleOAuthHandler from "../screens/singin/google-oauth-handler.screen"
 import CarListScreen from "../screens/cars/car-list.screen"
 import CarDetailScreen from "../screens/cars/car-detail.screen"
 import BookingDetailScreen from "../screens/bookings/booking-detail.screen"
 import BookingFormScreen from "../screens/bookings/booking-form.screen"
+import CarMapScreen from "../screens/cars/car-map.screen"
+import CarMapRouteScreen from "../screens/cars/car-map-route.screen"
 import StaffScreen from "../screens/staff/staff.screen"
 import PickupReturnConfirmScreen from "../screens/staff/pickup-return-confirm.screen"
 
@@ -129,6 +133,23 @@ const AuthStack = () => {
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       />
+      <Stack.Screen
+        name="GoogleLoginWebView"
+        component={GoogleLoginWebView}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+          presentation: 'modal',
+        }}
+      />
+      <Stack.Screen
+        name="GoogleOAuthHandler"
+        component={GoogleOAuthHandler}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   )
 }
@@ -176,6 +197,20 @@ const CombinedStack = () => {
       <Stack.Screen
         name="BookingDetail"
         component={BookingDetailScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="CarMapScreen"
+        component={CarMapScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="CarMapRouteScreen"
+        component={CarMapRouteScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

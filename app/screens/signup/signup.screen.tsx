@@ -1,18 +1,143 @@
-import { Image, ScrollView, Text, View } from "react-native"
-import AntDesign from "react-native-vector-icons/AntDesign"
-import MaterialIcons from "react-native-vector-icons/MaterialIcons"
+import { useState } from "react"
+import { Image, ScrollView, Text, View, Alert } from "react-native"
 import assets from "../../assets"
 import Button from "../../components/button/component"
 import InputComponent from "../../components/input/component"
-import { goBack } from "../../navigators/navigation-utilities"
-import { scale } from "../../theme/scale"
+import { goBack, navigate } from "../../navigators/navigation-utilities"
 import { renderMarginTop } from "../../utils/ui-utils"
 import { useSignup } from "./signup.hook"
 import { createStyles } from "./signup.styles"
+import { authService } from "../../../lib/api"
+import { validateEmail } from "../singin/signin.validation"
 
 const SignUpScreen = () => {
   const styles = createStyles()
   const { isSecure, setIsSecure } = useSignup()
+  const [fullName, setFullName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [phone, setPhone] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSignUp = async () => {
+    // Validation
+    if (!fullName.trim()) {
+      Alert.alert("Validation Error", "Please enter your full name")
+      return
+    }
+    // Validate email
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.valid) {
+      Alert.alert("Invalid Email", emailValidation.error || "Please enter a valid email")
+      return
+    }
+    if (!password.trim()) {
+      Alert.alert("Validation Error", "Please enter a password")
+      return
+    }
+
+    // Google-style password validation
+    if (password.length < 8) {
+      Alert.alert("Weak Password", "Password must be at least 8 characters")
+      return
+    }
+
+    // Check for at least one letter (uppercase or lowercase)
+    if (!/[a-zA-Z]/.test(password)) {
+      Alert.alert("Weak Password", "Password must contain at least one letter")
+      return
+    }
+
+    // Check for at least one number
+    if (!/\d/.test(password)) {
+      Alert.alert("Weak Password", "Password must contain at least one number")
+      return
+    }
+
+    // Check for at least one special character or uppercase letter
+    if (!/[A-Z!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      Alert.alert(
+        "Weak Password",
+        "Password must contain at least one uppercase letter or special character (!@#$%^&*)"
+      )
+      return
+    }
+    // Phone validation (if provided)
+    if (phone.trim()) {
+      // Remove any spaces or dashes
+      const cleanPhone = phone.replace(/[\s-]/g, "")
+
+      // Must be exactly 10 digits
+      if (cleanPhone.length !== 10) {
+        Alert.alert("Validation Error", "Phone number must be exactly 10 digits")
+        return
+      }
+
+      // Must start with 0
+      if (!cleanPhone.startsWith("0")) {
+        Alert.alert("Validation Error", "Phone number must start with 0")
+        return
+      }
+
+      // Must contain only digits
+      if (!/^\d+$/.test(cleanPhone)) {
+        Alert.alert("Validation Error", "Phone number must contain only digits")
+        return
+      }
+    }
+
+    setIsLoading(true)
+    try {
+      console.log("=== Starting Signup ===")
+      console.log("Signup data:", { name: fullName, email, phone })
+
+      const result = await authService.register({
+        name: fullName,
+        email: email,
+        password: password,
+        phone: phone || undefined,
+      })
+
+      console.log("Signup result:", { hasError: !!result.error, hasData: !!result.data })
+
+      if (result.error) {
+        console.error("Signup error details:", {
+          message: result.error.message,
+          status: (result.error as any).status,
+          data: (result.error as any).data,
+        })
+
+        // Show more detailed error message
+        const errorMessage = result.error.message || "Unable to create account"
+        const statusCode = (result.error as any).status
+
+        Alert.alert(
+          "Sign Up Failed",
+          statusCode
+            ? `${errorMessage} (Error ${statusCode})`
+            : errorMessage
+        )
+      } else {
+        console.log("✅ Signup successful:", result.data)
+        Alert.alert(
+          "Success",
+          "Account created successfully! Please sign in.",
+          [
+            {
+              text: "OK",
+              onPress: () => navigate("SignInScreen"),
+            },
+          ]
+        )
+      }
+    } catch (error: any) {
+      console.error("Signup exception:", error)
+      Alert.alert("Sign Up Error", error?.message || "Something went wrong")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const { logo_black } = assets
   return (
     <ScrollView style={styles.container}>
@@ -24,20 +149,34 @@ const SignUpScreen = () => {
         <Text style={[styles.textStyle, styles.textCenter]}>Sign Up</Text>
       </View>
       <View style={styles.inputContainer}>
-        <InputComponent onChangeText={(e) => console.log(e)} placeholder={"Full Name"} />
-        <InputComponent onChangeText={(e) => console.log(e)} placeholder={"Email Address"} />
+        <InputComponent
+          onChangeText={setFullName}
+          placeholder={"Full Name"}
+        />
+        <InputComponent
+          onChangeText={setEmail}
+          placeholder={"Email Address"}
+        />
         <InputComponent
           isSecure
           secureTextEntry={isSecure}
-          onChangeText={(e) => console.log(e)}
+          onChangeText={setPassword}
           placeholder={"Password"}
           onSecurePress={() => setIsSecure(!isSecure)}
         />
-        <InputComponent onChangeText={(e) => console.log(e)} placeholder={"Country"} />
+        <InputComponent
+          onChangeText={setPhone}
+          placeholder={"Phone Number (Optional)"}
+        />
       </View>
       {renderMarginTop(12)}
       <View style={styles.buttonContainer}>
-        <Button text="Sign Up" textStyles={styles.buttonText} />
+        <Button
+          text={isLoading ? "Creating Account..." : "Sign Up"}
+          textStyles={styles.buttonText}
+          onPress={handleSignUp}
+          buttonStyles={isLoading ? { opacity: 0.7 } : undefined}
+        />
         <Button
           onPress={goBack}
           text="Login"
@@ -45,25 +184,7 @@ const SignUpScreen = () => {
           buttonStyles={styles.outlineButton}
         />
       </View>
-      <View style={styles.borderContainer}>
-        <View style={styles.orBorder} />
-        <Text style={styles.orText}>Or</Text>
-        <View style={styles.orBorder} />
-      </View>
-      <View style={[styles.buttonContainer, styles.mt14]}>
-        <Button
-          text="Apple Pay"
-          textStyles={styles.outlineButtonText}
-          buttonStyles={styles.iconButtonStyle}
-          component={<MaterialIcons name="apple" size={scale(26)} />}
-        />
-        <Button
-          text="Google Pay"
-          textStyles={styles.outlineButtonText}
-          buttonStyles={styles.iconButtonStyle}
-          component={<AntDesign name="google" size={scale(20)} />}
-        />
-      </View>
+
       <View style={styles.haveAccountContainer}>
         <Text style={styles.dontHaveText}>
           Already have an account? {"\t"}

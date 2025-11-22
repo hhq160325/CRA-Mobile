@@ -1,270 +1,476 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Modal, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, ScrollView, Alert, ActivityIndicator, Text } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../theme/colors';
 import { scale, verticalScale } from '../../theme/scale';
 import { useAuth } from '../../../lib/auth-context';
 import getAsset from '@/lib/getAsset';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import Header from '../../components/Header/Header';
-import * as ImagePicker from 'expo-image-picker';
+import { userService } from '../../../lib/api/services/user.service';
 
-import { Image, ScrollView } from 'react-native';
-import { useState, useEffect } from 'react';
+// Components
+import ProfileHeader from './components/ProfileHeader';
+import ProfileField from './components/ProfileField';
+import DriverLicenseSection from './components/DriverLicenseSection';
+import PasswordVerificationModal from './components/PasswordVerificationModal';
+import EditFieldModal from './components/EditFieldModal';
 
+// Hooks & Utils
+import { useProfileData } from './hooks/useProfileData';
+import { validateLicenseNumber, validateDateOfBirth, validateLicenseExpiry } from './utils/validation';
 
 export default function ProfileScreen() {
-  const { user } = useAuth()
-  const [editingField, setEditingField] = useState<string | null>(null)
-  const [showIncompleteModal, setShowIncompleteModal] = useState(false)
-  const [showLicenseModal, setShowLicenseModal] = useState(false)
-  const [licenseImage, setLicenseImage] = useState<string | null>(null)
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [isVerified, setIsVerified] = useState(false)
-  const [verificationError, setVerificationError] = useState<string | null>(null)
-  const [tempLicenseData, setTempLicenseData] = useState({
-    licenseNumber: "",
-    licenseExpiry: "",
-    fullName: "",
-  })
-  const [fieldValues, setFieldValues] = useState({
-    dateOfBirth: "30/1/2001",
-    gender: "Male",
-    phone: "+1234567891",
-    email: user?.email || "example@gmail.com",
-    facebook: "Admin",
-    google: "JohnDoeGmail",
-    licenseNumber: "",
-    licenseExpiry: "",
-  })
+  const { user } = useAuth();
+  const { userData, setUserData, isLoading, licenseImage, setLicenseImage, fieldValues, setFieldValues } = useProfileData(user?.id);
 
-  // Check if profile is incomplete on mount
-  useEffect(() => {
-    const isIncomplete = !fieldValues.licenseNumber || !licenseImage
-    if (isIncomplete) {
-      // Show notification after 2 seconds
-      const timer = setTimeout(() => {
-        setShowIncompleteModal(true)
-      }, 2000)
-      return () => clearTimeout(timer)
-    }
-  }, [])
+  // Edit state
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleEditField = (field: string) => {
-    setEditingField(field)
-  }
-
-  const handleSaveField = (field: string, value: string) => {
-    setFieldValues((prev) => ({ ...prev, [field]: value }))
-    setEditingField(null)
-  }
+  // Password verification state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isPasswordSecure, setIsPasswordSecure] = useState(true);
+  const [pendingField, setPendingField] = useState<string | null>(null);
 
   const getStatusColor = (field: string) => {
-    const emptyFields = ["phone", "licenseNumber"]
-    return emptyFields.includes(field) || !fieldValues[field as keyof typeof fieldValues] ? colors.red : colors.green
-  }
+    const emptyFields = ["phone", "licenseNumber"];
+    return emptyFields.includes(field) || !fieldValues[field as keyof typeof fieldValues] ? colors.red : colors.green;
+  };
+
+  // Format date with mask (DD/MM/YYYY)
+  const formatDateWithMask = (text: string) => {
+    // Remove all non-numeric characters
+    const cleaned = text.replace(/\D/g, '');
+
+    // Build the masked string
+    let result = '';
+    const mask = '__/__/____';
+    let cleanedIndex = 0;
+
+    for (let i = 0; i < mask.length && cleanedIndex < cleaned.length; i++) {
+      if (mask[i] === '_') {
+        result += cleaned[cleanedIndex];
+        cleanedIndex++;
+      } else {
+        result += mask[i];
+      }
+    }
+
+    // If we haven't filled all positions, add remaining mask characters
+    if (result.length < mask.length) {
+      result += mask.slice(result.length);
+    }
+
+    return result;
+  };
+
+  // Handle edit value change with date formatting and license number limit
+  const handleEditValueChange = (text: string) => {
+    if (editingField === 'dateOfBirth' || editingField === 'licenseExpiry') {
+      // Extract only the digits from input
+      const digits = text.replace(/\D/g, '');
+
+      // Always allow deletion, limit to 8 digits when adding
+      const limitedDigits = digits.slice(0, 8);
+      const formatted = formatDateWithMask(limitedDigits);
+      setEditValue(formatted);
+    } else if (editingField === 'licenseNumber') {
+      // Only allow digits for license number
+      const digits = text.replace(/\D/g, '');
+
+      // Always allow deletion, limit to 12 digits when adding
+      const limitedDigits = digits.slice(0, 12);
+      setEditValue(limitedDigits);
+    } else {
+      setEditValue(text);
+    }
+  };
+
+  const handleEditField = (field: string) => {
+    const sensitiveFields = ["email", "phone"];
+
+    if (sensitiveFields.includes(field)) {
+      setPendingField(field);
+      setShowPasswordModal(true);
+    } else {
+      const currentValue = fieldValues[field as keyof typeof fieldValues] || "";
+
+      // For date fields, always show with mask format
+      if (field === 'dateOfBirth' || field === 'licenseExpiry') {
+        if (!currentValue) {
+          setEditValue('__/__/____');
+        } else {
+          // If there's a value, format it with the mask
+          const digits = currentValue.replace(/\D/g, '');
+          setEditValue(formatDateWithMask(digits));
+        }
+      } else {
+        setEditValue(currentValue);
+      }
+
+      setEditingField(field);
+    }
+  };
+
+  const handlePasswordVerification = async () => {
+    if (!password) {
+      Alert.alert("Password Required", "Please enter your password to continue.");
+      return;
+    }
+
+    if (!user?.email) {
+      Alert.alert("Error", "User email not found.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const { authService } = require("../../../lib/api");
+      const { data, error } = await authService.login({
+        email: user.email,
+        password: password,
+      });
+
+      if (error || !data) {
+        Alert.alert("Incorrect Password", "The password you entered is incorrect.");
+        setPassword("");
+        return;
+      }
+
+      setShowPasswordModal(false);
+      setPassword("");
+
+      if (pendingField) {
+        setEditValue(fieldValues[pendingField as keyof typeof fieldValues] || "");
+        setEditingField(pendingField);
+        setPendingField(null);
+      }
+    } catch (err: any) {
+      Alert.alert("Verification Failed", err?.message || "Failed to verify password.");
+      setPassword("");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveField = async () => {
+    if (!editingField) return;
+
+    const value = editValue;
+
+    // Validation
+    if (editingField === "licenseNumber") {
+      if (!validateLicenseNumber(value)) {
+        Alert.alert("Invalid License Number", "License number must be exactly 12 digits.");
+        return;
+      }
+    }
+
+    if (editingField === "dateOfBirth") {
+      const validation = validateDateOfBirth(value);
+      if (!validation.valid) {
+        Alert.alert("Invalid Date", validation.error || "Invalid date of birth");
+        return;
+      }
+    }
+
+    if (editingField === "licenseExpiry") {
+      const validation = validateLicenseExpiry(value);
+      if (!validation.valid) {
+        Alert.alert("Invalid Date", validation.error || "Invalid expiry date");
+        return;
+      }
+    }
+
+    if (!user?.id) {
+      Alert.alert("Error", "User not found. Please login again.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const fieldMapping: Record<string, string> = {
+        phone: "phoneNumber",
+        email: "email",
+        licenseNumber: "licenseNumber",
+        licenseExpiry: "licenseExpiry",
+        dateOfBirth: "dateOfBirth",
+        gender: "gender",
+        address: "address",
+        username: "username",
+        fullname: "fullname",
+      };
+
+      const apiFieldName = fieldMapping[editingField] || editingField;
+
+      // Convert date format from DD/MM/YYYY to YYYY-MM-DD for API
+      let apiValue = value;
+      if (editingField === 'dateOfBirth' || editingField === 'licenseExpiry') {
+        const [day, month, year] = value.split('/');
+        apiValue = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+
+      const updateData: any = {
+        [apiFieldName]: apiValue,
+      };
+
+      console.log("Updating user with data:", updateData);
+
+      const { data, error } = await userService.updateUserInfo(user.id, updateData);
+
+      if (error) {
+        console.error("Failed to update user info:", error);
+        Alert.alert("Update Failed", error.message || "Failed to save changes. Please try again.");
+        return;
+      }
+
+      setFieldValues((prev) => ({ ...prev, [editingField]: value }));
+
+      if (data) {
+        setUserData(data);
+      }
+
+      setEditingField(null);
+      setEditValue("");
+
+      Alert.alert("Success", "Profile updated successfully!");
+    } catch (err: any) {
+      console.error("Error updating profile:", err);
+      Alert.alert("Error", err?.message || "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUploadAvatar = async () => {
+    Alert.alert(
+      "Change Profile Picture",
+      "Choose an option",
+      [
+        { text: "Take Photo", onPress: () => openAvatarCamera() },
+        { text: "Choose from Gallery", onPress: () => openAvatarGallery() },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
+
+  const handleEditGender = () => {
+    Alert.alert(
+      "Select Gender",
+      "Choose your gender",
+      [
+        { text: "Male", onPress: () => updateGender("Male") },
+        { text: "Female", onPress: () => updateGender("Female") },
+        { text: "Other", onPress: () => updateGender("Other") },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
+
+  const updateGender = async (gender: string) => {
+    if (!user?.id) return;
+
+    setIsSaving(true);
+    try {
+      const genderValue = gender === "Male" ? 0 : gender === "Female" ? 1 : 2;
+      const { data, error } = await userService.updateUserInfo(user.id, { gender: genderValue });
+
+      if (error) {
+        Alert.alert("Update Failed", error.message || "Failed to update gender");
+        return;
+      }
+
+      setFieldValues((prev) => ({ ...prev, gender }));
+      if (data) setUserData(data);
+      Alert.alert("Success", "Gender updated successfully!");
+    } catch (err: any) {
+      Alert.alert("Error", err?.message || "Failed to update gender");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleUploadLicense = async () => {
     Alert.alert(
       "Upload Driver's License",
       "Choose an option",
       [
-        {
-          text: "Take Photo",
-          onPress: () => openCamera(),
-        },
-        {
-          text: "Choose from Gallery",
-          onPress: () => openGallery(),
-        },
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Take Photo", onPress: () => openCamera() },
+        { text: "Choose from Gallery", onPress: () => openGallery() },
+        { text: "Cancel", style: "cancel" },
       ]
-    )
-  }
+    );
+  };
 
   const openCamera = async () => {
     try {
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync()
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Camera permission is required to take photos.")
-        return
+        Alert.alert("Permission Required", "Camera permission is required to take photos.");
+        return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.8,
-      })
+      });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setLicenseImage(result.assets[0].uri)
-        Alert.alert("Success", "Driver's license photo uploaded!")
+        setLicenseImage(result.assets[0].uri);
+        Alert.alert("Success", "Driver's license photo uploaded!");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to open camera")
+      Alert.alert("Error", "Failed to open camera");
     }
-  }
+  };
 
   const openGallery = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Photo library permission is required.")
-        return
+        Alert.alert("Permission Required", "Photo library permission is required.");
+        return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.8,
-      })
+      });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setLicenseImage(result.assets[0].uri)
-        Alert.alert("Success", "Driver's license photo uploaded!")
+        setLicenseImage(result.assets[0].uri);
+        Alert.alert("Success", "Driver's license photo uploaded!");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to open gallery")
+      Alert.alert("Error", "Failed to open gallery");
     }
+  };
+
+  const openAvatarCamera = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Required", "Camera permission is required to take photos.");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open camera");
+    }
+  };
+
+  const openAvatarGallery = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Required", "Photo library permission is required.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadAvatar(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open gallery");
+    }
+  };
+
+  const uploadAvatar = async (uri: string) => {
+    if (!user?.id) return;
+
+    setIsSaving(true);
+    try {
+      const { data, error } = await userService.uploadAvatar(user.id, uri);
+
+      if (error) {
+        // Check if it's a 405 error (method not allowed)
+        if (error.message?.includes("405")) {
+          Alert.alert(
+            "Upload Not Supported",
+            "The backend doesn't currently support avatar uploads. Please contact support or use a profile picture URL instead.",
+            [{ text: "OK" }]
+          );
+        } else {
+          Alert.alert("Upload Failed", error.message || "Failed to upload avatar");
+        }
+        return;
+      }
+
+      if (data) {
+        setUserData(data);
+        // Force a small delay to ensure the image is uploaded
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      Alert.alert("Success", "Profile picture updated successfully!");
+    } catch (err: any) {
+      Alert.alert("Error", err?.message || "Failed to upload avatar");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const avatarSource = userData?.imageAvatar
+    ? { uri: `${userData.imageAvatar}?t=${Date.now()}` }
+    : user?.avatar
+      ? getAsset(user.avatar)
+      : require('../../../assets/male-avatar.png');
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={colors.morentBlue} />
+          <Text style={{ marginTop: verticalScale(16), color: colors.placeholder }}>
+            Loading profile...
+          </Text>
+        </View>
+      </View>
+    );
   }
-
-  const avatarSource = user?.avatar
-    ? getAsset(user.avatar)
-    : require('../../../assets/male-avatar.png');
-
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
-      <ScrollView
-        style={{
-          flex: 1,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-
-        {/* Account Information */}
-        <View
-          style={{
-            marginHorizontal: scale(16),
-            marginVertical: verticalScale(12),
-            backgroundColor: colors.white,
-            borderRadius: scale(12),
-            padding: scale(16),
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: verticalScale(16),
-            }}
-          >
-            <Text
-              style={{
-                fontSize: scale(16),
-                fontWeight: "bold",
-                color: colors.primary,
-              }}
-            >
-              Account Information
-            </Text>
-            <TouchableOpacity>
-              <Icon name="edit" size={scale(20)} color={colors.morentBlue} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Avatar */}
-          <View style={{ alignItems: "center", marginBottom: verticalScale(16) }}>
-            <Image
-              source={avatarSource}
-              style={{
-                width: scale(100),
-                height: scale(100),
-                borderRadius: scale(50),
-                marginBottom: verticalScale(12),
-              }}
-            />
-            <Text
-              style={{
-                fontSize: scale(18),
-                fontWeight: "bold",
-                color: colors.primary,
-              }}
-            >
-              {user?.name || "John Doe"}
-            </Text>
-            <Text
-              style={{
-                fontSize: scale(12),
-                color: colors.placeholder,
-                marginTop: verticalScale(4),
-              }}
-            >
-              Sec ID/0025
-            </Text>
-          </View>
-
-          {/* Status Row */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-around",
-              marginBottom: verticalScale(16),
-              paddingBottom: verticalScale(12),
-              borderBottomWidth: 1,
-              borderBottomColor: colors.border,
-            }}
-          >
-            <View style={{ alignItems: "center" }}>
-              <Text
-                style={{
-                  fontSize: scale(12),
-                  color: colors.placeholder,
-                  marginBottom: verticalScale(4),
-                }}
-              >
-                Gender
-              </Text>
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  fontWeight: "600",
-                  color: colors.primary,
-                }}
-              >
-                Male
-              </Text>
-            </View>
-            <View style={{ alignItems: "center" }}>
-              <Text
-                style={{
-                  fontSize: scale(12),
-                  color: colors.placeholder,
-                  marginBottom: verticalScale(4),
-                }}
-              >
-                Status
-              </Text>
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  fontWeight: "600",
-                  color: colors.primary,
-                }}
-              >
-                Male
-              </Text>
-            </View>
-          </View>
-        </View>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <ProfileHeader
+          avatarSource={avatarSource}
+          fullname={fieldValues.fullname}
+          username={fieldValues.username}
+          gender={fieldValues.gender}
+          status={userData?.status || "Active"}
+          onEditAvatar={handleUploadAvatar}
+          onEditGender={handleEditGender}
+        />
 
         {/* Account Details */}
         <View
@@ -276,483 +482,89 @@ export default function ProfileScreen() {
             padding: scale(16),
           }}
         >
-          {/* Date of Birth */}
-          <View style={{ marginBottom: verticalScale(16) }}>
-            <Text
-              style={{
-                fontSize: scale(12),
-                color: colors.placeholder,
-                marginBottom: verticalScale(4),
-              }}
-            >
-              Date of Birth
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  color: colors.primary,
-                }}
-              >
-                {fieldValues.dateOfBirth}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("dateOfBirth")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ProfileField
+            label="Date of Birth"
+            value={fieldValues.dateOfBirth}
+            placeholder="Add Date of Birth"
+            onEdit={() => handleEditField("dateOfBirth")}
+          />
 
-          {/* Gender */}
-          <View style={{ marginBottom: verticalScale(16) }}>
-            <Text
-              style={{
-                fontSize: scale(12),
-                color: colors.placeholder,
-                marginBottom: verticalScale(4),
-              }}
-            >
-              Gender
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  color: colors.primary,
-                }}
-              >
-                {fieldValues.gender}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("gender")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ProfileField
+            label="Phone Number"
+            value={fieldValues.phone}
+            placeholder="Add Phone Number"
+            onEdit={() => handleEditField("phone")}
+            showStatusDot
+            statusColor={getStatusColor("phone")}
+            isSecure
+          />
 
-          {/* Phone Number */}
-          <View style={{ marginBottom: verticalScale(16) }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: verticalScale(4),
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(12),
-                  color: colors.placeholder,
-                }}
-              >
-                Phone Number
-              </Text>
-              <View
-                style={{
-                  width: scale(8),
-                  height: scale(8),
-                  borderRadius: scale(4),
-                  backgroundColor: getStatusColor("phone"),
-                }}
-              />
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  color: colors.primary,
-                }}
-              >
-                {fieldValues.phone || "Add Phone Number"}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("phone")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ProfileField
+            label="Email"
+            value={fieldValues.email}
+            onEdit={() => handleEditField("email")}
+            showStatusDot
+            statusColor={colors.green}
+            isSecure
+          />
 
-          {/* Email */}
-          <View style={{ marginBottom: verticalScale(16) }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: verticalScale(4),
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(12),
-                  color: colors.placeholder,
-                }}
-              >
-                Email
-              </Text>
-              <View
-                style={{
-                  width: scale(8),
-                  height: scale(8),
-                  borderRadius: scale(4),
-                  backgroundColor: colors.green,
-                }}
-              />
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  color: colors.primary,
-                }}
-              >
-                {fieldValues.email}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("email")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ProfileField
+            label="Address"
+            value={fieldValues.address}
+            placeholder="Add your address"
+            onEdit={() => handleEditField("address")}
+            multiline
+          />
 
-          {/* Facebook */}
-          <View style={{ marginBottom: verticalScale(16) }}>
-            <Text
-              style={{
-                fontSize: scale(12),
-                color: colors.placeholder,
-                marginBottom: verticalScale(4),
-              }}
-            >
-              Facebook
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  color: colors.primary,
-                }}
-              >
-                {fieldValues.facebook}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("facebook")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Google */}
-          <View>
-            <Text
-              style={{
-                fontSize: scale(12),
-                color: colors.placeholder,
-                marginBottom: verticalScale(4),
-              }}
-            >
-              Google
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  color: colors.primary,
-                }}
-              >
-                {fieldValues.google}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("google")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ProfileField
+            label="Username"
+            value={fieldValues.username}
+            placeholder="Not set"
+            onEdit={() => handleEditField("username")}
+          />
         </View>
 
-        {/* Driver's License Section */}
-        <View
-          style={{
-            marginHorizontal: scale(16),
-            marginVertical: verticalScale(12),
-            backgroundColor: colors.white,
-            borderRadius: scale(12),
-            padding: scale(16),
-          }}
-        >
-          <Text
-            style={{
-              fontSize: scale(16),
-              fontWeight: "bold",
-              color: colors.primary,
-              marginBottom: verticalScale(16),
-            }}
-          >
-            Driver's License
-          </Text>
+        <DriverLicenseSection
+          licenseNumber={fieldValues.licenseNumber}
+          licenseExpiry={fieldValues.licenseExpiry}
+          licenseImage={licenseImage}
+          onEditLicenseNumber={() => handleEditField("licenseNumber")}
+          onEditLicenseExpiry={() => handleEditField("licenseExpiry")}
+          onUploadLicense={handleUploadLicense}
+          getStatusColor={getStatusColor}
+        />
 
-          {/* License Number */}
-          <View style={{ marginBottom: verticalScale(16) }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: verticalScale(4),
-              }}
-            >
-              <Text style={{ fontSize: scale(12), color: colors.placeholder }}>
-                License Number
-              </Text>
-              <View
-                style={{
-                  width: scale(8),
-                  height: scale(8),
-                  borderRadius: scale(4),
-                  backgroundColor: getStatusColor("licenseNumber"),
-                }}
-              />
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ fontSize: scale(14), color: colors.primary }}>
-                {fieldValues.licenseNumber || "Add License Number"}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("licenseNumber")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* License Expiry */}
-          <View style={{ marginBottom: verticalScale(16) }}>
-            <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: verticalScale(4) }}>
-              Expiry Date
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ fontSize: scale(14), color: colors.primary }}>
-                {fieldValues.licenseExpiry || "Add Expiry Date"}
-              </Text>
-              <TouchableOpacity onPress={() => handleEditField("licenseExpiry")}>
-                <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* License Photo */}
-          <View>
-            <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: verticalScale(8) }}>
-              License Photo
-            </Text>
-            {licenseImage ? (
-              <View>
-                <Image
-                  source={{ uri: licenseImage }}
-                  style={{
-                    width: "100%",
-                    height: scale(150),
-                    borderRadius: scale(8),
-                    marginBottom: verticalScale(12),
-                  }}
-                  resizeMode="cover"
-                />
-                <TouchableOpacity
-                  onPress={handleUploadLicense}
-                  style={{
-                    backgroundColor: colors.morentBlue,
-                    paddingVertical: verticalScale(10),
-                    borderRadius: scale(8),
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ color: colors.white, fontSize: scale(14), fontWeight: "600" }}>
-                    Change Photo
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                onPress={handleUploadLicense}
-                style={{
-                  borderWidth: 2,
-                  borderStyle: "dashed",
-                  borderColor: colors.morentBlue,
-                  borderRadius: scale(8),
-                  paddingVertical: verticalScale(40),
-                  alignItems: "center",
-                  backgroundColor: colors.background,
-                }}
-              >
-                <Icon name="add-a-photo" size={scale(40)} color={colors.morentBlue} />
-                <Text style={{ fontSize: scale(14), color: colors.morentBlue, marginTop: verticalScale(8), fontWeight: "600" }}>
-                  Upload License Photo
-                </Text>
-                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginTop: verticalScale(4) }}>
-                  Take photo or choose from gallery
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Bottom Padding */}
         <View style={{ height: verticalScale(20) }} />
       </ScrollView>
 
-      {/* Incomplete Profile Modal */}
-      <Modal
-        visible={showIncompleteModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowIncompleteModal(false)}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: colors.white,
-              borderRadius: scale(16),
-              padding: scale(24),
-              width: "85%",
-              maxWidth: scale(350),
-            }}
-          >
-            <View style={{ alignItems: "center", marginBottom: verticalScale(16) }}>
-              <View
-                style={{
-                  width: scale(60),
-                  height: scale(60),
-                  borderRadius: scale(30),
-                  backgroundColor: "#FEF3C7",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginBottom: verticalScale(12),
-                }}
-              >
-                <Icon name="warning" size={scale(32)} color="#F59E0B" />
-              </View>
-              <Text
-                style={{
-                  fontSize: scale(18),
-                  fontWeight: "700",
-                  color: colors.primary,
-                  marginBottom: verticalScale(8),
-                }}
-              >
-                Incomplete Profile
-              </Text>
-              <Text
-                style={{
-                  fontSize: scale(14),
-                  color: colors.placeholder,
-                  textAlign: "center",
-                  lineHeight: scale(20),
-                }}
-              >
-                Please complete your driver's license information to rent vehicles.
-              </Text>
-            </View>
+      <PasswordVerificationModal
+        visible={showPasswordModal}
+        password={password}
+        isPasswordSecure={isPasswordSecure}
+        isSaving={isSaving}
+        pendingField={pendingField}
+        onPasswordChange={setPassword}
+        onToggleSecure={() => setIsPasswordSecure(!isPasswordSecure)}
+        onVerify={handlePasswordVerification}
+        onCancel={() => {
+          setShowPasswordModal(false);
+          setPassword("");
+          setPendingField(null);
+        }}
+      />
 
-            <View style={{ marginBottom: verticalScale(16) }}>
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: verticalScale(8) }}>
-                <Icon name="check-circle" size={scale(20)} color={colors.green} />
-                <Text style={{ fontSize: scale(13), color: colors.primary, marginLeft: scale(8) }}>
-                  Upload driver's license photo
-                </Text>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Icon name="check-circle" size={scale(20)} color={colors.green} />
-                <Text style={{ fontSize: scale(13), color: colors.primary, marginLeft: scale(8) }}>
-                  Add license number and expiry date
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: "row", gap: scale(12) }}>
-              <TouchableOpacity
-                onPress={() => setShowIncompleteModal(false)}
-                style={{
-                  flex: 1,
-                  paddingVertical: verticalScale(12),
-                  borderRadius: scale(8),
-                  borderWidth: 1,
-                  borderColor: colors.morentBlue,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.morentBlue }}>
-                  Later
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowIncompleteModal(false)
-                  handleUploadLicense()
-                }}
-                style={{
-                  flex: 1,
-                  paddingVertical: verticalScale(12),
-                  borderRadius: scale(8),
-                  backgroundColor: colors.morentBlue,
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.white }}>
-                  Complete Now
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <EditFieldModal
+        visible={editingField !== null}
+        editingField={editingField}
+        editValue={editValue}
+        isSaving={isSaving}
+        onValueChange={handleEditValueChange}
+        onSave={handleSaveField}
+        onCancel={() => {
+          setEditingField(null);
+          setEditValue("");
+        }}
+      />
     </View>
-  )
+  );
 }

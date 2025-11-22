@@ -6,6 +6,8 @@ export type NavigatorParamList = {
   ['ResetScreen']: undefined;
   ['VerifyScreen']: undefined;
   ['OtpScreen']: undefined;
+  ['GoogleLoginWebView']: undefined;
+  ['GoogleOAuthHandler']: undefined;
   ['Home']: undefined;
   ['Bookings']: undefined;
   ['Cars']: undefined;
@@ -13,6 +15,15 @@ export type NavigatorParamList = {
   ['CarDetail']: { id: string };
   ['BookingDetail']: { id: string };
   ['BookingForm']: { id: string } | undefined;
+  ['CarMapScreen']: {
+    pickupLocation: string;
+    pickupDate: string;
+    pickupTime: string;
+    dropoffLocation: string;
+    dropoffDate: string;
+    dropoffTime: string;
+    showRoute?: boolean;
+  };
   ['Staff']: undefined;
   ['StaffScreen']: undefined;
   ['PickupReturnConfirm']: { paymentId: string };

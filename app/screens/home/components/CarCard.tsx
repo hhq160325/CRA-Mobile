@@ -44,7 +44,9 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                     <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary, marginBottom: scale(4) }}>
                         {car.name}
                     </Text>
-                    <Text style={{ fontSize: scale(12), color: colors.placeholder }}>{car.category.toUpperCase()}</Text>
+                    <Text style={{ fontSize: scale(12), color: colors.placeholder }}>
+                        {car.category ? car.category.toUpperCase() : "STANDARD"}
+                    </Text>
                 </View>
                 <Ionicons name="heart-outline" size={scale(20)} color={colors.placeholder} />
             </View>

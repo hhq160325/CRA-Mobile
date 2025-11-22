@@ -10,17 +10,79 @@ import { useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 
-export default function CarMapScreen() {
+interface RouteParams {
+    pickupLocation?: string
+    pickupDate?: string
+    pickupTime?: string
+    dropoffLocation?: string
+    dropoffDate?: string
+    dropoffTime?: string
+    showRoute?: boolean
+}
+
+export default function CarMapScreen({ route }: { route?: { params?: RouteParams } }) {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [loading, setLoading] = useState(true)
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
     const [nearbyCars, setNearbyCars] = useState<CarLocation[]>([])
     const [selectedCar, setSelectedCar] = useState<CarLocation | null>(null)
     const [searchRadius, setSearchRadius] = useState(10) // km
+    const [chargingStations, setChargingStations] = useState<Array<{ id: string; latitude: number; longitude: number; name: string }>>([])
+    const [routeDistance, setRouteDistance] = useState<number | null>(null)
+
+    const params = route?.params
 
     useEffect(() => {
-        loadUserLocationAndCars()
-    }, [searchRadius])
+        if (params?.showRoute && params.pickupLocation && params.dropoffLocation) {
+            loadRouteWithChargingStations()
+        } else {
+            loadUserLocationAndCars()
+        }
+    }, [searchRadius, params])
+
+    const loadRouteWithChargingStations = async () => {
+        setLoading(true)
+
+        // Mock coordinates for pickup and dropoff (in real app, geocode the location names)
+        const pickupCoords = { latitude: 10.8231, longitude: 106.6297 } // Ho Chi Minh City
+        const dropoffCoords = { latitude: 10.7769, longitude: 106.7009 } // Thu Duc City
+
+        setUserLocation(pickupCoords)
+
+        // Calculate distance between pickup and dropoff
+        const distance = locationService.calculateDistance(
+            pickupCoords.latitude,
+            pickupCoords.longitude,
+            dropoffCoords.latitude,
+            dropoffCoords.longitude
+        )
+        setRouteDistance(distance)
+
+        // Mock charging stations along the route
+        const mockChargingStations = [
+            {
+                id: "station1",
+                latitude: 10.8100,
+                longitude: 106.6500,
+                name: "EV Charging Station 1",
+            },
+            {
+                id: "station2",
+                latitude: 10.7950,
+                longitude: 106.6700,
+                name: "EV Charging Station 2",
+            },
+            {
+                id: "station3",
+                latitude: 10.7850,
+                longitude: 106.6900,
+                name: "EV Charging Station 3",
+            },
+        ]
+        setChargingStations(mockChargingStations)
+
+        setLoading(false)
+    }
 
     const loadUserLocationAndCars = async () => {
         setLoading(true)

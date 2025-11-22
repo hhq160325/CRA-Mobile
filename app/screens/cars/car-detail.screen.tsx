@@ -21,39 +21,44 @@ export default function CarDetailScreen() {
   const [loading, setLoading] = useState(true)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [reviews, setReviews] = useState<Review[]>([])
-  const [reviewsLoading, setReviewsLoading] = useState(false)
 
   useEffect(() => {
     let mounted = true
     async function load() {
+      if (!id) return
+
       setLoading(true)
-      const res = await carsService.getCarById(id)
-      if (mounted && res.data) {
-        setCar(res.data)
-        loadReviews()
+
+      try {
+        // Load car details and reviews in parallel for faster loading
+        const [carResult, reviewsResult] = await Promise.all([
+          carsService.getCarById(id),
+          reviewsService.getCarReviews(id)
+        ])
+
+        if (mounted) {
+          if (carResult.data) {
+            setCar(carResult.data)
+          }
+          if (reviewsResult.data) {
+            setReviews(reviewsResult.data)
+          }
+        }
+      } catch (err) {
+        console.error("Error loading car details:", err)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
       }
-      setLoading(false)
     }
-    if (id) load()
+
+    load()
+
     return () => {
       mounted = false
     }
   }, [id])
-
-  const loadReviews = async () => {
-    if (!id) return
-    setReviewsLoading(true)
-    try {
-      const { data, error } = await reviewsService.getCarReviews(id)
-      if (data) {
-        setReviews(data)
-      }
-    } catch (err) {
-      console.error("Error loading reviews:", err)
-    } finally {
-      setReviewsLoading(false)
-    }
-  }
 
   const calculateAverageRating = (): string => {
     if (reviews.length === 0) return "0"
@@ -313,14 +318,7 @@ export default function CarDetailScreen() {
           </View>
 
           {/* Reviews List */}
-          {reviewsLoading ? (
-            <View style={{ paddingVertical: scale(40), alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={colors.morentBlue} />
-              <Text style={{ marginTop: scale(8), color: colors.placeholder, fontSize: scale(12) }}>
-                Loading reviews...
-              </Text>
-            </View>
-          ) : reviews.length === 0 ? (
+          {reviews.length === 0 ? (
             <View style={{
               paddingVertical: scale(40),
               alignItems: 'center',

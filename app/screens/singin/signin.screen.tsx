@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Image, ScrollView, Text, View, Alert } from "react-native"
 import AntDesign from "react-native-vector-icons/AntDesign"
 import assets from "../../assets"
@@ -13,6 +13,7 @@ import { useSignin } from "./signin.hook"
 import { useAuth } from "../../../lib/auth-context"
 import { navigate } from "../../navigators/navigation-utilities"
 import { renderMarginBottom } from "../../utils/ui-utils"
+import { validateEmail, validatePassword } from "./signin.validation"
 
 const SignInScreen = () => {
   const styles = createStyles()
@@ -20,9 +21,53 @@ const SignInScreen = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const [justLoggedIn, setJustLoggedIn] = useState(false)
+  const [showGoogleHint, setShowGoogleHint] = useState(false)
+  const { login, loginWithGoogle, user, refreshUser } = useAuth()
+
+  // Watch for user changes after login and navigate accordingly
+  useEffect(() => {
+    if (justLoggedIn && user) {
+      console.log("=== User logged in, navigating based on role ===")
+      console.log("User:", JSON.stringify(user, null, 2))
+      console.log("Role:", user.role)
+      console.log("RoleId:", user.roleId)
+
+      const { navigationRef } = require("../../navigators/navigation-utilities")
+      if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
+        if (user.role === "staff") {
+          console.log("✅ Navigating to StaffScreen")
+          navigationRef.reset({
+            index: 0,
+            routes: [{ name: "StaffScreen" }],
+          })
+        } else {
+          console.log("✅ Navigating to tabStack")
+          navigationRef.reset({
+            index: 0,
+            routes: [{ name: "tabStack" }],
+          })
+        }
+      }
+      setJustLoggedIn(false)
+    }
+  }, [user, justLoggedIn])
 
   const handleLogin = async () => {
+    // Validate email
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.valid) {
+      Alert.alert("Invalid Email", emailValidation.error || "Please enter a valid email")
+      return
+    }
+
+    // Validate password
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.valid) {
+      Alert.alert("Invalid Password", passwordValidation.error || "Please enter a valid password")
+      return
+    }
+
     setIsLoading(true)
     // eslint-disable-next-line no-console
     console.log("mobile sign in attempt", email, password)
@@ -31,104 +76,79 @@ const SignInScreen = () => {
       // eslint-disable-next-line no-console
       console.log("mobile login result success", success)
       if (success) {
-        // Small delay to ensure auth context is updated
-        await new Promise(resolve => setTimeout(resolve, 150))
-
-        // Get current user from auth context
-        const { authService } = require("../../../lib/api")
-        const currentUser = authService.getCurrentUser()
-
-        // eslint-disable-next-line no-console
-        console.log("Current user after login:", currentUser)
-        // eslint-disable-next-line no-console
-        console.log("User role:", currentUser?.role)
-
-        // After successful login, redirect based on role
-        try {
-          const { navigationRef } = require("../../navigators/navigation-utilities")
-          if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
-            // If user is staff, redirect to staff screen
-            if (currentUser?.role === "staff") {
-              // eslint-disable-next-line no-console
-              console.log("Redirecting to StaffScreen for staff user")
-              navigationRef.reset({
-                index: 0,
-                routes: [
-                  {
-                    name: "StaffScreen",
-                  },
-                ],
-              })
-            } else {
-              // For customer and car-owner, go to main tab stack
-              // eslint-disable-next-line no-console
-              console.log("Redirecting to tabStack for non-staff user")
-              navigationRef.reset({
-                index: 0,
-                routes: [
-                  {
-                    name: "tabStack",
-                  },
-                ],
-              })
-            }
-          } else {
-            // eslint-disable-next-line no-console
-            console.log("Navigation not ready yet")
-          }
-        } catch (e) {
-          // fallback: no-op
-          // eslint-disable-next-line no-console
-          console.log("reset after login failed", e)
-        }
+        // Set flag to trigger navigation in useEffect
+        setJustLoggedIn(true)
       } else {
         // visible feedback on failure
-        Alert.alert("Login failed", "Invalid credentials")
+        Alert.alert(
+          "Login Failed",
+          "Unable to sign in. This could be due to:\n\n• Invalid email or password\n• Server is starting up (try again in a moment)\n• Network connection issue",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Try Again", onPress: () => handleLogin() }
+          ]
+        )
       }
     } catch (err: any) {
       // network or unexpected error
       // eslint-disable-next-line no-console
       console.log("login exception", err)
-      Alert.alert("Login error", err?.message || "Something went wrong")
+
+      const isTimeout = err?.message?.includes("timeout") || err?.message?.includes("Timeout")
+      const message = isTimeout
+        ? "The server is taking too long to respond. It may be starting up. Please try again in a moment."
+        : err?.message || "Something went wrong"
+
+      Alert.alert(
+        "Login Error",
+        message,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Try Again", onPress: () => handleLogin() }
+        ]
+      )
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true)
-    try {
-      // TODO: Implement Google Sign-In
-      // You'll need to:
-      // 1. Install: expo install expo-auth-session expo-crypto
-      // 2. Set up Google OAuth credentials in Google Cloud Console
-      // 3. Configure app.json with Google client IDs
-      // 4. Implement the OAuth flow
+  const handleGoogleLogin = () => {
+    console.log("=== Opening Google OAuth Handler ===")
+    setShowGoogleHint(false)
 
+    // Navigate to OAuth handler screen
+    navigate("GoogleOAuthHandler")
+
+    // Check login status when user comes back
+    setTimeout(() => {
+      refreshUser()
+      const { authService } = require("../../../lib/api")
+      const currentUser = authService.getCurrentUser()
+      if (currentUser) {
+        console.log("✅ User logged in via Google OAuth Handler")
+        setJustLoggedIn(true)
+      }
+    }, 1000)
+  }
+
+  const handleCheckLoginStatus = (showAlert: boolean = true) => {
+    console.log("Checking login status...")
+    refreshUser()
+
+    // Check if user is now logged in
+    const { authService } = require("../../../lib/api")
+    const currentUser = authService.getCurrentUser()
+
+    if (currentUser) {
+      console.log("✅ User found after refresh:", currentUser.email)
+      setJustLoggedIn(true)
+      setShowGoogleHint(false)
+    } else if (showAlert) {
       Alert.alert(
-        "Google Sign-In",
-        "Google Sign-In will be implemented here. This requires:\n\n" +
-        "1. Google OAuth credentials\n" +
-        "2. expo-auth-session package\n" +
-        "3. Backend API endpoint for Google authentication"
+        "Not Logged In Yet",
+        "Please make sure you:\n1. Completed Google login in the browser\n2. Closed the browser\n\nThen tap 'Check Login Status' again.",
+        [{ text: "OK" }]
       )
-
-      // Example implementation structure:
-      // const response = await googleAuthRequest()
-      // if (response?.type === 'success') {
-      //   const { authentication } = response
-      //   // Send token to your backend
-      //   const result = await apiClient('/auth/google', {
-      //     method: 'POST',
-      //     body: JSON.stringify({ token: authentication.accessToken })
-      //   })
-      //   // Handle successful login
-      // }
-    } catch (err: any) {
-      console.log("Google login error", err)
-      Alert.alert("Google Sign-In Error", err?.message || "Something went wrong")
-    } finally {
-      setIsLoading(false)
     }
   }
   const { logo_black } = assets
@@ -163,7 +183,11 @@ const SignInScreen = () => {
           />
           <Text style={styles.textRemember}>Remember Me</Text>
         </View>
-        <Text style={styles.forgotPasswordText}>Forgot Password</Text>
+        <Text
+          onPress={() => navigate("ResetScreen")}
+          style={styles.forgotPasswordText}>
+          Forgot Password
+        </Text>
       </View>
       <View style={styles.buttonContainer}>
         <Button
@@ -193,6 +217,31 @@ const SignInScreen = () => {
           onPress={handleGoogleLogin}
         />
       </View>
+
+      {showGoogleHint && (
+        <View style={[styles.buttonContainer, { marginTop: scale(12) }]}>
+          <View style={{
+            backgroundColor: '#FFF3CD',
+            padding: scale(12),
+            borderRadius: scale(8),
+            marginBottom: scale(8)
+          }}>
+            <Text style={{
+              fontSize: scale(12),
+              color: '#856404',
+              textAlign: 'center'
+            }}>
+              ℹ️ After completing Google login, close the browser and tap below
+            </Text>
+          </View>
+          <Button
+            text="Check Login Status"
+            textStyles={styles.outlineButtonText}
+            buttonStyles={styles.outlineButton}
+            onPress={() => handleCheckLoginStatus(true)}
+          />
+        </View>
+      )}
       <View style={styles.haveAccountContainer}>
         <Text style={styles.dontHaveText}>
           Don't have an account ? {"\t"}

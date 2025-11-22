@@ -15,21 +15,27 @@ export function useHomeData() {
     const loadData = async () => {
         setLoading(true)
 
-        // Load cars
-        const carsResult = await carsService.getCars({})
-        if (carsResult.data) {
-            setCars(carsResult.data)
-        }
+        try {
+            // Load cars and bookings in parallel for faster loading
+            const [carsResult, bookingsResult] = await Promise.all([
+                carsService.getCars({}),
+                user?.id
+                    ? bookingsService.getBookings(user.id)
+                    : Promise.resolve({ data: null as Booking[] | null, error: null })
+            ])
 
-        // Load recent bookings if user is logged in
-        if (user?.id) {
-            const bookingsResult = await bookingsService.getBookings(user.id)
+            if (carsResult.data) {
+                setCars(carsResult.data)
+            }
+
             if (bookingsResult.data) {
                 setRecentBookings(bookingsResult.data.slice(0, 4))
             }
+        } catch (error) {
+            console.error("Error loading home data:", error)
+        } finally {
+            setLoading(false)
         }
-
-        setLoading(false)
     }
 
     return { cars, recentBookings, loading, refetch: loadData }

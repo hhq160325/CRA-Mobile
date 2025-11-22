@@ -23,10 +23,29 @@ export default function BookingsListScreen() {
 
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!user?.id) return
+      if (!user?.id) {
+        console.log("BookingsListScreen: No user ID found")
+        setLoading(false)
+        return
+      }
+
+      console.log("BookingsListScreen: Fetching bookings for user", user.id)
       setLoading(true)
-      const { data } = await bookingsService.getBookings(user.id)
-      if (data) setBookings(data)
+
+      const { data, error } = await bookingsService.getBookings(user.id)
+
+      if (error) {
+        console.error("BookingsListScreen: Error fetching bookings", error)
+      }
+
+      if (data) {
+        console.log("BookingsListScreen: Received bookings", data.length)
+        setBookings(data)
+      } else {
+        console.log("BookingsListScreen: No bookings data received")
+        setBookings([])
+      }
+
       setLoading(false)
     }
     fetchBookings()

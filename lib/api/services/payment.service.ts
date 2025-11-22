@@ -8,7 +8,7 @@ export interface Payment {
     amount: number
     currency: string
     status: "pending" | "processing" | "completed" | "failed" | "refunded" | "cancelled"
-    paymentMethod: "credit-card" | "debit-card" | "paypal" | "bitcoin" | "bank-transfer"
+    paymentMethod: "cash" | "qr-payos"
     transactionId?: string
     createdAt: string | Date
     updatedAt: string | Date
@@ -99,21 +99,7 @@ export interface CreatePaymentData {
     bookingId: string
     amount: number
     currency?: string
-    paymentMethod: "credit-card" | "debit-card" | "paypal" | "bitcoin" | "bank-transfer"
-    cardDetails?: {
-        cardNumber: string
-        cardHolder: string
-        expirationDate: string
-        cvc: string
-    }
-    billingAddress?: {
-        name: string
-        address: string
-        city: string
-        state?: string
-        postalCode: string
-        country: string
-    }
+    paymentMethod: "cash" | "qr-payos"
 }
 
 export interface RefundData {

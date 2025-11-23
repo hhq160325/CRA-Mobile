@@ -69,7 +69,8 @@ export default function BookingPaymentScreen() {
                     clearInterval(interval)
                     setPaymentStatus("success")
 
-                    await updateBookingStatus("paid")
+                    // Update booking status to "2" (paid)
+                    await updateBookingStatus("2")
                     Alert.alert("Success", "Payment completed successfully!", [
                         {
                             text: "OK",
@@ -93,8 +94,16 @@ export default function BookingPaymentScreen() {
     const handleCashPayment = async () => {
         setLoading(true)
         try {
+            // Update booking status from "0" to "1" (pending_payment)
+            const { error } = await bookingsService.updateBooking({
+                bookingId: bookingId,
+                status: "1",
+            } as any)
 
-            await updateBookingStatus("pending_payment")
+            if (error) {
+                Alert.alert("Error", error.message || "Failed to confirm booking")
+                return
+            }
 
             Alert.alert(
                 "Booking Confirmed",
@@ -113,13 +122,12 @@ export default function BookingPaymentScreen() {
         }
     }
 
-    const updateBookingStatus = async (status: "upcoming" | "completed" | "cancelled" | "pending_payment" | "paid") => {
+    const updateBookingStatus = async (status: string) => {
         try {
             await bookingsService.updateBooking({
-                id: bookingId,
+                bookingId: bookingId,
                 status: status,
-                paymentMethod: paymentMethod as "cash" | "qr-payos",
-            })
+            } as any)
         } catch (err) {
             console.error("Failed to update booking status:", err)
         }

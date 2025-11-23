@@ -47,10 +47,10 @@ const SignInScreen = () => {
         console.log("Checking user role:", { original: user.role, lowercase: userRole, roleId: user.roleId })
 
         if (userRole === "staff" || user.roleId === 1002) {
-          console.log("✅ Navigating to StaffScreen for staff user")
+          console.log("✅ Navigating to staffStack for staff user")
           navigationRef.reset({
             index: 0,
-            routes: [{ name: "StaffScreen" }],
+            routes: [{ name: "staffStack" }],
           })
         } else {
           console.log("✅ Navigating to tabStack for", user.role, "user")
@@ -111,10 +111,10 @@ const SignInScreen = () => {
           const { navigationRef } = require("../../navigators/navigation-utilities")
           if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
             if (isStaff) {
-              console.log("✅ IMMEDIATE NAVIGATION to StaffScreen")
+              console.log("✅ IMMEDIATE NAVIGATION to staffStack")
               navigationRef.reset({
                 index: 0,
-                routes: [{ name: "StaffScreen" }],
+                routes: [{ name: "staffStack" }],
               })
             } else {
               console.log("✅ IMMEDIATE NAVIGATION to tabStack")

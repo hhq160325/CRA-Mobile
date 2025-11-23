@@ -52,6 +52,7 @@ export type NavigatorParamList = {
   };
   ['auth']: undefined;
   ['tabStack']: undefined;
+  ['staffStack']: undefined;
   ['authStack']: undefined;
   ['rootStack']: undefined;
 };

@@ -61,23 +61,65 @@ export default function Header() {
         if (user?.id) {
             loadUserAvatar()
         }
-    }, [user?.id])
+    }, [user?.id, user?.avatar])
 
 
     useFocusEffect(
         React.useCallback(() => {
             if (user?.id) {
+                console.log("Header: Screen focused, reloading avatar")
                 loadUserAvatar()
             }
         }, [user?.id])
     )
 
 
-    const avatarSource = userAvatar
-        ? { uri: `${userAvatar}?t=${refreshKey}` }
-        : user?.avatar
-            ? (user.avatar.startsWith('http') ? { uri: user.avatar } : getAsset(user.avatar))
-            : require("../../../assets/admin-avatar.png")
+    const getAvatarSource = () => {
+        // Check userAvatar from API first
+        if (userAvatar) {
+            // If it's a URL
+            if (userAvatar.startsWith('http://') || userAvatar.startsWith('https://')) {
+                return { uri: `${userAvatar}?t=${refreshKey}` }
+            }
+
+            // If it's base64 (with or without prefix)
+            if (userAvatar.length > 100) {
+                const base64 = userAvatar.startsWith('data:')
+                    ? userAvatar
+                    : `data:image/jpeg;base64,${userAvatar}`;
+                return { uri: base64 };
+            }
+
+            // Try as local asset
+            const localAsset = getAsset(userAvatar)
+            if (localAsset) return localAsset
+        }
+
+        // Check user.avatar as fallback
+        if (user?.avatar) {
+            // If it's a URL
+            if (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) {
+                return { uri: user.avatar }
+            }
+
+            // If it's base64
+            if (user.avatar.length > 100) {
+                const base64 = user.avatar.startsWith('data:')
+                    ? user.avatar
+                    : `data:image/jpeg;base64,${user.avatar}`;
+                return { uri: base64 };
+            }
+
+            // Try as local asset
+            const localAsset = getAsset(user.avatar)
+            if (localAsset) return localAsset
+        }
+
+        // Default avatar
+        return require("../../../assets/admin-avatar.png")
+    }
+
+    const avatarSource = getAvatarSource()
 
     const handleLogout = () => {
         setMenuVisible(false)
@@ -87,23 +129,36 @@ export default function Header() {
 
     const handleMenuNavigation = (screen: string) => {
         setMenuVisible(false)
+        const isStaff = user?.role === "staff" || user?.roleId === 1002
+
+        console.log("Header navigation:", { screen, isStaff, userRole: user?.role, roleId: user?.roleId })
+
         try {
             if (screen === "Profile") {
+                console.log("Navigating to Profile")
                 navigation.navigate("Profile" as any)
             } else if (screen === "Bookings") {
-                // Navigate to Bookings screen in main tab stack
+                console.log("Navigating to Bookings")
                 navigation.navigate("Bookings" as any)
             } else if (screen === "Cars") {
+                console.log("Navigating to Cars")
                 navigation.navigate("Cars" as any)
             } else if (screen === "Home") {
-                navigation.navigate("Home" as any)
+                if (isStaff) {
+                    console.log("Navigating to StaffScreen")
+                    navigation.navigate("StaffScreen" as any)
+                } else {
+                    console.log("Navigating to Home")
+                    navigation.navigate("Home" as any)
+                }
             }
         } catch (error) {
             console.error("Navigation error:", error)
-            // Fallback: reset to tab stack
+            // Fallback: reset to appropriate stack based on role
+            console.log("Resetting to", isStaff ? "staffStack" : "tabStack")
             navigation.reset({
                 index: 0,
-                routes: [{ name: "tabStack" as any }],
+                routes: [{ name: (isStaff ? "staffStack" : "tabStack") as any }],
             })
         }
     }
@@ -121,17 +176,18 @@ export default function Header() {
                     backgroundColor: colors.white,
                 }}
             >
-                <Pressable onPress={() => navigation.navigate("Home" as any)}>
+                <Pressable onPress={() => handleMenuNavigation("Home")}>
                     <Text style={{ fontSize: scale(28), fontWeight: "700", color: colors.morentBlue, letterSpacing: 1 }}>
                         MORENT
                     </Text>
                 </Pressable>
                 <Pressable onPress={() => setMenuVisible(true)}>
-                    <Image
-                        key={`avatar-${refreshKey}`}
-                        source={avatarSource}
-                        style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
-                    />
+                    <View key={`avatar-${refreshKey}`}>
+                        <Image
+                            source={avatarSource}
+                            style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
+                        />
+                    </View>
                 </Pressable>
             </View>
 
@@ -191,37 +247,42 @@ export default function Header() {
                             </Text>
                         </Pressable>
 
-                        <Pressable
-                            onPress={() => handleMenuNavigation("Bookings")}
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                paddingVertical: scale(12),
-                                paddingHorizontal: scale(12),
-                                borderRadius: 8,
-                            }}
-                        >
-                            <MaterialIcons name="event-note" size={scale(20)} color={colors.primary} />
-                            <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                                {t("bookings")}
-                            </Text>
-                        </Pressable>
+                        {/* Hide Bookings and Cars for staff users */}
+                        {user?.role !== "staff" && user?.roleId !== 1002 && (
+                            <>
+                                <Pressable
+                                    onPress={() => handleMenuNavigation("Bookings")}
+                                    style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        paddingVertical: scale(12),
+                                        paddingHorizontal: scale(12),
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <MaterialIcons name="event-note" size={scale(20)} color={colors.primary} />
+                                    <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
+                                        {t("bookings")}
+                                    </Text>
+                                </Pressable>
 
-                        <Pressable
-                            onPress={() => handleMenuNavigation("Cars")}
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                paddingVertical: scale(12),
-                                paddingHorizontal: scale(12),
-                                borderRadius: 8,
-                            }}
-                        >
-                            <MaterialIcons name="directions-car" size={scale(20)} color={colors.primary} />
-                            <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
-                                {t("cars")}
-                            </Text>
-                        </Pressable>
+                                <Pressable
+                                    onPress={() => handleMenuNavigation("Cars")}
+                                    style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        paddingVertical: scale(12),
+                                        paddingHorizontal: scale(12),
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <MaterialIcons name="directions-car" size={scale(20)} color={colors.primary} />
+                                    <Text style={{ marginLeft: scale(12), fontSize: scale(14), color: colors.primary, fontWeight: "500" }}>
+                                        {t("cars")}
+                                    </Text>
+                                </Pressable>
+                            </>
+                        )}
 
                         <View style={{ height: 1, backgroundColor: colors.border, marginVertical: scale(4) }} />
 

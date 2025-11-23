@@ -27,6 +27,7 @@ export interface Car {
   name: string
   brand: string
   model: string
+  licensePlate?: string
   year: number
   category: string
   price: number
@@ -65,6 +66,7 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
     name: `${apiCar.manufacturer} ${apiCar.model}`,
     brand: apiCar.manufacturer,
     model: apiCar.model,
+    licensePlate: apiCar.licensePlate,
     year: apiCar.yearofManufacture,
     category: category,
     price: price,

@@ -6,6 +6,7 @@ import { colors } from "../../../theme/colors"
 import { scale } from "../../../theme/scale"
 import { getAsset } from "../../../../lib/getAsset"
 import type { Car } from "../../../../lib/api"
+import { useFavorites } from "../../../../lib/favorites-context"
 
 interface CarCardProps {
     car: Car
@@ -15,6 +16,14 @@ interface CarCardProps {
 }
 
 export default function CarCard({ car, isHorizontal = false, onPress, onRentPress }: CarCardProps) {
+    const { isFavorite, toggleFavorite } = useFavorites()
+    const isLiked = isFavorite(car.id)
+
+    const handleFavoritePress = (e: any) => {
+        e.stopPropagation()
+        toggleFavorite(car.id)
+    }
+
     return (
         <Pressable
             onPress={onPress}
@@ -48,11 +57,21 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                         {car.category ? car.category.toUpperCase() : "STANDARD"}
                     </Text>
                 </View>
-                <Ionicons name="heart-outline" size={scale(20)} color={colors.placeholder} />
+                <Pressable onPress={handleFavoritePress}>
+                    <Ionicons
+                        name={isLiked ? "heart" : "heart-outline"}
+                        size={scale(20)}
+                        color={isLiked ? "#EF4444" : colors.placeholder}
+                    />
+                </Pressable>
             </View>
 
             <Image
-                source={getAsset(car.image) || require("../../../../assets/tesla-model-s-luxury.png")}
+                source={
+                    car.image && (car.image.startsWith('http://') || car.image.startsWith('https://'))
+                        ? { uri: car.image }
+                        : getAsset(car.image) || require("../../../../assets/tesla-model-s-luxury.png")
+                }
                 style={{ width: "100%", height: scale(80), resizeMode: "contain", marginBottom: scale(16) }}
             />
 
@@ -80,7 +99,7 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <View>
                     <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary }}>
-                        ${car.price}.00
+                        {car.price} VND
                         <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>/day</Text>
                     </Text>
                 </View>

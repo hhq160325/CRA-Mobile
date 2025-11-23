@@ -2,7 +2,7 @@
 import { API_ENDPOINTS, API_CONFIG } from "../config"
 import { apiClient } from "../client"
 
-// API Response from backend
+
 interface ApiUserResponse {
   id: string
   username: string
@@ -21,7 +21,7 @@ interface ApiUserResponse {
   gender: number
 }
 
-// App User model
+
 export interface User {
   id: string
   name: string
@@ -30,7 +30,7 @@ export interface User {
   avatar?: string
   role: "customer" | "staff" | "car-owner"
   createdAt: Date | string
-  // Additional fields from API
+
   username?: string
   address?: string
   isCarOwner?: boolean
@@ -39,9 +39,9 @@ export interface User {
   roleId?: number
 }
 
-// Map API response to app User model (used for Google login and other endpoints that return full user data)
+
 function mapApiUserToUser(apiUser: ApiUserResponse): User {
-  // Determine role based on roleId and isCarOwner
+
   let role: "customer" | "staff" | "car-owner" = "customer"
 
   const roleId = apiUser.roleId
@@ -120,7 +120,7 @@ export const authService = {
 
     console.log("authService.login: raw API response", result.data)
 
-    // Decode JWT token to get user info
+
     const token = result.data.token
     let user: User | null = null
 
@@ -132,10 +132,10 @@ export const authService = {
         const payload = tokenParts[1]
         const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
 
-        // Decode base64 - compatible with React Native
+
         let jsonPayload: string
         try {
-          // Try using atob (works in web and some RN environments)
+
           jsonPayload = decodeURIComponent(
             atob(base64)
               .split('')
@@ -143,7 +143,7 @@ export const authService = {
               .join('')
           )
         } catch (e) {
-          // Fallback: manual base64 decode for React Native
+
           console.log("atob failed, using Buffer fallback")
           if (typeof Buffer !== 'undefined') {
             jsonPayload = Buffer.from(base64, 'base64').toString('utf-8')
@@ -155,7 +155,7 @@ export const authService = {
         const decodedToken = JSON.parse(jsonPayload)
         console.log("authService.login: decoded JWT", JSON.stringify(decodedToken, null, 2))
 
-        // Extract role from JWT claims
+
         const roleFromToken = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
         const isCarOwner = decodedToken.IsCarOwner === "True" || decodedToken.IsCarOwner === true
 
@@ -178,9 +178,10 @@ export const authService = {
           console.log("✅ Detected CUSTOMER role (default)")
         }
 
-        // Create user object from JWT
+
+        const userId = decodedToken.sub || ""
         user = {
-          id: decodedToken.sub || "",
+          id: userId,
           name: decodedToken.name || "",
           email: decodedToken.email || credentials.email,
           phone: decodedToken.phone || "",
@@ -191,6 +192,38 @@ export const authService = {
         }
 
         console.log("authService.login: created user from JWT", user)
+
+
+        if (userId) {
+          try {
+            console.log("authService.login: fetching full user profile for", userId)
+            const { userService } = require('./user.service')
+            const profileResult = await userService.getUserById(userId)
+
+            if (profileResult.data) {
+              console.log("authService.login: got full profile data")
+
+              // Preserve role and roleId from JWT token
+              const preservedRole = user.role
+              const preservedRoleId = user.roleId
+
+              user = {
+                ...user,
+                name: profileResult.data.fullname || user.name,
+                username: profileResult.data.username,
+                phone: profileResult.data.phoneNumber || user.phone,
+                address: profileResult.data.address,
+                avatar: profileResult.data.imageAvatar || undefined,
+                // Ensure role is not overwritten
+                role: preservedRole,
+                roleId: preservedRoleId,
+              }
+              console.log("authService.login: merged user data (role preserved)", user)
+            }
+          } catch (profileErr) {
+            console.log("authService.login: could not fetch profile, using JWT data only")
+          }
+        }
       }
     } catch (e) {
       console.error("Failed to decode JWT:", e)
@@ -205,7 +238,11 @@ export const authService = {
       if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
         localStorage.setItem("token", result.data.token)
         localStorage.setItem("user", JSON.stringify(user))
-        console.log("authService.login: saved to localStorage")
+        console.log("authService.login: saved to localStorage", {
+          userId: user.id,
+          role: user.role,
+          roleId: user.roleId
+        })
       }
     } catch (e) {
       console.error("Failed to save to localStorage:", e)
@@ -217,7 +254,7 @@ export const authService = {
   async register(data: RegisterData): Promise<{ data: User | null; error: Error | null }> {
     console.log("authService.register: sending request with", data)
 
-    // Transform data to match backend expectations
+
     const requestBody = {
       Username: data.name,
       Email: data.email,
@@ -256,8 +293,8 @@ export const authService = {
   },
 
   logout(): { error: Error | null } {
-    // Logout is client-side only - just clear local storage
-    // No API call needed since tokens are stateless (JWT)
+
+
     try {
       if (typeof localStorage !== 'undefined' && localStorage?.removeItem) {
         localStorage.removeItem("token")
@@ -318,7 +355,7 @@ export const authService = {
 
     console.log("authService.loginWithGoogle: raw API response", result.data)
 
-    // Decode JWT to get user info
+
     const token = result.data.jwtToken
     let user: User | null = null
 
@@ -403,7 +440,7 @@ export const authService = {
   async refreshToken(refreshToken?: string): Promise<{ data: TokenResponse | null; error: Error | null }> {
     console.log("authService.refreshToken: sending request")
 
-    // Get refresh token from parameter or localStorage
+
     let token = refreshToken
     if (!token) {
       try {
@@ -435,7 +472,7 @@ export const authService = {
       return { data: null, error: result.error }
     }
 
-    // Save new tokens to localStorage
+
     try {
       if (typeof localStorage !== "undefined" && localStorage?.setItem) {
         localStorage.setItem("token", result.data.token)

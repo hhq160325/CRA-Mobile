@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { View, Text, FlatList, Pressable, Image, ActivityIndicator } from "react-native"
 import { bookingsService, type Booking } from "../../../lib/api"
 import { useAuth } from "../../../lib/auth-context"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useFocusEffect } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 import { colors } from "../../theme/colors"
@@ -21,35 +21,44 @@ export default function BookingsListScreen() {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
   const { user } = useAuth()
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      if (!user?.id) {
-        console.log("BookingsListScreen: No user ID found")
-        setLoading(false)
-        return
-      }
+  const fetchBookings = useCallback(async () => {
+    if (!user?.id) {
+      console.log("BookingsListScreen: No user ID found")
+      setLoading(false)
+      return
+    }
 
-      console.log("BookingsListScreen: Fetching bookings for user", user.id)
-      setLoading(true)
+    console.log("BookingsListScreen: Fetching bookings for user", user.id)
+    setLoading(true)
 
+    try {
       const { data, error } = await bookingsService.getBookings(user.id)
 
       if (error) {
-        console.error("BookingsListScreen: Error fetching bookings", error)
-      }
-
-      if (data) {
+        console.log("BookingsListScreen: No bookings found (this is normal for new users)")
+        setBookings([])
+      } else if (data) {
         console.log("BookingsListScreen: Received bookings", data.length)
         setBookings(data)
       } else {
         console.log("BookingsListScreen: No bookings data received")
         setBookings([])
       }
-
-      setLoading(false)
+    } catch (err) {
+      console.log("BookingsListScreen: Error fetching bookings (user may have no bookings yet)")
+      setBookings([])
     }
-    fetchBookings()
+
+    setLoading(false)
   }, [user?.id])
+
+  // Refresh bookings when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      console.log("BookingsListScreen: Screen focused, refreshing bookings")
+      fetchBookings()
+    }, [fetchBookings])
+  )
 
   const filteredBookings = statusFilter === "all" ? bookings : bookings.filter((b: Booking) => b.status === statusFilter)
 
@@ -184,7 +193,7 @@ export default function BookingsListScreen() {
             TOTAL
           </Text>
           <Text style={{ fontSize: scale(16), fontWeight: "bold", color: colors.primary }}>
-            ${item.totalPrice}
+            {item.totalPrice} VND
           </Text>
         </View>
       </View>

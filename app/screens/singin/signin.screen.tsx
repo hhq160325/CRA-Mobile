@@ -27,6 +27,10 @@ const SignInScreen = () => {
 
   // Watch for user changes after login and navigate accordingly
   useEffect(() => {
+    console.log("=== Navigation useEffect triggered ===")
+    console.log("justLoggedIn:", justLoggedIn)
+    console.log("user:", user ? `${user.name} (${user.role})` : "null")
+
     if (justLoggedIn && user) {
       console.log("=== User logged in, navigating based on role ===")
       console.log("User:", JSON.stringify(user, null, 2))
@@ -34,20 +38,29 @@ const SignInScreen = () => {
       console.log("RoleId:", user.roleId)
 
       const { navigationRef } = require("../../navigators/navigation-utilities")
+      console.log("navigationRef exists:", !!navigationRef)
+      console.log("navigationRef.isReady:", navigationRef?.isReady?.())
+
       if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
-        if (user.role === "staff") {
-          console.log("✅ Navigating to StaffScreen")
+        // Check role - handle both string comparison and case-insensitive
+        const userRole = user.role?.toLowerCase()
+        console.log("Checking user role:", { original: user.role, lowercase: userRole, roleId: user.roleId })
+
+        if (userRole === "staff" || user.roleId === 1002) {
+          console.log("✅ Navigating to StaffScreen for staff user")
           navigationRef.reset({
             index: 0,
             routes: [{ name: "StaffScreen" }],
           })
         } else {
-          console.log("✅ Navigating to tabStack")
+          console.log("✅ Navigating to tabStack for", user.role, "user")
           navigationRef.reset({
             index: 0,
             routes: [{ name: "tabStack" }],
           })
         }
+      } else {
+        console.log("❌ navigationRef not ready, cannot navigate")
       }
       setJustLoggedIn(false)
     }
@@ -76,8 +89,50 @@ const SignInScreen = () => {
       // eslint-disable-next-line no-console
       console.log("mobile login result success", success)
       if (success) {
-        // Set flag to trigger navigation in useEffect
-        setJustLoggedIn(true)
+        // Wait a bit for auth context to update
+        await new Promise(resolve => setTimeout(resolve, 200))
+
+        // Get current user from localStorage
+        const { authService } = require("../../../lib/api")
+        const currentUser = authService.getCurrentUser()
+        console.log("Current user after login:", currentUser)
+
+        if (currentUser) {
+          const userRole = currentUser.role?.toLowerCase()
+          const isStaff = userRole === "staff" || currentUser.roleId === 1002
+
+          console.log("Immediate role check:", {
+            role: currentUser.role,
+            roleId: currentUser.roleId,
+            isStaff
+          })
+
+          // Navigate immediately based on role
+          const { navigationRef } = require("../../navigators/navigation-utilities")
+          if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
+            if (isStaff) {
+              console.log("✅ IMMEDIATE NAVIGATION to StaffScreen")
+              navigationRef.reset({
+                index: 0,
+                routes: [{ name: "StaffScreen" }],
+              })
+            } else {
+              console.log("✅ IMMEDIATE NAVIGATION to tabStack")
+              navigationRef.reset({
+                index: 0,
+                routes: [{ name: "tabStack" }],
+              })
+            }
+          } else {
+            // Fallback to useEffect method
+            console.log("navigationRef not ready, using useEffect method")
+            setJustLoggedIn(true)
+          }
+        } else {
+          // Fallback to useEffect method
+          console.log("No current user from localStorage, using useEffect method")
+          setJustLoggedIn(true)
+        }
       } else {
         // visible feedback on failure
         Alert.alert(

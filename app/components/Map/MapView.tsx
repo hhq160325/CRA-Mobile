@@ -140,7 +140,7 @@ export default function MapViewComponent({
                             </View>
                             {marker.price && (
                                 <View style={styles.priceTag}>
-                                    <Text style={styles.priceText}>${marker.price}</Text>
+                                    <Text style={styles.priceText}>{marker.price} VND</Text>
                                 </View>
                             )}
                         </View>

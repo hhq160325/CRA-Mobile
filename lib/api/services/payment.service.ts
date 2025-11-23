@@ -65,8 +65,9 @@ export interface UpdateInvoiceData {
 export interface PayOSPayment {
     orderCode: string
     amount: number
-    status: string
+    status: "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded" | "PAID" | "CANCELLED"
     paymentUrl?: string
+    qrCode?: string
     transactionId?: string
     createdAt: string
 }
@@ -104,7 +105,7 @@ export interface CreatePaymentData {
 
 export interface RefundData {
     paymentId: string
-    amount?: number // Partial refund if specified, full refund if not
+    amount?: number
     reason?: string
 }
 
@@ -129,11 +130,8 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    // ==================== INVOICE METHODS ====================
 
-    /**
-     * Get all invoices
-     */
+
     async getAllInvoices(): Promise<{ data: Invoice[] | null; error: Error | null }> {
         console.log("paymentService.getAllInvoices: fetching all invoices")
         const result = await apiClient<Invoice[]>(API_ENDPOINTS.ALL_INVOICES, {
@@ -146,9 +144,6 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get all invoices for a customer
-     */
     async getInvoicesByCustomer(customerId: string): Promise<{ data: Invoice[] | null; error: Error | null }> {
         console.log("paymentService.getInvoicesByCustomer: fetching invoices for customer", customerId)
         const result = await apiClient<Invoice[]>(API_ENDPOINTS.INVOICES_BY_CUSTOMER(customerId), {
@@ -161,9 +156,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get all invoices for a vendor
-     */
+
     async getInvoicesByVendor(vendorId: string): Promise<{ data: Invoice[] | null; error: Error | null }> {
         console.log("paymentService.getInvoicesByVendor: fetching invoices for vendor", vendorId)
         const result = await apiClient<Invoice[]>(API_ENDPOINTS.INVOICES_BY_VENDOR(vendorId), {
@@ -176,9 +169,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get invoice by ID
-     */
+
     async getInvoiceById(invoiceId: string): Promise<{ data: Invoice | null; error: Error | null }> {
         console.log("paymentService.getInvoiceById: fetching invoice", invoiceId)
         const result = await apiClient<Invoice>(API_ENDPOINTS.GET_INVOICE(invoiceId), {
@@ -188,9 +179,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Create a new invoice
-     */
+
     async createInvoice(data: CreateInvoiceData): Promise<{ data: Invoice | null; error: Error | null }> {
         console.log("paymentService.createInvoice: creating invoice", data)
         const result = await apiClient<Invoice>(API_ENDPOINTS.CREATE_INVOICE, {
@@ -201,9 +190,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Update an existing invoice
-     */
+
     async updateInvoice(data: UpdateInvoiceData): Promise<{ data: Invoice | null; error: Error | null }> {
         console.log("paymentService.updateInvoice: updating invoice", data.id)
         const result = await apiClient<Invoice>(API_ENDPOINTS.UPDATE_INVOICE, {
@@ -214,9 +201,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Mark invoice as complete
-     */
+
     async completeInvoice(invoiceId: string): Promise<{ data: Invoice | null; error: Error | null }> {
         console.log("paymentService.completeInvoice: completing invoice", invoiceId)
         const result = await apiClient<Invoice>(API_ENDPOINTS.INVOICE_COMPLETE, {
@@ -227,9 +212,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Mark invoice as failed
-     */
+
     async failInvoice(invoiceId: string, reason?: string): Promise<{ data: Invoice | null; error: Error | null }> {
         console.log("paymentService.failInvoice: marking invoice as failed", invoiceId)
         const result = await apiClient<Invoice>(API_ENDPOINTS.INVOICE_FAILED, {
@@ -240,11 +223,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    // ==================== PAYOS PAYMENT METHODS ====================
 
-    /**
-     * Get PayOS payment by order code
-     */
     async getPayOSPayment(orderCode: string): Promise<{ data: PayOSPayment | null; error: Error | null }> {
         console.log("paymentService.getPayOSPayment: fetching payment", orderCode)
         const result = await apiClient<PayOSPayment>(API_ENDPOINTS.GET_PAYOS_PAYMENT(orderCode), {
@@ -254,9 +233,6 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get payment by order code
-     */
     async getPaymentByOrderCode(orderCode: string): Promise<{ data: Payment | null; error: Error | null }> {
         console.log("paymentService.getPaymentByOrderCode: fetching payment", orderCode)
         const result = await apiClient<Payment>(API_ENDPOINTS.GET_PAYMENT(orderCode), {
@@ -266,9 +242,6 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Create PayOS payment request
-     */
     async createPayOSPayment(data: CreatePayOSPaymentRequest): Promise<{ data: PayOSPayment | null; error: Error | null }> {
         console.log("paymentService.createPayOSPayment: creating payment", data)
         const result = await apiClient<PayOSPayment>(API_ENDPOINTS.CREATE_PAYOS_PAYMENT, {
@@ -279,9 +252,6 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Create payment from invoice
-     */
     async createPaymentFromInvoice(invoiceId: string): Promise<{ data: Payment | null; error: Error | null }> {
         console.log("paymentService.createPaymentFromInvoice: creating payment for invoice", invoiceId)
         const result = await apiClient<Payment>(API_ENDPOINTS.CREATE_PAYMENT_FROM_INVOICE(invoiceId), {
@@ -291,9 +261,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Create a payment intent for a booking (legacy)
-     */
+
     async createPaymentIntent(
         bookingId: string,
         amount: number
@@ -305,9 +273,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Process a payment for a booking (legacy)
-     */
+
     async createPayment(data: CreatePaymentData): Promise<{ data: Payment | null; error: Error | null }> {
         const result = await apiClient<Payment>(API_ENDPOINTS.CREATE_PAYMENT, {
             method: "POST",
@@ -316,9 +282,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get payment by ID (legacy)
-     */
+
     async getPaymentById(paymentId: string): Promise<{ data: Payment | null; error: Error | null }> {
         const result = await apiClient<Payment>(API_ENDPOINTS.PAYMENT_DETAILS(paymentId), {
             method: "GET",
@@ -326,9 +290,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get payment by booking ID (legacy)
-     */
+
     async getPaymentByBookingId(bookingId: string): Promise<{ data: Payment | null; error: Error | null }> {
         const result = await apiClient<Payment>(API_ENDPOINTS.PAYMENT_BY_BOOKING(bookingId), {
             method: "GET",
@@ -336,9 +298,6 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get user's payment history (legacy)
-     */
     async getPaymentHistory(
         userId: string,
         page: number = 1,
@@ -353,9 +312,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get all payments (staff/admin only) (legacy)
-     */
+
     async getAllPayments(
         page: number = 1,
         pageSize: number = 20,
@@ -373,9 +330,6 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Verify payment status (legacy)
-     */
     async verifyPayment(paymentId: string): Promise<{ data: Payment | null; error: Error | null }> {
         const result = await apiClient<Payment>(API_ENDPOINTS.VERIFY_PAYMENT(paymentId), {
             method: "POST",
@@ -383,9 +337,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Cancel a pending payment (legacy)
-     */
+
     async cancelPayment(paymentId: string): Promise<{ error: Error | null }> {
         const result = await apiClient(API_ENDPOINTS.CANCEL_PAYMENT(paymentId), {
             method: "POST",
@@ -393,9 +345,6 @@ export const paymentService = {
         return { error: result.error }
     },
 
-    /**
-     * Request a refund (legacy)
-     */
     async requestRefund(data: RefundData): Promise<{ data: Payment | null; error: Error | null }> {
         const result = await apiClient<Payment>(API_ENDPOINTS.REFUND_PAYMENT, {
             method: "POST",
@@ -404,9 +353,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get payment receipt (legacy)
-     */
+
     async getPaymentReceipt(paymentId: string): Promise<{ data: { receiptUrl: string } | null; error: Error | null }> {
         const result = await apiClient<{ receiptUrl: string }>(API_ENDPOINTS.PAYMENT_RECEIPT(paymentId), {
             method: "GET",
@@ -414,9 +361,7 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get payment statistics (for car owners) (legacy)
-     */
+
     async getPaymentStats(
         ownerId: string,
         startDate?: string,
@@ -447,9 +392,6 @@ export const paymentService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Process webhook for payment status updates (legacy)
-     */
     async handlePaymentWebhook(webhookData: any): Promise<{ error: Error | null }> {
         const result = await apiClient(API_ENDPOINTS.PAYMENT_WEBHOOK, {
             method: "POST",

@@ -47,7 +47,7 @@ export default function HomeScreen() {
 
     // Split cars into sections
     const popularCars = filteredCars.slice(0, 3)
-    const recommendedCars = filteredCars.slice(3)
+    const recommendedCars = filteredCars.slice(3, 8) // Show only 5 cars (index 3-7)
 
     if (loading) {
         return (

@@ -20,8 +20,37 @@ interface ImageData {
 }
 
 export default function PickupReturnConfirmScreen() {
-    const route = useRoute<RouteProp<{ params: { paymentId: string } }, "params">>()
-    const { paymentId } = (route.params as any) || {}
+    const route = useRoute<RouteProp<{
+        params: {
+            paymentId: string;
+            bookingId?: string;
+            carName?: string;
+            carType?: string;
+            customerName?: string;
+            pickupLocation?: string;
+            pickupDate?: string;
+            pickupTime?: string;
+            dropoffLocation?: string;
+            dropoffDate?: string;
+            dropoffTime?: string;
+        }
+    }, "params">>()
+
+    const params = (route.params as any) || {}
+    const {
+        paymentId,
+        bookingId,
+        carName,
+        carType,
+        customerName,
+        pickupLocation,
+        pickupDate,
+        pickupTime,
+        dropoffLocation,
+        dropoffDate,
+        dropoffTime
+    } = params
+
     const navigation = useNavigation()
 
     // Check existing confirmations and set initial tab
@@ -33,15 +62,27 @@ export default function PickupReturnConfirmScreen() {
     const [returnImage, setReturnImage] = useState<ImageData | null>(null)
     const [loading, setLoading] = useState(false)
 
-    // Mock payment data
+    // Format date for display
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return "N/A"
+        const date = new Date(dateStr)
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
+
+    // Use real data from params or fallback to mock data
     const payment = {
-        id: "PAY001",
-        carName: "Koenigsegg",
-        carType: "Sport",
-        customerName: "John Doe",
+        id: paymentId || "PAY001",
+        carName: carName || "Koenigsegg",
+        carType: carType || "Sport",
+        customerName: customerName || "John Doe",
         amount: 450,
-        date: new Date("2024-01-15"),
-        pickupTime: "10:00 AM",
+        date: pickupDate ? new Date(pickupDate) : new Date("2024-01-15"),
+        pickupTime: pickupTime || "10:00 AM",
+        pickupLocation: pickupLocation || "N/A",
+        pickupDate: pickupDate ? formatDate(pickupDate) : "N/A",
+        dropoffLocation: dropoffLocation || "N/A",
+        dropoffDate: dropoffDate ? formatDate(dropoffDate) : "N/A",
+        dropoffTime: dropoffTime || "N/A",
         mileage: 15420,
         fuelLevel: "Full",
     }
@@ -263,10 +304,57 @@ export default function PickupReturnConfirmScreen() {
                                 ${payment.amount.toFixed(2)}
                             </Text>
                         </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
                             <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Initial Mileage</Text>
                             <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
                                 {payment.mileage} km
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Pick-up & Drop-off Details */}
+                    <View style={{ marginTop: scale(12), backgroundColor: colors.background, borderRadius: scale(8), padding: scale(12) }}>
+                        <Text style={{ fontSize: scale(13), fontWeight: "700", color: colors.primary, marginBottom: scale(8) }}>
+                            📍 Pick-up Details
+                        </Text>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Location</Text>
+                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
+                                {payment.pickupLocation}
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Date</Text>
+                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
+                                {payment.pickupDate}
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(12) }}>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Time</Text>
+                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
+                                {payment.pickupTime}
+                            </Text>
+                        </View>
+
+                        <Text style={{ fontSize: scale(13), fontWeight: "700", color: colors.primary, marginBottom: scale(8) }}>
+                            📍 Drop-off Details
+                        </Text>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Location</Text>
+                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
+                                {payment.dropoffLocation}
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Date</Text>
+                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
+                                {payment.dropoffDate}
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Time</Text>
+                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
+                                {payment.dropoffTime}
                             </Text>
                         </View>
                     </View>

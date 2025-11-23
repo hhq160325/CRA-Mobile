@@ -64,7 +64,7 @@ export default function RecentTransactions({ bookings, onViewAll }: RecentTransa
                             })}
                         </Text>
                         <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
-                            ${booking.totalPrice}.00
+                            {booking.totalPrice} VND
                         </Text>
                     </View>
                 </View>

@@ -36,9 +36,9 @@ export interface CarLocation {
 }
 
 export interface RouteData {
-    distance: number // in kilometers
-    duration: number // in minutes
-    polyline: string // encoded polyline
+    distance: number
+    duration: number
+    polyline: string
     steps: {
         instruction: string
         distance: number
@@ -49,31 +49,25 @@ export interface RouteData {
 export interface NearbySearch {
     latitude: number
     longitude: number
-    radius: number // in kilometers
+    radius: number
     type?: "pickup" | "dropoff" | "parking"
 }
 
 export const locationService = {
-    /**
-     * Get all available pickup/dropoff locations
-     */
+
     async getLocations(type?: string): Promise<{ data: Location[] | null; error: Error | null }> {
         const params = type ? `?type=${type}` : ""
         const result = await apiClient<Location[]>(`/locations${params}`, { method: "GET" })
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get location by ID
-     */
+
     async getLocationById(locationId: string): Promise<{ data: Location | null; error: Error | null }> {
         const result = await apiClient<Location>(`/locations/${locationId}`, { method: "GET" })
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Search nearby locations
-     */
+
     async searchNearby(params: NearbySearch): Promise<{ data: Location[] | null; error: Error | null }> {
         const queryParams = new URLSearchParams({
             latitude: params.latitude.toString(),
@@ -86,9 +80,7 @@ export const locationService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get available cars near a location
-     */
+
     async getCarsNearLocation(
         latitude: number,
         longitude: number,
@@ -104,9 +96,7 @@ export const locationService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Calculate route between two points
-     */
+
     async calculateRoute(
         origin: { latitude: number; longitude: number },
         destination: { latitude: number; longitude: number }
@@ -118,9 +108,7 @@ export const locationService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Geocode address to coordinates
-     */
+
     async geocodeAddress(
         address: string
     ): Promise<{ data: { latitude: number; longitude: number; formattedAddress: string } | null; error: Error | null }> {
@@ -134,9 +122,7 @@ export const locationService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Reverse geocode coordinates to address
-     */
+
     async reverseGeocode(
         latitude: number,
         longitude: number
@@ -155,9 +141,7 @@ export const locationService = {
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 
-    /**
-     * Get user's current location (using device GPS)
-     */
+
     async getCurrentLocation(): Promise<{
         data: { latitude: number; longitude: number } | null
         error: Error | null
@@ -190,16 +174,14 @@ export const locationService = {
         })
     },
 
-    /**
-     * Calculate distance between two points (Haversine formula)
-     */
+
     calculateDistance(
         lat1: number,
         lon1: number,
         lat2: number,
         lon2: number
     ): number {
-        const R = 6371 // Earth's radius in kilometers
+        const R = 6371
         const dLat = this.toRad(lat2 - lat1)
         const dLon = this.toRad(lon2 - lon1)
         const a =

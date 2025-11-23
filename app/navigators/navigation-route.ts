@@ -15,6 +15,9 @@ export type NavigatorParamList = {
   ['CarDetail']: { id: string };
   ['BookingDetail']: { id: string };
   ['BookingForm']: { id: string } | undefined;
+  ['BookingPayment']: { bookingId: string; paymentMethod: string; amount: number };
+  ['PayOSWebView']: { paymentUrl: string; bookingId?: string };
+  ['FeedbackForm']: { carId: string };
   ['CarMapScreen']: {
     pickupLocation: string;
     pickupDate: string;
@@ -24,9 +27,29 @@ export type NavigatorParamList = {
     dropoffTime: string;
     showRoute?: boolean;
   };
+  ['CarMapRouteScreen']: {
+    pickupLocation: string;
+    pickupDate: string;
+    pickupTime: string;
+    dropoffLocation: string;
+    dropoffDate: string;
+    dropoffTime: string;
+  };
   ['Staff']: undefined;
   ['StaffScreen']: undefined;
-  ['PickupReturnConfirm']: { paymentId: string };
+  ['PickupReturnConfirm']: {
+    paymentId: string;
+    bookingId?: string;
+    carName?: string;
+    carType?: string;
+    customerName?: string;
+    pickupLocation?: string;
+    pickupDate?: string;
+    pickupTime?: string;
+    dropoffLocation?: string;
+    dropoffDate?: string;
+    dropoffTime?: string;
+  };
   ['auth']: undefined;
   ['tabStack']: undefined;
   ['authStack']: undefined;

@@ -12,7 +12,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
-// Translations
+
 const translations = {
     en: {
         // Header
@@ -134,7 +134,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const [language, setLanguageState] = useState<Language>("en")
 
     useEffect(() => {
-        // Load saved language from storage
+
         const loadLanguage = async () => {
             try {
                 if (typeof localStorage !== 'undefined') {

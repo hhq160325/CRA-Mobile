@@ -6,21 +6,15 @@ import { colors } from "../../theme/colors"
 import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
+import type { RouteProp } from "@react-navigation/native"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 
-interface RouteParams {
-    pickupLocation?: string
-    pickupDate?: string
-    pickupTime?: string
-    dropoffLocation?: string
-    dropoffDate?: string
-    dropoffTime?: string
-    showRoute?: boolean
-}
+type CarMapScreenRouteProp = RouteProp<NavigatorParamList, "CarMapScreen">
 
-export default function CarMapScreen({ route }: { route?: { params?: RouteParams } }) {
+export default function CarMapScreen() {
+    const route = useRoute<CarMapScreenRouteProp>()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [loading, setLoading] = useState(true)
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
@@ -43,13 +37,13 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
     const loadRouteWithChargingStations = async () => {
         setLoading(true)
 
-        // Mock coordinates for pickup and dropoff (in real app, geocode the location names)
-        const pickupCoords = { latitude: 10.8231, longitude: 106.6297 } // Ho Chi Minh City
-        const dropoffCoords = { latitude: 10.7769, longitude: 106.7009 } // Thu Duc City
+
+        const pickupCoords = { latitude: 10.8231, longitude: 106.6297 }
+        const dropoffCoords = { latitude: 10.7769, longitude: 106.7009 }
 
         setUserLocation(pickupCoords)
 
-        // Calculate distance between pickup and dropoff
+
         const distance = locationService.calculateDistance(
             pickupCoords.latitude,
             pickupCoords.longitude,
@@ -58,7 +52,7 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
         )
         setRouteDistance(distance)
 
-        // Mock charging stations along the route
+
         const mockChargingStations = [
             {
                 id: "station1",
@@ -87,17 +81,17 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
     const loadUserLocationAndCars = async () => {
         setLoading(true)
 
-        // Get user's current location
+
         const { data: location, error: locationError } = await locationService.getCurrentLocation()
 
         if (locationError || !location) {
-            // Fallback to default location (Ho Chi Minh City)
+
             setUserLocation({ latitude: 10.8231, longitude: 106.6297 })
         } else {
             setUserLocation(location)
         }
 
-        // Get nearby cars
+
         const { data: cars } = await locationService.getCarsNearLocation(
             location?.latitude || 10.8231,
             location?.longitude || 106.6297,
@@ -105,7 +99,7 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
         )
 
         if (cars) {
-            // Calculate distance for each car
+
             const carsWithDistance = cars.map((car) => ({
                 ...car,
                 distance: locationService.calculateDistance(
@@ -135,7 +129,7 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
     }
 
     const markers: MapMarker[] = [
-        // User location marker
+
         ...(userLocation
             ? [
                 {
@@ -147,13 +141,13 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
                 },
             ]
             : []),
-        // Car markers
+
         ...nearbyCars.map((car) => ({
             id: car.carId,
             latitude: car.latitude,
             longitude: car.longitude,
             title: car.carName,
-            description: `$${car.price}/day`,
+            description: `${car.price} VND/day`,
             type: "car" as const,
             price: car.price,
         })),
@@ -237,7 +231,7 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
                                     <MaterialIcons name="location-on" size={scale(14)} color={colors.placeholder} />
                                     <Text style={styles.carDistance}>{car.distance?.toFixed(1)} km away</Text>
                                 </View>
-                                <Text style={styles.carPrice}>${car.price}/day</Text>
+                                <Text style={styles.carPrice}>{car.price} VND/day</Text>
                             </View>
                             {car.available ? (
                                 <View style={styles.availableBadge}>
@@ -263,7 +257,7 @@ export default function CarMapScreen({ route }: { route?: { params?: RouteParams
                                 <MaterialIcons name="location-on" size={scale(16)} color={colors.placeholder} />
                                 <Text style={styles.selectedCarDistance}>{selectedCar.distance?.toFixed(1)} km away</Text>
                             </View>
-                            <Text style={styles.selectedCarPrice}>${selectedCar.price}/day</Text>
+                            <Text style={styles.selectedCarPrice}>{selectedCar.price} VND/day</Text>
                         </View>
                         <Pressable style={styles.viewDetailsButton} onPress={handleViewCarDetails}>
                             <Text style={styles.viewDetailsText}>View Details</Text>

@@ -1,17 +1,11 @@
 "use client"
-
-/* eslint-disable react/no-unstable-nested-components */
-/* eslint-disable @typescript-eslint/no-shadow */
-/* eslint-disable eqeqeq */
 import type React from "react"
 import { Animated } from "react-native"
 
 import { NavigationContainer } from "@react-navigation/native"
 import { CardStyleInterpolators, createStackNavigator } from "@react-navigation/stack"
 
-// import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 
-// import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { NavigatorParamList } from "./navigation-route"
 import { navigationRef } from "./navigation-utilities"
 import { useAuth } from "../../lib/auth-context"
@@ -32,10 +26,13 @@ import CarListScreen from "../screens/cars/car-list.screen"
 import CarDetailScreen from "../screens/cars/car-detail.screen"
 import BookingDetailScreen from "../screens/bookings/booking-detail.screen"
 import BookingFormScreen from "../screens/bookings/booking-form.screen"
+import BookingPaymentScreen from "../screens/bookings/booking-payment.screen"
+import PayOSWebViewScreen from "../screens/bookings/payos-webview.screen"
 import CarMapScreen from "../screens/cars/car-map.screen"
 import CarMapRouteScreen from "../screens/cars/car-map-route.screen"
 import StaffScreen from "../screens/staff/staff.screen"
 import PickupReturnConfirmScreen from "../screens/staff/pickup-return-confirm.screen"
+import FeedbackFormScreen from "../screens/feedback/feedback-form.screen"
 
 type NavigationProps = Partial<React.ComponentProps<typeof NavigationContainer>>
 
@@ -170,7 +167,25 @@ const RootStack = () => {
 
 const CombinedStack = () => {
 
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+
+
+  const getInitialComponent = () => {
+    if (!isAuthenticated) {
+      return AuthStack
+    }
+
+    // Check if user is staff
+    const userRole = user?.role?.toLowerCase()
+    const isStaff = userRole === "staff" || user?.roleId === 1002
+
+    if (isStaff) {
+      console.log("CombinedStack: User is staff, should show StaffScreen")
+    }
+
+    return MainStack
+  }
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen
@@ -178,7 +193,7 @@ const CombinedStack = () => {
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
-        component={isAuthenticated ? MainStack : AuthStack}
+        component={getInitialComponent()}
       />
       <Stack.Screen
         name="CarDetail"
@@ -199,6 +214,21 @@ const CombinedStack = () => {
         component={BookingDetailScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="BookingPayment"
+        component={BookingPaymentScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="PayOSWebView"
+        component={PayOSWebViewScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+          presentation: 'modal',
         }}
       />
       <Stack.Screen
@@ -246,6 +276,13 @@ const CombinedStack = () => {
       <Stack.Screen
         name="PickupReturnConfirm"
         component={PickupReturnConfirmScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="FeedbackForm"
+        component={FeedbackFormScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

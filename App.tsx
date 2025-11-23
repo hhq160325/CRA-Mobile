@@ -3,6 +3,7 @@ import { LogBox } from 'react-native';
 import { AppNavigator } from './app/navigators/app-navigator';
 import { AuthProvider } from './lib/auth-context';
 import { LanguageProvider } from './lib/language-context';
+import { FavoritesProvider } from './lib/favorites-context';
 
 // Disable all LogBox warnings and errors on the device
 LogBox.ignoreAllLogs(true);
@@ -22,7 +23,9 @@ const App = () => {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <AppNavigator />
+        <FavoritesProvider>
+          <AppNavigator />
+        </FavoritesProvider>
       </AuthProvider>
     </LanguageProvider>
   );

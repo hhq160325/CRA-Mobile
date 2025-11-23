@@ -86,7 +86,7 @@ export default function FilterModal({
                                                 fontWeight: maxPrice === price ? "600" : "400",
                                             }}
                                         >
-                                            ${price}
+                                            {price} VND
                                         </Text>
                                     </Pressable>
                                 ))}

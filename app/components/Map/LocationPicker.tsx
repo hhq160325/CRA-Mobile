@@ -48,7 +48,7 @@ export default function LocationPicker({ onLocationSelect, initialLocation, type
     const handleMapPress = async (coordinate: { latitude: number; longitude: number }) => {
         setSelectedLocation(coordinate)
 
-        // Reverse geocode to get address
+
         const { data } = await locationService.reverseGeocode(coordinate.latitude, coordinate.longitude)
         if (data) {
             setAddress(data.address)
@@ -70,7 +70,7 @@ export default function LocationPicker({ onLocationSelect, initialLocation, type
     }
 
     const markers: MapMarker[] = [
-        // Selected location
+
         ...(selectedLocation
             ? [
                 {
@@ -83,7 +83,7 @@ export default function LocationPicker({ onLocationSelect, initialLocation, type
                 },
             ]
             : []),
-        // Available locations
+
         ...locations.map((loc) => ({
             id: loc.id,
             latitude: loc.latitude,

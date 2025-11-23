@@ -38,7 +38,7 @@ export default function ActiveFilters({
                                 borderRadius: scale(16),
                             }}
                         >
-                            <Text style={{ fontSize: scale(12), color: colors.white, marginRight: scale(6) }}>Max ${maxPrice}</Text>
+                            <Text style={{ fontSize: scale(12), color: colors.white, marginRight: scale(6) }}>Max {maxPrice} VND</Text>
                             <Pressable onPress={onRemovePrice}>
                                 <MaterialIcons name="close" size={scale(14)} color={colors.white} />
                             </Pressable>

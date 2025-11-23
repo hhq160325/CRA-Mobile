@@ -1,7 +1,7 @@
 
 export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_URL || "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api",
-  TIMEOUT: 60000, // Increased to 60 seconds for Azure cold starts
+  TIMEOUT: 60000,
   RETRY_ATTEMPTS: 2,
   RETRY_DELAY: 1000,
 }
@@ -13,7 +13,7 @@ export const API_ENDPOINTS = {
   REGISTER: "/Authen/SignUp",
   LOGOUT: "/Authen/Logout",
   VERIFY_OTP: "/Authen/verify-otp",
-  // Note: These endpoints may need to be implemented on the backend
+
   // Alternative paths to try: /Authen/forgotPassword, /Authen/request-reset, /User/forgot-password
   FORGOT_PASSWORD: "/Authen/ForgotPassword",
   RESET_PASSWORD: "/Authen/ResetPassword",
@@ -38,10 +38,10 @@ export const API_ENDPOINTS = {
 
   // Feedback (Reviews)
   ALL_FEEDBACK: "/Feedback/All",
-  FEEDBACK_BY_CAR: (carId: string) => `/Feedback/${carId}`,
-  CREATE_FEEDBACK: "/Feedback",
-  UPDATE_FEEDBACK: (id: string) => `/Feedback/${id}`,
-  DELETE_FEEDBACK: (id: string) => `/Feedback/${id}`,
+  FEEDBACK_BY_CAR: (carId: string) => `/Feedback/GetFeedbacksForCar/${carId}`,
+  CREATE_FEEDBACK: "/Feedback/CreateFeedback",
+  UPDATE_FEEDBACK: (id: string) => `/Feedback/UpdateFeedback/${id}`,
+  DELETE_FEEDBACK: (id: string) => `/Feedback/DeleteFeedback/${id}`,
 
   // User
   USER_PROFILE: "/user/profile",
@@ -54,20 +54,20 @@ export const API_ENDPOINTS = {
   GET_USER: (userId: string) => `/User/GetUserById?userId=${userId}`,
 
   // Invoice endpoints
-  ALL_INVOICES: "/api/Invoice/AllInvoices",
-  INVOICES_BY_CUSTOMER: (cusId: string) => `/api/Invoice/AllInvoicesFromCustomer/${cusId}`,
-  INVOICES_BY_VENDOR: (vendorId: string) => `/api/Invoice/AllInvoicesToVendor/${vendorId}`,
-  GET_INVOICE: (invoiceId: string) => `/${invoiceId}`,
-  CREATE_INVOICE: "/api/Invoice/CreateInvoice",
-  UPDATE_INVOICE: "/api/Invoice/UpdateInvoice",
-  INVOICE_COMPLETE: "/api/Invoice/InvoiceComplete",
-  INVOICE_FAILED: "/api/Invoice/InvoiceFailed",
+  ALL_INVOICES: "/Invoice/AllInvoices",
+  INVOICES_BY_CUSTOMER: (cusId: string) => `/Invoice/AllInvoicesFromCustomer/${cusId}`,
+  INVOICES_BY_VENDOR: (vendorId: string) => `/Invoice/AllInvoicesToVendor/${vendorId}`,
+  GET_INVOICE: (invoiceId: string) => `/Invoice/${invoiceId}`,
+  CREATE_INVOICE: "/Invoice/CreateInvoice",
+  UPDATE_INVOICE: "/Invoice/UpdateInvoice",
+  INVOICE_COMPLETE: "/Invoice/InvoiceComplete",
+  INVOICE_FAILED: "/Invoice/InvoiceFailed",
 
   // PayOS Payment endpoints
   GET_PAYOS_PAYMENT: (orderCode: string) => `/PayOSPayment/${orderCode}`,
   GET_PAYMENT: (orderCode: string) => `/Payment/${orderCode}`,
   CREATE_PAYOS_PAYMENT: "/CreatePayOSPaymentRequest",
-  CREATE_PAYMENT_FROM_INVOICE: (invoiceId: string) => `/api/Payment/CreatePaymentFromInvoice/${invoiceId}`,
+  CREATE_PAYMENT_FROM_INVOICE: (invoiceId: string) => `/Payment/CreatePaymentFromInvoice/${invoiceId}`,
 
   // Legacy payment endpoints (keeping for backward compatibility)
   PAYMENT_INTENT: "/payments/intent",

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { View, Text, ActivityIndicator, ScrollView, Pressable, Image } from "react-native"
-import { carsService, reviewsService, type Car, type Review } from "../../../lib/api"
+import { carsService, reviewsService, bookingsService, type Car, type Review } from "../../../lib/api"
 import { useRoute, useNavigation } from "@react-navigation/native"
 import type { RouteProp } from "@react-navigation/native"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
@@ -12,15 +12,18 @@ import { scale, verticalScale } from "../../theme/scale"
 import { getAsset } from "../../../lib/getAsset"
 import Header from "../../components/Header/Header"
 import Icon from "react-native-vector-icons/MaterialIcons"
+import { useAuth } from "../../../lib/auth-context"
 
 export default function CarDetailScreen() {
   const route = useRoute<RouteProp<{ params: { id: string } }, "params">>()
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
+  const { user } = useAuth()
   const { id } = (route.params as any) || {}
   const [car, setCar] = useState<Car | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [reviews, setReviews] = useState<Review[]>([])
+  const [hasBookedCar, setHasBookedCar] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -31,17 +34,39 @@ export default function CarDetailScreen() {
 
       try {
         // Load car details and reviews in parallel for faster loading
-        const [carResult, reviewsResult] = await Promise.all([
+        const promises = [
           carsService.getCarById(id),
           reviewsService.getCarReviews(id)
-        ])
+        ]
+
+        const [carResult, reviewsResult] = await Promise.all(promises)
 
         if (mounted) {
           if (carResult.data) {
-            setCar(carResult.data)
+            setCar(carResult.data as Car)
           }
           if (reviewsResult.data) {
-            setReviews(reviewsResult.data)
+            setReviews(reviewsResult.data as Review[])
+          }
+        }
+
+        // Check if user has booked this car (separate call to avoid type issues)
+        if (user?.id && mounted) {
+          try {
+            const bookingsResult = await bookingsService.getBookings(user.id)
+            if (bookingsResult.data && bookingsResult.data.length > 0) {
+              const hasBooked = bookingsResult.data.some(
+                (booking: any) => booking.carId === id && booking.status === "completed"
+              )
+              setHasBookedCar(hasBooked)
+            } else {
+              // No bookings found or error (404) - user hasn't booked any car
+              setHasBookedCar(false)
+            }
+          } catch (bookingErr) {
+            // Handle 404 or other errors gracefully - assume no bookings
+            console.log("No bookings found for user (this is normal for new users)")
+            setHasBookedCar(false)
           }
         }
       } catch (err) {
@@ -58,7 +83,7 @@ export default function CarDetailScreen() {
     return () => {
       mounted = false
     }
-  }, [id])
+  }, [id, user?.id])
 
   const calculateAverageRating = (): string => {
     if (reviews.length === 0) return "0"
@@ -119,10 +144,27 @@ export default function CarDetailScreen() {
     )
   }
 
-  // Create array of images (main image + additional images if available)
-  const carImages = car.images && car.images.length > 0
-    ? car.images
-    : [car.image, car.image, car.image, car.image, car.image]
+
+  // Get car images - prioritize imageUrls from API, then images, then image
+  const getCarImages = () => {
+    if (car.imageUrls && car.imageUrls.length > 0) {
+      return car.imageUrls
+    }
+    if (car.images && car.images.length > 0) {
+      return car.images
+    }
+    return [car.image, car.image, car.image]
+  }
+
+  const carImages = getCarImages()
+
+  // Helper to get image source (URL or local asset)
+  const getImageSource = (img: string) => {
+    if (img && (img.startsWith('http://') || img.startsWith('https://'))) {
+      return { uri: img }
+    }
+    return getAsset(img) || require("../../../assets/tesla-model-s-luxury.png")
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -136,7 +178,7 @@ export default function CarDetailScreen() {
           marginBottom: scale(8)
         }}>
           <Image
-            source={getAsset(carImages[selectedImageIndex]) || require("../../../assets/tesla-model-s-luxury.png")}
+            source={getImageSource(carImages[selectedImageIndex])}
             style={{
               width: "100%",
               height: scale(300),
@@ -175,7 +217,7 @@ export default function CarDetailScreen() {
                 }}
               >
                 <Image
-                  source={getAsset(img) || require("../../../assets/tesla-model-s-luxury.png")}
+                  source={getImageSource(img)}
                   style={{
                     width: "90%",
                     height: "90%",
@@ -254,7 +296,7 @@ export default function CarDetailScreen() {
             <View>
               <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Price per day</Text>
               <Text style={{ fontSize: scale(28), fontWeight: '700', color: colors.morentBlue }}>
-                ${car.price}
+                {car.price} VND
               </Text>
             </View>
             <Pressable
@@ -283,10 +325,10 @@ export default function CarDetailScreen() {
           <View style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             marginBottom: scale(16)
           }}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={{ fontSize: scale(18), fontWeight: '700', color: colors.primary }}>
                 Customer Reviews
               </Text>
@@ -299,22 +341,24 @@ export default function CarDetailScreen() {
                 </View>
               )}
             </View>
-            <Pressable
-              onPress={() => navigation.navigate("FeedbackForm" as any, { carId: car.id })}
-              style={{
-                backgroundColor: colors.morentBlue,
-                paddingHorizontal: scale(16),
-                paddingVertical: scale(8),
-                borderRadius: scale(6),
-                flexDirection: 'row',
-                alignItems: 'center'
-              }}
-            >
-              <Icon name="add" size={scale(16)} color={colors.white} />
-              <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600", marginLeft: scale(4) }}>
-                Add Review
-              </Text>
-            </Pressable>
+            {hasBookedCar && (
+              <Pressable
+                onPress={() => navigation.navigate("FeedbackForm" as any, { carId: car.id })}
+                style={{
+                  backgroundColor: colors.morentBlue,
+                  paddingHorizontal: scale(16),
+                  paddingVertical: scale(8),
+                  borderRadius: scale(6),
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}
+              >
+                <Icon name="add" size={scale(16)} color={colors.white} />
+                <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600", marginLeft: scale(4) }}>
+                  Add Review
+                </Text>
+              </Pressable>
+            )}
           </View>
 
           {/* Reviews List */}

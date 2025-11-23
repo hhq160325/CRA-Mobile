@@ -10,11 +10,11 @@ export interface Confirmation {
     returnDate?: Date | string
 }
 
-// In-memory cache for confirmations (for synchronous access in UI)
+
 const confirmationCache = new Map<string, Confirmation>()
 
 export const confirmationService = {
-    // Synchronous method for UI (uses cache)
+
     getConfirmation(paymentId: string): Confirmation {
         return confirmationCache.get(paymentId) || {
             paymentId,
@@ -23,7 +23,7 @@ export const confirmationService = {
         }
     },
 
-    // Async method to fetch from API and update cache
+
     async fetchConfirmation(paymentId: string): Promise<{ data: Confirmation | null; error: Error | null }> {
         const result = await apiClient<Confirmation>(`/confirmations/${paymentId}`, { method: "GET" })
         if (result.data) {

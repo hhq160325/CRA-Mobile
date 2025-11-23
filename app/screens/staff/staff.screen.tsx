@@ -23,6 +23,11 @@ const mockPayments = [
         status: "successfully",
         date: new Date("2024-01-15"),
         pickupTime: "10:00 AM",
+        pickupLocation: "Downtown Office",
+        pickupDate: "2025-11-23T10:00:00.000Z",
+        dropoffLocation: "Airport Terminal 2",
+        dropoffDate: "2025-11-25T16:00:00.000Z",
+        dropoffTime: "04:00 PM",
         returnTime: null,
         pickupImage: null,
         returnImage: null,
@@ -37,6 +42,11 @@ const mockPayments = [
         status: "successfully",
         date: new Date("2024-01-16"),
         pickupTime: "02:00 PM",
+        pickupLocation: "City Center Mall",
+        pickupDate: "2025-11-24T14:00:00.000Z",
+        dropoffLocation: "Hotel Grand Plaza",
+        dropoffDate: "2025-11-26T18:00:00.000Z",
+        dropoffTime: "06:00 PM",
         returnTime: null,
         pickupImage: null,
         returnImage: null,
@@ -51,6 +61,11 @@ const mockPayments = [
         status: "pending",
         date: new Date("2024-01-17"),
         pickupTime: null,
+        pickupLocation: "North Station",
+        pickupDate: "2025-11-25T09:00:00.000Z",
+        dropoffLocation: "South Terminal",
+        dropoffDate: "2025-11-27T17:00:00.000Z",
+        dropoffTime: "05:00 PM",
         returnTime: null,
         pickupImage: null,
         returnImage: null,
@@ -65,6 +80,11 @@ const mockPayments = [
         status: "successfully",
         date: new Date("2024-01-14"),
         pickupTime: "09:30 AM",
+        pickupLocation: "Main Office",
+        pickupDate: "2025-11-22T09:30:00.000Z",
+        dropoffLocation: "Main Office",
+        dropoffDate: "2025-11-24T16:30:00.000Z",
+        dropoffTime: "04:30 PM",
         returnTime: "04:30 PM",
         pickupImage: "image1",
         returnImage: "image2",
@@ -79,6 +99,11 @@ const mockPayments = [
         status: "successfully",
         date: new Date("2024-01-18"),
         pickupTime: "11:00 AM",
+        pickupLocation: "Beach Resort",
+        pickupDate: "2025-11-26T11:00:00.000Z",
+        dropoffLocation: "Mountain Lodge",
+        dropoffDate: "2025-11-28T15:00:00.000Z",
+        dropoffTime: "03:00 PM",
         returnTime: null,
         pickupImage: null,
         returnImage: null,
@@ -91,26 +116,149 @@ export default function StaffScreen() {
     const [statusFilter, setStatusFilter] = useState<PaymentStatus>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [refreshKey, setRefreshKey] = useState(0)
+    const [realBookings, setRealBookings] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
     const { user } = useAuth()
     const navigation = useNavigation()
 
     // Redirect if not staff
     useEffect(() => {
         if (user && user.role !== "staff") {
-            // eslint-disable-next-line no-console
             console.log("Non-staff user trying to access staff screen, redirecting...")
                 ; (navigation as any).navigate("Home")
         }
     }, [user, navigation])
 
+    // Fetch real bookings and invoices from API
+    useEffect(() => {
+        fetchBookingsWithPayments()
+    }, [])
+
+    const fetchBookingsWithPayments = async () => {
+        setLoading(true)
+        try {
+            const { bookingsService, paymentService } = require("../../../lib/api")
+
+            // Fetch all bookings
+            const { data: bookings, error: bookingsError } = await bookingsService.getAllBookings()
+
+            if (bookingsError) {
+                console.log("Staff: Error fetching bookings:", bookingsError)
+                setRealBookings([])
+                setLoading(false)
+                return
+            }
+
+            if (!bookings || bookings.length === 0) {
+                console.log("Staff: No bookings found")
+                setRealBookings([])
+                setLoading(false)
+                return
+            }
+
+            console.log("Staff: Fetched bookings:", bookings.length)
+
+            // Try to fetch all invoices to get payment information
+            let invoices = null
+            try {
+                const { data: invoiceData, error: invoicesError } = await paymentService.getAllInvoices()
+
+                if (invoicesError) {
+                    console.log("Staff: Error fetching invoices (will use booking data only):", invoicesError.message)
+                } else {
+                    invoices = invoiceData
+                    console.log("Staff: Fetched invoices:", invoices?.length || 0)
+                }
+            } catch (err) {
+                console.log("Staff: Exception fetching invoices (will use booking data only):", err)
+            }
+
+            // Create a map of bookingId -> invoice for quick lookup
+            const invoiceMap = new Map()
+            if (invoices && invoices.length > 0) {
+                invoices.forEach((invoice: any) => {
+                    if (invoice.bookingId) {
+                        invoiceMap.set(invoice.bookingId, invoice)
+                    }
+                })
+            }
+
+            // Transform bookings with payment/invoice data
+            const transformedBookings = await Promise.all(
+                bookings.map(async (booking: any) => {
+                    const invoice = invoiceMap.get(booking.id)
+
+                    // Determine payment status
+                    // If we have invoice data, use it; otherwise use booking status
+                    let paymentStatus = "pending"
+                    if (invoice) {
+                        if (invoice.status === "paid" || invoice.status === "completed") {
+                            paymentStatus = "successfully"
+                        }
+                    } else {
+                        // Fallback: use booking status
+                        if (booking.status === "completed") {
+                            paymentStatus = "successfully"
+                        }
+                    }
+
+                    // Fetch customer name if available
+                    let customerName = "Unknown Customer"
+                    if (booking.userId) {
+                        try {
+                            const { data: user } = await paymentService.getUserById(booking.userId)
+                            if (user) {
+                                customerName = user.name || user.email || "Unknown Customer"
+                            }
+                        } catch (err) {
+                            console.log("Staff: Error fetching user:", err)
+                        }
+                    }
+
+                    return {
+                        id: invoice?.id || booking.id, // Use invoice ID as payment ID
+                        bookingId: booking.id,
+                        carName: booking.carName || "Unknown Car",
+                        carType: booking.carType || "Standard",
+                        customerName: customerName,
+                        amount: invoice?.amount || booking.totalPrice || 0,
+                        status: paymentStatus,
+                        date: new Date(booking.startDate || booking.pickupTime),
+                        pickupTime: new Date(booking.startDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                        pickupLocation: booking.pickupLocation,
+                        pickupDate: booking.startDate,
+                        dropoffLocation: booking.dropoffLocation,
+                        dropoffDate: booking.endDate,
+                        dropoffTime: new Date(booking.endDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                        returnTime: null,
+                        pickupImage: null,
+                        returnImage: null,
+                    }
+                })
+            )
+
+            console.log("Staff: Transformed bookings with payments:", transformedBookings.length)
+            setRealBookings(transformedBookings)
+        } catch (err) {
+            console.error("Staff: Exception fetching data:", err)
+            setRealBookings([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
     // Refresh when screen comes into focus
     useFocusEffect(
         useCallback(() => {
             setRefreshKey(prev => prev + 1)
+            fetchBookingsWithPayments() // Refresh bookings with payments when screen is focused
         }, [])
     )
 
-    const filteredPayments = mockPayments.filter((payment) => {
+    // Use real bookings if available, fallback to mock data
+    const paymentsToUse = realBookings.length > 0 ? realBookings : mockPayments
+
+    const filteredPayments = paymentsToUse.filter((payment) => {
         const matchesStatus = statusFilter === "all" || payment.status === statusFilter
         const matchesSearch =
             payment.carName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -123,8 +271,8 @@ export default function StaffScreen() {
         return `${date.getDate()} ${date.toLocaleString("default", { month: "short" })}`
     }
 
-    const handleConfirmPickupReturn = (paymentId: string) => {
-        const confirmation = confirmationService.getConfirmation(paymentId)
+    const handleConfirmPickupReturn = (payment: typeof mockPayments[0]) => {
+        const confirmation = confirmationService.getConfirmation(payment.id)
         const isFullyConfirmed = confirmation.pickupConfirmed && confirmation.returnConfirmed
 
         if (isFullyConfirmed) {
@@ -132,7 +280,20 @@ export default function StaffScreen() {
             return
         }
 
-        ; (navigation as any).navigate("PickupReturnConfirm", { paymentId })
+        // Navigate with full booking information
+        ; (navigation as any).navigate("PickupReturnConfirm", {
+            paymentId: payment.id,
+            bookingId: payment.bookingId,
+            carName: payment.carName,
+            carType: payment.carType,
+            customerName: payment.customerName,
+            pickupLocation: payment.pickupLocation,
+            pickupDate: payment.pickupDate,
+            pickupTime: payment.pickupTime,
+            dropoffLocation: payment.dropoffLocation,
+            dropoffDate: payment.dropoffDate,
+            dropoffTime: payment.dropoffTime,
+        })
     }
 
     const renderPaymentCard = ({ item }: { item: typeof mockPayments[0] }) => {
@@ -143,7 +304,7 @@ export default function StaffScreen() {
             <Pressable
                 onPress={() => {
                     if (item.status === "successfully") {
-                        handleConfirmPickupReturn(item.id)
+                        handleConfirmPickupReturn(item)
                     }
                 }}
                 disabled={isFullyConfirmed}
@@ -265,6 +426,18 @@ export default function StaffScreen() {
         )
     }
 
+    // Show loading indicator
+    if (loading && realBookings.length === 0) {
+        return (
+            <View style={{ flex: 1, backgroundColor: "#f9fafb" }}>
+                <Header />
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <Text style={{ fontSize: scale(14), color: colors.placeholder }}>Loading bookings...</Text>
+                </View>
+            </View>
+        )
+    }
+
     return (
         <View style={{ flex: 1, backgroundColor: "#f9fafb" }}>
             <Header />
@@ -272,6 +445,9 @@ export default function StaffScreen() {
             <View style={{ paddingHorizontal: scale(16), paddingTop: scale(8), marginBottom: verticalScale(8) }}>
                 <Text style={{ fontSize: scale(24), fontWeight: "bold", color: colors.primary }}>
                     Staff Dashboard
+                </Text>
+                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginTop: scale(4) }}>
+                    {realBookings.length > 0 ? `${realBookings.length} real bookings` : "Using mock data"}
                 </Text>
             </View>
 

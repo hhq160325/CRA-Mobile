@@ -12,15 +12,15 @@ export class APIError extends Error {
   }
 }
 
-// Test connectivity to the API server
+
 export async function testConnection(): Promise<{ success: boolean; message: string; latency?: number }> {
   const startTime = Date.now()
   try {
     console.log("Testing connection to:", API_CONFIG.BASE_URL)
 
-    // Try a simple HEAD request to the base URL
+
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout for test
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
 
     const response = await fetch(API_CONFIG.BASE_URL, {
       method: "HEAD",
@@ -80,14 +80,16 @@ async function makeRequest<T>(
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error("apiClient: error response", errorText)
+      console.error("apiClient: error response status:", response.status)
+      console.error("apiClient: error response body:", errorText)
       let errorData: any = {}
       try {
         errorData = JSON.parse(errorText)
+        console.error("apiClient: parsed error data:", JSON.stringify(errorData, null, 2))
       } catch {
         errorData = { message: errorText }
       }
-      throw new APIError(errorData.message || "Request failed", response.status, errorData)
+      throw new APIError(errorData.message || errorData.title || "Request failed", response.status, errorData)
     }
 
     const responseText = await response.text()
@@ -97,6 +99,12 @@ async function makeRequest<T>(
     try {
       data = JSON.parse(responseText)
     } catch {
+      // If JSON parse fails, check if it's a plain text response (like a URL)
+      console.log("apiClient: response is not JSON, treating as text:", responseText)
+      // If response looks like a URL or plain text, return it as-is
+      if (responseText.startsWith('http') || responseText.length < 500) {
+        return responseText as any
+      }
       console.error("apiClient: failed to parse JSON response")
       throw new APIError("Invalid JSON response from server")
     }
@@ -117,7 +125,7 @@ export async function apiClient<T>(
     console.log("apiClient: making request to", url)
     console.log("apiClient: request body", options?.body)
 
-    // Get auth token from localStorage
+
     let token: string | null = null
     try {
       if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
@@ -132,7 +140,7 @@ export async function apiClient<T>(
       ...(options?.headers as Record<string, string>),
     }
 
-    // Add Authorization header if token exists
+
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
     }
@@ -142,7 +150,7 @@ export async function apiClient<T>(
       headers,
     }
 
-    // Try with retry logic
+
     let lastError: Error | null = null
     const maxRetries = API_CONFIG.RETRY_ATTEMPTS || 2
 
@@ -150,7 +158,7 @@ export async function apiClient<T>(
       try {
         if (attempt > 0) {
           console.log(`apiClient: retry attempt ${attempt}/${maxRetries}`)
-          // Wait before retry (exponential backoff)
+
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
         }
 
@@ -160,13 +168,13 @@ export async function apiClient<T>(
         lastError = error as Error
         console.error(`apiClient: attempt ${attempt + 1} failed:`, error)
 
-        // Don't retry on certain errors
+
         if (error instanceof APIError && error.status && error.status >= 400 && error.status < 500) {
-          // Client errors (4xx) shouldn't be retried
+
           throw error
         }
 
-        // If this was the last attempt, throw the error
+
         if (attempt === maxRetries) {
           throw error
         }
@@ -181,7 +189,7 @@ export async function apiClient<T>(
       return { data: null, error }
     }
 
-    // Handle abort/timeout errors
+
     if (error instanceof Error && error.name === 'AbortError') {
       return {
         data: null,
@@ -189,7 +197,7 @@ export async function apiClient<T>(
       }
     }
 
-    // Handle network errors
+
     if (error instanceof Error && error.message.includes("Network request failed")) {
       return {
         data: null,

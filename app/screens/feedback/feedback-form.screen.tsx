@@ -18,6 +18,7 @@ import Header from "../../components/Header/Header"
 import Button from "../../components/button/component"
 import Icon from "react-native-vector-icons/MaterialIcons"
 import { reviewsService } from "../../../lib/api"
+import { useAuth } from "../../../lib/auth-context"
 
 const FEEDBACK_CATEGORIES = [
     "Service Quality",
@@ -31,6 +32,7 @@ const FEEDBACK_CATEGORIES = [
 export default function FeedbackFormScreen() {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const route = useRoute()
+    const { user } = useAuth()
     const carId = (route.params as any)?.carId || ""
 
     const [rating, setRating] = useState(0)
@@ -52,6 +54,11 @@ export default function FeedbackFormScreen() {
             return
         }
 
+        if (!user?.id) {
+            Alert.alert("Error", "Please login to submit feedback")
+            return
+        }
+
         setIsSubmitting(true)
         try {
             // Combine title, message, and category into comment
@@ -59,8 +66,10 @@ export default function FeedbackFormScreen() {
 
             const { data, error } = await reviewsService.createFeedback({
                 carId: carId,
+                customerId: user.id,
                 rating: rating,
                 comment: comment,
+                content: message, // Some APIs might use 'content' instead of 'comment'
             })
 
             if (error) {

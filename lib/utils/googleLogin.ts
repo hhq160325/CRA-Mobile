@@ -3,7 +3,7 @@ import { API_CONFIG, API_ENDPOINTS } from "../api/config"
 
 WebBrowser.maybeCompleteAuthSession()
 
-// Polling mechanism to detect token in localStorage
+
 let pollingInterval: NodeJS.Timeout | null = null
 
 function startTokenPolling(onTokenFound: (user: any) => void): void {
@@ -26,7 +26,7 @@ function startTokenPolling(onTokenFound: (user: any) => void): void {
         } catch (e) {
             console.error("Polling error:", e)
         }
-    }, 1000) // Check every second
+    }, 1000)
 }
 
 function stopTokenPolling(): void {
@@ -41,11 +41,11 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
     try {
         console.log("=== Starting Google Login ===")
 
-        // Build the Google login URL
+
         const googleLoginUrl = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`
         console.log("Opening URL:", googleLoginUrl)
 
-        // Start polling for token in background
+
         let tokenFoundViaPolling = false
         let pollingUser: any = null
 
@@ -56,19 +56,19 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
             WebBrowser.dismissBrowser()
         })
 
-        // Open the browser for Google OAuth
+
         const result = await WebBrowser.openAuthSessionAsync(
             googleLoginUrl,
             "carapp://auth/callback"
         )
 
-        // Stop polling when browser closes
+
         stopTokenPolling()
 
         console.log("Browser result type:", result.type)
         console.log("Browser result:", JSON.stringify(result, null, 2))
 
-        // Check if token was found via polling (browser dismissed automatically)
+
         if (tokenFoundViaPolling && pollingUser) {
             console.log("✅ Login successful via polling")
             return { success: true, user: pollingUser }
@@ -79,17 +79,17 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
             console.log("Callback URL:", result.url)
             console.log("Full result object:", result)
 
-            // Parse the callback URL to extract the response
+
             const url = new URL(result.url)
             const params = url.searchParams
 
-            // Try to get data from query params
+
             let jwtToken = params.get("jwtToken") || params.get("token")
             let username = params.get("username")
             let email = params.get("email")
             let refreshToken = params.get("refreshToken")
 
-            // If no token in params, try to get from URL fragment (hash)
+
             if (!jwtToken && url.hash) {
                 const hashParams = new URLSearchParams(url.hash.substring(1))
                 jwtToken = hashParams.get("jwtToken") || hashParams.get("token")
@@ -108,7 +108,7 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
             if (jwtToken) {
                 console.log("✅ Got JWT token from callback")
 
-                // Decode JWT to get user info
+
                 const tokenParts = jwtToken.split('.')
                 let decodedToken: any = {}
 
@@ -129,7 +129,7 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
                     }
                 }
 
-                // Determine user role from JWT
+
                 let role: "customer" | "staff" | "car-owner" = "customer"
                 const roleFromToken = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
                 const roleId = decodedToken.roleId || decodedToken.RoleId
@@ -142,7 +142,7 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
                     role = "car-owner"
                 }
 
-                // Save token to localStorage
+
                 try {
                     if (typeof localStorage !== "undefined" && localStorage?.setItem) {
                         localStorage.setItem("token", jwtToken)
@@ -151,7 +151,7 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
                             localStorage.setItem("refreshToken", refreshToken)
                         }
 
-                        // Create user object from JWT and params
+
                         const user = {
                             id: decodedToken.sub || "",
                             name: username || decodedToken.name || "",
@@ -171,7 +171,7 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
                     }
                 } catch (e) {
                     console.error("Failed to save to localStorage:", e)
-                    // Still return user even if localStorage fails
+
                     const user = {
                         id: decodedToken.sub || "",
                         name: username || decodedToken.name || "",
@@ -184,7 +184,7 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
                     return { success: true, user }
                 }
 
-                // Fallback: return success without user if localStorage is not available
+
                 const user = {
                     id: decodedToken.sub || "",
                     name: username || decodedToken.name || "",
@@ -207,13 +207,13 @@ export async function performGoogleLogin(): Promise<{ success: boolean; error?: 
         } else if (result.type === "dismiss") {
             console.log("⚠️ Browser dismissed")
 
-            // Check if token was found via polling before dismiss
+
             if (tokenFoundViaPolling && pollingUser) {
                 console.log("✅ Login successful (dismissed after token found)")
                 return { success: true, user: pollingUser }
             }
 
-            // Check localStorage one more time
+
             try {
                 if (typeof localStorage !== "undefined" && localStorage?.getItem) {
                     const token = localStorage.getItem("token")

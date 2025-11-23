@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser)
     }
 
-    // Handle deep link for Google OAuth callback
+
     const handleDeepLink = async (event: { url: string }) => {
       console.log("🔗 Deep link received:", event.url)
 
@@ -35,10 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const url = new URL(event.url)
           const params = url.searchParams
 
-          // Try to get token from query params
+
           let jwtToken = params.get("jwtToken") || params.get("token")
 
-          // If no token in params, try hash
+
           if (!jwtToken && url.hash) {
             const hashParams = new URLSearchParams(url.hash.substring(1))
             jwtToken = hashParams.get("jwtToken") || hashParams.get("token")
@@ -47,8 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (jwtToken) {
             console.log("✅ JWT token found in callback, auto-logging in...")
 
-            // Token is already saved by performGoogleLogin
-            // Just refresh user from localStorage
+
             const currentUser = authService.getCurrentUser()
             if (currentUser) {
               console.log("✅ Auto-login successful:", currentUser.email)
@@ -65,10 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Listen for deep links when app is already open
+
     const subscription = Linking.addEventListener("url", handleDeepLink)
 
-    // Check if app was opened with a deep link
+
     Linking.getInitialURL().then((url) => {
       if (url) {
         console.log("🔗 App opened with URL:", url)
@@ -83,24 +82,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // eslint-disable-next-line no-console
+
       console.log('auth-context: calling authService.login', { email })
       const { data, error } = await authService.login({ email, password })
-      // eslint-disable-next-line no-console
+
       console.log('auth-context: authService.login result', { data: data ? 'user data received' : null, error: error?.message })
 
       if (data && !error) {
-        // eslint-disable-next-line no-console
+
         console.log('auth-context: setting user in state', { userId: data.id, userRole: data.role })
         setUser(data)
         return true
       }
 
-      // eslint-disable-next-line no-console
+
       console.log('auth-context: login failed', { hasData: !!data, hasError: !!error })
       return false
     } catch (err) {
-      // eslint-disable-next-line no-console
+
       console.error('auth-context: login exception', err)
       return false
     }
@@ -110,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('auth-context: Google login initiated')
 
-      // Import the Google login helper function (not a hook)
+
       const { performGoogleLogin } = require("./utils/googleLogin")
 
       const result = await performGoogleLogin()
@@ -118,14 +117,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.success) {
         console.log('auth-context: Google login successful')
 
-        // If user is returned directly, use it
+
         if (result.user) {
           console.log('auth-context: setting user from result', { userId: result.user.id, userRole: result.user.role })
           setUser(result.user)
           return true
         }
 
-        // Otherwise get from localStorage
+
         const currentUser = authService.getCurrentUser()
         if (currentUser) {
           console.log('auth-context: setting user from localStorage', { userId: currentUser.id, userRole: currentUser.role })

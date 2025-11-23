@@ -1,4 +1,4 @@
-// Helper to map image paths (string) to require() references for React Native
+
 const assetMap: Record<string, any> = {
   '/tesla-model-s-luxury.png': require('../assets/tesla-model-s-luxury.png'),
   '/tesla-interior.jpg': require('../assets/tesla-interior.jpg'),
@@ -6,12 +6,12 @@ const assetMap: Record<string, any> = {
   '/bmw-x5-suv.png': require('../assets/bmw-x5-suv.png'),
   '/bmw-x5-interior.png': require('../assets/bmw-x5-interior.png'),
   '/bmw-x5-trunk.jpg': require('../assets/bmw-x5-trunk.jpg'),
-  // mercedes image not present in repo; fall back to a similar existing asset
+
   '/mercedes-s-class-luxury.jpg': require('../assets/luxury-sedan.png'),
   '/sleek-red-sports-car.png': require('../assets/sleek-red-sports-car.png'),
   '/porsche-911-interior.jpg': require('../assets/porsche-911-interior.jpg'),
   '/porsche-engine.jpg': require('../assets/porsche-engine.jpg'),
-  // fallbacks for mercedes interior images that are not in assets
+
   '/mercedes-s-class-interior.jpg': require('../assets/luxury-sedan.png'),
   '/mercedes-luxury-seats.jpg': require('../assets/luxury-sedan.png'),
   '/luxury-sedan.png': require('../assets/luxury-sedan.png'),

@@ -199,8 +199,8 @@ export default function PickupReturnConfirmScreen() {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`py-3 px-4 font-semibold text-sm transition-all relative ${activeTab === tab
-                                        ? "text-primary"
-                                        : "text-muted-foreground hover:text-primary"
+                                    ? "text-primary"
+                                    : "text-muted-foreground hover:text-primary"
                                     }`}
                             >
                                 {tab.charAt(0).toUpperCase() + tab.slice(1)}

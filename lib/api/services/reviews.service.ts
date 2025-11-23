@@ -16,8 +16,10 @@ export interface Review {
 
 export interface CreateFeedbackData {
   carId: string
+  customerId?: string
   rating: number
   comment: string
+  content?: string
 }
 
 export interface UpdateFeedbackData {
@@ -27,7 +29,7 @@ export interface UpdateFeedbackData {
 }
 
 export const reviewsService = {
-  // Get all feedback/reviews (admin view)
+
   async getAllFeedback(): Promise<{ data: Review[] | null; error: Error | null }> {
     console.log("reviewsService.getAllFeedback: fetching all reviews")
     const result = await apiClient<Review[]>(API_ENDPOINTS.ALL_FEEDBACK, { method: "GET" })
@@ -38,18 +40,39 @@ export const reviewsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Get feedback/reviews for a specific car
+
   async getCarReviews(carId: string): Promise<{ data: Review[] | null; error: Error | null }> {
     console.log("reviewsService.getCarReviews: fetching reviews for car", carId)
-    const result = await apiClient<Review[]>(API_ENDPOINTS.FEEDBACK_BY_CAR(carId), { method: "GET" })
+
+    // Try the car-specific endpoint first
+    let result = await apiClient<Review[]>(API_ENDPOINTS.FEEDBACK_BY_CAR(carId), { method: "GET" })
+
+    // If it fails with 404, fallback to getting all feedback and filter client-side
+    if (result.error && result.error.message.includes('404')) {
+      console.log("reviewsService.getCarReviews: car endpoint not found, trying getAllFeedback")
+      result = await apiClient<Review[]>(API_ENDPOINTS.ALL_FEEDBACK, { method: "GET" })
+
+      if (!result.error && result.data) {
+        // Filter reviews for this car
+        result.data = result.data.filter(review => review.carId === carId)
+        console.log("reviewsService.getCarReviews: filtered reviews", { dataLength: result.data.length })
+      }
+    }
+
+    // If still error, return empty array instead of error to not break the UI
+    if (result.error) {
+      console.log("reviewsService.getCarReviews: returning empty array due to error")
+      return { data: [], error: null }
+    }
+
     console.log("reviewsService.getCarReviews: result", {
       hasError: !!result.error,
       dataLength: result.data?.length
     })
-    return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
+    return { data: result.data, error: null }
   },
 
-  // Create new feedback/review
+
   async createFeedback(data: CreateFeedbackData): Promise<{ data: Review | null; error: Error | null }> {
     console.log("reviewsService.createFeedback: creating feedback", data)
     const result = await apiClient<Review>(API_ENDPOINTS.CREATE_FEEDBACK, {
@@ -63,7 +86,7 @@ export const reviewsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Update existing feedback/review
+
   async updateFeedback(data: UpdateFeedbackData): Promise<{ data: Review | null; error: Error | null }> {
     console.log("reviewsService.updateFeedback: updating feedback", data.id)
     const result = await apiClient<Review>(API_ENDPOINTS.UPDATE_FEEDBACK(data.id), {
@@ -77,7 +100,7 @@ export const reviewsService = {
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 
-  // Delete feedback/review
+
   async deleteFeedback(id: string): Promise<{ error: Error | null }> {
     console.log("reviewsService.deleteFeedback: deleting feedback", id)
     const result = await apiClient(API_ENDPOINTS.DELETE_FEEDBACK(id), { method: "DELETE" })

@@ -20,7 +20,7 @@ export default function Header() {
     const { user, logout } = useAuth()
     const { language, setLanguage, t } = useLanguage()
 
-    // Load user avatar
+
     const loadUserAvatar = async () => {
         if (!user?.id) return
 
@@ -28,7 +28,7 @@ export default function Header() {
         try {
             const { data, error } = await userService.getUserById(user.id)
             if (error) {
-                // If user not found (404), they may have been deleted - log them out
+
                 const isNotFound = (error as any).status === 404 ||
                     error.message?.includes("404") ||
                     error.message?.toLowerCase().includes("not found")
@@ -46,7 +46,7 @@ export default function Header() {
             if (data && data.imageAvatar) {
                 console.log("Header: Avatar loaded:", data.imageAvatar)
                 setUserAvatar(data.imageAvatar)
-                setRefreshKey(Date.now()) // Force image refresh
+                setRefreshKey(Date.now())
             } else {
                 console.log("Header: No avatar found in user data")
             }
@@ -56,18 +56,27 @@ export default function Header() {
         }
     }
 
-    // Load avatar once when user logs in
+
     useEffect(() => {
         if (user?.id) {
             loadUserAvatar()
         }
     }, [user?.id])
 
-    // Determine avatar source with cache busting
+
+    useFocusEffect(
+        React.useCallback(() => {
+            if (user?.id) {
+                loadUserAvatar()
+            }
+        }, [user?.id])
+    )
+
+
     const avatarSource = userAvatar
-        ? { uri: `${userAvatar}?t=${refreshKey}`, cache: 'reload' as any }
+        ? { uri: `${userAvatar}?t=${refreshKey}` }
         : user?.avatar
-            ? getAsset(user.avatar)
+            ? (user.avatar.startsWith('http') ? { uri: user.avatar } : getAsset(user.avatar))
             : require("../../../assets/admin-avatar.png")
 
     const handleLogout = () => {
@@ -78,14 +87,24 @@ export default function Header() {
 
     const handleMenuNavigation = (screen: string) => {
         setMenuVisible(false)
-        if (screen === "Profile") {
-            navigation.navigate("Profile" as any)
-        } else if (screen === "Bookings") {
-            navigation.navigate("Bookings" as any)
-        } else if (screen === "Cars") {
-            navigation.navigate("Cars" as any)
-        } else if (screen === "Home") {
-            navigation.navigate("Home" as any)
+        try {
+            if (screen === "Profile") {
+                navigation.navigate("Profile" as any)
+            } else if (screen === "Bookings") {
+                // Navigate to Bookings screen in main tab stack
+                navigation.navigate("Bookings" as any)
+            } else if (screen === "Cars") {
+                navigation.navigate("Cars" as any)
+            } else if (screen === "Home") {
+                navigation.navigate("Home" as any)
+            }
+        } catch (error) {
+            console.error("Navigation error:", error)
+            // Fallback: reset to tab stack
+            navigation.reset({
+                index: 0,
+                routes: [{ name: "tabStack" as any }],
+            })
         }
     }
 

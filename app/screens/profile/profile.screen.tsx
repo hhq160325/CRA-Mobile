@@ -17,7 +17,7 @@ import EditFieldModal from './components/EditFieldModal';
 
 // Hooks & Utils
 import { useProfileData } from './hooks/useProfileData';
-import { validateLicenseNumber, validateDateOfBirth, validateLicenseExpiry } from './utils/validation';
+import { validateLicenseNumber, validateLicenseExpiry } from './utils/validation';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -68,7 +68,7 @@ export default function ProfileScreen() {
 
   // Handle edit value change with date formatting and license number limit
   const handleEditValueChange = (text: string) => {
-    if (editingField === 'dateOfBirth' || editingField === 'licenseExpiry') {
+    if (editingField === 'licenseExpiry') {
       // Extract only the digits from input
       const digits = text.replace(/\D/g, '');
 
@@ -98,7 +98,7 @@ export default function ProfileScreen() {
       const currentValue = fieldValues[field as keyof typeof fieldValues] || "";
 
       // For date fields, always show with mask format
-      if (field === 'dateOfBirth' || field === 'licenseExpiry') {
+      if (field === 'licenseExpiry') {
         if (!currentValue) {
           setEditValue('__/__/____');
         } else {
@@ -169,13 +169,7 @@ export default function ProfileScreen() {
       }
     }
 
-    if (editingField === "dateOfBirth") {
-      const validation = validateDateOfBirth(value);
-      if (!validation.valid) {
-        Alert.alert("Invalid Date", validation.error || "Invalid date of birth");
-        return;
-      }
-    }
+
 
     if (editingField === "licenseExpiry") {
       const validation = validateLicenseExpiry(value);
@@ -198,7 +192,6 @@ export default function ProfileScreen() {
         email: "email",
         licenseNumber: "licenseNumber",
         licenseExpiry: "licenseExpiry",
-        dateOfBirth: "dateOfBirth",
         gender: "gender",
         address: "address",
         username: "username",
@@ -209,12 +202,24 @@ export default function ProfileScreen() {
 
       // Convert date format from DD/MM/YYYY to YYYY-MM-DD for API
       let apiValue = value;
-      if (editingField === 'dateOfBirth' || editingField === 'licenseExpiry') {
+      if (editingField === 'licenseExpiry') {
         const [day, month, year] = value.split('/');
         apiValue = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       }
 
+      // Build update data with ALL current fields + the changed field
       const updateData: any = {
+        // Keep all existing fields
+        username: userData?.username || fieldValues.username || "",
+        fullname: userData?.fullname || fieldValues.fullname || "",
+        email: userData?.email || fieldValues.email || "",
+        phoneNumber: userData?.phoneNumber || fieldValues.phone || "",
+        address: userData?.address || fieldValues.address || "",
+        gender: userData?.gender !== undefined ? userData.gender : (fieldValues.gender === "Male" ? 0 : fieldValues.gender === "Female" ? 1 : 2),
+        licenseNumber: userData?.licenseNumber || fieldValues.licenseNumber || "",
+        licenseExpiry: userData?.licenseExpiry || fieldValues.licenseExpiry || "",
+
+        // Override with the new value
         [apiFieldName]: apiValue,
       };
 
@@ -277,7 +282,20 @@ export default function ProfileScreen() {
     setIsSaving(true);
     try {
       const genderValue = gender === "Male" ? 0 : gender === "Female" ? 1 : 2;
-      const { data, error } = await userService.updateUserInfo(user.id, { gender: genderValue });
+
+      // Build update data with ALL current fields + the changed gender
+      const updateData = {
+        username: userData?.username || fieldValues.username || "",
+        fullname: userData?.fullname || fieldValues.fullname || "",
+        email: userData?.email || fieldValues.email || "",
+        phoneNumber: userData?.phoneNumber || fieldValues.phone || "",
+        address: userData?.address || fieldValues.address || "",
+        licenseNumber: userData?.licenseNumber || fieldValues.licenseNumber || "",
+        licenseExpiry: userData?.licenseExpiry || fieldValues.licenseExpiry || "",
+        gender: genderValue,
+      };
+
+      const { data, error } = await userService.updateUserInfo(user.id, updateData);
 
       if (error) {
         Alert.alert("Update Failed", error.message || "Failed to update gender");
@@ -409,40 +427,81 @@ export default function ProfileScreen() {
 
     setIsSaving(true);
     try {
-      const { data, error } = await userService.uploadAvatar(user.id, uri);
+      // Step 1: Upload image to Supabase storage
+      const { storageService } = require("../../../lib/api");
+      const { url, error: uploadError } = await storageService.uploadAvatar(user.id, uri);
+
+      if (uploadError || !url) {
+        Alert.alert("Upload Failed", uploadError?.message || "Failed to upload image to storage");
+        return;
+      }
+
+      console.log("Image uploaded to:", url);
+
+      // Step 2: Update user profile with the image URL
+      const updateData = {
+        username: userData?.username || fieldValues.username || "",
+        fullname: userData?.fullname || fieldValues.fullname || "",
+        email: userData?.email || fieldValues.email || "",
+        phoneNumber: userData?.phoneNumber || fieldValues.phone || "",
+        address: userData?.address || fieldValues.address || "",
+        gender: userData?.gender !== undefined ? userData.gender : (fieldValues.gender === "Male" ? 0 : fieldValues.gender === "Female" ? 1 : 2),
+        licenseNumber: userData?.licenseNumber || fieldValues.licenseNumber || "",
+        licenseExpiry: userData?.licenseExpiry || fieldValues.licenseExpiry || "",
+        imageAvatar: url,
+      };
+
+      const { data, error } = await userService.updateUserInfo(user.id, updateData);
 
       if (error) {
-        // Check if it's a 405 error (method not allowed)
-        if (error.message?.includes("405")) {
-          Alert.alert(
-            "Upload Not Supported",
-            "The backend doesn't currently support avatar uploads. Please contact support or use a profile picture URL instead.",
-            [{ text: "OK" }]
-          );
-        } else {
-          Alert.alert("Upload Failed", error.message || "Failed to upload avatar");
-        }
+        Alert.alert("Update Failed", error.message || "Failed to update profile with new avatar");
         return;
       }
 
       if (data) {
         setUserData(data);
-        // Force a small delay to ensure the image is uploaded
+        // Force a small delay to ensure the image is loaded
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+
       Alert.alert("Success", "Profile picture updated successfully!");
     } catch (err: any) {
+      console.error("Avatar upload error:", err);
       Alert.alert("Error", err?.message || "Failed to upload avatar");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const avatarSource = userData?.imageAvatar
-    ? { uri: `${userData.imageAvatar}?t=${Date.now()}` }
-    : user?.avatar
-      ? getAsset(user.avatar)
-      : require('../../../assets/male-avatar.png');
+  // Get avatar source - support both URL and local assets
+  const getAvatarSource = () => {
+    // First check userData.imageAvatar from API
+    if (userData?.imageAvatar) {
+      // If it's a URL, use it directly
+      if (userData.imageAvatar.startsWith('http://') || userData.imageAvatar.startsWith('https://')) {
+        return { uri: `${userData.imageAvatar}?t=${Date.now()}` }
+      }
+      // Otherwise try to get local asset
+      const localAsset = getAsset(userData.imageAvatar)
+      if (localAsset) return localAsset
+    }
+
+    // Then check user.avatar from auth context
+    if (user?.avatar) {
+      // If it's a URL, use it directly
+      if (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) {
+        return { uri: `${user.avatar}?t=${Date.now()}` }
+      }
+      // Otherwise try to get local asset
+      const localAsset = getAsset(user.avatar)
+      if (localAsset) return localAsset
+    }
+
+    // Fallback to default avatar
+    return require('../../../assets/male-avatar.png')
+  }
+
+  const avatarSource = getAvatarSource();
 
   if (isLoading) {
     return (
@@ -482,13 +541,6 @@ export default function ProfileScreen() {
             padding: scale(16),
           }}
         >
-          <ProfileField
-            label="Date of Birth"
-            value={fieldValues.dateOfBirth}
-            placeholder="Add Date of Birth"
-            onEdit={() => handleEditField("dateOfBirth")}
-          />
-
           <ProfileField
             label="Phone Number"
             value={fieldValues.phone}

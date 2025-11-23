@@ -75,8 +75,7 @@ export const userService = {
             return phone
         }
 
-        // Show first 3 and last 2 digits, mask the middle
-        // Example: 0931234519 -> 093*****19
+
         const first = phone.substring(0, 3)
         const last = phone.substring(phone.length - 2)
         const masked = "*".repeat(phone.length - 5)
@@ -108,9 +107,10 @@ export const userService = {
         console.log("userService.updateUserInfo: updating user", userId)
 
         const result = await apiClient<UserData>(API_ENDPOINTS.UPDATE_USER_INFO, {
-            method: "PUT",
+            method: "PATCH",
             body: JSON.stringify({
                 id: userId,
+                status: "Active", // Required field by API
                 ...updateData,
             }),
         })
@@ -132,7 +132,7 @@ export const userService = {
         console.log("userService.uploadAvatar: uploading avatar for user", userId)
 
         try {
-            // Get auth token
+
             let token: string | null = null
             try {
                 if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
@@ -142,16 +142,16 @@ export const userService = {
                 console.error("Failed to get token from localStorage:", e)
             }
 
-            // Try approach 1: FormData with POST
+
             console.log("userService.uploadAvatar: trying FormData with POST")
             const formData = new FormData()
 
-            // Extract filename from URI
+
             const filename = imageUri.split('/').pop() || 'avatar.jpg'
             const match = /\.(\w+)$/.exec(filename)
             const type = match ? `image/${match[1]}` : 'image/jpeg'
 
-            // Append the image file
+
             formData.append('imageAvatar', {
                 uri: imageUri,
                 name: filename,
@@ -175,13 +175,13 @@ export const userService = {
 
             console.log("userService.uploadAvatar: POST response status", response.status)
 
-            // If POST fails with 405, the endpoint might only accept PUT with JSON
-            if (!response.ok && response.status === 405) {
-                console.log("userService.uploadAvatar: POST failed, trying PUT with image URL")
 
-                // Just send the URI as a string - maybe the backend can fetch it
+            if (!response.ok && response.status === 405) {
+                console.log("userService.uploadAvatar: POST failed, trying PATCH with image URL")
+
+
                 response = await fetch(`${baseUrl}${url}`, {
-                    method: "PUT",
+                    method: "PATCH",
                     headers: {
                         'Authorization': token ? `Bearer ${token}` : '',
                         'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ export const userService = {
                     }),
                 })
 
-                console.log("userService.uploadAvatar: PUT response status", response.status)
+                console.log("userService.uploadAvatar: PATCH response status", response.status)
             }
 
             if (!response.ok) {
@@ -207,7 +207,7 @@ export const userService = {
             try {
                 data = JSON.parse(responseText)
             } catch {
-                // If response is not JSON, consider it success if status is OK
+
                 console.log("userService.uploadAvatar: non-JSON response, fetching user data")
                 return await this.getUserById(userId)
             }

@@ -6,21 +6,15 @@ import { colors } from "../../theme/colors"
 import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
+import type { RouteProp } from "@react-navigation/native"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 
-interface RouteParams {
-    pickupLocation: string
-    pickupDate: string
-    pickupTime: string
-    dropoffLocation: string
-    dropoffDate: string
-    dropoffTime: string
-    showRoute: boolean
-}
+type CarMapRouteScreenRouteProp = RouteProp<NavigatorParamList, "CarMapRouteScreen">
 
-export default function CarMapRouteScreen({ route }: { route: { params: RouteParams } }) {
+export default function CarMapRouteScreen() {
+    const route = useRoute<CarMapRouteScreenRouteProp>()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [loading, setLoading] = useState(true)
     const [chargingStations, setChargingStations] = useState<Array<{ id: string; latitude: number; longitude: number; name: string }>>([])
@@ -28,9 +22,9 @@ export default function CarMapRouteScreen({ route }: { route: { params: RoutePar
 
     const params = route.params
 
-    // Mock coordinates (in real app, use geocoding API)
-    const pickupCoords = { latitude: 10.8231, longitude: 106.6297 } // Ho Chi Minh City
-    const dropoffCoords = { latitude: 10.7769, longitude: 106.7009 } // Thu Duc City
+
+    const pickupCoords = { latitude: 10.8231, longitude: 106.6297 }
+    const dropoffCoords = { latitude: 10.7769, longitude: 106.7009 }
 
     useEffect(() => {
         loadRouteData()
@@ -39,7 +33,7 @@ export default function CarMapRouteScreen({ route }: { route: { params: RoutePar
     const loadRouteData = async () => {
         setLoading(true)
 
-        // Calculate distance
+
         const distance = locationService.calculateDistance(
             pickupCoords.latitude,
             pickupCoords.longitude,
@@ -48,7 +42,7 @@ export default function CarMapRouteScreen({ route }: { route: { params: RoutePar
         )
         setRouteDistance(distance)
 
-        // Mock charging stations along the route (positioned between pickup and dropoff)
+
         const mockStations = [
             {
                 id: "station1",
@@ -74,7 +68,7 @@ export default function CarMapRouteScreen({ route }: { route: { params: RoutePar
         setLoading(false)
     }
 
-    // Create route coordinates (simple straight line with waypoints for charging stations)
+
     const routeCoordinates = [
         pickupCoords,
         ...chargingStations.map(station => ({ latitude: station.latitude, longitude: station.longitude })),
@@ -82,7 +76,7 @@ export default function CarMapRouteScreen({ route }: { route: { params: RoutePar
     ]
 
     const markers: MapMarker[] = [
-        // Pickup location
+
         {
             id: "pickup",
             latitude: pickupCoords.latitude,
@@ -91,7 +85,7 @@ export default function CarMapRouteScreen({ route }: { route: { params: RoutePar
             description: `Pickup: ${params.pickupDate} ${params.pickupTime}`,
             type: "user" as const,
         },
-        // Dropoff location
+
         {
             id: "dropoff",
             latitude: dropoffCoords.latitude,
@@ -100,7 +94,7 @@ export default function CarMapRouteScreen({ route }: { route: { params: RoutePar
             description: `Dropoff: ${params.dropoffDate} ${params.dropoffTime}`,
             type: "car" as const,
         },
-        // Charging stations
+
         ...chargingStations.map((station) => ({
             id: station.id,
             latitude: station.latitude,

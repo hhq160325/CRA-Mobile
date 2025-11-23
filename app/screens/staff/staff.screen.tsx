@@ -121,11 +121,19 @@ export default function StaffScreen() {
     const { user } = useAuth()
     const navigation = useNavigation()
 
-    // Redirect if not staff
+    // Redirect if not staff (but wait for user to be loaded)
     useEffect(() => {
-        if (user && user.role !== "staff") {
-            console.log("Non-staff user trying to access staff screen, redirecting...")
-                ; (navigation as any).navigate("Home")
+        if (user) {
+            console.log("Staff screen: Checking user role:", user.role, "roleId:", user.roleId)
+            if (user.role !== "staff" && user.roleId !== 1002) {
+                console.log("Non-staff user trying to access staff screen, redirecting to tabStack...")
+                    ; (navigation as any).reset({
+                        index: 0,
+                        routes: [{ name: "tabStack" }],
+                    })
+            } else {
+                console.log("Staff user confirmed, staying on staff screen")
+            }
         }
     }, [user, navigation])
 
@@ -202,13 +210,43 @@ export default function StaffScreen() {
                         }
                     }
 
-                    // Fetch customer name if available
-                    let customerName = "Unknown Customer"
-                    if (booking.userId) {
+                    // Fetch detailed booking to get pickupPlace and dropoffPlace
+                    let bookingDetails = booking
+                    try {
+                        const { data: detailedBooking } = await bookingsService.getBookingById(booking.id)
+                        if (detailedBooking) {
+                            bookingDetails = detailedBooking
+                        }
+                    } catch (err) {
+                        console.log("Staff: Error fetching booking details:", err)
+                    }
+
+                    // Fetch car details using carId
+                    let carName = "Unknown Car"
+                    let carType = "Standard"
+                    if (bookingDetails.carId) {
                         try {
-                            const { data: user } = await paymentService.getUserById(booking.userId)
+                            const { carsService } = require("../../../lib/api")
+                            const { data: cars } = await carsService.getAllCars()
+                            if (cars) {
+                                const car = cars.find((c: any) => c.id === bookingDetails.carId)
+                                if (car) {
+                                    carName = car.name || car.model || "Unknown Car"
+                                    carType = car.type || car.category || "Standard"
+                                }
+                            }
+                        } catch (err) {
+                            console.log("Staff: Error fetching car details:", err)
+                        }
+                    }
+
+                    // Fetch customer name
+                    let customerName = "Unknown Customer"
+                    if (bookingDetails.userId) {
+                        try {
+                            const { data: user } = await paymentService.getUserById(bookingDetails.userId)
                             if (user) {
-                                customerName = user.name || user.email || "Unknown Customer"
+                                customerName = user.fullname || user.username || user.email || "Unknown Customer"
                             }
                         } catch (err) {
                             console.log("Staff: Error fetching user:", err)
@@ -216,20 +254,20 @@ export default function StaffScreen() {
                     }
 
                     return {
-                        id: invoice?.id || booking.id, // Use invoice ID as payment ID
+                        id: invoice?.id || booking.id,
                         bookingId: booking.id,
-                        carName: booking.carName || "Unknown Car",
-                        carType: booking.carType || "Standard",
+                        carName: carName,
+                        carType: carType,
                         customerName: customerName,
                         amount: invoice?.amount || booking.totalPrice || 0,
                         status: paymentStatus,
-                        date: new Date(booking.startDate || booking.pickupTime),
-                        pickupTime: new Date(booking.startDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-                        pickupLocation: booking.pickupLocation,
-                        pickupDate: booking.startDate,
-                        dropoffLocation: booking.dropoffLocation,
-                        dropoffDate: booking.endDate,
-                        dropoffTime: new Date(booking.endDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                        date: new Date(bookingDetails.pickupTime || bookingDetails.createDate),
+                        pickupTime: new Date(bookingDetails.pickupTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                        pickupLocation: bookingDetails.pickupPlace || "N/A",
+                        pickupDate: bookingDetails.pickupTime,
+                        dropoffLocation: bookingDetails.dropoffPlace || "N/A",
+                        dropoffDate: bookingDetails.dropoffTime,
+                        dropoffTime: new Date(bookingDetails.dropoffTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
                         returnTime: null,
                         pickupImage: null,
                         returnImage: null,

@@ -78,6 +78,36 @@ const MainStack = () => {
   )
 }
 
+const StaffStack = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen
+        name="StaffScreen"
+        component={StaffScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="PickupReturnConfirm"
+        component={PickupReturnConfirmScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+    </Stack.Navigator>
+  )
+}
+
+
+
 const AuthStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -172,6 +202,7 @@ const CombinedStack = () => {
 
   const getInitialComponent = () => {
     if (!isAuthenticated) {
+      console.log("CombinedStack: User not authenticated, returning AuthStack")
       return AuthStack
     }
 
@@ -180,9 +211,11 @@ const CombinedStack = () => {
     const isStaff = userRole === "staff" || user?.roleId === 1002
 
     if (isStaff) {
-      console.log("CombinedStack: User is staff, should show StaffScreen")
+      console.log("CombinedStack: User is staff, returning StaffStack")
+      return StaffStack
     }
 
+    console.log("CombinedStack: User authenticated, returning MainStack")
     return MainStack
   }
 
@@ -253,6 +286,13 @@ const CombinedStack = () => {
         }}
       />
       <Stack.Screen
+        name="staffStack"
+        component={StaffStack}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
         name="authStack"
         component={AuthStack}
         options={{
@@ -269,6 +309,13 @@ const CombinedStack = () => {
       <Stack.Screen
         name="StaffScreen"
         component={StaffScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

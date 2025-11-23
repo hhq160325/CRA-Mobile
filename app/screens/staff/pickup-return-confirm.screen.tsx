@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, Pressable, ScrollView, Image, Alert } from "react-native"
 import { useRoute } from "@react-navigation/native"
 import type { RouteProp } from "@react-navigation/native"
@@ -9,7 +9,7 @@ import * as ImagePicker from "expo-image-picker"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
-import { confirmationService } from "../../../lib/api"
+import { confirmationService, bookingsService, carsService, paymentService } from "../../../lib/api"
 
 type ConfirmationType = "pickup" | "return"
 
@@ -61,6 +61,8 @@ export default function PickupReturnConfirmScreen() {
     const [pickupImage, setPickupImage] = useState<ImageData | null>(null)
     const [returnImage, setReturnImage] = useState<ImageData | null>(null)
     const [loading, setLoading] = useState(false)
+    const [bookingData, setBookingData] = useState<any>(null)
+    const [fetchingBooking, setFetchingBooking] = useState(true)
 
     // Format date for display
     const formatDate = (dateStr: string) => {
@@ -69,11 +71,114 @@ export default function PickupReturnConfirmScreen() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
 
-    // Use real data from params or fallback to mock data
-    const payment = {
+    // Format time for display
+    const formatTime = (dateStr: string) => {
+        if (!dateStr) return "N/A"
+        const date = new Date(dateStr)
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    }
+
+    // Fetch booking details from API
+    useEffect(() => {
+        const fetchBookingDetails = async () => {
+            if (!bookingId) {
+                console.log("No bookingId provided, using params data")
+                setFetchingBooking(false)
+                return
+            }
+
+            try {
+                setFetchingBooking(true)
+                console.log("Fetching booking details for:", bookingId)
+
+                // Fetch booking details
+                const { data: booking, error: bookingError } = await bookingsService.getBookingById(bookingId)
+
+                if (bookingError || !booking) {
+                    console.error("Error fetching booking:", bookingError)
+                    Alert.alert("Error", "Failed to fetch booking details")
+                    setFetchingBooking(false)
+                    return
+                }
+
+                console.log("Booking fetched:", booking)
+                console.log("Pickup location from booking:", booking.pickupLocation)
+                console.log("Dropoff location from booking:", booking.dropoffLocation)
+
+                // Fetch car details
+                let fetchedCarName = carName || "Unknown Car"
+                let fetchedCarType = carType || "Standard"
+                let fetchedCarModel = "N/A"
+                let fetchedLicensePlate = "N/A"
+                if (booking.carId) {
+                    try {
+                        const { data: cars } = await carsService.getAllCars()
+                        if (cars) {
+                            const car = cars.find((c: any) => c.id === booking.carId)
+                            if (car) {
+                                fetchedCarName = car.name || car.model || "Unknown Car"
+                                fetchedCarType = car.category || "Standard"
+                                fetchedCarModel = car.model || "N/A"
+                                fetchedLicensePlate = car.licensePlate || "N/A"
+                            }
+                        }
+                    } catch (err) {
+                        console.log("Error fetching car details:", err)
+                    }
+                }
+
+                // Fetch customer details
+                let fetchedCustomerName = customerName || "Unknown Customer"
+                if (booking.userId) {
+                    try {
+                        const { data: user } = await paymentService.getUserById(booking.userId)
+                        if (user) {
+                            fetchedCustomerName = user.name || user.email || "Unknown Customer"
+                        }
+                    } catch (err) {
+                        console.log("Error fetching user details:", err)
+                    }
+                }
+
+                // Set the booking data
+                const newBookingData = {
+                    id: booking.id,
+                    carName: fetchedCarName,
+                    carType: fetchedCarType,
+                    carModel: fetchedCarModel,
+                    licensePlate: fetchedLicensePlate,
+                    customerName: fetchedCustomerName,
+                    amount: booking.totalPrice || 0,
+                    pickupLocation: booking.pickupLocation || "N/A",
+                    pickupDate: formatDate(booking.startDate),
+                    pickupTime: formatTime(booking.startDate),
+                    dropoffLocation: booking.dropoffLocation || "N/A",
+                    dropoffDate: formatDate(booking.endDate),
+                    dropoffTime: formatTime(booking.endDate),
+                    mileage: 15420, // Mock data - would come from car details
+                    fuelLevel: "Full", // Mock data - would come from car details
+                }
+
+                console.log("Booking data to set:", newBookingData)
+                setBookingData(newBookingData)
+            } catch (error) {
+                console.error("Exception fetching booking details:", error)
+                Alert.alert("Error", "Failed to load booking details")
+            } finally {
+                setFetchingBooking(false)
+            }
+        }
+
+        fetchBookingDetails()
+    }, [bookingId])
+
+    // Use fetched booking data or fallback to params or mock data
+    const payment = bookingData || {
         id: paymentId || "PAY001",
         carName: carName || "Koenigsegg",
         carType: carType || "Sport",
+        carModel: "Agera RS",
+        licensePlate: "N/A",
         customerName: customerName || "John Doe",
         amount: 450,
         date: pickupDate ? new Date(pickupDate) : new Date("2024-01-15"),
@@ -274,6 +379,18 @@ export default function PickupReturnConfirmScreen() {
         }
     }
 
+    // Show loading state while fetching booking
+    if (fetchingBooking) {
+        return (
+            <View style={{ flex: 1, backgroundColor: colors.background }}>
+                <Header />
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <Text style={{ fontSize: scale(14), color: colors.placeholder }}>Loading booking details...</Text>
+                </View>
+            </View>
+        )
+    }
+
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <Header />
@@ -290,6 +407,18 @@ export default function PickupReturnConfirmScreen() {
                             <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Car</Text>
                             <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
                                 {payment.carName} ({payment.carType})
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
+                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Model</Text>
+                            <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
+                                {payment.carModel || "N/A"}
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
+                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>License Plate</Text>
+                            <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
+                                {payment.licensePlate || "N/A"}
                             </Text>
                         </View>
                         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>

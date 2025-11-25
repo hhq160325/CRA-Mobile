@@ -34,6 +34,7 @@ export const API_ENDPOINTS = {
   BOOKINGS_BY_CAR: (carId: string) => `/Booking/GetBookingsForCar/${carId}`,
   CREATE_BOOKING: "/Booking/CreateBooking",
   UPDATE_BOOKING: "/Booking/UpdateBooking",
+  UPDATE_BOOKING_STATUS: "/Booking/UpdateBooking",
   CANCEL_BOOKING: (id: string) => `/bookings/${id}/cancel`,
 
   // Feedback (Reviews)
@@ -69,6 +70,7 @@ export const API_ENDPOINTS = {
   GET_PAYMENT: (orderCode: string) => `/Payment/${orderCode}`,
   CREATE_PAYOS_PAYMENT: "/CreatePayOSPaymentRequest",
   CREATE_PAYMENT_FROM_INVOICE: (invoiceId: string) => `/Payment/CreatePaymentFromInvoice/${invoiceId}`,
+  CREATE_RENTAL_PAYMENT: "/PayOS/Booking/CreateRentalPayment",
 
   // Legacy payment endpoints (keeping for backward compatibility)
   PAYMENT_INTENT: "/payments/intent",
@@ -92,4 +94,15 @@ export const API_ENDPOINTS = {
   CALCULATE_ROUTE: "/locations/route",
   GEOCODE: "/locations/geocode",
   REVERSE_GEOCODE: "/locations/reverse-geocode",
+
+  // Notifications
+  GET_NOTIFICATIONS: (userId: string) => `/Notification/GetNotificationsForUser/${userId}`,
+  MARK_NOTIFICATION_READ: (notificationId: string) => `/Notification/MarkAsRead/${notificationId}`,
+  DELETE_NOTIFICATION: (notificationId: string) => `/Notification/DeleteNotification/${notificationId}`,
+
+  // Schedules
+  GET_SCHEDULE_BY_BOOKING: (bookingId: string, scheduleType: string) => `/Schedule/GetLastScheduleByBookingAndType/${bookingId}/${scheduleType}`,
+  CHECK_IN: "/Schedule/checkIn",
+  CHECK_OUT: "/Schedule/checkOut",
+  UPLOAD_SCHEDULE_IMAGE: (scheduleId: string) => `/Schedule/UploadImage/${scheduleId}`,
 }

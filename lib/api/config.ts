@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
   GET_ALL_USERS: "/User/GetAllUsers",
   UPDATE_USER_INFO: "/User/UpdateUserInfo",
   UPLOAD_AVATAR: "/User/UploadAvatar",
+  UPLOAD_DRIVER_LICENSE: (userId: string) => `/User/driverLicense/${userId}`,
 
   // Payments & Invoices
   GET_USER: (userId: string) => `/User/GetUserById?userId=${userId}`,

@@ -13,7 +13,6 @@ import DriverLicenseSection from './components/DriverLicenseSection';
 import PasswordVerificationModal from './components/PasswordVerificationModal';
 import EditFieldModal from './components/EditFieldModal';
 import { useProfileData } from './hooks/useProfileData';
-import { validateLicenseNumber, validateLicenseExpiry } from './utils/validation';
 
 export default function ProfileScreen() {
   const { user, refreshUser } = useAuth();
@@ -99,57 +98,12 @@ export default function ProfileScreen() {
   };
 
   const getStatusColor = (field: string) => {
-    const emptyFields = ["phone", "licenseNumber"];
+    const emptyFields = ["phone"];
     return emptyFields.includes(field) || !fieldValues[field as keyof typeof fieldValues] ? colors.red : colors.green;
   };
 
-
-  const formatDateWithMask = (text: string) => {
-
-    const cleaned = text.replace(/\D/g, '');
-
-
-    let result = '';
-    const mask = '__/__/____';
-    let cleanedIndex = 0;
-
-    for (let i = 0; i < mask.length && cleanedIndex < cleaned.length; i++) {
-      if (mask[i] === '_') {
-        result += cleaned[cleanedIndex];
-        cleanedIndex++;
-      } else {
-        result += mask[i];
-      }
-    }
-
-
-    if (result.length < mask.length) {
-      result += mask.slice(result.length);
-    }
-
-    return result;
-  };
-
-
   const handleEditValueChange = (text: string) => {
-    if (editingField === 'licenseExpiry') {
-
-      const digits = text.replace(/\D/g, '');
-
-
-      const limitedDigits = digits.slice(0, 8);
-      const formatted = formatDateWithMask(limitedDigits);
-      setEditValue(formatted);
-    } else if (editingField === 'licenseNumber') {
-
-      const digits = text.replace(/\D/g, '');
-
-
-      const limitedDigits = digits.slice(0, 12);
-      setEditValue(limitedDigits);
-    } else {
-      setEditValue(text);
-    }
+    setEditValue(text);
   };
 
   const handleEditField = (field: string) => {
@@ -160,20 +114,7 @@ export default function ProfileScreen() {
       setShowPasswordModal(true);
     } else {
       const currentValue = fieldValues[field as keyof typeof fieldValues] || "";
-
-
-      if (field === 'licenseExpiry') {
-        if (!currentValue) {
-          setEditValue('__/__/____');
-        } else {
-
-          const digits = currentValue.replace(/\D/g, '');
-          setEditValue(formatDateWithMask(digits));
-        }
-      } else {
-        setEditValue(currentValue);
-      }
-
+      setEditValue(currentValue);
       setEditingField(field);
     }
   };
@@ -225,24 +166,6 @@ export default function ProfileScreen() {
 
     const value = editValue;
 
-    // Validation
-    if (editingField === "licenseNumber") {
-      if (!validateLicenseNumber(value)) {
-        Alert.alert("Invalid License Number", "License number must be exactly 12 digits.");
-        return;
-      }
-    }
-
-
-
-    if (editingField === "licenseExpiry") {
-      const validation = validateLicenseExpiry(value);
-      if (!validation.valid) {
-        Alert.alert("Invalid Date", validation.error || "Invalid expiry date");
-        return;
-      }
-    }
-
     if (!user?.id) {
       Alert.alert("Error", "User not found. Please login again.");
       return;
@@ -254,8 +177,6 @@ export default function ProfileScreen() {
       const fieldMapping: Record<string, string> = {
         phone: "phoneNumber",
         email: "email",
-        licenseNumber: "licenseNumber",
-        licenseExpiry: "licenseExpiry",
         gender: "gender",
         address: "address",
         username: "username",
@@ -263,13 +184,7 @@ export default function ProfileScreen() {
       };
 
       const apiFieldName = fieldMapping[editingField] || editingField;
-
-      // Convert date format from DD/MM/YYYY to YYYY-MM-DD for API
-      let apiValue = value;
-      if (editingField === 'licenseExpiry') {
-        const [day, month, year] = value.split('/');
-        apiValue = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      }
+      const apiValue = value;
 
       // Fetch latest user data first to ensure we have all current values
       const { data: currentUserData, error: fetchError } = await userService.getUserById(user.id);
@@ -387,6 +302,52 @@ export default function ProfileScreen() {
     );
   };
 
+  const uploadDriverLicense = async (uri: string) => {
+    if (!user?.id) {
+      console.error("Upload driver license failed: No user ID");
+      Alert.alert("Error", "User not found. Please login again.");
+      return;
+    }
+
+    console.log("=== Starting Driver License Upload ===");
+    console.log("User ID:", user.id);
+    console.log("Image URI:", uri);
+
+    setIsSaving(true);
+    try {
+      console.log("Uploading driver license image...");
+      const { data, error } = await userService.uploadDriverLicense(user.id, uri);
+
+      if (error) {
+        console.error("Driver license upload failed:", error);
+        Alert.alert("Upload Failed", error.message || "Failed to upload driver's license");
+        return;
+      }
+
+      console.log("✓ Driver license uploaded successfully");
+
+      // Update local state
+      setLicenseImage(uri);
+
+      // Refresh user data to get updated license info
+      const { data: updatedUser, error: fetchError } = await userService.getUserById(user.id);
+      if (!fetchError && updatedUser) {
+        setUserData(updatedUser);
+        console.log("✓ User data refreshed");
+      }
+
+      console.log("=== Driver License Upload Complete ===");
+      Alert.alert("Success", "Driver's license uploaded successfully!");
+    } catch (err: any) {
+      console.error("=== Driver License Upload Error ===");
+      console.error("Error details:", err);
+      console.error("Error message:", err?.message);
+      Alert.alert("Error", err?.message || "Failed to upload driver's license");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const openCamera = async () => {
     try {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
@@ -404,8 +365,9 @@ export default function ProfileScreen() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setLicenseImage(result.assets[0].uri);
-        Alert.alert("Success", "Driver's license photo uploaded!");
+        const imageUri = result.assets[0].uri;
+        console.log("Camera image selected:", imageUri);
+        await uploadDriverLicense(imageUri);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to open camera");
@@ -429,8 +391,9 @@ export default function ProfileScreen() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setLicenseImage(result.assets[0].uri);
-        Alert.alert("Success", "Driver's license photo uploaded!");
+        const imageUri = result.assets[0].uri;
+        console.log("Gallery image selected:", imageUri);
+        await uploadDriverLicense(imageUri);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to open gallery");
@@ -708,13 +671,8 @@ export default function ProfileScreen() {
         </View>
 
         <DriverLicenseSection
-          licenseNumber={fieldValues.licenseNumber}
-          licenseExpiry={fieldValues.licenseExpiry}
           licenseImage={licenseImage}
-          onEditLicenseNumber={() => handleEditField("licenseNumber")}
-          onEditLicenseExpiry={() => handleEditField("licenseExpiry")}
           onUploadLicense={handleUploadLicense}
-          getStatusColor={getStatusColor}
         />
 
         <View style={{ height: verticalScale(20) }} />

@@ -222,6 +222,72 @@ export const userService = {
             return { data: null, error: error as Error }
         }
     },
+
+    async uploadDriverLicense(userId: string, imageUri: string): Promise<{ data: any | null; error: Error | null }> {
+        console.log("userService.uploadDriverLicense: uploading driver license for user", userId)
+
+        try {
+            let token: string | null = null
+            try {
+                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                    token = localStorage.getItem("token")
+                }
+            } catch (e) {
+                console.error("Failed to get token from localStorage:", e)
+            }
+
+            const formData = new FormData()
+
+            const filename = imageUri.split('/').pop() || 'license.jpg'
+            const match = /\.(\w+)$/.exec(filename)
+            const type = match ? `image/${match[1]}` : 'image/jpeg'
+
+            formData.append('images', {
+                uri: imageUri,
+                name: filename,
+                type: type,
+            } as any)
+
+            formData.append('userId', userId)
+
+            const url = API_ENDPOINTS.UPLOAD_DRIVER_LICENSE(userId)
+            const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
+
+            console.log("userService.uploadDriverLicense: uploading to", `${baseUrl}${url}`)
+
+            const response = await fetch(`${baseUrl}${url}`, {
+                method: "POST",
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+                body: formData,
+            })
+
+            console.log("userService.uploadDriverLicense: response status", response.status)
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("userService.uploadDriverLicense: error response", errorText)
+                return { data: null, error: new Error(`Upload failed: ${response.status} - ${errorText}`) }
+            }
+
+            const responseText = await response.text()
+            let data: any
+
+            try {
+                data = JSON.parse(responseText)
+            } catch {
+                console.log("userService.uploadDriverLicense: non-JSON response, treating as success")
+                data = { success: true }
+            }
+
+            console.log("userService.uploadDriverLicense: success")
+            return { data, error: null }
+        } catch (error) {
+            console.error("userService.uploadDriverLicense: caught error", error)
+            return { data: null, error: error as Error }
+        }
+    },
 }
 
 export type { UserData }

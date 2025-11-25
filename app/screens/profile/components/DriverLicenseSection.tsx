@@ -3,26 +3,15 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../theme/colors';
 import { scale, verticalScale } from '../../../theme/scale';
-import ProfileField from './ProfileField';
 
 interface DriverLicenseSectionProps {
-    licenseNumber: string;
-    licenseExpiry: string;
     licenseImage: string | null;
-    onEditLicenseNumber: () => void;
-    onEditLicenseExpiry: () => void;
     onUploadLicense: () => void;
-    getStatusColor: (field: string) => string;
 }
 
 export default function DriverLicenseSection({
-    licenseNumber,
-    licenseExpiry,
     licenseImage,
-    onEditLicenseNumber,
-    onEditLicenseExpiry,
     onUploadLicense,
-    getStatusColor,
 }: DriverLicenseSectionProps) {
     return (
         <View
@@ -44,22 +33,6 @@ export default function DriverLicenseSection({
             >
                 Driver's License
             </Text>
-
-            <ProfileField
-                label="License Number"
-                value={licenseNumber}
-                placeholder="Add License Number"
-                onEdit={onEditLicenseNumber}
-                showStatusDot
-                statusColor={getStatusColor("licenseNumber")}
-            />
-
-            <ProfileField
-                label="Expiry Date"
-                value={licenseExpiry}
-                placeholder="Add Expiry Date"
-                onEdit={onEditLicenseExpiry}
-            />
 
             {/* License Photo */}
             <View>

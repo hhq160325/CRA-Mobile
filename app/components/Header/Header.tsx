@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { View, Text, Pressable, Image, Modal } from "react-native"
+import { View, Text, Pressable, Image, Modal, ScrollView, ActivityIndicator } from "react-native"
 import { useNavigation, useFocusEffect } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
@@ -9,14 +9,18 @@ import { scale } from "../../theme/scale"
 import { useAuth } from "../../../lib/auth-context"
 import { useLanguage } from "../../../lib/language-context"
 import { userService } from "../../../lib/api/services/user.service"
+import { notificationService, type Notification } from "../../../lib/api/services/notification.service"
 import getAsset from "@/lib/getAsset"
 
 export default function Header() {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [menuVisible, setMenuVisible] = useState(false)
     const [languageModalVisible, setLanguageModalVisible] = useState(false)
+    const [notificationModalVisible, setNotificationModalVisible] = useState(false)
     const [userAvatar, setUserAvatar] = useState<string | null>(null)
     const [refreshKey, setRefreshKey] = useState(0)
+    const [notifications, setNotifications] = useState<Notification[]>([])
+    const [loadingNotifications, setLoadingNotifications] = useState(false)
     const { user, logout } = useAuth()
     const { language, setLanguage, t } = useLanguage()
 
@@ -56,6 +60,45 @@ export default function Header() {
         }
     }
 
+    const loadNotifications = async () => {
+        if (!user?.id) return
+
+        setLoadingNotifications(true)
+        try {
+            const { data, error } = await notificationService.getNotifications(user.id)
+            if (error) {
+                console.error("Failed to load notifications:", error)
+                setNotifications([])
+                return
+            }
+            if (data) {
+                setNotifications(data)
+            }
+        } catch (err) {
+            console.error("Failed to load notifications:", err)
+            setNotifications([])
+        } finally {
+            setLoadingNotifications(false)
+        }
+    }
+
+    const handleNotificationClick = async (notification: Notification) => {
+        // Mark as read
+        if (!notification.isRead) {
+            await notificationService.markAsRead(notification.id)
+        }
+
+        setNotificationModalVisible(false)
+
+        // Navigate based on notification type
+        if (notification.type === "booking" && notification.relatedId) {
+            navigation.navigate("BookingDetail" as any, { bookingId: notification.relatedId })
+        }
+
+        // Reload notifications
+        loadNotifications()
+    }
+
 
     useEffect(() => {
         if (user?.id) {
@@ -67,8 +110,9 @@ export default function Header() {
     useFocusEffect(
         React.useCallback(() => {
             if (user?.id) {
-                console.log("Header: Screen focused, reloading avatar")
+                console.log("Header: Screen focused, reloading avatar and notifications")
                 loadUserAvatar()
+                loadNotifications()
             }
         }, [user?.id])
     )
@@ -144,13 +188,20 @@ export default function Header() {
                 console.log("Navigating to Cars")
                 navigation.navigate("Cars" as any)
             } else if (screen === "Home") {
-                if (isStaff) {
-                    console.log("Navigating to StaffScreen")
-                    navigation.navigate("StaffScreen" as any)
-                } else {
-                    console.log("Navigating to Home")
-                    navigation.navigate("Home" as any)
-                }
+                console.log("Navigating to Home")
+                // Always navigate to Home screen (not StaffScreen)
+                // Use reset to ensure we go to the home screen in the tab stack
+                navigation.reset({
+                    index: 0,
+                    routes: [
+                        {
+                            name: isStaff ? "staffStack" : "tabStack" as any,
+                            state: {
+                                routes: [{ name: "Home" }]
+                            }
+                        }
+                    ],
+                })
             }
         } catch (error) {
             console.error("Navigation error:", error)
@@ -181,14 +232,42 @@ export default function Header() {
                         MORENT
                     </Text>
                 </Pressable>
-                <Pressable onPress={() => setMenuVisible(true)}>
-                    <View key={`avatar-${refreshKey}`}>
-                        <Image
-                            source={avatarSource}
-                            style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
-                        />
-                    </View>
-                </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: scale(16) }}>
+                    <Pressable onPress={() => {
+                        setNotificationModalVisible(true)
+                        loadNotifications()
+                    }}>
+                        <View style={{ position: "relative" }}>
+                            <MaterialIcons name="notifications" size={scale(28)} color={colors.primary} />
+                            {notifications.filter(n => !n.isRead).length > 0 && (
+                                <View style={{
+                                    position: "absolute",
+                                    top: -4,
+                                    right: -4,
+                                    backgroundColor: colors.red,
+                                    borderRadius: scale(10),
+                                    minWidth: scale(18),
+                                    height: scale(18),
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    paddingHorizontal: scale(4),
+                                }}>
+                                    <Text style={{ color: colors.white, fontSize: scale(10), fontWeight: "700" }}>
+                                        {notifications.filter(n => !n.isRead).length}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    </Pressable>
+                    <Pressable onPress={() => setMenuVisible(true)}>
+                        <View key={`avatar-${refreshKey}`}>
+                            <Image
+                                source={avatarSource}
+                                style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
+                            />
+                        </View>
+                    </Pressable>
+                </View>
             </View>
 
             <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
@@ -406,6 +485,101 @@ export default function Header() {
                                 <MaterialIcons name="check-circle" size={scale(20)} color={colors.morentBlue} />
                             )}
                         </Pressable>
+                    </View>
+                </Pressable>
+            </Modal>
+
+            {/* Notifications Modal */}
+            <Modal visible={notificationModalVisible} transparent animationType="fade" onRequestClose={() => setNotificationModalVisible(false)}>
+                <Pressable
+                    style={{
+                        flex: 1,
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    }}
+                    onPress={() => setNotificationModalVisible(false)}
+                >
+                    <View
+                        style={{
+                            position: "absolute",
+                            top: scale(90),
+                            right: scale(20),
+                            backgroundColor: colors.white,
+                            borderRadius: 12,
+                            width: scale(320),
+                            maxHeight: scale(500),
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.15,
+                            shadowRadius: 8,
+                            elevation: 8,
+                        }}
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <View style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: scale(16),
+                            borderBottomWidth: 1,
+                            borderBottomColor: colors.border,
+                        }}>
+                            <Text style={{ fontSize: scale(18), fontWeight: "700", color: colors.primary }}>
+                                Notifications
+                            </Text>
+                            <Pressable onPress={() => setNotificationModalVisible(false)}>
+                                <MaterialIcons name="close" size={scale(24)} color={colors.placeholder} />
+                            </Pressable>
+                        </View>
+
+                        {loadingNotifications ? (
+                            <View style={{ padding: scale(40), alignItems: "center" }}>
+                                <ActivityIndicator size="large" color={colors.morentBlue} />
+                            </View>
+                        ) : notifications.length === 0 ? (
+                            <View style={{ padding: scale(40), alignItems: "center" }}>
+                                <MaterialIcons name="notifications-none" size={scale(48)} color={colors.placeholder} />
+                                <Text style={{ marginTop: scale(12), fontSize: scale(14), color: colors.placeholder, textAlign: "center" }}>
+                                    No notifications yet
+                                </Text>
+                            </View>
+                        ) : (
+                            <ScrollView style={{ maxHeight: scale(400) }}>
+                                {notifications.map((notification) => (
+                                    <Pressable
+                                        key={notification.id}
+                                        onPress={() => handleNotificationClick(notification)}
+                                        style={{
+                                            padding: scale(16),
+                                            borderBottomWidth: 1,
+                                            borderBottomColor: colors.border,
+                                            backgroundColor: notification.isRead ? colors.white : colors.morentBlue + "10",
+                                        }}
+                                    >
+                                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(4) }}>
+                                            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary, flex: 1 }}>
+                                                {notification.title}
+                                            </Text>
+                                            {!notification.isRead && (
+                                                <View style={{
+                                                    width: scale(8),
+                                                    height: scale(8),
+                                                    borderRadius: scale(4),
+                                                    backgroundColor: colors.morentBlue,
+                                                    marginLeft: scale(8),
+                                                    marginTop: scale(4),
+                                                }} />
+                                            )}
+                                        </View>
+                                        <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: scale(4) }}>
+                                            {notification.message}
+                                        </Text>
+                                        <Text style={{ fontSize: scale(10), color: colors.placeholder }}>
+                                            {new Date(notification.createdAt).toLocaleString()}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+                        )}
                     </View>
                 </Pressable>
             </Modal>

@@ -402,13 +402,43 @@ export default function BookingFormScreen({ route }: any) {
       }
 
       if (res.data) {
-        // API returns PayOS URL directly as string
-        const payosUrl = typeof res.data === 'string' ? res.data : (res.data as any).paymentUrl
+        // Extract booking ID and payment URL from response
+        const bookingResponse = res.data
+        let createdBookingId: string | null = null
+        let payosUrl: string | null = null
 
         console.log("=== BOOKING RESPONSE DEBUG ===")
-        console.log("Response data:", res.data)
-        console.log("Response data type:", typeof res.data)
-        console.log("PayOS URL:", payosUrl)
+        console.log("Response data:", JSON.stringify(bookingResponse, null, 2))
+        console.log("Response data type:", typeof bookingResponse)
+
+        // Handle different response formats
+        if (typeof bookingResponse === 'string') {
+          // Response is a PayOS URL string
+          payosUrl = bookingResponse
+          console.log("Response is PayOS URL string:", payosUrl)
+        } else if (typeof bookingResponse === 'object' && bookingResponse !== null) {
+          // Response is an object - extract bookingId and paymentUrl
+          // Check for nested structure: { payment: "url", booking: { id: "..." } }
+          if (bookingResponse.payment) {
+            payosUrl = bookingResponse.payment
+          }
+          if (bookingResponse.booking && bookingResponse.booking.id) {
+            createdBookingId = bookingResponse.booking.id
+          }
+
+          // Fallback to flat structure
+          if (!createdBookingId) {
+            createdBookingId = bookingResponse.bookingId || bookingResponse.id || null
+          }
+          if (!payosUrl) {
+            payosUrl = bookingResponse.paymentUrl || bookingResponse.checkoutUrl || null
+          }
+
+          console.log("Extracted from response object:")
+          console.log("- Booking ID:", createdBookingId)
+          console.log("- PayOS URL:", payosUrl)
+        }
+
         console.log("Payment method:", paymentMethod)
 
         // Check if user selected QR PayOS payment
@@ -417,11 +447,11 @@ export default function BookingFormScreen({ route }: any) {
           console.log("✅ Opening PayOS WebView with URL:", payosUrl)
           navigation.navigate("PayOSWebView" as any, {
             paymentUrl: payosUrl,
-            bookingId: "pending"
+            bookingId: createdBookingId || "pending"
           })
         } else {
           // Cash payment - show confirmation popup
-          console.log("❌ Cash payment - showing confirmation")
+          console.log("💵 Cash payment - showing confirmation")
           Alert.alert(
             "Confirm Cash Payment",
             "Your booking has been created. You will pay cash when picking up the car.\n\nPlease confirm to complete the booking.",
@@ -429,19 +459,62 @@ export default function BookingFormScreen({ route }: any) {
               {
                 text: "Cancel",
                 style: "cancel",
-                onPress: () => {
-                  // Stay on current screen, user can modify
-                  console.log("User cancelled cash payment confirmation")
+                onPress: async () => {
+                  console.log("❌ User cancelled cash payment confirmation")
+
+                  // Update booking status to cancelled
+                  if (createdBookingId) {
+                    try {
+                      console.log("Updating booking status to cancelled:", createdBookingId)
+                      const { error: updateError } = await bookingsService.updateBookingStatus(createdBookingId, "cancelled")
+                      if (updateError) {
+                        console.error("Failed to update booking status to cancelled:", updateError)
+                        Alert.alert("Error", "Failed to cancel booking. Please try again.")
+                      } else {
+                        console.log("✓ Booking status updated to cancelled")
+                        Alert.alert("Booking Cancelled", "Your booking has been cancelled.")
+                      }
+                    } catch (err) {
+                      console.error("Exception updating booking status to cancelled:", err)
+                      Alert.alert("Error", "Failed to cancel booking. Please try again.")
+                    }
+                  } else {
+                    Alert.alert("Booking Cancelled", "Your booking has been cancelled.")
+                  }
+
+                  // Stay on current screen so user can modify and try again
                 }
               },
               {
                 text: "Confirm",
-                onPress: () => {
+                onPress: async () => {
+                  console.log("✅ User confirmed cash payment")
+
+                  // Update booking status to confirmed
+                  if (createdBookingId) {
+                    try {
+                      console.log("Updating booking status to confirmed:", createdBookingId)
+                      const { error: updateError } = await bookingsService.updateBookingStatus(createdBookingId, "confirmed")
+                      if (updateError) {
+                        console.error("Failed to update booking status to confirmed:", updateError)
+                        Alert.alert("Error", "Failed to confirm booking. Please try again.")
+                        return
+                      } else {
+                        console.log("✓ Booking status updated to confirmed")
+                      }
+                    } catch (err) {
+                      console.error("Exception updating booking status to confirmed:", err)
+                      Alert.alert("Error", "Failed to confirm booking. Please try again.")
+                      return
+                    }
+                  }
+
                   // Navigate to main tab stack (home screen)
                   navigation.reset({
                     index: 0,
                     routes: [{ name: "tabStack" as any }],
                   })
+
                   // Show success message after navigation
                   setTimeout(() => {
                     Alert.alert(

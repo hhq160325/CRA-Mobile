@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, TextInput, Pressable, FlatList } from "react-native"
+import { View, Text, TextInput, Pressable, FlatList, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { useFocusEffect } from "@react-navigation/native"
 import { useCallback } from "react"
@@ -9,7 +9,7 @@ import { colors } from "../../theme/colors"
 import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../../lib/auth-context"
-import { confirmationService } from "../../../lib/api"
+import { confirmationService, paymentService } from "../../../lib/api"
 
 // Mock payment data
 const mockPayments = [
@@ -360,20 +360,9 @@ export default function StaffScreen() {
             >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: verticalScale(12) }}>
                     <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: verticalScale(8) }}>
-                            <Text style={{ fontSize: scale(18), fontWeight: "bold", color: colors.primary }}>{item.carName}</Text>
-                            <View
-                                style={{
-                                    backgroundColor: "#f3f4f6",
-                                    paddingHorizontal: scale(12),
-                                    paddingVertical: verticalScale(4),
-                                    borderRadius: scale(12),
-                                    marginLeft: scale(8),
-                                }}
-                            >
-                                <Text style={{ fontSize: scale(12), color: "#6b7280" }}>{item.carType}</Text>
-                            </View>
-                        </View>
+                        <Text style={{ fontSize: scale(18), fontWeight: "bold", color: colors.primary, marginBottom: verticalScale(8) }}>
+                            {item.carName}
+                        </Text>
                         <Text style={{ fontSize: scale(12), color: "#6b7280" }}>Payment ID: {item.id}</Text>
                     </View>
                     <View
@@ -436,6 +425,51 @@ export default function StaffScreen() {
                         const isFullyConfirmed = confirmation.pickupConfirmed && confirmation.returnConfirmed
                         const isPickupOnly = confirmation.pickupConfirmed && !confirmation.returnConfirmed
 
+                        if (item.status === "pending") {
+                            return (
+                                <Pressable
+                                    onPress={async () => {
+                                        Alert.alert(
+                                            "Request Payment",
+                                            "Send payment request to customer?",
+                                            [
+                                                {
+                                                    text: "Cancel",
+                                                    style: "cancel"
+                                                },
+                                                {
+                                                    text: "Send",
+                                                    onPress: async () => {
+                                                        try {
+                                                            const { data, error } = await paymentService.createRentalPayment(item.bookingId)
+                                                            if (error) {
+                                                                Alert.alert("Error", error.message || "Failed to create payment request")
+                                                                return
+                                                            }
+                                                            Alert.alert("Success", "Payment request sent to customer!")
+                                                            fetchBookingsWithPayments() // Refresh the list
+                                                        } catch (err: any) {
+                                                            Alert.alert("Error", err?.message || "Failed to send payment request")
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        )
+                                    }}
+                                    style={{
+                                        backgroundColor: colors.morentBlue,
+                                        paddingHorizontal: scale(16),
+                                        paddingVertical: scale(8),
+                                        borderRadius: scale(8),
+                                    }}
+                                >
+                                    <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.white }}>
+                                        Request Payment
+                                    </Text>
+                                </Pressable>
+                            )
+                        }
+
                         return (
                             <>
                                 <Text
@@ -445,15 +479,13 @@ export default function StaffScreen() {
                                         color: isFullyConfirmed ? "#00B050" : isPickupOnly ? "#FF9500" : colors.primary
                                     }}
                                 >
-                                    {item.status === "successfully"
-                                        ? isFullyConfirmed
-                                            ? "✓ Pickup & Return Confirmed"
-                                            : isPickupOnly
-                                                ? "✓ Pickup Done → Tap to confirm return"
-                                                : "→ Tap to confirm pickup"
-                                        : "Awaiting payment confirmation"}
+                                    {isFullyConfirmed
+                                        ? "✓ Pickup & Return Confirmed"
+                                        : isPickupOnly
+                                            ? "✓ Pickup Done → Tap to confirm return"
+                                            : "→ Tap to confirm pickup"}
                                 </Text>
-                                {item.status === "successfully" && !isFullyConfirmed && (
+                                {!isFullyConfirmed && (
                                     <Text style={{ fontSize: scale(20) }}>→</Text>
                                 )}
                             </>

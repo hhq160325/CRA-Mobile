@@ -10,6 +10,7 @@ import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import { confirmationService, bookingsService, carsService, paymentService } from "../../../lib/api"
+import { scheduleService } from "../../../lib/api/services/schedule.service"
 
 type ConfirmationType = "pickup" | "return"
 
@@ -58,6 +59,8 @@ export default function PickupReturnConfirmScreen() {
     const initialTab: ConfirmationType = existingConfirmation.pickupConfirmed ? "return" : "pickup"
 
     const [activeTab, setActiveTab] = useState<ConfirmationType>(initialTab)
+    const [pickupScheduleStatus, setPickupScheduleStatus] = useState<string | null>(null)
+    const [returnScheduleStatus, setReturnScheduleStatus] = useState<string | null>(null)
     const [pickupImage, setPickupImage] = useState<ImageData | null>(null)
     const [returnImage, setReturnImage] = useState<ImageData | null>(null)
     const [loading, setLoading] = useState(false)
@@ -77,6 +80,38 @@ export default function PickupReturnConfirmScreen() {
         const date = new Date(dateStr)
         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     }
+
+    // Check schedule statuses
+    useEffect(() => {
+        const checkScheduleStatuses = async () => {
+            if (!bookingId) return
+
+            try {
+                // Check pickup schedule status
+                const { data: pickupSchedule } = await scheduleService.getScheduleByBookingAndType(bookingId, "Pickup")
+                if (pickupSchedule) {
+                    setPickupScheduleStatus(pickupSchedule.status)
+                    console.log("Pickup schedule status:", pickupSchedule.status)
+
+                    // If pickup is completed, switch to return tab
+                    if (pickupSchedule.status === "COMPLETED") {
+                        setActiveTab("return")
+                    }
+                }
+
+                // Check return schedule status
+                const { data: returnSchedule } = await scheduleService.getScheduleByBookingAndType(bookingId, "Return")
+                if (returnSchedule) {
+                    setReturnScheduleStatus(returnSchedule.status)
+                    console.log("Return schedule status:", returnSchedule.status)
+                }
+            } catch (error) {
+                console.error("Error checking schedule statuses:", error)
+            }
+        }
+
+        checkScheduleStatuses()
+    }, [bookingId])
 
     // Fetch booking details from API
     useEffect(() => {
@@ -143,6 +178,8 @@ export default function PickupReturnConfirmScreen() {
                 // Set the booking data
                 const newBookingData = {
                     id: booking.id,
+                    carId: booking.carId,
+                    userId: booking.userId,
                     carName: fetchedCarName,
                     carType: fetchedCarType,
                     carModel: fetchedCarModel,
@@ -318,6 +355,21 @@ export default function PickupReturnConfirmScreen() {
     }
 
     const handleSubmit = async () => {
+        if (!bookingId) {
+            Alert.alert("Error", "Booking ID not found")
+            return
+        }
+
+        // Get userId and carId from bookingData or payment
+        const userId = bookingData?.userId || payment?.userId
+        const carId = bookingData?.carId || payment?.carId
+
+        if (!userId || !carId) {
+            Alert.alert("Error", "Missing user ID or car ID. Please try again.")
+            console.error("Missing required data:", { userId, carId, bookingData, payment })
+            return
+        }
+
         // Check which tab is active and what needs to be confirmed
         if (activeTab === "pickup") {
             if (!pickupImage) {
@@ -327,23 +379,43 @@ export default function PickupReturnConfirmScreen() {
 
             setLoading(true)
             try {
-                // Simulate API call
-                await new Promise((resolve) => setTimeout(resolve, 1000))
+                console.log("=== Starting Check-In (Pickup) ===")
+                console.log("Booking ID:", bookingId)
+                console.log("User ID:", userId)
+                console.log("Car ID:", carId)
+                console.log("Image URI:", pickupImage.uri)
 
-                // Save pickup confirmation
+                // Call check-in API with userId and carId
+                const { data, error } = await scheduleService.checkIn(
+                    bookingId,
+                    pickupImage.uri,
+                    userId,
+                    carId
+                )
+
+                if (error) {
+                    console.error("Check-in failed:", error)
+                    Alert.alert("Error", error.message || "Failed to confirm pickup")
+                    return
+                }
+
+                console.log("✓ Check-in successful")
+
+                // Save pickup confirmation locally
                 confirmationService.confirmPickup(paymentId, pickupImage.uri)
 
-                Alert.alert("Success", "Pickup confirmed! Car delivered to customer.", [
+                Alert.alert("Success", "Pickup confirmed! Car delivered to customer.\n\nPickup schedule marked as COMPLETED.\nReturn schedule created.", [
                     {
                         text: "OK",
                         onPress: () => {
                             // Navigate back to staff screen
-                            ; (navigation as any).navigate("StaffScreen")
+                            (navigation as any).navigate("StaffScreen")
                         },
                     },
                 ])
-            } catch (error) {
-                Alert.alert("Error", "Failed to confirm pickup")
+            } catch (error: any) {
+                console.error("Exception during check-in:", error)
+                Alert.alert("Error", error?.message || "Failed to confirm pickup")
             } finally {
                 setLoading(false)
             }
@@ -356,23 +428,43 @@ export default function PickupReturnConfirmScreen() {
 
             setLoading(true)
             try {
-                // Simulate API call
-                await new Promise((resolve) => setTimeout(resolve, 1000))
+                console.log("=== Starting Check-Out (Return) ===")
+                console.log("Booking ID:", bookingId)
+                console.log("User ID:", userId)
+                console.log("Car ID:", carId)
+                console.log("Image URI:", returnImage.uri)
 
-                // Save return confirmation
+                // Call check-out API with userId and carId
+                const { data, error } = await scheduleService.checkOut(
+                    bookingId,
+                    returnImage.uri,
+                    userId,
+                    carId
+                )
+
+                if (error) {
+                    console.error("Check-out failed:", error)
+                    Alert.alert("Error", error.message || "Failed to confirm return")
+                    return
+                }
+
+                console.log("✓ Check-out successful")
+
+                // Save return confirmation locally
                 confirmationService.confirmReturn(paymentId, returnImage.uri)
 
-                Alert.alert("Success", "Return confirmed! Car back in garage.", [
+                Alert.alert("Success", "Return confirmed! Car back in garage.\n\nReturn schedule marked as COMPLETED.\nBooking finished.", [
                     {
                         text: "OK",
                         onPress: () => {
                             // Navigate back to staff screen
-                            ; (navigation as any).navigate("StaffScreen")
+                            (navigation as any).navigate("StaffScreen")
                         },
                     },
                 ])
-            } catch (error) {
-                Alert.alert("Error", "Failed to confirm return")
+            } catch (error: any) {
+                console.error("Exception during check-out:", error)
+                Alert.alert("Error", error?.message || "Failed to confirm return")
             } finally {
                 setLoading(false)
             }

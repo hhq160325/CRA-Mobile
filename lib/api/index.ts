@@ -33,3 +33,9 @@ export { userService, type UserData } from "./services/user.service"
 
 // Storage service
 export { storageService } from "./services/storage.service"
+
+// Schedule service
+export { scheduleService, type Schedule } from "./services/schedule.service"
+
+// Notification service
+export { notificationService, type Notification } from "./services/notification.service"

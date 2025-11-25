@@ -399,4 +399,14 @@ export const paymentService = {
         })
         return { error: result.error }
     },
+
+    async createRentalPayment(bookingId: string): Promise<{ data: any | null; error: Error | null }> {
+        console.log("paymentService.createRentalPayment: creating rental payment for booking", bookingId)
+        const result = await apiClient(API_ENDPOINTS.CREATE_RENTAL_PAYMENT, {
+            method: "POST",
+            body: JSON.stringify({ bookingId }),
+        })
+        console.log("paymentService.createRentalPayment: result", { hasError: !!result.error })
+        return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
+    },
 }

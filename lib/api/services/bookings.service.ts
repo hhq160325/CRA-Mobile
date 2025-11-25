@@ -184,21 +184,15 @@ export const bookingsService = {
       body: JSON.stringify(data),
     })
     console.log("bookingsService.createBooking: result", { hasError: !!result.error, hasData: !!result.data })
+    console.log("bookingsService.createBooking: raw response data", result.data)
 
     if (result.error) {
       return { data: null, error: result.error }
     }
 
-    // API can return either a PayOS URL (string) or a Booking object
-    // If it's a string (URL), return as-is
-    if (typeof result.data === 'string') {
-      console.log("bookingsService.createBooking: received PayOS URL")
-      return { data: result.data, error: null }
-    }
-
-    // Otherwise, map API response to app model
-    const mappedData = result.data ? mapApiBookingToBooking(result.data) : null
-    return { data: mappedData, error: null }
+    // Return raw response data without mapping
+    // This preserves bookingId, paymentUrl, and other fields from API
+    return { data: result.data, error: null }
   },
 
   async updateBooking(data: UpdateBookingData): Promise<{ data: Booking | null; error: Error | null }> {
@@ -223,5 +217,39 @@ export const bookingsService = {
     const result = await apiClient(API_ENDPOINTS.CANCEL_BOOKING(id), { method: "POST" })
     console.log("bookingsService.cancelBooking: result", { hasError: !!result.error })
     return { error: result.error }
+  },
+
+  async updateBookingStatus(bookingId: string, status: "confirmed" | "cancelled"): Promise<{ data: any | null; error: Error | null }> {
+    console.log("bookingsService.updateBookingStatus: updating booking status", { bookingId, status })
+
+    // Fetch current booking data first
+    const { data: currentBooking, error: fetchError } = await this.getBookingById(bookingId)
+    if (fetchError || !currentBooking) {
+      console.error("bookingsService.updateBookingStatus: failed to fetch current booking", fetchError)
+      return { data: null, error: fetchError || new Error("Booking not found") }
+    }
+
+    console.log("bookingsService.updateBookingStatus: current booking fetched, updating status")
+
+    // Send update with full booking data
+    const updateData = {
+      id: bookingId,
+      pickupPlace: currentBooking.pickupLocation,
+      pickupTime: currentBooking.startDate,
+      dropoffPlace: currentBooking.dropoffLocation,
+      dropoffTime: currentBooking.endDate,
+      status: status,
+      userId: currentBooking.userId,
+      carId: currentBooking.carId,
+    }
+
+    console.log("bookingsService.updateBookingStatus: sending update data", updateData)
+
+    const result = await apiClient(API_ENDPOINTS.UPDATE_BOOKING_STATUS, {
+      method: "PATCH",
+      body: JSON.stringify(updateData),
+    })
+    console.log("bookingsService.updateBookingStatus: result", { hasError: !!result.error })
+    return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
   },
 }

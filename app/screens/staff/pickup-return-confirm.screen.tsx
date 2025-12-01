@@ -12,6 +12,7 @@ import { bookingsService } from "../../../lib/api/services/bookings.service"
 import { carsService } from "../../../lib/api/services/cars.service"
 import { userService } from "../../../lib/api/services/user.service"
 import { scheduleService } from "../../../lib/api/services/schedule.service"
+import { useAuth } from "../../../lib/auth-context"
 import * as ImagePicker from 'expo-image-picker'
 
 type PickupReturnConfirmRouteProp = RouteProp<{ params: { bookingId: string } }, "params">
@@ -34,6 +35,7 @@ interface BookingDetails {
 export default function PickupReturnConfirmScreen() {
     const route = useRoute<PickupReturnConfirmRouteProp>()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
+    const { user } = useAuth()
     const { bookingId } = (route.params as any) || {}
 
     const [booking, setBooking] = useState<BookingDetails | null>(null)
@@ -42,25 +44,20 @@ export default function PickupReturnConfirmScreen() {
     const [selectedImages, setSelectedImages] = useState<string[]>([])
     const [description, setDescription] = useState("")
     const [submitting, setSubmitting] = useState(false)
-    const [staffId, setStaffId] = useState<string>("")
 
-    // Get staff ID from localStorage
+    // Log user info for debugging
     useEffect(() => {
-        const getStaffId = async () => {
-            try {
-                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                    const userId = localStorage.getItem("userId")
-                    if (userId) {
-                        setStaffId(userId)
-                        console.log("Staff ID loaded:", userId)
-                    }
-                }
-            } catch (e) {
-                console.error("Failed to get staff ID:", e)
-            }
+        if (user) {
+            console.log("Staff user loaded:", {
+                id: user.id,
+                name: user.name,
+                role: user.role,
+                roleId: user.roleId
+            })
+        } else {
+            console.error("No user found in auth context")
         }
-        getStaffId()
-    }, [])
+    }, [user])
 
     useEffect(() => {
         const fetchBookingDetails = async () => {
@@ -232,7 +229,7 @@ export default function PickupReturnConfirmScreen() {
     }
 
     const handleConfirmPickup = async () => {
-        if (!staffId) {
+        if (!user?.id) {
             Alert.alert('Error', 'Staff ID not found. Please log in again.')
             return
         }
@@ -253,11 +250,12 @@ export default function PickupReturnConfirmScreen() {
                         try {
                             setSubmitting(true)
                             console.log("Confirming pickup for booking:", bookingId)
+                            console.log("Staff ID:", user.id)
 
                             const result = await scheduleService.checkIn(
                                 bookingId,
                                 selectedImages,
-                                staffId,
+                                user.id,
                                 description || "Pickup confirmed"
                             )
 

@@ -108,20 +108,53 @@ export default function PayOSWebViewScreen() {
                         console.error("Error details:", err.message)
                     })
                     .finally(() => {
-                        // Navigate directly to home screen without showing alert
-                        console.log("✅ Payment completed, navigating to home screen")
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: "tabStack" as any }],
-                        })
+                        // Navigate based on returnScreen parameter
+                        if (returnScreen === "StaffScreen") {
+                            console.log(`✅ Payment completed, navigating to staffStack`)
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: "staffStack" as any }],
+                            })
+                        } else {
+                            console.log(`✅ Payment completed, navigating to Home screen`)
+                            navigation.reset({
+                                index: 0,
+                                routes: [
+                                    {
+                                        name: "tabStack" as any,
+                                        state: {
+                                            routes: [{ name: "Home" as any }],
+                                            index: 0,
+                                        },
+                                    },
+                                ],
+                            })
+                        }
                     })
             } else {
                 console.log("⚠️ No valid booking ID, skipping booking status update")
-                // Navigate directly to home screen
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: "tabStack" as any }],
-                })
+                // Navigate based on returnScreen parameter
+                if (returnScreen === "StaffScreen") {
+                    console.log(`Navigating to staffStack`)
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: "staffStack" as any }],
+                    })
+                } else {
+                    console.log(`Navigating to Home screen`)
+                    navigation.reset({
+                        index: 0,
+                        routes: [
+                            {
+                                name: "tabStack" as any,
+                                state: {
+                                    routes: [{ name: "Home" as any }],
+                                    index: 0,
+                                },
+                            },
+                        ],
+                    })
+                }
             }
         } else if (url.includes('cancel') || url.includes('failed')) {
             // Prevent processing multiple times
@@ -166,11 +199,28 @@ export default function PayOSWebViewScreen() {
                 console.log("⚠️ No valid booking ID, skipping booking status update")
             }
 
-            // Auto close WebView and return to home
-            navigation.reset({
-                index: 0,
-                routes: [{ name: "tabStack" as any }],
-            })
+            // Auto close WebView and return based on returnScreen parameter
+            if (returnScreen === "StaffScreen") {
+                console.log(`Payment cancelled, navigating to staffStack`)
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: "staffStack" as any }],
+                })
+            } else {
+                console.log(`Payment cancelled, navigating to Home screen`)
+                navigation.reset({
+                    index: 0,
+                    routes: [
+                        {
+                            name: "tabStack" as any,
+                            state: {
+                                routes: [{ name: "Home" as any }],
+                                index: 0,
+                            },
+                        },
+                    ],
+                })
+            }
 
             // Show alert after navigation
             setTimeout(() => {

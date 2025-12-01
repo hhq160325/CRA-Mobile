@@ -32,6 +32,7 @@ import CarMapScreen from "../screens/cars/car-map.screen"
 import CarMapRouteScreen from "../screens/cars/car-map-route.screen"
 import StaffScreen from "../screens/staff/staff.screen"
 import PickupReturnConfirmScreen from "../screens/staff/pickup-return-confirm.screen"
+import VehicleReturnScreen from "../screens/staff/vehicle-return.screen"
 import FeedbackFormScreen from "../screens/feedback/feedback-form.screen"
 
 type NavigationProps = Partial<React.ComponentProps<typeof NavigationContainer>>
@@ -98,6 +99,13 @@ const StaffStack = () => {
       <Stack.Screen
         name="PickupReturnConfirm"
         component={PickupReturnConfirmScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="VehicleReturn"
+        component={VehicleReturnScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
@@ -323,6 +331,13 @@ const CombinedStack = () => {
       <Stack.Screen
         name="PickupReturnConfirm"
         component={PickupReturnConfirmScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="VehicleReturn"
+        component={VehicleReturnScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

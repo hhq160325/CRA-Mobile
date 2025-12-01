@@ -1,5 +1,5 @@
 import { apiClient } from "../client"
-import { API_ENDPOINTS } from "../config"
+import { API_ENDPOINTS, API_CONFIG } from "../config"
 
 export interface Payment {
     id: string
@@ -65,7 +65,7 @@ export interface UpdateInvoiceData {
 export interface PayOSPayment {
     orderCode: string
     amount: number
-    status: "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded" | "PAID" | "CANCELLED"
+    status: "pending" | "processing" | "completed" | "failed" | "cancelled" | "refunded" | "PAID" | "CANCELLED" | "EXPIRED"
     paymentUrl?: string
     qrCode?: string
     transactionId?: string
@@ -402,11 +402,142 @@ export const paymentService = {
 
     async createRentalPayment(bookingId: string): Promise<{ data: any | null; error: Error | null }> {
         console.log("paymentService.createRentalPayment: creating rental payment for booking", bookingId)
-        const result = await apiClient(API_ENDPOINTS.CREATE_RENTAL_PAYMENT, {
-            method: "POST",
-            body: JSON.stringify({ bookingId }),
+
+        // PayOS endpoint doesn't use /api prefix, so we need to call it directly
+        const baseUrl = API_CONFIG.BASE_URL.replace('/api', '') // Remove /api from base URL
+        const fullUrl = `${baseUrl}/PayOS/Booking/CreateRentalPayment`
+
+        console.log("paymentService.createRentalPayment: calling", fullUrl)
+
+        try {
+            let token: string | null = null
+            try {
+                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                    token = localStorage.getItem("token")
+                }
+            } catch (e) {
+                console.error("Failed to get token:", e)
+            }
+
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+            }
+
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`
+            }
+
+            const response = await fetch(fullUrl, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ bookingId }),
+            })
+
+            console.log("paymentService.createRentalPayment: response status", response.status)
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("paymentService.createRentalPayment: error", errorText)
+                return {
+                    data: null,
+                    error: new Error(`Failed to create rental payment: ${response.status}`)
+                }
+            }
+
+            const data = await response.json()
+            console.log("paymentService.createRentalPayment: success", data)
+            return { data, error: null }
+        } catch (error: any) {
+            console.error("paymentService.createRentalPayment: exception", error)
+            return {
+                data: null,
+                error: new Error(error?.message || "Failed to create rental payment")
+            }
+        }
+    },
+
+    async updateRentalPaymentCash(bookingId: string): Promise<{ data: any | null; error: Error | null }> {
+        console.log("paymentService.updateRentalPaymentCash: updating booking payment for booking", bookingId)
+
+        // Use UpdatePayment/Booking/BookingPayment endpoint without /api prefix
+        const baseUrl = API_CONFIG.BASE_URL.replace('/api', '')
+        const fullUrl = `${baseUrl}/UpdatePayment/Booking/BookingPayment`
+
+        console.log("paymentService.updateRentalPaymentCash: calling", fullUrl)
+
+        try {
+            let token: string | null = null
+            try {
+                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                    token = localStorage.getItem("token")
+                }
+            } catch (e) {
+                console.error("Failed to get token:", e)
+            }
+
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+            }
+
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`
+            }
+
+            const response = await fetch(fullUrl, {
+                method: "PUT",
+                headers,
+                body: JSON.stringify({
+                    bookingId,
+                    paymentMethod: "Cash on Delivery",
+                    status: "Success"
+                }),
+            })
+
+            console.log("paymentService.updateRentalPaymentCash: response status", response.status)
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("paymentService.updateRentalPaymentCash: error", errorText)
+                return {
+                    data: null,
+                    error: new Error(`Failed to update payment: ${response.status}`)
+                }
+            }
+
+            const data = await response.json()
+            console.log("paymentService.updateRentalPaymentCash: success", data)
+            return { data, error: null }
+        } catch (error: any) {
+            console.error("paymentService.updateRentalPaymentCash: exception", error)
+            return {
+                data: null,
+                error: new Error(error?.message || "Failed to update payment")
+            }
+        }
+    },
+
+    async getPaymentsByInvoice(invoiceId: string): Promise<{ data: any[] | null; error: Error | null }> {
+        console.log("paymentService.getPaymentsByInvoice: fetching payments for invoice", invoiceId)
+        const result = await apiClient<any[]>(API_ENDPOINTS.GET_INVOICE(invoiceId), {
+            method: "GET",
         })
-        console.log("paymentService.createRentalPayment: result", { hasError: !!result.error })
+        console.log("paymentService.getPaymentsByInvoice: result", {
+            hasError: !!result.error,
+            dataLength: Array.isArray(result.data) ? result.data.length : 0
+        })
+        return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
+    },
+
+    async getBookingPayments(bookingId: string): Promise<{ data: any[] | null; error: Error | null }> {
+        console.log("paymentService.getBookingPayments: fetching payments for booking", bookingId)
+        const result = await apiClient<any[]>(API_ENDPOINTS.GET_BOOKING_PAYMENTS(bookingId), {
+            method: "GET",
+        })
+        console.log("paymentService.getBookingPayments: result", {
+            hasError: !!result.error,
+            dataLength: Array.isArray(result.data) ? result.data.length : 0,
+            payments: result.data
+        })
         return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
     },
 }

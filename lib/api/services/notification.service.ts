@@ -27,6 +27,17 @@ export const notificationService = {
         })
 
         if (result.error) {
+            // Check if it's a 404 error (no notifications found)
+            const is404 = (result.error as any).status === 404 ||
+                result.error.message?.includes("404") ||
+                result.error.message?.toLowerCase().includes("not found")
+
+            if (is404) {
+                // 404 is expected when user has no notifications, return empty array
+                console.log("notificationService.getNotifications: no notifications found (404), returning empty array")
+                return { data: [], error: null }
+            }
+
             console.error("notificationService.getNotifications: error details", result.error)
             return { data: null, error: result.error }
         }

@@ -18,6 +18,7 @@ export default function CarMapScreen() {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [loading, setLoading] = useState(true)
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
+    const [userAddress, setUserAddress] = useState<string>("")
     const [nearbyCars, setNearbyCars] = useState<CarLocation[]>([])
     const [selectedCar, setSelectedCar] = useState<CarLocation | null>(null)
     const [searchRadius, setSearchRadius] = useState(10) // km
@@ -81,30 +82,43 @@ export default function CarMapScreen() {
     const loadUserLocationAndCars = async () => {
         setLoading(true)
 
-
         const { data: location, error: locationError } = await locationService.getCurrentLocation()
 
-        if (locationError || !location) {
+        const finalLocation = location || { latitude: 10.8231, longitude: 106.6297 }
+        setUserLocation(finalLocation)
 
-            setUserLocation({ latitude: 10.8231, longitude: 106.6297 })
-        } else {
-            setUserLocation(location)
+        // Get address for user location using reverse geocoding
+        try {
+            const { data: addressData, error } = await locationService.reverseGeocode(
+                finalLocation.latitude,
+                finalLocation.longitude
+            )
+            if (error) {
+                console.error("Reverse geocoding error:", error)
+                setUserAddress(`${finalLocation.latitude.toFixed(4)}, ${finalLocation.longitude.toFixed(4)}`)
+            } else if (addressData) {
+                const displayAddress = addressData.address ||
+                    (addressData.city && addressData.country ? `${addressData.city}, ${addressData.country}` : null) ||
+                    `${finalLocation.latitude.toFixed(4)}, ${finalLocation.longitude.toFixed(4)}`
+                setUserAddress(displayAddress)
+            }
+        } catch (err) {
+            console.error("Failed to get address:", err)
+            setUserAddress(`${finalLocation.latitude.toFixed(4)}, ${finalLocation.longitude.toFixed(4)}`)
         }
 
-
         const { data: cars } = await locationService.getCarsNearLocation(
-            location?.latitude || 10.8231,
-            location?.longitude || 106.6297,
+            finalLocation.latitude,
+            finalLocation.longitude,
             searchRadius
         )
 
         if (cars) {
-
             const carsWithDistance = cars.map((car) => ({
                 ...car,
                 distance: locationService.calculateDistance(
-                    location?.latitude || 10.8231,
-                    location?.longitude || 106.6297,
+                    finalLocation.latitude,
+                    finalLocation.longitude,
                     car.latitude,
                     car.longitude
                 ),
@@ -188,6 +202,16 @@ export default function CarMapScreen() {
                 searchRadius={searchRadius}
                 searchCenter={userLocation || undefined}
             />
+
+            {/* User Location Info */}
+            {userAddress && (
+                <View style={styles.locationInfo}>
+                    <MaterialIcons name="my-location" size={scale(20)} color={colors.morentBlue} />
+                    <Text style={styles.locationText} numberOfLines={1}>
+                        {userAddress}
+                    </Text>
+                </View>
+            )}
 
             {/* Search Radius Control */}
             <View style={styles.radiusControl}>
@@ -284,6 +308,21 @@ const styles = StyleSheet.create({
         marginTop: verticalScale(16),
         fontSize: scale(16),
         color: colors.placeholder,
+    },
+    locationInfo: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "white",
+        padding: scale(12),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        gap: scale(8),
+    },
+    locationText: {
+        flex: 1,
+        fontSize: scale(14),
+        color: colors.primary,
+        fontWeight: "500",
     },
     radiusControl: {
         backgroundColor: "white",

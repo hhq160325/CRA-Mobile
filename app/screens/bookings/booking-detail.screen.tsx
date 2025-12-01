@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, ScrollView, Image, Alert, Pressable, Clipboard } from 'react-native';
 import { bookingsService } from '../../../lib/api';
+import { invoiceService } from '../../../lib/api/services/invoice.service';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -17,36 +18,84 @@ export default function BookingDetailScreen() {
   const { user } = useAuth();
   const { id } = (route.params as any) || {};
   const [booking, setBooking] = useState<any>(null);
+  const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     async function load() {
+      console.log("BookingDetail: Loading booking with ID:", id);
       setLoading(true);
-      const res = await bookingsService.getBookingById(id);
 
-      if (mounted && res.data) {
-        // Security check: Only allow user to view their own bookings
-        if (res.data.userId !== user?.id) {
-          console.log("BookingDetail: Access denied - booking belongs to different user");
-          Alert.alert(
-            "Access Denied",
-            "You don't have permission to view this booking.",
-            [
-              {
-                text: "OK",
-                onPress: () => navigation.goBack()
-              }
-            ]
-          );
+      try {
+        const res = await bookingsService.getBookingById(id);
+        console.log("BookingDetail: API response:", { hasData: !!res.data, hasError: !!res.error });
+
+        if (!mounted) return;
+
+        if (res.error) {
+          console.error("BookingDetail: Error loading booking:", res.error);
+          Alert.alert("Error", "Failed to load booking details. Please try again.");
           setLoading(false);
           return;
         }
-        setBooking(res.data);
+
+        if (res.data) {
+          // Security check: Only allow user to view their own bookings
+          if (res.data.userId !== user?.id) {
+            console.log("BookingDetail: Access denied - booking belongs to different user");
+            Alert.alert(
+              "Access Denied",
+              "You don't have permission to view this booking.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => navigation.goBack()
+                }
+              ]
+            );
+            setLoading(false);
+            return;
+          }
+
+          console.log("BookingDetail: Setting booking data");
+          setBooking(res.data);
+
+          // Fetch invoice details if invoiceId exists
+          if (res.data.invoiceId) {
+            console.log("BookingDetail: Fetching invoice:", res.data.invoiceId);
+            try {
+              const invoiceRes = await invoiceService.getInvoiceById(res.data.invoiceId);
+              if (mounted && invoiceRes.data) {
+                console.log("BookingDetail: Invoice loaded successfully");
+                setInvoice(invoiceRes.data);
+              } else if (invoiceRes.error) {
+                console.log("BookingDetail: Invoice not found, using booking total price");
+              }
+            } catch (err) {
+              console.log("BookingDetail: Error fetching invoice:", err);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("BookingDetail: Unexpected error:", err);
+        if (mounted) {
+          Alert.alert("Error", "An unexpected error occurred. Please try again.");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
+    }
+
+    if (id) {
+      load();
+    } else {
+      console.error("BookingDetail: No booking ID provided");
       setLoading(false);
     }
-    if (id) load();
+
     return () => {
       mounted = false;
     };
@@ -94,6 +143,11 @@ export default function BookingDetailScreen() {
       default:
         return status;
     }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    Clipboard.setString(text);
+    Alert.alert('Copied', `${label} copied to clipboard`);
   };
 
   if (loading) {
@@ -144,9 +198,105 @@ export default function BookingDetailScreen() {
               {getStatusText(booking.status)}
             </Text>
           </View>
-          <Text style={{ marginTop: 12, fontSize: 12, color: colors.placeholder }}>
-            Booking ID: {booking.id?.substring(0, 8)}...
-          </Text>
+        </View>
+
+        {/* IDs Section */}
+        <View style={{
+          backgroundColor: colors.white,
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 16
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <MaterialIcons name="info" size={24} color={colors.morentBlue} />
+            <Text style={{ fontSize: 16, fontWeight: '700', marginLeft: 8, color: colors.primary }}>
+              Booking Information
+            </Text>
+          </View>
+
+          {/* Booking ID */}
+          <Pressable
+            onPress={() => copyToClipboard(booking.id, 'Booking ID')}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingVertical: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 4 }}>Booking ID</Text>
+              <Text style={{ fontSize: 13, color: colors.primary, fontFamily: 'monospace' }}>
+                {booking.id}
+              </Text>
+            </View>
+            <MaterialIcons name="content-copy" size={20} color={colors.morentBlue} />
+          </Pressable>
+
+          {/* Car ID */}
+          <Pressable
+            onPress={() => copyToClipboard(booking.carId, 'Car ID')}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingVertical: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 4 }}>Car ID</Text>
+              <Text style={{ fontSize: 13, color: colors.primary, fontFamily: 'monospace' }}>
+                {booking.carId}
+              </Text>
+            </View>
+            <MaterialIcons name="content-copy" size={20} color={colors.morentBlue} />
+          </Pressable>
+
+          {/* Invoice ID */}
+          {booking.invoiceId && (
+            <Pressable
+              onPress={() => copyToClipboard(booking.invoiceId, 'Invoice ID')}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingVertical: 8,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.border
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 4 }}>Invoice ID</Text>
+                <Text style={{ fontSize: 13, color: colors.primary, fontFamily: 'monospace' }}>
+                  {booking.invoiceId}
+                </Text>
+              </View>
+              <MaterialIcons name="content-copy" size={20} color={colors.morentBlue} />
+            </Pressable>
+          )}
+
+          {/* User ID */}
+          <Pressable
+            onPress={() => copyToClipboard(booking.userId, 'User ID')}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingVertical: 8
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 4 }}>User ID</Text>
+              <Text style={{ fontSize: 13, color: colors.primary, fontFamily: 'monospace' }}>
+                {booking.userId}
+              </Text>
+            </View>
+            <MaterialIcons name="content-copy" size={20} color={colors.morentBlue} />
+          </Pressable>
         </View>
 
         {/* Customer Info */}
@@ -277,13 +427,45 @@ export default function BookingDetailScreen() {
               Payment
             </Text>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-            <Text style={{ fontSize: 14, color: colors.placeholder }}>Total Price</Text>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.morentBlue }}>
-              {booking.totalPrice?.toLocaleString() || '0'} VND
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+
+          {invoice && (
+            <>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                <Text style={{ fontSize: 14, color: colors.placeholder }}>Booking Fee</Text>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.morentBlue }}>
+                  {invoice.amount?.toLocaleString() || '0'} VND
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                <Text style={{ fontSize: 12, color: colors.placeholder }}>Payment Status</Text>
+                <Text style={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: invoice.status?.toLowerCase() === 'paid' ? '#00B050' : colors.placeholder
+                }}>
+                  {invoice.status || 'Pending'}
+                </Text>
+              </View>
+            </>
+          )}
+
+          {!invoice && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+              <Text style={{ fontSize: 14, color: colors.placeholder }}>Total Price</Text>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.morentBlue }}>
+                {booking.totalPrice?.toLocaleString() || '0'} VND
+              </Text>
+            </View>
+          )}
+
+          <View style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 12,
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderTopColor: colors.border
+          }}>
             <Text style={{ fontSize: 12, color: colors.placeholder }}>Booking Date</Text>
             <Text style={{ fontSize: 12, color: colors.placeholder }}>
               {formatDate(booking.bookingDate)}

@@ -75,10 +75,13 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  name: string
+  username: string
+  fullname: string
   email: string
   password: string
-  phone?: string
+  phoneNumber?: string
+  address?: string
+  gender?: number
 }
 
 export interface GoogleLoginData {
@@ -254,12 +257,14 @@ export const authService = {
   async register(data: RegisterData): Promise<{ data: User | null; error: Error | null }> {
     console.log("authService.register: sending request with", data)
 
-
     const requestBody = {
-      Username: data.name,
-      Email: data.email,
-      Password: data.password,
-      PhoneNumber: data.phone || "",
+      username: data.username,
+      password: data.password,
+      email: data.email,
+      phoneNumber: data.phoneNumber || "",
+      fullname: data.fullname,
+      address: data.address || "",
+      gender: data.gender !== undefined ? data.gender : 2, // Default to "Other" (2)
     }
 
     console.log("authService.register: request body", requestBody)

@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   // Cars
   CARS: "/Car/AllCars",
   CAR_DETAILS: (id: string) => `/Car/${id}`,
+  CAR_RENTAL_RATE: (carId: string) => `/Car/rentalRate/${carId}`,
   CAR_SEARCH: "/cars/search",
   CAR_FILTER: "/cars/filter",
 
@@ -35,6 +36,9 @@ export const API_ENDPOINTS = {
   CREATE_BOOKING: "/Booking/CreateBooking",
   UPDATE_BOOKING: "/Booking/UpdateBooking",
   UPDATE_BOOKING_STATUS: "/Booking/UpdateBooking",
+  UPDATE_BOOKING_PAYMENT: "/UpdatePayment/Booking/BookingPayment",
+  UPDATE_BOOKING_PAYMENT_BY_ID: (bookingId: string) => `/UpdatePayment/Booking/BookingPayment/${bookingId}`,
+  UPDATE_RENTAL_PAYMENT: "/UpdatePayment/Booking/RentalPayment",
   CANCEL_BOOKING: (id: string) => `/bookings/${id}/cancel`,
 
   // Feedback (Reviews)
@@ -49,8 +53,9 @@ export const API_ENDPOINTS = {
   UPDATE_PROFILE: "/user/profile/update",
   GET_ALL_USERS: "/User/GetAllUsers",
   UPDATE_USER_INFO: "/User/UpdateUserInfo",
-  UPLOAD_AVATAR: "/User/UploadAvatar",
+  UPLOAD_AVATAR: (userId: string) => `/User/upload-avatar/${userId}`,
   UPLOAD_DRIVER_LICENSE: (userId: string) => `/User/driverLicense/${userId}`,
+  GET_DRIVER_LICENSE: (userId: string, email: string) => `/User/driverLicense?UserId=${userId}&Email=${encodeURIComponent(email)}`,
 
   // Payments & Invoices
   GET_USER: (userId: string) => `/User/GetUserById?userId=${userId}`,
@@ -64,6 +69,8 @@ export const API_ENDPOINTS = {
   UPDATE_INVOICE: "/Invoice/UpdateInvoice",
   INVOICE_COMPLETE: "/Invoice/InvoiceComplete",
   INVOICE_FAILED: "/Invoice/InvoiceFailed",
+  UPDATE_ALL_INVOICE_PAYMENTS: "/UpdatePayment/Booking/BookingPayment",
+  GET_BOOKING_PAYMENTS: (bookingId: string) => `/Booking/${bookingId}/Payments`,
 
   // PayOS Payment endpoints
   GET_PAYOS_PAYMENT: (orderCode: string) => `/PayOSPayment/${orderCode}`,
@@ -93,7 +100,8 @@ export const API_ENDPOINTS = {
   CARS_NEARBY: "/cars/nearby",
   CALCULATE_ROUTE: "/locations/route",
   GEOCODE: "/locations/geocode",
-  REVERSE_GEOCODE: "/locations/reverse-geocode",
+  REVERSE_GEOCODE: "/TrackAsia/GetReverseGeocoding",
+  PARK_LOTS: "/ParkLot",
 
   // Notifications
   GET_NOTIFICATIONS: (userId: string) => `/Notification/GetNotificationsForUser/${userId}`,
@@ -102,7 +110,9 @@ export const API_ENDPOINTS = {
 
   // Schedules
   GET_SCHEDULE_BY_BOOKING: (bookingId: string, scheduleType: string) => `/Schedule/GetLastScheduleByBookingAndType/${bookingId}/${scheduleType}`,
+  GET_SCHEDULES_BY_BOOKING: (bookingId: string) => `/Schedule/booking?bookingId=${bookingId}`,
   CHECK_IN: "/Schedule/checkIn",
   CHECK_OUT: "/Schedule/checkOut",
   UPLOAD_SCHEDULE_IMAGE: (scheduleId: string) => `/Schedule/UploadImage/${scheduleId}`,
+  UPLOAD_CHECKIN_IMAGES: "/Schedule/checkIn/images",
 }

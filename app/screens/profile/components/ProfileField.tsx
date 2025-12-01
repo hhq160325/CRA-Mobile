@@ -8,11 +8,15 @@ interface ProfileFieldProps {
     label: string;
     value: string;
     placeholder?: string;
-    onEdit: () => void;
+    onEdit?: () => void;
     showStatusDot?: boolean;
     statusColor?: string;
     isSecure?: boolean;
     multiline?: boolean;
+    onAutoFill?: () => void;
+    autoFillIcon?: string;
+    isAutoFilling?: boolean;
+    hideEditButton?: boolean;
 }
 
 export default function ProfileField({
@@ -24,6 +28,10 @@ export default function ProfileField({
     statusColor,
     isSecure = false,
     multiline = false,
+    onAutoFill,
+    autoFillIcon = "my-location",
+    isAutoFilling = false,
+    hideEditButton = false,
 }: ProfileFieldProps) {
     return (
         <View style={{ marginBottom: verticalScale(16) }}>
@@ -75,9 +83,22 @@ export default function ProfileField({
                     </Text>
                     {isSecure && <Icon name="lock" size={scale(14)} color={colors.placeholder} />}
                 </View>
-                <TouchableOpacity onPress={onEdit}>
-                    <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
-                </TouchableOpacity>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: scale(8) }}>
+                    {onAutoFill && (
+                        <TouchableOpacity onPress={onAutoFill} disabled={isAutoFilling}>
+                            <Icon
+                                name={isAutoFilling ? "hourglass-empty" : autoFillIcon}
+                                size={scale(18)}
+                                color={isAutoFilling ? colors.placeholder : colors.green}
+                            />
+                        </TouchableOpacity>
+                    )}
+                    {!hideEditButton && onEdit && (
+                        <TouchableOpacity onPress={onEdit}>
+                            <Icon name="edit" size={scale(18)} color={colors.morentBlue} />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
         </View>
     );

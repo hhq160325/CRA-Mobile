@@ -22,10 +22,12 @@ import RecentTransactions from "./components/RecentTransactions"
 // Hooks
 import { useCarFilters } from "./hooks/useCarFilters"
 import { useHomeData } from "./hooks/useHomeData"
+import { useLanguage } from "../../../lib/language-context"
 
 export default function HomeScreen() {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const [filterVisible, setFilterVisible] = useState(false)
+    const { t } = useLanguage()
 
     // Load data
     const { cars, recentBookings, loading } = useHomeData()
@@ -100,9 +102,9 @@ export default function HomeScreen() {
                             marginBottom: scale(12),
                         }}
                     >
-                        <Text style={{ fontSize: scale(14), color: colors.placeholder }}>Popular Car</Text>
+                        <Text style={{ fontSize: scale(14), color: colors.placeholder }}>{t("popularCar")}</Text>
                         <Pressable onPress={() => navigation.navigate("Cars" as any)}>
-                            <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>View All</Text>
+                            <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>{t("viewAll")}</Text>
                         </Pressable>
                     </View>
 
@@ -133,9 +135,9 @@ export default function HomeScreen() {
                             marginBottom: scale(12),
                         }}
                     >
-                        <Text style={{ fontSize: scale(14), color: colors.placeholder }}>Recomendation Car</Text>
+                        <Text style={{ fontSize: scale(14), color: colors.placeholder }}>{t("recommendationCar")}</Text>
                         <Pressable onPress={() => navigation.navigate("Cars" as any)}>
-                            <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>View All</Text>
+                            <Text style={{ fontSize: scale(12), color: colors.morentBlue, fontWeight: "600" }}>{t("viewAll")}</Text>
                         </Pressable>
                     </View>
 
@@ -172,7 +174,7 @@ export default function HomeScreen() {
                                 marginBottom: scale(16),
                             }}
                         >
-                            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>Top 5 Car Rental</Text>
+                            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.primary }}>{t("topCarRental")}</Text>
                             <MaterialIcons name="more-vert" size={scale(20)} color={colors.placeholder} />
                         </View>
 

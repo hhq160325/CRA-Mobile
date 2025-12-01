@@ -25,6 +25,7 @@ export interface Booking {
   id: string
   userId: string
   carId: string
+  invoiceId: string
   carName: string
   carImage: string
   startDate: string
@@ -45,19 +46,29 @@ export interface Booking {
 
 // Map API response to app Booking model
 function mapApiBookingToBooking(apiBooking: ApiBookingResponse): Booking {
-  // Map status
+  // Map status from backend to app
+  // Backend statuses: cancelled, confirmed, completed
+  // App statuses: cancelled, upcoming, completed
   let status: "upcoming" | "completed" | "cancelled" = "upcoming"
   const apiStatus = apiBooking.status?.toLowerCase()
-  if (apiStatus === "completed" || apiStatus === "finished") {
+
+  if (apiStatus === "completed") {
     status = "completed"
-  } else if (apiStatus === "cancelled" || apiStatus === "canceled") {
+  } else if (apiStatus === "cancelled") {
     status = "cancelled"
+  } else if (apiStatus === "confirmed") {
+    // Confirmed bookings are "completed" in the app (payment confirmed)
+    status = "completed"
+  } else {
+    // Default to upcoming for any other status
+    status = "upcoming"
   }
 
   return {
     id: apiBooking.id,
     userId: apiBooking.userId,
     carId: apiBooking.carId,
+    invoiceId: apiBooking.invoiceId,
     carName: apiBooking.car?.model || apiBooking.car?.name || "Unknown Car",
     carImage: apiBooking.car?.imageUrls?.[0] || apiBooking.car?.image || "",
     startDate: apiBooking.pickupTime,
@@ -143,7 +154,39 @@ export const bookingsService = {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model
+    // Map API response to app model and enrich with car details
+    if (result.data && result.data.length > 0) {
+      const { carsService } = require("./cars.service")
+
+      const enrichedBookings = await Promise.all(
+        result.data.map(async (booking) => {
+          const mapped = mapApiBookingToBooking(booking)
+
+          // If car details are missing, fetch them
+          if (mapped.carName === "Unknown Car" && booking.carId) {
+            try {
+              const carResult = await carsService.getCarById(booking.carId)
+              if (carResult.data) {
+                mapped.carName = carResult.data.name
+                mapped.carImage = carResult.data.image
+                // Calculate total price if missing
+                if (mapped.totalPrice === 0 && carResult.data.price) {
+                  const days = Math.ceil((new Date(mapped.endDate).getTime() - new Date(mapped.startDate).getTime()) / (1000 * 60 * 60 * 24))
+                  mapped.totalPrice = carResult.data.price * days
+                }
+              }
+            } catch (err) {
+              console.log(`Could not fetch car details for booking ${booking.id}`)
+            }
+          }
+
+          return mapped
+        })
+      )
+
+      return { data: enrichedBookings, error: null }
+    }
+
     const mappedData = result.data?.map(mapApiBookingToBooking) || null
     return { data: mappedData, error: null }
   },
@@ -222,25 +265,10 @@ export const bookingsService = {
   async updateBookingStatus(bookingId: string, status: "confirmed" | "cancelled"): Promise<{ data: any | null; error: Error | null }> {
     console.log("bookingsService.updateBookingStatus: updating booking status", { bookingId, status })
 
-    // Fetch current booking data first
-    const { data: currentBooking, error: fetchError } = await this.getBookingById(bookingId)
-    if (fetchError || !currentBooking) {
-      console.error("bookingsService.updateBookingStatus: failed to fetch current booking", fetchError)
-      return { data: null, error: fetchError || new Error("Booking not found") }
-    }
-
-    console.log("bookingsService.updateBookingStatus: current booking fetched, updating status")
-
-    // Send update with full booking data
+    // Simple approach: just send bookingId and status
     const updateData = {
-      id: bookingId,
-      pickupPlace: currentBooking.pickupLocation,
-      pickupTime: currentBooking.startDate,
-      dropoffPlace: currentBooking.dropoffLocation,
-      dropoffTime: currentBooking.endDate,
+      bookingId: bookingId,
       status: status,
-      userId: currentBooking.userId,
-      carId: currentBooking.carId,
     }
 
     console.log("bookingsService.updateBookingStatus: sending update data", updateData)
@@ -249,7 +277,82 @@ export const bookingsService = {
       method: "PATCH",
       body: JSON.stringify(updateData),
     })
+
     console.log("bookingsService.updateBookingStatus: result", { hasError: !!result.error })
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
+  },
+
+  async updateBookingPayment(bookingId: string, status: "paid" | "cancelled"): Promise<{ data: any | null; error: Error | null }> {
+    console.log("bookingsService.updateBookingPayment: updating booking payment", { bookingId, status })
+
+    // Try different endpoint variations and HTTP methods
+    const attempts = [
+      // Attempt 1: POST with body (bookingId in body)
+      {
+        endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT,
+        method: "POST",
+        body: { bookingId, status },
+        description: "POST with bookingId in body"
+      },
+      // Attempt 2: PATCH with body
+      {
+        endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT,
+        method: "PATCH",
+        body: { bookingId, status },
+        description: "PATCH with bookingId in body"
+      },
+      // Attempt 3: PUT with body
+      {
+        endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT,
+        method: "PUT",
+        body: { bookingId, status },
+        description: "PUT with bookingId in body"
+      },
+      // Attempt 4: POST with bookingId in URL
+      {
+        endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT_BY_ID(bookingId),
+        method: "POST",
+        body: { status },
+        description: "POST with bookingId in URL"
+      },
+      // Attempt 5: PATCH with bookingId in URL
+      {
+        endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT_BY_ID(bookingId),
+        method: "PATCH",
+        body: { status },
+        description: "PATCH with bookingId in URL"
+      },
+    ]
+
+    for (const attempt of attempts) {
+      console.log(`bookingsService.updateBookingPayment: trying ${attempt.description}...`)
+
+      const result = await apiClient(attempt.endpoint, {
+        method: attempt.method as any,
+        body: JSON.stringify(attempt.body),
+      })
+
+      // If successful, return immediately
+      if (!result.error) {
+        console.log(`✅ Success with ${attempt.description}`)
+        console.log("bookingsService.updateBookingPayment: result", { hasError: false, hasData: !!result.data })
+        return { data: result.data, error: null }
+      }
+
+      // If not 404, it's a different error - return it
+      if (!result.error.message.includes('404')) {
+        console.error(`❌ Failed with ${attempt.description}:`, result.error.message)
+        return { data: null, error: result.error }
+      }
+
+      console.log(`⚠️ 404 with ${attempt.description}, trying next...`)
+    }
+
+    // All attempts failed
+    console.error("❌ All attempts failed to update booking payment")
+    return {
+      data: null,
+      error: new Error("Failed to update booking payment: endpoint not found. Please check API documentation.")
+    }
   },
 }

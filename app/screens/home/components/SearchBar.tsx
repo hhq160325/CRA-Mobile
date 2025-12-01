@@ -3,6 +3,7 @@ import { View, TextInput, Pressable } from "react-native"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import { colors } from "../../../theme/colors"
 import { scale } from "../../../theme/scale"
+import { useLanguage } from "../../../../lib/language-context"
 
 interface SearchBarProps {
     searchQuery: string
@@ -12,6 +13,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ searchQuery, onSearchChange, onFilterPress, hasActiveFilters }: SearchBarProps) {
+    const { t } = useLanguage()
     return (
         <View style={{ padding: scale(16), paddingTop: scale(12), backgroundColor: colors.white }}>
             <View
@@ -28,7 +30,7 @@ export default function SearchBar({ searchQuery, onSearchChange, onFilterPress, 
             >
                 <MaterialIcons name="search" size={scale(22)} color={colors.placeholder} />
                 <TextInput
-                    placeholder="Search something here"
+                    placeholder={t("searchPlaceholder")}
                     placeholderTextColor={colors.placeholder}
                     value={searchQuery}
                     onChangeText={onSearchChange}

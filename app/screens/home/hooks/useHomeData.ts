@@ -25,7 +25,29 @@ export function useHomeData() {
             ])
 
             if (carsResult.data) {
-                setCars(carsResult.data)
+                // Filter rentable cars (Active, Reserved, Available)
+                const rentableStatuses = ["Active", "Reserved", "Available"]
+                const rentableCars = carsResult.data.filter(car => rentableStatuses.includes(car.status || ""))
+
+                console.log(`Total cars: ${carsResult.data.length}, Rentable: ${rentableCars.length}`)
+
+                // Fetch rental rates for each car (AllCars endpoint doesn't include rentalRate)
+                const carsWithRates = await Promise.all(
+                    rentableCars.map(async (car) => {
+                        const rateResult = await carsService.getCarRentalRate(car.id)
+
+                        if (rateResult.data && rateResult.data.status === "Active" && rateResult.data.dailyRate > 0) {
+                            console.log(`✅ ${car.name}: ${rateResult.data.dailyRate.toLocaleString()} VND/day`)
+                            return { ...car, price: rateResult.data.dailyRate }
+                        }
+
+                        console.log(`⚠️ ${car.name}: No active rental rate`)
+                        return { ...car, price: 0 }
+                    })
+                )
+
+                console.log(`Displaying ${carsWithRates.length} cars`)
+                setCars(carsWithRates)
             }
 
             if (bookingsResult.data) {

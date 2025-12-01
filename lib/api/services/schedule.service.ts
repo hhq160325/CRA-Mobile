@@ -19,6 +19,31 @@ export interface Schedule {
 }
 
 export const scheduleService = {
+    async getSchedulesByBooking(
+        bookingId: string
+    ): Promise<{ data: Schedule[] | null; error: Error | null }> {
+        console.log("scheduleService.getSchedulesByBooking:", bookingId)
+
+        const result = await apiClient<Schedule[]>(
+            API_ENDPOINTS.GET_SCHEDULES_BY_BOOKING(bookingId),
+            {
+                method: "GET",
+            }
+        )
+
+        if (result.error) {
+            console.error("scheduleService.getSchedulesByBooking: error", result.error)
+            return { data: null, error: result.error }
+        }
+
+        console.log("scheduleService.getSchedulesByBooking: success", {
+            count: result.data?.length || 0,
+            schedules: result.data?.map(s => ({ type: s.scheduleType, status: s.status }))
+        })
+
+        return { data: result.data, error: null }
+    },
+
     async getScheduleByBookingAndType(
         bookingId: string,
         scheduleType: "Pickup" | "Return"
@@ -40,13 +65,111 @@ export const scheduleService = {
         return { data: result.data, error: null }
     },
 
+    async getCheckInImages(
+        bookingId: string
+    ): Promise<{ data: { images: string[]; description: string } | null; error: Error | null }> {
+        console.log("scheduleService.getCheckInImages:", bookingId)
+
+        try {
+            const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
+            const url = `/Schedule/checkIn/images?BookingId=${bookingId}&isCheckIn=true`
+
+            let token: string | null = null
+            try {
+                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                    token = localStorage.getItem("token")
+                }
+            } catch (e) {
+                console.error("Failed to get token from localStorage:", e)
+            }
+
+            console.log("scheduleService.getCheckInImages: fetching from", `${baseUrl}${url}`)
+
+            const response = await fetch(`${baseUrl}${url}`, {
+                method: "GET",
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+            })
+
+            console.log("scheduleService.getCheckInImages: response status", response.status)
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("scheduleService.getCheckInImages: error response", errorText)
+                return { data: null, error: new Error("Failed to fetch check-in images") }
+            }
+
+            const responseData = await response.json()
+            console.log("scheduleService.getCheckInImages: success", responseData)
+
+            // Extract images and description from the view object
+            const images = responseData?.view?.urls || []
+            const description = responseData?.view?.description || ""
+
+            return { data: { images, description }, error: null }
+        } catch (error) {
+            console.error("scheduleService.getCheckInImages: caught error", error)
+            return { data: null, error: error as Error }
+        }
+    },
+
+    async getCheckOutImages(
+        bookingId: string
+    ): Promise<{ data: { images: string[]; description: string } | null; error: Error | null }> {
+        console.log("scheduleService.getCheckOutImages:", bookingId)
+
+        try {
+            const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
+            const url = `/Schedule/checkIn/images?BookingId=${bookingId}&isCheckIn=false`
+
+            let token: string | null = null
+            try {
+                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                    token = localStorage.getItem("token")
+                }
+            } catch (e) {
+                console.error("Failed to get token from localStorage:", e)
+            }
+
+            console.log("scheduleService.getCheckOutImages: fetching from", `${baseUrl}${url}`)
+
+            const response = await fetch(`${baseUrl}${url}`, {
+                method: "GET",
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+            })
+
+            console.log("scheduleService.getCheckOutImages: response status", response.status)
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("scheduleService.getCheckOutImages: error response", errorText)
+                return { data: null, error: new Error("Failed to fetch check-out images") }
+            }
+
+            const responseData = await response.json()
+            console.log("scheduleService.getCheckOutImages: success", responseData)
+
+            // Extract images and description from the view object
+            const images = responseData?.view?.urls || []
+            const description = responseData?.view?.description || ""
+
+            return { data: { images, description }, error: null }
+        } catch (error) {
+            console.error("scheduleService.getCheckOutImages: caught error", error)
+            return { data: null, error: error as Error }
+        }
+    },
+
     async checkIn(
         bookingId: string,
-        imageUri: string,
-        userId: string,
-        carId: string
+        imageUris: string[],
+        responsibleStaffId: string,
+        description: string = "Pickup confirmation"
     ): Promise<{ data: any | null; error: Error | null }> {
-        console.log("scheduleService.checkIn:", { bookingId, userId, carId })
+        console.log("scheduleService.checkIn:", { bookingId, responsibleStaffId, imageCount: imageUris.length })
 
         try {
             let token: string | null = null
@@ -60,26 +183,38 @@ export const scheduleService = {
 
             const formData = new FormData()
 
-            const filename = imageUri.split('/').pop() || 'pickup.jpg'
-            const match = /\.(\w+)$/.exec(filename)
-            const type = match ? `image/${match[1]}` : 'image/jpeg'
+            // Append BookingId (capital B as per API spec)
+            formData.append('BookingId', bookingId)
 
-            // Append image(s) - using 'images' as array field name
-            formData.append('images', {
-                uri: imageUri,
-                name: filename,
-                type: type,
-            } as any)
+            // Append ResponsibleStaffId (capital R and S as per API spec)
+            formData.append('ResponsibleStaffId', responsibleStaffId)
 
-            // Append required fields
-            formData.append('userId', userId)
-            formData.append('carId', carId)
+            // Append Description (capital D as per API spec)
+            formData.append('Description', description)
+
+            // Append multiple images
+            imageUris.forEach((imageUri) => {
+                const filename = imageUri.split('/').pop() || 'pickup.jpg'
+                const match = /\.(\w+)$/.exec(filename)
+                const type = match ? `image/${match[1]}` : 'image/jpeg'
+
+                formData.append('images', {
+                    uri: imageUri,
+                    name: filename,
+                    type: type,
+                } as any)
+            })
 
             const url = API_ENDPOINTS.CHECK_IN
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
 
             console.log("scheduleService.checkIn: uploading to", `${baseUrl}${url}`)
-            console.log("scheduleService.checkIn: form data", { userId, carId, imageUri })
+            console.log("scheduleService.checkIn: form data", {
+                bookingId,
+                responsibleStaffId,
+                description,
+                imageCount: imageUris.length
+            })
 
             const response = await fetch(`${baseUrl}${url}`, {
                 method: "POST",
@@ -94,7 +229,22 @@ export const scheduleService = {
             if (!response.ok) {
                 const errorText = await response.text()
                 console.error("scheduleService.checkIn: error response", errorText)
-                return { data: null, error: new Error(`Check-in failed: ${response.status} - ${errorText}`) }
+
+                // Parse error message for user-friendly display
+                let userMessage = "Check-in failed. Please try again."
+                try {
+                    const errorJson = JSON.parse(errorText)
+                    if (errorJson.message) {
+                        userMessage = errorJson.message
+                    }
+                } catch {
+                    // If not JSON, use the raw error text if it's short enough
+                    if (errorText.length < 100) {
+                        userMessage = errorText
+                    }
+                }
+
+                return { data: null, error: new Error(userMessage) }
             }
 
             const responseText = await response.text()
@@ -107,7 +257,7 @@ export const scheduleService = {
                 data = { success: true }
             }
 
-            console.log("scheduleService.checkIn: success")
+            console.log("scheduleService.checkIn: success", data)
             return { data, error: null }
         } catch (error) {
             console.error("scheduleService.checkIn: caught error", error)
@@ -117,11 +267,11 @@ export const scheduleService = {
 
     async checkOut(
         bookingId: string,
-        imageUri: string,
-        userId: string,
-        carId: string
+        imageUris: string[],
+        responsibleStaffId: string,
+        description: string = "Return confirmation"
     ): Promise<{ data: any | null; error: Error | null }> {
-        console.log("scheduleService.checkOut:", { bookingId, userId, carId })
+        console.log("scheduleService.checkOut:", { bookingId, responsibleStaffId, imageCount: imageUris.length })
 
         try {
             let token: string | null = null
@@ -135,26 +285,38 @@ export const scheduleService = {
 
             const formData = new FormData()
 
-            const filename = imageUri.split('/').pop() || 'return.jpg'
-            const match = /\.(\w+)$/.exec(filename)
-            const type = match ? `image/${match[1]}` : 'image/jpeg'
+            // Append BookingId (capital B as per API spec)
+            formData.append('BookingId', bookingId)
 
-            // Append image(s) - using 'images' as array field name
-            formData.append('images', {
-                uri: imageUri,
-                name: filename,
-                type: type,
-            } as any)
+            // Append ResponsibleStaffId (capital R and S as per API spec)
+            formData.append('ResponsibleStaffId', responsibleStaffId)
 
-            // Append required fields
-            formData.append('userId', userId)
-            formData.append('carId', carId)
+            // Append Description (capital D as per API spec)
+            formData.append('Description', description)
+
+            // Append multiple images
+            imageUris.forEach((imageUri) => {
+                const filename = imageUri.split('/').pop() || 'return.jpg'
+                const match = /\.(\w+)$/.exec(filename)
+                const type = match ? `image/${match[1]}` : 'image/jpeg'
+
+                formData.append('images', {
+                    uri: imageUri,
+                    name: filename,
+                    type: type,
+                } as any)
+            })
 
             const url = API_ENDPOINTS.CHECK_OUT
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
 
             console.log("scheduleService.checkOut: uploading to", `${baseUrl}${url}`)
-            console.log("scheduleService.checkOut: form data", { userId, carId, imageUri })
+            console.log("scheduleService.checkOut: form data", {
+                bookingId,
+                responsibleStaffId,
+                description,
+                imageCount: imageUris.length
+            })
 
             const response = await fetch(`${baseUrl}${url}`, {
                 method: "POST",
@@ -169,7 +331,22 @@ export const scheduleService = {
             if (!response.ok) {
                 const errorText = await response.text()
                 console.error("scheduleService.checkOut: error response", errorText)
-                return { data: null, error: new Error(`Check-out failed: ${response.status} - ${errorText}`) }
+
+                // Parse error message for user-friendly display
+                let userMessage = "Check-out failed. Please try again."
+                try {
+                    const errorJson = JSON.parse(errorText)
+                    if (errorJson.message) {
+                        userMessage = errorJson.message
+                    }
+                } catch {
+                    // If not JSON, use the raw error text if it's short enough
+                    if (errorText.length < 100) {
+                        userMessage = errorText
+                    }
+                }
+
+                return { data: null, error: new Error(userMessage) }
             }
 
             const responseText = await response.text()
@@ -182,7 +359,7 @@ export const scheduleService = {
                 data = { success: true }
             }
 
-            console.log("scheduleService.checkOut: success")
+            console.log("scheduleService.checkOut: success", data)
             return { data, error: null }
         } catch (error) {
             console.error("scheduleService.checkOut: caught error", error)

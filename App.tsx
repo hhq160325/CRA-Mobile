@@ -5,21 +5,16 @@ import { AuthProvider } from './lib/auth-context';
 import { LanguageProvider } from './lib/language-context';
 import { FavoritesProvider } from './lib/favorites-context';
 
-// Disable all LogBox warnings and errors on the device
+
 LogBox.ignoreAllLogs(true);
 
-// Optionally, disable console errors and warnings in production
+
 if (!__DEV__) {
   console.error = () => { };
   console.warn = () => { };
 }
 
 const App = () => {
-  useEffect(() => {
-    // Disable yellow box warnings
-    console.disableYellowBox = true;
-  }, []);
-
   return (
     <LanguageProvider>
       <AuthProvider>

@@ -15,7 +15,7 @@ import { scheduleService } from "../../../lib/api/services/schedule.service"
 import { useAuth } from "../../../lib/auth-context"
 import * as ImagePicker from 'expo-image-picker'
 
-type PickupReturnConfirmRouteProp = RouteProp<{ params: { bookingId: string } }, "params">
+type VehicleReturnRouteProp = RouteProp<{ params: { bookingId: string } }, "params">
 
 interface BookingDetails {
     id: string
@@ -32,8 +32,8 @@ interface BookingDetails {
     status: string
 }
 
-export default function PickupReturnConfirmScreen() {
-    const route = useRoute<PickupReturnConfirmRouteProp>()
+export default function VehicleReturnScreen() {
+    const route = useRoute<VehicleReturnRouteProp>()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const { user } = useAuth()
     const { bookingId } = (route.params as any) || {}
@@ -44,8 +44,8 @@ export default function PickupReturnConfirmScreen() {
     const [selectedImages, setSelectedImages] = useState<string[]>([])
     const [description, setDescription] = useState("")
     const [submitting, setSubmitting] = useState(false)
-    const [isAlreadyCheckedIn, setIsAlreadyCheckedIn] = useState(false)
-    const [existingCheckInData, setExistingCheckInData] = useState<{ images: string[]; description: string } | null>(null)
+    const [pickupImages, setPickupImages] = useState<string[]>([])
+    const [pickupDescription, setPickupDescription] = useState("")
 
     // Log user info for debugging
     useEffect(() => {
@@ -62,23 +62,16 @@ export default function PickupReturnConfirmScreen() {
     }, [user])
 
     useEffect(() => {
-        const fetchBookingDetails = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true)
-                console.log("Fetching booking details for:", bookingId)
+                console.log("Fetching data for return:", bookingId)
 
-                // First, check if check-in data already exists
-                console.log("Checking for existing check-in data...")
+                // Fetch pickup/check-in images
                 const checkInResult = await scheduleService.getCheckInImages(bookingId)
-
-                if (checkInResult.data && checkInResult.data.images.length > 0) {
-                    console.log("✅ Check-in data found:", checkInResult.data)
-                    setIsAlreadyCheckedIn(true)
-                    setExistingCheckInData(checkInResult.data)
-                    setDescription(checkInResult.data.description)
-                } else {
-                    console.log("ℹ️ No check-in data found, proceeding with check-in flow")
-                    setIsAlreadyCheckedIn(false)
+                if (checkInResult.data) {
+                    setPickupImages(checkInResult.data.images)
+                    setPickupDescription(checkInResult.data.description)
                 }
 
                 // Fetch booking
@@ -133,14 +126,14 @@ export default function PickupReturnConfirmScreen() {
 
                 setLoading(false)
             } catch (err) {
-                console.error("Error fetching booking details:", err)
+                console.error("Error fetching data:", err)
                 setError("An error occurred")
                 setLoading(false)
             }
         }
 
         if (bookingId) {
-            fetchBookingDetails()
+            fetchData()
         }
     }, [bookingId])
 
@@ -175,14 +168,12 @@ export default function PickupReturnConfirmScreen() {
 
     const takePhoto = async () => {
         try {
-            // Request camera permission
             const { status } = await ImagePicker.requestCameraPermissionsAsync()
             if (status !== 'granted') {
                 Alert.alert('Permission Required', 'Please grant camera permissions to take photos.')
                 return
             }
 
-            // Launch camera
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
@@ -196,7 +187,6 @@ export default function PickupReturnConfirmScreen() {
                     return
                 }
                 setSelectedImages(prev => [...prev, result.assets[0].uri])
-                console.log("Photo taken:", result.assets[0].uri)
             }
         } catch (error) {
             console.error("Error taking photo:", error)
@@ -206,21 +196,18 @@ export default function PickupReturnConfirmScreen() {
 
     const pickFromGallery = async () => {
         try {
-            // Request media library permission
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
             if (status !== 'granted') {
                 Alert.alert('Permission Required', 'Please grant gallery permissions to select photos.')
                 return
             }
 
-            // Calculate how many more images can be selected
             const remainingSlots = 5 - selectedImages.length
             if (remainingSlots <= 0) {
                 Alert.alert('Limit Reached', 'You can only upload up to 5 photos.')
                 return
             }
 
-            // Launch image picker
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsMultipleSelection: true,
@@ -231,8 +218,7 @@ export default function PickupReturnConfirmScreen() {
 
             if (!result.canceled && result.assets) {
                 const imageUris = result.assets.map(asset => asset.uri)
-                setSelectedImages(prev => [...prev, ...imageUris].slice(0, 5)) // Max 5 images
-                console.log("Images selected from gallery:", imageUris.length)
+                setSelectedImages(prev => [...prev, ...imageUris].slice(0, 5))
             }
         } catch (error) {
             console.error("Error picking images:", error)
@@ -244,14 +230,7 @@ export default function PickupReturnConfirmScreen() {
         setSelectedImages(prev => prev.filter((_, i) => i !== index))
     }
 
-    const handleProceedToReturn = () => {
-        // Navigate to return/checkout screen with the same booking ID
-        navigation.navigate("VehicleReturn" as any, {
-            bookingId: bookingId
-        })
-    }
-
-    const handleConfirmPickup = async () => {
+    const handleConfirmReturn = async () => {
         if (!user?.id) {
             Alert.alert('Error', 'Staff ID not found. Please log in again.')
             return
@@ -263,8 +242,8 @@ export default function PickupReturnConfirmScreen() {
         }
 
         Alert.alert(
-            'Confirm Pickup',
-            'Are you sure you want to confirm this pickup?',
+            'Confirm Return',
+            'Are you sure you want to confirm this vehicle return?',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -272,14 +251,14 @@ export default function PickupReturnConfirmScreen() {
                     onPress: async () => {
                         try {
                             setSubmitting(true)
-                            console.log("Confirming pickup for booking:", bookingId)
+                            console.log("Confirming return for booking:", bookingId)
                             console.log("Staff ID:", user.id)
 
-                            const result = await scheduleService.checkIn(
+                            const result = await scheduleService.checkOut(
                                 bookingId,
                                 selectedImages,
                                 user.id,
-                                description || "Pickup confirmed"
+                                description || "Return confirmed"
                             )
 
                             if (result.error) {
@@ -290,17 +269,23 @@ export default function PickupReturnConfirmScreen() {
 
                             Alert.alert(
                                 'Success',
-                                'Pickup confirmed successfully!',
+                                'Vehicle return confirmed successfully!',
                                 [
                                     {
                                         text: 'OK',
-                                        onPress: () => navigation.goBack()
+                                        onPress: () => {
+                                            // Navigate back to staff screen
+                                            navigation.reset({
+                                                index: 0,
+                                                routes: [{ name: "staffStack" as any }],
+                                            })
+                                        }
                                     }
                                 ]
                             )
                         } catch (error) {
-                            console.error("Error confirming pickup:", error)
-                            Alert.alert('Error', 'Failed to confirm pickup')
+                            console.error("Error confirming return:", error)
+                            Alert.alert('Error', 'Failed to confirm return')
                             setSubmitting(false)
                         }
                     }
@@ -336,7 +321,6 @@ export default function PickupReturnConfirmScreen() {
         )
     }
 
-    const pickupDateTime = formatDateTime(booking.pickupTime)
     const dropoffDateTime = formatDateTime(booking.dropoffTime)
 
     return (
@@ -347,19 +331,17 @@ export default function PickupReturnConfirmScreen() {
             <View style={styles.header}>
                 <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
                     <MaterialIcons name="arrow-back" size={24} color={colors.primary} />
-                    <Text style={styles.backText}>Back to Staff</Text>
+                    <Text style={styles.backText}>Back</Text>
                 </Pressable>
             </View>
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Booking Card */}
                 <View style={styles.card}>
-                    {/* Car Image */}
                     {booking.carImage && (
                         <Image source={{ uri: booking.carImage }} style={styles.carImage} resizeMode="cover" />
                     )}
 
-                    {/* Car Info */}
                     <View style={styles.cardHeader}>
                         <View style={styles.carInfo}>
                             <Text style={styles.carName}>{booking.carName}</Text>
@@ -369,13 +351,10 @@ export default function PickupReturnConfirmScreen() {
                             <Text style={styles.bookingId}>Booking ID: {booking.id.substring(0, 8)}...</Text>
                         </View>
                         <View style={styles.statusBadge}>
-                            <Text style={styles.statusText}>
-                                {booking.status === "completed" ? "Completed" : "Confirmed"}
-                            </Text>
+                            <Text style={styles.statusText}>Return</Text>
                         </View>
                     </View>
 
-                    {/* Customer & Amount */}
                     <View style={styles.infoRow}>
                         <View style={styles.infoItem}>
                             <Text style={styles.infoLabel}>CUSTOMER</Text>
@@ -388,37 +367,33 @@ export default function PickupReturnConfirmScreen() {
                     </View>
                 </View>
 
-                {/* Pickup Section */}
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <MaterialIcons name="location-on" size={24} color={colors.morentBlue} />
-                        <Text style={styles.sectionTitle}>Pickup Information</Text>
-                    </View>
-                    <View style={styles.sectionContent}>
-                        <View style={styles.locationRow}>
-                            <MaterialIcons name="place" size={20} color="#6b7280" />
-                            <View style={styles.locationInfo}>
-                                <Text style={styles.locationLabel}>Location</Text>
-                                <Text style={styles.locationValue}>{booking.pickupPlace}</Text>
-                            </View>
+                {/* Pickup Photos Section */}
+                {pickupImages.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <MaterialIcons name="photo-library" size={24} color="#10b981" />
+                            <Text style={styles.sectionTitle}>Pickup Photos</Text>
                         </View>
-                        <View style={styles.locationRow}>
-                            <MaterialIcons name="schedule" size={20} color="#6b7280" />
-                            <View style={styles.locationInfo}>
-                                <Text style={styles.locationLabel}>Date & Time</Text>
-                                <Text style={styles.locationValue}>
-                                    {pickupDateTime.date} at {pickupDateTime.time}
-                                </Text>
+                        <View style={styles.sectionContent}>
+                            {pickupDescription && (
+                                <Text style={styles.pickupDescription}>{pickupDescription}</Text>
+                            )}
+                            <View style={styles.imageGrid}>
+                                {pickupImages.map((uri, index) => (
+                                    <View key={index} style={styles.imageContainer}>
+                                        <Image source={{ uri }} style={styles.thumbnail} />
+                                    </View>
+                                ))}
                             </View>
                         </View>
                     </View>
-                </View>
+                )}
 
-                {/* Dropoff Section */}
+                {/* Return Location */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <MaterialIcons name="location-off" size={24} color="#ef4444" />
-                        <Text style={styles.sectionTitle}>Dropoff Information</Text>
+                        <Text style={styles.sectionTitle}>Return Information</Text>
                     </View>
                     <View style={styles.sectionContent}>
                         <View style={styles.locationRow}>
@@ -444,19 +419,16 @@ export default function PickupReturnConfirmScreen() {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <MaterialIcons name="description" size={24} color={colors.primary} />
-                        <Text style={styles.sectionTitle}>
-                            {isAlreadyCheckedIn ? "Pickup Notes" : "Notes (Optional)"}
-                        </Text>
+                        <Text style={styles.sectionTitle}>Return Notes (Optional)</Text>
                     </View>
                     <View style={styles.sectionContent}>
                         <TextInput
-                            style={[styles.textInput, isAlreadyCheckedIn && styles.textInputReadOnly]}
-                            placeholder="Add any notes about the vehicle condition..."
+                            style={styles.textInput}
+                            placeholder="Add any notes about the vehicle condition on return..."
                             value={description}
                             onChangeText={setDescription}
                             multiline
                             numberOfLines={3}
-                            editable={!isAlreadyCheckedIn}
                         />
                     </View>
                 </View>
@@ -465,31 +437,15 @@ export default function PickupReturnConfirmScreen() {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <MaterialIcons name="photo-camera" size={24} color={colors.primary} />
-                        <Text style={styles.sectionTitle}>
-                            {isAlreadyCheckedIn ? "Pickup Photos (Already Submitted)" : `Vehicle Photos (${selectedImages.length}/5)`}
-                        </Text>
+                        <Text style={styles.sectionTitle}>Return Photos ({selectedImages.length}/5)</Text>
                     </View>
                     <View style={styles.sectionContent}>
-                        {!isAlreadyCheckedIn && (
-                            <Pressable onPress={showImagePickerOptions} style={styles.uploadButton}>
-                                <MaterialIcons name="add-photo-alternate" size={20} color={colors.primary} />
-                                <Text style={styles.uploadButtonText}>Add Photos</Text>
-                            </Pressable>
-                        )}
+                        <Pressable onPress={showImagePickerOptions} style={styles.uploadButton}>
+                            <MaterialIcons name="add-photo-alternate" size={20} color={colors.primary} />
+                            <Text style={styles.uploadButtonText}>Add Photos</Text>
+                        </Pressable>
 
-                        {/* Show existing check-in images if already checked in */}
-                        {isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0 && (
-                            <View style={styles.imageGrid}>
-                                {existingCheckInData.images.map((uri, index) => (
-                                    <View key={index} style={styles.imageContainer}>
-                                        <Image source={{ uri }} style={styles.thumbnail} />
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-
-                        {/* Show new images for check-in */}
-                        {!isAlreadyCheckedIn && selectedImages.length > 0 && (
+                        {selectedImages.length > 0 && (
                             <View style={styles.imageGrid}>
                                 {selectedImages.map((uri, index) => (
                                     <View key={index} style={styles.imageContainer}>
@@ -509,33 +465,23 @@ export default function PickupReturnConfirmScreen() {
 
                 {/* Action Buttons */}
                 <View style={styles.actionButtons}>
-                    {isAlreadyCheckedIn ? (
-                        <Pressable
-                            onPress={handleProceedToReturn}
-                            style={styles.confirmButton}
-                        >
-                            <MaterialIcons name="arrow-forward" size={20} color={colors.white} />
-                            <Text style={styles.confirmButtonText}>Proceed to Return</Text>
-                        </Pressable>
-                    ) : (
-                        <Pressable
-                            onPress={handleConfirmPickup}
-                            disabled={submitting || selectedImages.length === 0}
-                            style={[
-                                styles.confirmButton,
-                                (submitting || selectedImages.length === 0) && styles.confirmButtonDisabled
-                            ]}
-                        >
-                            {submitting ? (
-                                <ActivityIndicator size="small" color={colors.white} />
-                            ) : (
-                                <>
-                                    <MaterialIcons name="check-circle" size={20} color={colors.white} />
-                                    <Text style={styles.confirmButtonText}>Confirm Pickup</Text>
-                                </>
-                            )}
-                        </Pressable>
-                    )}
+                    <Pressable
+                        onPress={handleConfirmReturn}
+                        disabled={submitting || selectedImages.length === 0}
+                        style={[
+                            styles.confirmButton,
+                            (submitting || selectedImages.length === 0) && styles.confirmButtonDisabled
+                        ]}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator size="small" color={colors.white} />
+                        ) : (
+                            <>
+                                <MaterialIcons name="check-circle" size={20} color={colors.white} />
+                                <Text style={styles.confirmButtonText}>Confirm Return</Text>
+                            </>
+                        )}
+                    </Pressable>
                 </View>
             </ScrollView>
         </View>
@@ -643,7 +589,7 @@ const styles = StyleSheet.create({
         color: "#6b7280",
     },
     statusBadge: {
-        backgroundColor: "#d1fae5",
+        backgroundColor: "#fef3c7",
         paddingHorizontal: scale(12),
         paddingVertical: verticalScale(6),
         borderRadius: scale(16),
@@ -652,7 +598,7 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: scale(12),
         fontWeight: "600",
-        color: "#059669",
+        color: "#d97706",
     },
     infoRow: {
         flexDirection: "row",
@@ -733,10 +679,6 @@ const styles = StyleSheet.create({
         minHeight: verticalScale(80),
         textAlignVertical: "top",
     },
-    textInputReadOnly: {
-        backgroundColor: "#f3f4f6",
-        color: "#6b7280",
-    },
     confirmButton: {
         backgroundColor: colors.morentBlue,
         flexDirection: "row",
@@ -798,5 +740,11 @@ const styles = StyleSheet.create({
         height: scale(24),
         alignItems: "center",
         justifyContent: "center",
+    },
+    pickupDescription: {
+        fontSize: scale(14),
+        color: "#6b7280",
+        marginBottom: verticalScale(8),
+        fontStyle: "italic",
     },
 })

@@ -50,6 +50,7 @@ export type NavigatorParamList = {
     dropoffDate?: string;
     dropoffTime?: string;
   };
+  ['VehicleReturn']: { bookingId: string };
   ['auth']: undefined;
   ['tabStack']: undefined;
   ['staffStack']: undefined;

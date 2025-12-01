@@ -41,9 +41,13 @@ export default function BookingDetailScreen() {
         }
 
         if (res.data) {
-          // Security check: Only allow user to view their own bookings
-          if (res.data.userId !== user?.id) {
+          // Security check: Only allow user to view their own bookings (unless they're staff)
+          const isStaff = user?.role === 'staff' || user?.roleId === 1002;
+          const isOwner = res.data.userId === user?.id;
+
+          if (!isStaff && !isOwner) {
             console.log("BookingDetail: Access denied - booking belongs to different user");
+            console.log("BookingDetail: Booking userId:", res.data.userId, "User id:", user?.id);
             Alert.alert(
               "Access Denied",
               "You don't have permission to view this booking.",

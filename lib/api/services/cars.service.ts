@@ -18,7 +18,29 @@ interface ApiCarResponse {
   status: string
   owner?: any
   preferredLot?: any
+  rentalRate?: {
+    dailyRate: number
+    hourlyRate: number
+    weeklyDiscount: number
+    monthlyDiscount: number
+    maxDistancePerDay: number | null
+    overtravelRatePerKm: number
+    status: string
+    carId: string
+  } | null
   imageUrls: string[]
+}
+
+// Rental Rate Response from API
+export interface RentalRate {
+  dailyRate: number
+  hourlyRate: number
+  weeklyDiscount: number
+  monthlyDiscount: number
+  maxDistancePerDay: number | null
+  overtravelRatePerKm: number
+  status: string
+  carId: string
 }
 
 // App Car model
@@ -27,8 +49,10 @@ export interface Car {
   name: string
   brand: string
   model: string
+  manufacturer: string
   licensePlate?: string
   year: number
+  yearofManufacture: number
   category: string
   price: number
   image: string
@@ -39,11 +63,14 @@ export interface Car {
   seats: number
   transmission: string
   fuelType: string
+  fuelConsumption?: number
   mileage: string
   features: string[]
   description: string
   available: boolean
+  status?: string
   location?: string
+  preferredLot?: any
 }
 
 // Map API response to app Car model
@@ -56,18 +83,25 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
     category = "sport"
   }
 
-  // Calculate price (mock - should come from API)
-  const basePrice = 500000 // 500k VND base
-  const yearFactor = (apiCar.yearofManufacture - 2020) * 50000
-  const price = basePrice + yearFactor
+  // Get price from rentalRate if available
+  const price = apiCar.rentalRate?.dailyRate || 0
+
+  // Debug logging
+  if (apiCar.rentalRate) {
+    console.log(`🚗 ${apiCar.manufacturer} ${apiCar.model}: rentalRate found, dailyRate = ${apiCar.rentalRate.dailyRate}, status = ${apiCar.status}`)
+  } else {
+    console.log(`🚗 ${apiCar.manufacturer} ${apiCar.model}: NO rentalRate, status = ${apiCar.status}`)
+  }
 
   return {
     id: apiCar.id,
     name: `${apiCar.manufacturer} ${apiCar.model}`,
     brand: apiCar.manufacturer,
+    manufacturer: apiCar.manufacturer,
     model: apiCar.model,
     licensePlate: apiCar.licensePlate,
     year: apiCar.yearofManufacture,
+    yearofManufacture: apiCar.yearofManufacture,
     category: category,
     price: price,
     image: apiCar.imageUrls?.[0] || "",
@@ -78,11 +112,14 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
     seats: apiCar.seats,
     transmission: apiCar.transmission,
     fuelType: apiCar.fuelType,
+    fuelConsumption: apiCar.fuelConsumption,
     mileage: `${apiCar.fuelConsumption} L/100km`,
     features: [], // API doesn't provide this
     description: apiCar.description || "",
     available: apiCar.status?.toLowerCase() === "available" || apiCar.status?.toLowerCase() === "active",
+    status: apiCar.status,
     location: apiCar.preferredLot?.city || apiCar.preferredLot?.address || undefined,
+    preferredLot: apiCar.preferredLot,
   }
 }
 
@@ -153,7 +190,7 @@ export const carsService = {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model
+    // Map API response to app model (rentalRate.dailyRate is already included)
     const mappedData = result.data?.map(mapApiCarToCar) || null
     return { data: mappedData, error: null }
   },
@@ -171,7 +208,7 @@ export const carsService = {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model
+    // Map API response to app model (rentalRate.dailyRate is already included)
     const mappedData = result.data ? mapApiCarToCar(result.data) : null
     return { data: mappedData, error: null }
   },
@@ -186,5 +223,24 @@ export const carsService = {
     // Map API response to app model
     const mappedData = result.data?.map(mapApiCarToCar) || null
     return { data: mappedData, error: null }
+  },
+
+  async getCarRentalRate(carId: string): Promise<{ data: RentalRate | null; error: Error | null }> {
+    const result = await apiClient<RentalRate>(API_ENDPOINTS.CAR_RENTAL_RATE(carId), { method: "GET" })
+
+    if (result.error) {
+      // Don't log 404 errors as they're expected for cars without rental rates
+      if (!result.error.message.includes("404") && !result.error.message.includes("not found")) {
+        console.error("carsService.getCarRentalRate: unexpected error for car", carId, result.error)
+      }
+      return { data: null, error: result.error }
+    }
+
+    console.log("carsService.getCarRentalRate: found rate for car", carId, {
+      dailyRate: result.data?.dailyRate,
+      status: result.data?.status
+    })
+
+    return { data: result.data, error: null }
   },
 }

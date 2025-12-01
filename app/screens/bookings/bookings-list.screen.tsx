@@ -18,6 +18,7 @@ export default function BookingsListScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
   const { user } = useAuth()
 
@@ -39,7 +40,13 @@ export default function BookingsListScreen() {
         setBookings([])
       } else if (data) {
         console.log("BookingsListScreen: Received bookings", data.length)
-        setBookings(data)
+        // Sort bookings by booking date (newest first)
+        const sortedBookings = data.sort((a, b) => {
+          const dateA = new Date(a.bookingDate || a.startDate).getTime()
+          const dateB = new Date(b.bookingDate || b.startDate).getTime()
+          return dateB - dateA // Newest first
+        })
+        setBookings(sortedBookings)
       } else {
         console.log("BookingsListScreen: No bookings data received")
         setBookings([])
@@ -59,6 +66,14 @@ export default function BookingsListScreen() {
       fetchBookings()
     }, [fetchBookings])
   )
+
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    console.log("BookingsListScreen: Pull-to-refresh triggered")
+    setRefreshing(true)
+    await fetchBookings()
+    setRefreshing(false)
+  }, [fetchBookings])
 
   const filteredBookings = statusFilter === "all" ? bookings : bookings.filter((b: Booking) => b.status === statusFilter)
 
@@ -140,16 +155,22 @@ export default function BookingsListScreen() {
       </View>
 
       {/* Car Image */}
-      <View style={{ borderRadius: scale(8), overflow: "hidden", marginBottom: verticalScale(12) }}>
-        <Image
-          source={getAsset(item.carImage)}
-          style={{
-            width: "100%",
-            height: scale(140),
-            resizeMode: "cover",
-          }}
-        />
-      </View>
+      {item.carImage && (
+        <View style={{ borderRadius: scale(8), overflow: "hidden", marginBottom: verticalScale(12) }}>
+          <Image
+            source={
+              item.carImage.startsWith('http://') || item.carImage.startsWith('https://')
+                ? { uri: item.carImage }
+                : getAsset(item.carImage)
+            }
+            style={{
+              width: "100%",
+              height: scale(140),
+              resizeMode: "cover",
+            }}
+          />
+        </View>
+      )}
 
       {/* Location */}
       <View style={{ marginBottom: verticalScale(12) }}>
@@ -248,6 +269,8 @@ export default function BookingsListScreen() {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: scale(16), paddingBottom: verticalScale(100) }}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListHeaderComponent={
           <View
             style={{

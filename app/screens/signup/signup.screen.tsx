@@ -13,14 +13,20 @@ import { validateEmail } from "../singin/signin.validation"
 const SignUpScreen = () => {
   const styles = createStyles()
   const { isSecure, setIsSecure } = useSignup()
+  const [username, setUsername] = useState("")
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSignUp = async () => {
     // Validation
+    if (!username.trim()) {
+      Alert.alert("Validation Error", "Please enter a username")
+      return
+    }
     if (!fullName.trim()) {
       Alert.alert("Validation Error", "Please enter your full name")
       return
@@ -89,13 +95,16 @@ const SignUpScreen = () => {
     setIsLoading(true)
     try {
       console.log("=== Starting Signup ===")
-      console.log("Signup data:", { name: fullName, email, phone })
+      console.log("Signup data:", { username, fullname: fullName, email, phone, address })
 
       const result = await authService.register({
-        name: fullName,
+        username: username,
+        fullname: fullName,
         email: email,
         password: password,
-        phone: phone || undefined,
+        phoneNumber: phone || undefined,
+        address: address || undefined,
+        gender: 2, // Default to "Other"
       })
 
       console.log("Signup result:", { hasError: !!result.error, hasData: !!result.data })
@@ -150,6 +159,10 @@ const SignUpScreen = () => {
       </View>
       <View style={styles.inputContainer}>
         <InputComponent
+          onChangeText={setUsername}
+          placeholder={"Username"}
+        />
+        <InputComponent
           onChangeText={setFullName}
           placeholder={"Full Name"}
         />
@@ -167,6 +180,10 @@ const SignUpScreen = () => {
         <InputComponent
           onChangeText={setPhone}
           placeholder={"Phone Number (Optional)"}
+        />
+        <InputComponent
+          onChangeText={setAddress}
+          placeholder={"Address (Optional)"}
         />
       </View>
       {renderMarginTop(12)}

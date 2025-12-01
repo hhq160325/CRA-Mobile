@@ -144,7 +144,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = () => {
     const currentUser = authService.getCurrentUser()
     if (currentUser) {
-      setUser(currentUser)
+      console.log('auth-context: refreshing user', {
+        userId: currentUser.id,
+        avatar: currentUser.avatar,
+        imageAvatar: (currentUser as any).imageAvatar
+      })
+      // Create a completely new object to force React to detect the change
+      setUser(null)
+      setTimeout(() => {
+        setUser({ ...currentUser })
+      }, 0)
     }
   }
 

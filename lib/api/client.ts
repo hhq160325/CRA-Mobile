@@ -80,16 +80,40 @@ async function makeRequest<T>(
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error("apiClient: error response status:", response.status)
-      console.error("apiClient: error response body:", errorText)
+
+      // Only log non-404 errors to reduce noise (404s are expected for missing data)
+      if (response.status !== 404) {
+        console.error("apiClient: error response status:", response.status)
+        console.error("apiClient: error response body:", errorText)
+      }
+
       let errorData: any = {}
       try {
         errorData = JSON.parse(errorText)
-        console.error("apiClient: parsed error data:", JSON.stringify(errorData, null, 2))
+        if (response.status !== 404) {
+          console.error("apiClient: parsed error data:", JSON.stringify(errorData, null, 2))
+        }
       } catch {
         errorData = { message: errorText }
       }
-      throw new APIError(errorData.message || errorData.title || "Request failed", response.status, errorData)
+
+      // Provide more helpful error messages for common status codes
+      let errorMessage = errorData.message || errorData.title || "Request failed"
+      if (!errorMessage || errorMessage === "Request failed") {
+        if (response.status === 500) {
+          errorMessage = "Server error occurred. Please try again later or contact support if the issue persists."
+        } else if (response.status === 400) {
+          errorMessage = "Invalid request data. Please check your input and try again."
+        } else if (response.status === 401) {
+          errorMessage = "Authentication required. Please log in again."
+        } else if (response.status === 403) {
+          errorMessage = "You don't have permission to perform this action."
+        } else if (response.status === 404) {
+          errorMessage = "The requested resource was not found."
+        }
+      }
+
+      throw new APIError(errorMessage, response.status, errorData)
     }
 
     const responseText = await response.text()
@@ -140,10 +164,11 @@ export async function apiClient<T>(
       ...(options?.headers as Record<string, string>),
     }
 
-
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
+      console.log("apiClient: using auth token (length:", token.length, ")")
     }
+    // Note: Some endpoints don't require authentication, so missing token is not always an error
 
     const fetchOptions: RequestInit = {
       ...options,

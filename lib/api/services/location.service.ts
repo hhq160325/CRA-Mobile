@@ -1,4 +1,5 @@
 import { apiClient } from "../client"
+import * as ExpoLocation from 'expo-location'
 
 export interface Location {
     id: string
@@ -127,18 +128,68 @@ export const locationService = {
         latitude: number,
         longitude: number
     ): Promise<{ data: { address: string; city: string; country: string } | null; error: Error | null }> {
-        const params = new URLSearchParams({
-            latitude: latitude.toString(),
-            longitude: longitude.toString(),
-        })
+        console.log("locationService.reverseGeocode: getting address for", { latitude, longitude })
 
-        const result = await apiClient<{ address: string; city: string; country: string }>(
-            `/locations/reverse-geocode?${params}`,
+        const result = await apiClient<any>(
+            "/TrackAsia/GetReverseGeocoding",
             {
-                method: "GET",
+                method: "POST",
+                body: JSON.stringify({
+                    latitude: latitude.toString(),
+                    longitude: longitude.toString(),
+                }),
             }
         )
-        return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
+
+        console.log("locationService.reverseGeocode: received response", {
+            hasError: !!result.error,
+            hasData: !!result.data,
+            data: result.data,
+        })
+
+        if (result.error) {
+            return { data: null, error: result.error }
+        }
+
+        // Handle different possible response formats from TrackAsia API
+        const responseData = result.data
+
+        // Try to extract address information from various possible formats
+        let address = ''
+        let city = ''
+        let country = ''
+
+        if (responseData) {
+            // TrackAsia API returns formattedAddress or oldFormattedAddress
+            address = responseData.formattedAddress ||
+                responseData.oldFormattedAddress ||
+                responseData.address ||
+                responseData.display_name ||
+                responseData.formatted_address ||
+                ''
+
+            city = responseData.city || responseData.town || responseData.village || ''
+            country = responseData.country || responseData.country_name || ''
+
+            // If no direct address, try to build from components
+            if (!address && responseData.address_components) {
+                const components = responseData.address_components
+                address = [
+                    components.road,
+                    components.suburb,
+                    components.city || components.town,
+                    components.state,
+                    components.country
+                ].filter(Boolean).join(', ')
+            }
+
+            console.log("locationService.reverseGeocode: parsed address", { address, city, country })
+        }
+
+        return {
+            data: { address, city, country },
+            error: null
+        }
     },
 
 
@@ -146,32 +197,42 @@ export const locationService = {
         data: { latitude: number; longitude: number } | null
         error: Error | null
     }> {
-        return new Promise((resolve) => {
-            if (!navigator.geolocation) {
-                resolve({ data: null, error: new Error("Geolocation not supported") })
-                return
+        try {
+            console.log("locationService.getCurrentLocation: requesting permissions");
+            const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
+
+            if (status !== 'granted') {
+                console.log("locationService.getCurrentLocation: permission denied");
+                return {
+                    data: null,
+                    error: new Error("Location permission denied. Please enable location access in your device settings.")
+                };
             }
 
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    resolve({
-                        data: {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                        },
-                        error: null,
-                    })
+            console.log("locationService.getCurrentLocation: getting current position");
+            const location = await ExpoLocation.getCurrentPositionAsync({
+                accuracy: ExpoLocation.Accuracy.High,
+            });
+
+            console.log("locationService.getCurrentLocation: success", {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+            });
+
+            return {
+                data: {
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
                 },
-                (error) => {
-                    resolve({ data: null, error: new Error(error.message) })
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0,
-                }
-            )
-        })
+                error: null,
+            };
+        } catch (error) {
+            console.error("locationService.getCurrentLocation: caught error", error);
+            return {
+                data: null,
+                error: error instanceof Error ? error : new Error("Failed to get location. Please ensure location services are enabled.")
+            };
+        }
     },
 
 

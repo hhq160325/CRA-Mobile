@@ -135,7 +135,6 @@ export const userService = {
         console.log("userService.uploadAvatar: uploading avatar for user", userId)
 
         try {
-
             let token: string | null = null
             try {
                 if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
@@ -145,58 +144,35 @@ export const userService = {
                 console.error("Failed to get token from localStorage:", e)
             }
 
-
-            console.log("userService.uploadAvatar: trying FormData with POST")
             const formData = new FormData()
-
 
             const filename = imageUri.split('/').pop() || 'avatar.jpg'
             const match = /\.(\w+)$/.exec(filename)
             const type = match ? `image/${match[1]}` : 'image/jpeg'
 
-
-            formData.append('imageAvatar', {
+            formData.append('image', {
                 uri: imageUri,
                 name: filename,
                 type: type,
             } as any)
 
-            formData.append('id', userId)
+            // Add userId to FormData as per API requirement
+            formData.append('userId', userId)
 
-            const url = `${API_ENDPOINTS.UPDATE_USER_INFO}`
+            const url = API_ENDPOINTS.UPLOAD_AVATAR(userId)
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
 
-            console.log("userService.uploadAvatar: uploading to", `${baseUrl}${url}`)
+            console.log("userService.uploadAvatar: uploading to", `${baseUrl}${url}`, "with userId:", userId)
 
-            let response = await fetch(`${baseUrl}${url}`, {
-                method: "POST",
+            const response = await fetch(`${baseUrl}${url}`, {
+                method: "PATCH",
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
                 },
                 body: formData,
             })
 
-            console.log("userService.uploadAvatar: POST response status", response.status)
-
-
-            if (!response.ok && response.status === 405) {
-                console.log("userService.uploadAvatar: POST failed, trying PATCH with image URL")
-
-
-                response = await fetch(`${baseUrl}${url}`, {
-                    method: "PATCH",
-                    headers: {
-                        'Authorization': token ? `Bearer ${token}` : '',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        id: userId,
-                        imageAvatar: imageUri,
-                    }),
-                })
-
-                console.log("userService.uploadAvatar: PATCH response status", response.status)
-            }
+            console.log("userService.uploadAvatar: response status", response.status)
 
             if (!response.ok) {
                 const errorText = await response.text()
@@ -204,18 +180,9 @@ export const userService = {
                 return { data: null, error: new Error(`Upload failed: ${response.status} - ${errorText}`) }
             }
 
-            const responseText = await response.text()
-            let data: any
+            const data = await response.json()
 
-            try {
-                data = JSON.parse(responseText)
-            } catch {
-
-                console.log("userService.uploadAvatar: non-JSON response, fetching user data")
-                return await this.getUserById(userId)
-            }
-
-            console.log("userService.uploadAvatar: success")
+            console.log("userService.uploadAvatar: success, avatar URL:", data.imageAvatar)
             return { data, error: null }
         } catch (error) {
             console.error("userService.uploadAvatar: caught error", error)
@@ -287,6 +254,27 @@ export const userService = {
             console.error("userService.uploadDriverLicense: caught error", error)
             return { data: null, error: error as Error }
         }
+    },
+
+    async getDriverLicense(userId: string, email: string): Promise<{ data: { urls: string[] } | null; error: Error | null }> {
+        console.log("userService.getDriverLicense: fetching driver license for user", userId)
+
+        const result = await apiClient<{ urls: string[]; view: any[] }>(API_ENDPOINTS.GET_DRIVER_LICENSE(userId, email), {
+            method: "GET",
+        })
+
+        console.log("userService.getDriverLicense: received response", {
+            hasError: !!result.error,
+            hasData: !!result.data,
+            urlCount: result.data?.urls?.length || 0,
+        })
+
+        if (result.error) {
+            console.error("userService.getDriverLicense: error details", result.error)
+            return { data: null, error: result.error }
+        }
+
+        return { data: result.data, error: null }
     },
 }
 

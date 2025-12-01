@@ -7,6 +7,7 @@ import { scale } from "../../../theme/scale"
 import { getAsset } from "../../../../lib/getAsset"
 import type { Car } from "../../../../lib/api"
 import { useFavorites } from "../../../../lib/favorites-context"
+import { useLanguage } from "../../../../lib/language-context"
 
 interface CarCardProps {
     car: Car
@@ -18,6 +19,7 @@ interface CarCardProps {
 export default function CarCard({ car, isHorizontal = false, onPress, onRentPress }: CarCardProps) {
     const { isFavorite, toggleFavorite } = useFavorites()
     const isLiked = isFavorite(car.id)
+    const { t } = useLanguage()
 
     const handleFavoritePress = (e: any) => {
         e.stopPropagation()
@@ -98,10 +100,16 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
 
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <View>
-                    <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary }}>
-                        {car.price} VND
-                        <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>/day</Text>
-                    </Text>
+                    {car.price > 0 ? (
+                        <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary }}>
+                            {car.price.toLocaleString()} VND
+                            <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>{t("perDay")}</Text>
+                        </Text>
+                    ) : (
+                        <Text style={{ fontSize: scale(12), color: colors.placeholder }}>
+                            Contact for price
+                        </Text>
+                    )}
                 </View>
                 <Pressable
                     onPress={onRentPress}
@@ -112,7 +120,7 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                         borderRadius: 4,
                     }}
                 >
-                    <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600" }}>Rent Now</Text>
+                    <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600" }}>{t("rentNow")}</Text>
                 </Pressable>
             </View>
         </Pressable>

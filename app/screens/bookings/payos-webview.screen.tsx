@@ -8,16 +8,17 @@ import type { NavigatorParamList } from "../../navigators/navigation-route"
 import { colors } from "../../theme/colors"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 
-type PayOSWebViewRouteProp = RouteProp<{ params: { paymentUrl: string; bookingId?: string } }, "params">
+type PayOSWebViewRouteProp = RouteProp<{ params: { paymentUrl: string; bookingId?: string; returnScreen?: string } }, "params">
 
 export default function PayOSWebViewScreen() {
     const route = useRoute<PayOSWebViewRouteProp>()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
-    const { paymentUrl, bookingId } = (route.params as any) || {}
+    const { paymentUrl, bookingId, returnScreen } = (route.params as any) || {}
 
     const [loading, setLoading] = useState(true)
     const [canGoBack, setCanGoBack] = useState(false)
     const webViewRef = useRef<WebView>(null)
+    const paymentProcessedRef = useRef(false) // Flag to prevent multiple alerts
 
     const handleNavigationStateChange = (navState: any) => {
         setCanGoBack(navState.canGoBack)
@@ -28,27 +29,143 @@ export default function PayOSWebViewScreen() {
 
         // PayOS success/cancel URLs
         if (url.includes('success') || url.includes('completed')) {
-            Alert.alert(
-                "Payment Successful",
-                "Your payment has been completed successfully!",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => {
-                            if (bookingId && bookingId !== "pending") {
-                                navigation.navigate("BookingDetail" as any, { id: bookingId })
-                            } else {
-                                // Navigate to main tab stack
-                                navigation.reset({
-                                    index: 0,
-                                    routes: [{ name: "tabStack" as any }],
-                                })
-                            }
+            // Prevent processing multiple times
+            if (paymentProcessedRef.current) {
+                console.log("⚠️ Payment already processed, skipping...")
+                return
+            }
+            paymentProcessedRef.current = true
+
+            console.log("=== Payment Success Detected ===")
+            console.log("URL:", url)
+            console.log("Booking ID:", bookingId)
+
+            // Update booking status to Confirmed and check payment statuses
+            if (bookingId && bookingId !== "pending") {
+                console.log("Updating booking status to Confirmed for:", bookingId)
+
+                const updateUrl = "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Booking/UpdateBooking"
+
+                // First update booking status - using "Confirmed" (capital C as per API response format)
+                const updatePayload = {
+                    bookingId: bookingId,
+                    status: "Confirmed"
+                }
+                console.log("📤 Sending booking update:", JSON.stringify(updatePayload))
+
+                fetch(updateUrl, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(updatePayload)
+                })
+                    .then(async response => {
+                        console.log("📥 Booking update response status:", response.status)
+                        const responseText = await response.text()
+                        console.log("📥 Booking update response body:", responseText)
+
+                        if (!response.ok) {
+                            console.error("❌ Booking update FAILED - Status:", response.status)
+                            console.error("❌ Error response:", responseText)
+                            // Don't throw - continue to update payment status anyway
+                        } else {
+                            console.log("✅ Booking status updated successfully")
                         }
-                    }
-                ]
-            )
+
+                        return responseText
+                    })
+                    .then(() => {
+                        // Update payment status using the UpdatePayment API
+                        console.log("Updating payment status...")
+                        const paymentUpdateUrl = "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/UpdatePayment/Booking/BookingPayment"
+
+                        return fetch(paymentUpdateUrl, {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                bookingId: bookingId,
+                                paymentMethod: "PayOS",
+                                status: "Success"
+                            })
+                        })
+                    })
+                    .then(async response => {
+                        console.log("Payment update response status:", response.status)
+                        const responseText = await response.text()
+                        console.log("Payment update response body:", responseText)
+
+                        if (!response.ok) {
+                            console.error("❌ Payment update failed with status:", response.status)
+                        } else {
+                            console.log("✅ Payment status updated to Success")
+                        }
+                    })
+                    .catch(err => {
+                        console.error("❌ Failed to update booking/payment status:", err)
+                        console.error("Error details:", err.message)
+                    })
+                    .finally(() => {
+                        // Navigate directly to home screen without showing alert
+                        console.log("✅ Payment completed, navigating to home screen")
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: "tabStack" as any }],
+                        })
+                    })
+            } else {
+                console.log("⚠️ No valid booking ID, skipping booking status update")
+                // Navigate directly to home screen
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: "tabStack" as any }],
+                })
+            }
         } else if (url.includes('cancel') || url.includes('failed')) {
+            // Prevent processing multiple times
+            if (paymentProcessedRef.current) {
+                console.log("⚠️ Payment cancellation already processed, skipping...")
+                return
+            }
+            paymentProcessedRef.current = true
+
+            console.log("=== Payment Cancelled Detected ===")
+            console.log("URL:", url)
+            console.log("Booking ID:", bookingId)
+
+            // Update booking status to Canceled
+            if (bookingId && bookingId !== "pending") {
+                console.log("Updating booking status to Canceled for:", bookingId)
+
+                const updateUrl = "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Booking/UpdateBooking"
+
+                fetch(updateUrl, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        bookingId: bookingId,
+                        status: "Canceled"
+                    })
+                })
+                    .then(response => {
+                        console.log("Booking update response status:", response.status)
+                        return response.text()
+                    })
+                    .then(responseText => {
+                        console.log("Booking update response:", responseText)
+                        console.log("✓ Booking status updated to Canceled")
+                    })
+                    .catch(err => {
+                        console.error("✗ Failed to update booking status:", err)
+                    })
+            } else {
+                console.log("⚠️ No valid booking ID, skipping booking status update")
+            }
+
             // Auto close WebView and return to home
             navigation.reset({
                 index: 0,

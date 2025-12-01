@@ -1,265 +1,171 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { View, Text, Pressable, ScrollView, Image, Alert } from "react-native"
-import { useRoute } from "@react-navigation/native"
+import React, { useState, useEffect } from "react"
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Image, Alert, TextInput } from "react-native"
+import { useRoute, useNavigation } from "@react-navigation/native"
 import type { RouteProp } from "@react-navigation/native"
-import { useNavigation } from "@react-navigation/native"
-import * as ImagePicker from "expo-image-picker"
+import type { StackNavigationProp } from "@react-navigation/stack"
+import type { NavigatorParamList } from "../../navigators/navigation-route"
 import { colors } from "../../theme/colors"
-import { scale } from "../../theme/scale"
+import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
-import { confirmationService, bookingsService, carsService, paymentService } from "../../../lib/api"
+import MaterialIcons from "react-native-vector-icons/MaterialIcons"
+import { bookingsService } from "../../../lib/api/services/bookings.service"
+import { carsService } from "../../../lib/api/services/cars.service"
+import { userService } from "../../../lib/api/services/user.service"
 import { scheduleService } from "../../../lib/api/services/schedule.service"
+import * as ImagePicker from 'expo-image-picker'
 
-type ConfirmationType = "pickup" | "return"
+type PickupReturnConfirmRouteProp = RouteProp<{ params: { bookingId: string } }, "params">
 
-interface ImageData {
-    uri: string
-    type: string
-    name: string
+interface BookingDetails {
+    id: string
+    carName: string
+    carModel: string
+    carLicensePlate: string
+    carImage: string
+    customerName: string
+    pickupPlace: string
+    pickupTime: string
+    dropoffPlace: string
+    dropoffTime: string
+    amount: number
+    status: string
 }
 
 export default function PickupReturnConfirmScreen() {
-    const route = useRoute<RouteProp<{
-        params: {
-            paymentId: string;
-            bookingId?: string;
-            carName?: string;
-            carType?: string;
-            customerName?: string;
-            pickupLocation?: string;
-            pickupDate?: string;
-            pickupTime?: string;
-            dropoffLocation?: string;
-            dropoffDate?: string;
-            dropoffTime?: string;
-        }
-    }, "params">>()
+    const route = useRoute<PickupReturnConfirmRouteProp>()
+    const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
+    const { bookingId } = (route.params as any) || {}
 
-    const params = (route.params as any) || {}
-    const {
-        paymentId,
-        bookingId,
-        carName,
-        carType,
-        customerName,
-        pickupLocation,
-        pickupDate,
-        pickupTime,
-        dropoffLocation,
-        dropoffDate,
-        dropoffTime
-    } = params
+    const [booking, setBooking] = useState<BookingDetails | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [selectedImages, setSelectedImages] = useState<string[]>([])
+    const [description, setDescription] = useState("")
+    const [submitting, setSubmitting] = useState(false)
+    const [staffId, setStaffId] = useState<string>("")
 
-    const navigation = useNavigation()
-
-    // Check existing confirmations and set initial tab
-    const existingConfirmation = confirmationService.getConfirmation(paymentId)
-    const initialTab: ConfirmationType = existingConfirmation.pickupConfirmed ? "return" : "pickup"
-
-    const [activeTab, setActiveTab] = useState<ConfirmationType>(initialTab)
-    const [pickupScheduleStatus, setPickupScheduleStatus] = useState<string | null>(null)
-    const [returnScheduleStatus, setReturnScheduleStatus] = useState<string | null>(null)
-    const [pickupImage, setPickupImage] = useState<ImageData | null>(null)
-    const [returnImage, setReturnImage] = useState<ImageData | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [bookingData, setBookingData] = useState<any>(null)
-    const [fetchingBooking, setFetchingBooking] = useState(true)
-
-    // Format date for display
-    const formatDate = (dateStr: string) => {
-        if (!dateStr) return "N/A"
-        const date = new Date(dateStr)
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    }
-
-    // Format time for display
-    const formatTime = (dateStr: string) => {
-        if (!dateStr) return "N/A"
-        const date = new Date(dateStr)
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    }
-
-    // Check schedule statuses
+    // Get staff ID from localStorage
     useEffect(() => {
-        const checkScheduleStatuses = async () => {
-            if (!bookingId) return
-
+        const getStaffId = async () => {
             try {
-                // Check pickup schedule status
-                const { data: pickupSchedule } = await scheduleService.getScheduleByBookingAndType(bookingId, "Pickup")
-                if (pickupSchedule) {
-                    setPickupScheduleStatus(pickupSchedule.status)
-                    console.log("Pickup schedule status:", pickupSchedule.status)
-
-                    // If pickup is completed, switch to return tab
-                    if (pickupSchedule.status === "COMPLETED") {
-                        setActiveTab("return")
+                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                    const userId = localStorage.getItem("userId")
+                    if (userId) {
+                        setStaffId(userId)
+                        console.log("Staff ID loaded:", userId)
                     }
                 }
-
-                // Check return schedule status
-                const { data: returnSchedule } = await scheduleService.getScheduleByBookingAndType(bookingId, "Return")
-                if (returnSchedule) {
-                    setReturnScheduleStatus(returnSchedule.status)
-                    console.log("Return schedule status:", returnSchedule.status)
-                }
-            } catch (error) {
-                console.error("Error checking schedule statuses:", error)
+            } catch (e) {
+                console.error("Failed to get staff ID:", e)
             }
         }
+        getStaffId()
+    }, [])
 
-        checkScheduleStatuses()
-    }, [bookingId])
-
-    // Fetch booking details from API
     useEffect(() => {
         const fetchBookingDetails = async () => {
-            if (!bookingId) {
-                console.log("No bookingId provided, using params data")
-                setFetchingBooking(false)
-                return
-            }
-
             try {
-                setFetchingBooking(true)
+                setLoading(true)
                 console.log("Fetching booking details for:", bookingId)
 
-                // Fetch booking details
-                const { data: booking, error: bookingError } = await bookingsService.getBookingById(bookingId)
-
-                if (bookingError || !booking) {
-                    console.error("Error fetching booking:", bookingError)
-                    Alert.alert("Error", "Failed to fetch booking details")
-                    setFetchingBooking(false)
+                // Fetch booking
+                const bookingResult = await bookingsService.getBookingById(bookingId)
+                if (bookingResult.error || !bookingResult.data) {
+                    setError("Failed to load booking details")
+                    setLoading(false)
                     return
                 }
 
-                console.log("Booking fetched:", booking)
-                console.log("Pickup location from booking:", booking.pickupLocation)
-                console.log("Dropoff location from booking:", booking.dropoffLocation)
+                const bookingData = bookingResult.data
 
                 // Fetch car details
-                let fetchedCarName = carName || "Unknown Car"
-                let fetchedCarType = carType || "Standard"
-                let fetchedCarModel = "N/A"
-                let fetchedLicensePlate = "N/A"
-                if (booking.carId) {
-                    try {
-                        const { data: cars } = await carsService.getAllCars()
-                        if (cars) {
-                            const car = cars.find((c: any) => c.id === booking.carId)
-                            if (car) {
-                                fetchedCarName = car.name || car.model || "Unknown Car"
-                                fetchedCarType = car.category || "Standard"
-                                fetchedCarModel = car.model || "N/A"
-                                fetchedLicensePlate = car.licensePlate || "N/A"
-                            }
-                        }
-                    } catch (err) {
-                        console.log("Error fetching car details:", err)
+                let carName = "Unknown Car"
+                let carModel = ""
+                let carLicensePlate = ""
+                let carImage = ""
+
+                if (bookingData.carId) {
+                    const carResult = await carsService.getCarById(bookingData.carId)
+                    if (carResult.data) {
+                        carName = carResult.data.name
+                        carModel = carResult.data.model
+                        carLicensePlate = carResult.data.licensePlate || ""
+                        carImage = carResult.data.image
                     }
                 }
 
                 // Fetch customer details
-                let fetchedCustomerName = customerName || "Unknown Customer"
-                if (booking.userId) {
-                    try {
-                        const { data: user } = await paymentService.getUserById(booking.userId)
-                        if (user) {
-                            fetchedCustomerName = user.name || user.email || "Unknown Customer"
-                        }
-                    } catch (err) {
-                        console.log("Error fetching user details:", err)
+                let customerName = "Customer"
+                if (bookingData.userId) {
+                    const userResult = await userService.getUserById(bookingData.userId)
+                    if (userResult.data) {
+                        customerName = userResult.data.fullname || userResult.data.username || "Customer"
                     }
                 }
 
-                // Set the booking data
-                const newBookingData = {
-                    id: booking.id,
-                    carId: booking.carId,
-                    userId: booking.userId,
-                    carName: fetchedCarName,
-                    carType: fetchedCarType,
-                    carModel: fetchedCarModel,
-                    licensePlate: fetchedLicensePlate,
-                    customerName: fetchedCustomerName,
-                    amount: booking.totalPrice || 0,
-                    pickupLocation: booking.pickupLocation || "N/A",
-                    pickupDate: formatDate(booking.startDate),
-                    pickupTime: formatTime(booking.startDate),
-                    dropoffLocation: booking.dropoffLocation || "N/A",
-                    dropoffDate: formatDate(booking.endDate),
-                    dropoffTime: formatTime(booking.endDate),
-                    mileage: 15420, // Mock data - would come from car details
-                    fuelLevel: "Full", // Mock data - would come from car details
-                }
+                setBooking({
+                    id: bookingData.id,
+                    carName,
+                    carModel,
+                    carLicensePlate,
+                    carImage,
+                    customerName,
+                    pickupPlace: bookingData.pickupLocation,
+                    pickupTime: bookingData.startDate,
+                    dropoffPlace: bookingData.dropoffLocation,
+                    dropoffTime: bookingData.endDate,
+                    amount: bookingData.totalPrice,
+                    status: bookingData.status,
+                })
 
-                console.log("Booking data to set:", newBookingData)
-                setBookingData(newBookingData)
-            } catch (error) {
-                console.error("Exception fetching booking details:", error)
-                Alert.alert("Error", "Failed to load booking details")
-            } finally {
-                setFetchingBooking(false)
+                setLoading(false)
+            } catch (err) {
+                console.error("Error fetching booking details:", err)
+                setError("An error occurred")
+                setLoading(false)
             }
         }
 
-        fetchBookingDetails()
+        if (bookingId) {
+            fetchBookingDetails()
+        }
     }, [bookingId])
 
-    // Use fetched booking data or fallback to params or mock data
-    const payment = bookingData || {
-        id: paymentId || "PAY001",
-        carName: carName || "Koenigsegg",
-        carType: carType || "Sport",
-        carModel: "Agera RS",
-        licensePlate: "N/A",
-        customerName: customerName || "John Doe",
-        amount: 450,
-        date: pickupDate ? new Date(pickupDate) : new Date("2024-01-15"),
-        pickupTime: pickupTime || "10:00 AM",
-        pickupLocation: pickupLocation || "N/A",
-        pickupDate: pickupDate ? formatDate(pickupDate) : "N/A",
-        dropoffLocation: dropoffLocation || "N/A",
-        dropoffDate: dropoffDate ? formatDate(dropoffDate) : "N/A",
-        dropoffTime: dropoffTime || "N/A",
-        mileage: 15420,
-        fuelLevel: "Full",
+    const formatDateTime = (dateString: string) => {
+        const date = new Date(dateString)
+        return {
+            date: date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+            time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        }
     }
 
-    const handleImageUpload = async (type: ConfirmationType) => {
+    const showImagePickerOptions = () => {
         Alert.alert(
-            "Select Image Source",
-            "Choose how you want to add the photo",
+            'Add Photos',
+            'Choose how you want to add photos',
             [
                 {
-                    text: "Take Photo",
-                    onPress: () => openCamera(type),
+                    text: 'Take Photo',
+                    onPress: () => takePhoto(),
                 },
                 {
-                    text: "Choose from Gallery",
-                    onPress: () => openGallery(type),
+                    text: 'Choose from Gallery',
+                    onPress: () => pickFromGallery(),
                 },
                 {
-                    text: "Cancel",
-                    style: "cancel",
+                    text: 'Cancel',
+                    style: 'cancel',
                 },
             ]
         )
     }
 
-    const openCamera = async (type: ConfirmationType) => {
+    const takePhoto = async () => {
         try {
-            // Request camera permissions
-            const permissionResult = await ImagePicker.requestCameraPermissionsAsync()
-
-            if (!permissionResult.granted) {
-                Alert.alert(
-                    "Permission Required",
-                    "Camera permission is required to take photos. Please enable it in your device settings."
-                )
+            // Request camera permission
+            const { status } = await ImagePicker.requestCameraPermissionsAsync()
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Please grant camera permissions to take photos.')
                 return
             }
 
@@ -267,632 +173,576 @@ export default function PickupReturnConfirmScreen() {
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
-                aspect: [4, 3],
                 quality: 0.8,
+                aspect: [4, 3],
             })
 
-            if (result.canceled) {
-                console.log("User cancelled camera")
-                return
-            }
-
-            if (result.assets && result.assets.length > 0) {
-                const asset = result.assets[0]
-                console.log("Camera asset:", asset)
-
-                const imageData: ImageData = {
-                    uri: asset.uri,
-                    type: "image/jpeg",
-                    name: `${type}_${Date.now()}.jpg`,
+            if (!result.canceled && result.assets && result.assets[0]) {
+                if (selectedImages.length >= 5) {
+                    Alert.alert('Limit Reached', 'You can only upload up to 5 photos.')
+                    return
                 }
-
-                if (type === "pickup") {
-                    setPickupImage(imageData)
-                    console.log("Pickup image set:", imageData)
-                } else {
-                    setReturnImage(imageData)
-                    console.log("Return image set:", imageData)
-                }
-
-                Alert.alert("Success", "Photo captured successfully!")
+                setSelectedImages(prev => [...prev, result.assets[0].uri])
+                console.log("Photo taken:", result.assets[0].uri)
             }
-        } catch (error: any) {
-            console.log("Camera exception:", error)
-            Alert.alert("Error", `Failed to open camera: ${error.message || "Unknown error"}`)
+        } catch (error) {
+            console.error("Error taking photo:", error)
+            Alert.alert('Error', 'Failed to take photo')
         }
     }
 
-    const openGallery = async (type: ConfirmationType) => {
+    const pickFromGallery = async () => {
         try {
-            // Request media library permissions
-            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
-
-            if (!permissionResult.granted) {
-                Alert.alert(
-                    "Permission Required",
-                    "Photo library permission is required to select photos. Please enable it in your device settings."
-                )
+            // Request media library permission
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Please grant gallery permissions to select photos.')
                 return
             }
 
-            // Launch image library
+            // Calculate how many more images can be selected
+            const remainingSlots = 5 - selectedImages.length
+            if (remainingSlots <= 0) {
+                Alert.alert('Limit Reached', 'You can only upload up to 5 photos.')
+                return
+            }
+
+            // Launch image picker
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
+                allowsMultipleSelection: true,
                 quality: 0.8,
+                selectionLimit: remainingSlots,
+                allowsEditing: false,
             })
 
-            if (result.canceled) {
-                console.log("User cancelled gallery")
-                return
+            if (!result.canceled && result.assets) {
+                const imageUris = result.assets.map(asset => asset.uri)
+                setSelectedImages(prev => [...prev, ...imageUris].slice(0, 5)) // Max 5 images
+                console.log("Images selected from gallery:", imageUris.length)
             }
-
-            if (result.assets && result.assets.length > 0) {
-                const asset = result.assets[0]
-                console.log("Gallery asset:", asset)
-
-                const imageData: ImageData = {
-                    uri: asset.uri,
-                    type: "image/jpeg",
-                    name: `${type}_${Date.now()}.jpg`,
-                }
-
-                if (type === "pickup") {
-                    setPickupImage(imageData)
-                    console.log("Pickup image set from gallery:", imageData)
-                } else {
-                    setReturnImage(imageData)
-                    console.log("Return image set from gallery:", imageData)
-                }
-
-                Alert.alert("Success", "Image selected successfully!")
-            }
-        } catch (error: any) {
-            console.log("Gallery exception:", error)
-            Alert.alert("Error", `Failed to open gallery: ${error.message || "Unknown error"}`)
+        } catch (error) {
+            console.error("Error picking images:", error)
+            Alert.alert('Error', 'Failed to pick images')
         }
     }
 
-    const handleSubmit = async () => {
-        if (!bookingId) {
-            Alert.alert("Error", "Booking ID not found")
-            return
-        }
-
-        // Get userId and carId from bookingData or payment
-        const userId = bookingData?.userId || payment?.userId
-        const carId = bookingData?.carId || payment?.carId
-
-        if (!userId || !carId) {
-            Alert.alert("Error", "Missing user ID or car ID. Please try again.")
-            console.error("Missing required data:", { userId, carId, bookingData, payment })
-            return
-        }
-
-        // Check which tab is active and what needs to be confirmed
-        if (activeTab === "pickup") {
-            if (!pickupImage) {
-                Alert.alert("Missing Image", "Please upload pickup confirmation photo")
-                return
-            }
-
-            setLoading(true)
-            try {
-                console.log("=== Starting Check-In (Pickup) ===")
-                console.log("Booking ID:", bookingId)
-                console.log("User ID:", userId)
-                console.log("Car ID:", carId)
-                console.log("Image URI:", pickupImage.uri)
-
-                // Call check-in API with userId and carId
-                const { data, error } = await scheduleService.checkIn(
-                    bookingId,
-                    pickupImage.uri,
-                    userId,
-                    carId
-                )
-
-                if (error) {
-                    console.error("Check-in failed:", error)
-                    Alert.alert("Error", error.message || "Failed to confirm pickup")
-                    return
-                }
-
-                console.log("✓ Check-in successful")
-
-                // Save pickup confirmation locally
-                confirmationService.confirmPickup(paymentId, pickupImage.uri)
-
-                Alert.alert("Success", "Pickup confirmed! Car delivered to customer.\n\nPickup schedule marked as COMPLETED.\nReturn schedule created.", [
-                    {
-                        text: "OK",
-                        onPress: () => {
-                            // Navigate back to staff screen
-                            (navigation as any).navigate("StaffScreen")
-                        },
-                    },
-                ])
-            } catch (error: any) {
-                console.error("Exception during check-in:", error)
-                Alert.alert("Error", error?.message || "Failed to confirm pickup")
-            } finally {
-                setLoading(false)
-            }
-        } else {
-            // Return tab
-            if (!returnImage) {
-                Alert.alert("Missing Image", "Please upload return confirmation photo")
-                return
-            }
-
-            setLoading(true)
-            try {
-                console.log("=== Starting Check-Out (Return) ===")
-                console.log("Booking ID:", bookingId)
-                console.log("User ID:", userId)
-                console.log("Car ID:", carId)
-                console.log("Image URI:", returnImage.uri)
-
-                // Call check-out API with userId and carId
-                const { data, error } = await scheduleService.checkOut(
-                    bookingId,
-                    returnImage.uri,
-                    userId,
-                    carId
-                )
-
-                if (error) {
-                    console.error("Check-out failed:", error)
-                    Alert.alert("Error", error.message || "Failed to confirm return")
-                    return
-                }
-
-                console.log("✓ Check-out successful")
-
-                // Save return confirmation locally
-                confirmationService.confirmReturn(paymentId, returnImage.uri)
-
-                Alert.alert("Success", "Return confirmed! Car back in garage.\n\nReturn schedule marked as COMPLETED.\nBooking finished.", [
-                    {
-                        text: "OK",
-                        onPress: () => {
-                            // Navigate back to staff screen
-                            (navigation as any).navigate("StaffScreen")
-                        },
-                    },
-                ])
-            } catch (error: any) {
-                console.error("Exception during check-out:", error)
-                Alert.alert("Error", error?.message || "Failed to confirm return")
-            } finally {
-                setLoading(false)
-            }
-        }
+    const removeImage = (index: number) => {
+        setSelectedImages(prev => prev.filter((_, i) => i !== index))
     }
 
-    // Show loading state while fetching booking
-    if (fetchingBooking) {
+    const handleConfirmPickup = async () => {
+        if (!staffId) {
+            Alert.alert('Error', 'Staff ID not found. Please log in again.')
+            return
+        }
+
+        if (selectedImages.length === 0) {
+            Alert.alert('Images Required', 'Please upload at least one photo of the vehicle condition.')
+            return
+        }
+
+        Alert.alert(
+            'Confirm Pickup',
+            'Are you sure you want to confirm this pickup?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Confirm',
+                    onPress: async () => {
+                        try {
+                            setSubmitting(true)
+                            console.log("Confirming pickup for booking:", bookingId)
+
+                            const result = await scheduleService.checkIn(
+                                bookingId,
+                                selectedImages,
+                                staffId,
+                                description || "Pickup confirmed"
+                            )
+
+                            if (result.error) {
+                                Alert.alert('Error', result.error.message)
+                                setSubmitting(false)
+                                return
+                            }
+
+                            Alert.alert(
+                                'Success',
+                                'Pickup confirmed successfully!',
+                                [
+                                    {
+                                        text: 'OK',
+                                        onPress: () => navigation.goBack()
+                                    }
+                                ]
+                            )
+                        } catch (error) {
+                            console.error("Error confirming pickup:", error)
+                            Alert.alert('Error', 'Failed to confirm pickup')
+                            setSubmitting(false)
+                        }
+                    }
+                }
+            ]
+        )
+    }
+
+    if (loading) {
         return (
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <View style={styles.container}>
                 <Header />
-                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <Text style={{ fontSize: scale(14), color: colors.placeholder }}>Loading booking details...</Text>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.loadingText}>Loading booking details...</Text>
                 </View>
             </View>
         )
     }
 
+    if (error || !booking) {
+        return (
+            <View style={styles.container}>
+                <Header />
+                <View style={styles.errorContainer}>
+                    <MaterialIcons name="error-outline" size={64} color="#ef4444" />
+                    <Text style={styles.errorText}>{error || "Booking not found"}</Text>
+                    <Pressable onPress={() => navigation.goBack()} style={styles.backButtonError}>
+                        <Text style={styles.backButtonText}>Go Back</Text>
+                    </Pressable>
+                </View>
+            </View>
+        )
+    }
+
+    const pickupDateTime = formatDateTime(booking.pickupTime)
+    const dropoffDateTime = formatDateTime(booking.dropoffTime)
+
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={styles.container}>
             <Header />
 
-            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-                {/* Vehicle Info Card */}
-                <View style={{ padding: scale(16), backgroundColor: colors.white, marginBottom: scale(1) }}>
-                    <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary, marginBottom: scale(12) }}>
-                        Vehicle Information
-                    </Text>
+            {/* Back Button */}
+            <View style={styles.header}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <MaterialIcons name="arrow-back" size={24} color={colors.primary} />
+                    <Text style={styles.backText}>Back to Staff</Text>
+                </Pressable>
+            </View>
 
-                    <View style={{ backgroundColor: colors.background, borderRadius: scale(8), padding: scale(12) }}>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
-                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Car</Text>
-                            <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
-                                {payment.carName} ({payment.carType})
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
-                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Model</Text>
-                            <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
-                                {payment.carModel || "N/A"}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
-                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>License Plate</Text>
-                            <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
-                                {payment.licensePlate || "N/A"}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
-                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Customer</Text>
-                            <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
-                                {payment.customerName}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
-                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Amount</Text>
-                            <Text style={{ fontSize: scale(12), fontWeight: "700", color: colors.morentBlue }}>
-                                ${payment.amount.toFixed(2)}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(8) }}>
-                            <Text style={{ fontSize: scale(12), color: colors.placeholder }}>Initial Mileage</Text>
-                            <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.primary }}>
-                                {payment.mileage} km
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Pick-up & Drop-off Details */}
-                    <View style={{ marginTop: scale(12), backgroundColor: colors.background, borderRadius: scale(8), padding: scale(12) }}>
-                        <Text style={{ fontSize: scale(13), fontWeight: "700", color: colors.primary, marginBottom: scale(8) }}>
-                            📍 Pick-up Details
-                        </Text>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
-                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Location</Text>
-                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
-                                {payment.pickupLocation}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
-                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Date</Text>
-                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
-                                {payment.pickupDate}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(12) }}>
-                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Time</Text>
-                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
-                                {payment.pickupTime}
-                            </Text>
-                        </View>
-
-                        <Text style={{ fontSize: scale(13), fontWeight: "700", color: colors.primary, marginBottom: scale(8) }}>
-                            📍 Drop-off Details
-                        </Text>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
-                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Location</Text>
-                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
-                                {payment.dropoffLocation}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(6) }}>
-                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Date</Text>
-                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
-                                {payment.dropoffDate}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                            <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Time</Text>
-                            <Text style={{ fontSize: scale(11), fontWeight: "600", color: colors.primary }}>
-                                {payment.dropoffTime}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Confirmation Tabs */}
-                <View
-                    style={{
-                        flexDirection: "row",
-                        backgroundColor: colors.white,
-                        borderBottomWidth: 1,
-                        borderBottomColor: colors.border,
-                    }}
-                >
-                    {(["pickup", "return"] as ConfirmationType[]).map((tab) => {
-                        const hasImage = tab === "pickup" ? pickupImage : returnImage
-                        return (
-                            <Pressable
-                                key={tab}
-                                onPress={() => setActiveTab(tab)}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: scale(12),
-                                    borderBottomWidth: activeTab === tab ? 3 : 0,
-                                    borderBottomColor: activeTab === tab ? colors.morentBlue : "transparent",
-                                }}
-                            >
-                                <Text
-                                    style={{
-                                        fontSize: scale(14),
-                                        fontWeight: "600",
-                                        color: activeTab === tab ? colors.morentBlue : colors.placeholder,
-                                        textAlign: "center",
-                                        textTransform: "capitalize",
-                                    }}
-                                >
-                                    {hasImage ? "✓ " : ""}{tab}
-                                </Text>
-                            </Pressable>
-                        )
-                    })}
-                </View>
-
-                {/* Content Area */}
-                <View style={{ flex: 1, padding: scale(16) }}>
-                    {activeTab === "pickup" ? (
-                        <View>
-                            <Text style={{ fontSize: scale(14), fontWeight: "700", color: colors.primary, marginBottom: scale(12) }}>
-                                Pickup Confirmation
-                            </Text>
-
-                            <View style={{ marginBottom: scale(16) }}>
-                                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: scale(6) }}>
-                                    Pickup Time
-                                </Text>
-                                <View
-                                    style={{
-                                        backgroundColor: colors.background,
-                                        padding: scale(12),
-                                        borderRadius: scale(8),
-                                    }}
-                                >
-                                    <Text style={{ fontSize: scale(13), fontWeight: "600", color: colors.primary }}>
-                                        {payment.pickupTime}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={{ marginBottom: scale(16) }}>
-                                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: scale(6) }}>
-                                    Fuel Level
-                                </Text>
-                                <View
-                                    style={{
-                                        backgroundColor: colors.background,
-                                        padding: scale(12),
-                                        borderRadius: scale(8),
-                                    }}
-                                >
-                                    <Text style={{ fontSize: scale(13), fontWeight: "600", color: colors.primary }}>
-                                        {payment.fuelLevel}
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={{ marginBottom: scale(20) }}>
-                                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: scale(6) }}>
-                                    Pickup Confirmation Photo
-                                </Text>
-                                <Text style={{ fontSize: scale(11), color: colors.placeholder, marginBottom: scale(10) }}>
-                                    Accepted formats: PNG, HEIC, HEIF
-                                </Text>
-
-                                {pickupImage ? (
-                                    <View
-                                        style={{
-                                            borderWidth: 2,
-                                            borderColor: "#00B050",
-                                            borderRadius: scale(8),
-                                            overflow: "hidden",
-                                            marginBottom: scale(12),
-                                        }}
-                                    >
-                                        <Image
-                                            source={{ uri: pickupImage.uri }}
-                                            style={{ width: "100%", height: scale(200), backgroundColor: colors.background }}
-                                        />
-                                        <View
-                                            style={{
-                                                backgroundColor: "#00B050",
-                                                padding: scale(8),
-                                                alignItems: "center",
-                                            }}
-                                        >
-                                            <Text style={{ fontSize: scale(11), color: colors.white, fontWeight: "600" }}>
-                                                ✓ Image Uploaded
-                                            </Text>
-                                        </View>
-                                        <Pressable
-                                            onPress={() => setPickupImage(null)}
-                                            style={{
-                                                position: "absolute",
-                                                top: scale(8),
-                                                right: scale(8),
-                                                backgroundColor: "#EF4444",
-                                                borderRadius: scale(20),
-                                                width: scale(32),
-                                                height: scale(32),
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <Text style={{ color: colors.white, fontSize: scale(16), fontWeight: "bold" }}>×</Text>
-                                        </Pressable>
-                                    </View>
-                                ) : null}
-
-                                <Pressable
-                                    onPress={() => handleImageUpload("pickup")}
-                                    style={{
-                                        borderWidth: 2,
-                                        borderStyle: "dashed",
-                                        borderColor: colors.morentBlue,
-                                        borderRadius: scale(8),
-                                        padding: scale(20),
-                                        alignItems: "center",
-                                        backgroundColor: colors.background,
-                                    }}
-                                >
-                                    <Text style={{ fontSize: scale(24), marginBottom: scale(8) }}>📷</Text>
-                                    <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.morentBlue, marginBottom: scale(4) }}>
-                                        Tap to upload photo
-                                    </Text>
-                                    <Text style={{ fontSize: scale(10), color: colors.placeholder }}>
-                                        PNG, HEIC, HEIF up to 10MB
-                                    </Text>
-                                </Pressable>
-                            </View>
-                        </View>
-                    ) : (
-                        <View>
-                            <Text style={{ fontSize: scale(14), fontWeight: "700", color: colors.primary, marginBottom: scale(12) }}>
-                                Return Confirmation
-                            </Text>
-
-                            <View style={{ marginBottom: scale(16) }}>
-                                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: scale(6) }}>
-                                    Expected Return Time
-                                </Text>
-                                <View
-                                    style={{
-                                        backgroundColor: colors.background,
-                                        padding: scale(12),
-                                        borderRadius: scale(8),
-                                    }}
-                                >
-                                    <Text style={{ fontSize: scale(13), fontWeight: "600", color: colors.primary }}>
-                                        04:00 PM
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={{ marginBottom: scale(16) }}>
-                                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: scale(6) }}>
-                                    Final Mileage
-                                </Text>
-                                <View
-                                    style={{
-                                        backgroundColor: colors.background,
-                                        padding: scale(12),
-                                        borderRadius: scale(8),
-                                    }}
-                                >
-                                    <Text style={{ fontSize: scale(13), fontWeight: "600", color: colors.primary }}>
-                                        15,520 km (100 km driven)
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={{ marginBottom: scale(20) }}>
-                                <Text style={{ fontSize: scale(12), color: colors.placeholder, marginBottom: scale(6) }}>
-                                    Return Confirmation Photo
-                                </Text>
-                                <Text style={{ fontSize: scale(11), color: colors.placeholder, marginBottom: scale(10) }}>
-                                    Accepted formats: PNG, HEIC, HEIF
-                                </Text>
-
-                                {returnImage ? (
-                                    <View
-                                        style={{
-                                            borderWidth: 2,
-                                            borderColor: "#00B050",
-                                            borderRadius: scale(8),
-                                            overflow: "hidden",
-                                            marginBottom: scale(12),
-                                        }}
-                                    >
-                                        <Image
-                                            source={{ uri: returnImage.uri }}
-                                            style={{ width: "100%", height: scale(200), backgroundColor: colors.background }}
-                                        />
-                                        <View
-                                            style={{
-                                                backgroundColor: "#00B050",
-                                                padding: scale(8),
-                                                alignItems: "center",
-                                            }}
-                                        >
-                                            <Text style={{ fontSize: scale(11), color: colors.white, fontWeight: "600" }}>
-                                                ✓ Image Uploaded
-                                            </Text>
-                                        </View>
-                                        <Pressable
-                                            onPress={() => setReturnImage(null)}
-                                            style={{
-                                                position: "absolute",
-                                                top: scale(8),
-                                                right: scale(8),
-                                                backgroundColor: "#EF4444",
-                                                borderRadius: scale(20),
-                                                width: scale(32),
-                                                height: scale(32),
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <Text style={{ color: colors.white, fontSize: scale(16), fontWeight: "bold" }}>×</Text>
-                                        </Pressable>
-                                    </View>
-                                ) : null}
-
-                                <Pressable
-                                    onPress={() => handleImageUpload("return")}
-                                    style={{
-                                        borderWidth: 2,
-                                        borderStyle: "dashed",
-                                        borderColor: colors.morentBlue,
-                                        borderRadius: scale(8),
-                                        padding: scale(20),
-                                        alignItems: "center",
-                                        backgroundColor: colors.background,
-                                    }}
-                                >
-                                    <Text style={{ fontSize: scale(24), marginBottom: scale(8) }}>📷</Text>
-                                    <Text style={{ fontSize: scale(12), fontWeight: "600", color: colors.morentBlue, marginBottom: scale(4) }}>
-                                        Tap to upload photo
-                                    </Text>
-                                    <Text style={{ fontSize: scale(10), color: colors.placeholder }}>
-                                        PNG, HEIC, HEIF up to 10MB
-                                    </Text>
-                                </Pressable>
-                            </View>
-                        </View>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                {/* Booking Card */}
+                <View style={styles.card}>
+                    {/* Car Image */}
+                    {booking.carImage && (
+                        <Image source={{ uri: booking.carImage }} style={styles.carImage} resizeMode="cover" />
                     )}
+
+                    {/* Car Info */}
+                    <View style={styles.cardHeader}>
+                        <View style={styles.carInfo}>
+                            <Text style={styles.carName}>{booking.carName}</Text>
+                            {booking.carLicensePlate && (
+                                <Text style={styles.licensePlate}>License: {booking.carLicensePlate}</Text>
+                            )}
+                            <Text style={styles.bookingId}>Booking ID: {booking.id.substring(0, 8)}...</Text>
+                        </View>
+                        <View style={styles.statusBadge}>
+                            <Text style={styles.statusText}>
+                                {booking.status === "completed" ? "Completed" : "Confirmed"}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Customer & Amount */}
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>CUSTOMER</Text>
+                            <Text style={styles.infoValue}>{booking.customerName}</Text>
+                        </View>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>AMOUNT</Text>
+                            <Text style={styles.infoValue}>${booking.amount.toFixed(2)}</Text>
+                        </View>
+                    </View>
                 </View>
 
-                {/* Submit Button */}
-                <View style={{ padding: scale(16), backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.border }}>
+                {/* Pickup Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <MaterialIcons name="location-on" size={24} color={colors.morentBlue} />
+                        <Text style={styles.sectionTitle}>Pickup Information</Text>
+                    </View>
+                    <View style={styles.sectionContent}>
+                        <View style={styles.locationRow}>
+                            <MaterialIcons name="place" size={20} color="#6b7280" />
+                            <View style={styles.locationInfo}>
+                                <Text style={styles.locationLabel}>Location</Text>
+                                <Text style={styles.locationValue}>{booking.pickupPlace}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.locationRow}>
+                            <MaterialIcons name="schedule" size={20} color="#6b7280" />
+                            <View style={styles.locationInfo}>
+                                <Text style={styles.locationLabel}>Date & Time</Text>
+                                <Text style={styles.locationValue}>
+                                    {pickupDateTime.date} at {pickupDateTime.time}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Dropoff Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <MaterialIcons name="location-off" size={24} color="#ef4444" />
+                        <Text style={styles.sectionTitle}>Dropoff Information</Text>
+                    </View>
+                    <View style={styles.sectionContent}>
+                        <View style={styles.locationRow}>
+                            <MaterialIcons name="place" size={20} color="#6b7280" />
+                            <View style={styles.locationInfo}>
+                                <Text style={styles.locationLabel}>Location</Text>
+                                <Text style={styles.locationValue}>{booking.dropoffPlace}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.locationRow}>
+                            <MaterialIcons name="schedule" size={20} color="#6b7280" />
+                            <View style={styles.locationInfo}>
+                                <Text style={styles.locationLabel}>Date & Time</Text>
+                                <Text style={styles.locationValue}>
+                                    {dropoffDateTime.date} at {dropoffDateTime.time}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Description Input */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <MaterialIcons name="description" size={24} color={colors.primary} />
+                        <Text style={styles.sectionTitle}>Notes (Optional)</Text>
+                    </View>
+                    <View style={styles.sectionContent}>
+                        <TextInput
+                            style={styles.textInput}
+                            placeholder="Add any notes about the vehicle condition..."
+                            value={description}
+                            onChangeText={setDescription}
+                            multiline
+                            numberOfLines={3}
+                        />
+                    </View>
+                </View>
+
+                {/* Image Upload Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <MaterialIcons name="photo-camera" size={24} color={colors.primary} />
+                        <Text style={styles.sectionTitle}>Vehicle Photos ({selectedImages.length}/5)</Text>
+                    </View>
+                    <View style={styles.sectionContent}>
+                        <Pressable onPress={showImagePickerOptions} style={styles.uploadButton}>
+                            <MaterialIcons name="add-photo-alternate" size={20} color={colors.primary} />
+                            <Text style={styles.uploadButtonText}>Add Photos</Text>
+                        </Pressable>
+
+                        {selectedImages.length > 0 && (
+                            <View style={styles.imageGrid}>
+                                {selectedImages.map((uri, index) => (
+                                    <View key={index} style={styles.imageContainer}>
+                                        <Image source={{ uri }} style={styles.thumbnail} />
+                                        <Pressable
+                                            onPress={() => removeImage(index)}
+                                            style={styles.removeButton}
+                                        >
+                                            <MaterialIcons name="close" size={16} color={colors.white} />
+                                        </Pressable>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.actionButtons}>
                     <Pressable
-                        onPress={() => {
-                            console.log("Submit button pressed")
-                            console.log("Active tab:", activeTab)
-                            console.log("Pickup image:", pickupImage)
-                            console.log("Return image:", returnImage)
-                            console.log("Loading:", loading)
-                            handleSubmit()
-                        }}
-                        disabled={loading || (activeTab === "pickup" ? !pickupImage : !returnImage)}
-                        style={{
-                            backgroundColor:
-                                loading || (activeTab === "pickup" ? !pickupImage : !returnImage) ? colors.placeholder : colors.morentBlue,
-                            paddingVertical: scale(14),
-                            borderRadius: scale(8),
-                            alignItems: "center",
-                        }}
+                        onPress={handleConfirmPickup}
+                        disabled={submitting || selectedImages.length === 0}
+                        style={[
+                            styles.confirmButton,
+                            (submitting || selectedImages.length === 0) && styles.confirmButtonDisabled
+                        ]}
                     >
-                        <Text
-                            style={{
-                                fontSize: scale(14),
-                                fontWeight: "700",
-                                color: colors.white,
-                            }}
-                        >
-                            {loading
-                                ? "Submitting..."
-                                : activeTab === "pickup"
-                                    ? !pickupImage
-                                        ? "Upload Pickup Photo"
-                                        : "Confirm Pickup"
-                                    : !returnImage
-                                        ? "Upload Return Photo"
-                                        : "Confirm Return"
-                            }
-                        </Text>
+                        {submitting ? (
+                            <ActivityIndicator size="small" color={colors.white} />
+                        ) : (
+                            <>
+                                <MaterialIcons name="check-circle" size={20} color={colors.white} />
+                                <Text style={styles.confirmButtonText}>Confirm Pickup</Text>
+                            </>
+                        )}
                     </Pressable>
                 </View>
             </ScrollView>
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "#f9fafb",
+    },
+    header: {
+        paddingHorizontal: scale(16),
+        paddingVertical: verticalScale(12),
+        backgroundColor: colors.white,
+        borderBottomWidth: 1,
+        borderBottomColor: "#e5e7eb",
+    },
+    backButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: scale(8),
+    },
+    backText: {
+        fontSize: scale(16),
+        color: colors.primary,
+        fontWeight: "600",
+    },
+    scrollView: {
+        flex: 1,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: verticalScale(16),
+        fontSize: scale(14),
+        color: "#6b7280",
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: scale(20),
+    },
+    errorText: {
+        fontSize: scale(16),
+        color: "#ef4444",
+        marginTop: verticalScale(16),
+        marginBottom: verticalScale(24),
+        textAlign: "center",
+    },
+    backButtonError: {
+        backgroundColor: colors.primary,
+        paddingHorizontal: scale(24),
+        paddingVertical: verticalScale(12),
+        borderRadius: scale(8),
+    },
+    backButtonText: {
+        color: colors.white,
+        fontSize: scale(14),
+        fontWeight: "600",
+    },
+    card: {
+        backgroundColor: colors.white,
+        borderRadius: scale(12),
+        margin: scale(16),
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        overflow: "hidden",
+    },
+    carImage: {
+        width: "100%",
+        height: verticalScale(180),
+        backgroundColor: "#e5e7eb",
+    },
+    cardHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        padding: scale(16),
+        borderBottomWidth: 1,
+        borderBottomColor: "#e5e7eb",
+    },
+    carInfo: {
+        flex: 1,
+    },
+    carName: {
+        fontSize: scale(18),
+        fontWeight: "bold",
+        color: colors.primary,
+        marginBottom: verticalScale(4),
+    },
+    licensePlate: {
+        fontSize: scale(12),
+        color: "#6b7280",
+        marginBottom: verticalScale(4),
+    },
+    bookingId: {
+        fontSize: scale(12),
+        color: "#6b7280",
+    },
+    statusBadge: {
+        backgroundColor: "#d1fae5",
+        paddingHorizontal: scale(12),
+        paddingVertical: verticalScale(6),
+        borderRadius: scale(16),
+        alignSelf: "flex-start",
+    },
+    statusText: {
+        fontSize: scale(12),
+        fontWeight: "600",
+        color: "#059669",
+    },
+    infoRow: {
+        flexDirection: "row",
+        padding: scale(16),
+    },
+    infoItem: {
+        flex: 1,
+    },
+    infoLabel: {
+        fontSize: scale(10),
+        color: "#6b7280",
+        fontWeight: "600",
+        marginBottom: verticalScale(4),
+    },
+    infoValue: {
+        fontSize: scale(14),
+        fontWeight: "600",
+        color: colors.primary,
+    },
+    section: {
+        backgroundColor: colors.white,
+        borderRadius: scale(12),
+        marginHorizontal: scale(16),
+        marginBottom: verticalScale(16),
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    sectionHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: scale(16),
+        borderBottomWidth: 1,
+        borderBottomColor: "#e5e7eb",
+        gap: scale(8),
+    },
+    sectionTitle: {
+        fontSize: scale(16),
+        fontWeight: "600",
+        color: colors.primary,
+    },
+    sectionContent: {
+        padding: scale(16),
+    },
+    locationRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        marginBottom: verticalScale(16),
+        gap: scale(12),
+    },
+    locationInfo: {
+        flex: 1,
+    },
+    locationLabel: {
+        fontSize: scale(12),
+        color: "#6b7280",
+        marginBottom: verticalScale(4),
+    },
+    locationValue: {
+        fontSize: scale(14),
+        color: colors.primary,
+        fontWeight: "500",
+    },
+    actionButtons: {
+        padding: scale(16),
+        gap: verticalScale(12),
+        marginBottom: verticalScale(24),
+    },
+    textInput: {
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
+        borderRadius: scale(8),
+        padding: scale(12),
+        fontSize: scale(14),
+        color: colors.primary,
+        minHeight: verticalScale(80),
+        textAlignVertical: "top",
+    },
+    confirmButton: {
+        backgroundColor: colors.morentBlue,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: verticalScale(14),
+        borderRadius: scale(8),
+        gap: scale(8),
+    },
+    confirmButtonDisabled: {
+        backgroundColor: "#9ca3af",
+        opacity: 0.6,
+    },
+    confirmButtonText: {
+        color: colors.white,
+        fontSize: scale(16),
+        fontWeight: "600",
+    },
+    uploadButton: {
+        backgroundColor: colors.white,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: verticalScale(12),
+        borderRadius: scale(8),
+        borderWidth: 1,
+        borderColor: colors.primary,
+        gap: scale(8),
+    },
+    uploadButtonText: {
+        color: colors.primary,
+        fontSize: scale(14),
+        fontWeight: "600",
+    },
+    imageGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: scale(8),
+        marginTop: verticalScale(12),
+    },
+    imageContainer: {
+        position: "relative",
+        width: scale(80),
+        height: scale(80),
+    },
+    thumbnail: {
+        width: "100%",
+        height: "100%",
+        borderRadius: scale(8),
+        backgroundColor: "#e5e7eb",
+    },
+    removeButton: {
+        position: "absolute",
+        top: -scale(6),
+        right: -scale(6),
+        backgroundColor: "#ef4444",
+        borderRadius: scale(12),
+        width: scale(24),
+        height: scale(24),
+        alignItems: "center",
+        justifyContent: "center",
+    },
+})

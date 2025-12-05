@@ -1,22 +1,21 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native"
-import { WebView } from "react-native-webview"
-import { useAuth } from "../../../lib/auth-context"
-import { API_CONFIG, API_ENDPOINTS } from "../../../lib/api/config"
-import { goBack } from "../../navigators/navigation-utilities"
-import { scale } from "../../theme/scale"
+import {useEffect, useState} from 'react';
+import {View, Text, ActivityIndicator, StyleSheet} from 'react-native';
+import {WebView} from 'react-native-webview';
+import {useAuth} from '../../../lib/auth-context';
+import {API_CONFIG, API_ENDPOINTS} from '../../../lib/api/config';
+import {goBack} from '../../navigators/navigation-utilities';
+import {scale} from '../../theme/scale';
 
 const GoogleOAuthHandler = () => {
-    const [status, setStatus] = useState("Connecting to Google...")
-    const { refreshUser } = useAuth()
-    const [processed, setProcessed] = useState(false)
+  const [status, setStatus] = useState('Connecting to Google...');
+  const {refreshUser} = useAuth();
+  const [processed, setProcessed] = useState(false);
 
-    const googleLoginUrl = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`
+  const googleLoginUrl = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`;
 
-    // HTML content that will handle the OAuth flow
-    const htmlContent = `
+  const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -229,74 +228,72 @@ const GoogleOAuthHandler = () => {
     </script>
 </body>
 </html>
-  `
+  `;
 
-    const handleMessage = (event: any) => {
-        try {
-            const data = JSON.parse(event.nativeEvent.data)
-            console.log("Message from WebView:", data)
+  const handleMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      console.log('Message from WebView:', data);
 
-            if (data.type === "LOGIN_SUCCESS") {
-                if (processed) return
-                setProcessed(true)
+      if (data.type === 'LOGIN_SUCCESS') {
+        if (processed) return;
+        setProcessed(true);
 
-                console.log("✅ Login successful!")
-                setStatus("Login successful!")
+        console.log('✅ Login successful!');
+        setStatus('Login successful!');
 
-                // Save to localStorage
-                if (typeof localStorage !== "undefined" && localStorage?.setItem) {
-                    localStorage.setItem("token", data.token)
+        if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
+          localStorage.setItem('token', data.token);
 
-                    if (data.refreshToken && data.refreshToken !== "null") {
-                        localStorage.setItem("refreshToken", data.refreshToken)
-                    }
+          if (data.refreshToken && data.refreshToken !== 'null') {
+            localStorage.setItem('refreshToken', data.refreshToken);
+          }
 
-                    if (data.user) {
-                        localStorage.setItem("user", JSON.stringify(data.user))
-                    }
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
 
-                    console.log("✅ Saved to localStorage")
-                }
-
-                // Refresh user and close
-                setTimeout(() => {
-                    refreshUser()
-                    goBack()
-                }, 1500)
-            } else if (data.type === "ERROR") {
-                setStatus("Error: " + data.message)
-                setTimeout(() => goBack(), 3000)
-            }
-        } catch (error) {
-            console.error("Error handling message:", error)
+          console.log('✅ Saved to localStorage');
         }
-    }
 
-    return (
-        <View style={styles.container}>
-            <WebView
-                source={{ html: htmlContent }}
-                onMessage={handleMessage}
-                style={styles.webview}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                sharedCookiesEnabled={true}
-                thirdPartyCookiesEnabled={true}
-                mixedContentMode="always"
-                originWhitelist={['*']}
-            />
-        </View>
-    )
-}
+        setTimeout(() => {
+          refreshUser();
+          goBack();
+        }, 1500);
+      } else if (data.type === 'ERROR') {
+        setStatus('Error: ' + data.message);
+        setTimeout(() => goBack(), 3000);
+      }
+    } catch (error) {
+      console.error('Error handling message:', error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <WebView
+        source={{html: htmlContent}}
+        onMessage={handleMessage}
+        style={styles.webview}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        sharedCookiesEnabled={true}
+        thirdPartyCookiesEnabled={true}
+        mixedContentMode="always"
+        originWhitelist={['*']}
+      />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-    },
-    webview: {
-        flex: 1,
-    },
-})
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  webview: {
+    flex: 1,
+  },
+});
 
-export default GoogleOAuthHandler
+export default GoogleOAuthHandler;

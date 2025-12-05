@@ -31,7 +31,7 @@ export default function CustomDateTimePicker({
         'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
     const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-    // Generate time options (06:00 - 23:00)
+    
     const timeOptions = [];
     for (let hour = 6; hour <= 23; hour++) {
         timeOptions.push(`${String(hour).padStart(2, '0')}:00`);
@@ -53,12 +53,12 @@ export default function CustomDateTimePicker({
         const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
         const days = [];
 
-        // Empty cells for days before month starts
+     
         for (let i = 0; i < firstDay; i++) {
             days.push(<View key={`empty-${i}`} style={{ width: '14.28%', padding: 8 }} />);
         }
 
-        // Days of the month
+        
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(currentYear, currentMonth, day);
             const isSelected = selectedDate.getDate() === day &&

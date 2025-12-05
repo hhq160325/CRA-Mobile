@@ -14,7 +14,7 @@ import { getAsset } from "../../../lib/getAsset"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../../lib/auth-context"
 
-// Components
+
 import CarImageGallery from "./components/CarImageGallery"
 import CarSpecifications from "./components/CarSpecifications"
 import CarAmenities from "./components/CarAmenities"
@@ -112,11 +112,11 @@ export default function CarDetailScreen() {
     }
 
     try {
-      // Check if user has uploaded driver's license
+      
       const { data: licenseData, error: licenseError } = await userService.getDriverLicense(user.id, user.email)
 
       if (licenseError || !licenseData || !licenseData.urls || licenseData.urls.length === 0) {
-        // No driver's license found
+        
         Alert.alert(
           "Driver's License Required",
           "You must upload your driver's license before booking a car. Would you like to upload it now?",
@@ -134,7 +134,6 @@ export default function CarDetailScreen() {
         return
       }
 
-      // Driver's license exists, proceed to booking
       navigation.navigate("BookingForm" as any, { id: car?.id })
     } catch (error) {
       console.error("Error checking driver's license:", error)

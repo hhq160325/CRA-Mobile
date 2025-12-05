@@ -9,7 +9,7 @@ export function useHeaderNavigation() {
 
     const handleLogout = () => {
         logout()
-        // Reset navigation stack completely to prevent going back to authenticated screens
+      
         navigation.reset({
             index: 0,
             routes: [{ name: "authStack" as any }],
@@ -27,7 +27,6 @@ export function useHeaderNavigation() {
                 navigation.navigate("Profile" as any)
             } else if (screen === "Bookings") {
                 console.log("Navigating to Bookings")
-                // Navigate within the current stack (MainStack/tabStack)
                 navigation.navigate("Bookings" as any)
             } else if (screen === "PaymentHistory") {
                 console.log("Navigating to PaymentHistory")

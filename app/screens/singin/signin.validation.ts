@@ -1,46 +1,51 @@
-export const validateEmail = (email: string): { valid: boolean; error?: string } => {
-    if (!email || email.trim() === "") {
-        return {
-            valid: false,
-            error: "Email is required"
-        }
-    }
+export const validateEmail = (
+  email: string,
+): {valid: boolean; error?: string} => {
+  if (!email || email.trim() === '') {
+    return {
+      valid: false,
+      error: 'Email is required',
+    };
+  }
 
-    // Basic email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-        return {
-            valid: false,
-            error: "Please enter a valid email address"
-        }
-    }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return {
+      valid: false,
+      error: 'Please enter a valid email address',
+    };
+  }
 
-    // Check if email ends with @carrental.com or @gmail.com
-    const emailLower = email.toLowerCase()
-    if (!emailLower.endsWith("@carrental.com") && !emailLower.endsWith("@gmail.com")) {
-        return {
-            valid: false,
-            error: "Email must be a @carrental.com or @gmail.com address"
-        }
-    }
+  const emailLower = email.toLowerCase();
+  if (
+    !emailLower.endsWith('@carrental.com') &&
+    !emailLower.endsWith('@gmail.com')
+  ) {
+    return {
+      valid: false,
+      error: 'Email must be a @carrental.com or @gmail.com address',
+    };
+  }
 
-    return { valid: true }
-}
+  return {valid: true};
+};
 
-export const validatePassword = (password: string): { valid: boolean; error?: string } => {
-    if (!password || password.trim() === "") {
-        return {
-            valid: false,
-            error: "Password is required"
-        }
-    }
+export const validatePassword = (
+  password: string,
+): {valid: boolean; error?: string} => {
+  if (!password || password.trim() === '') {
+    return {
+      valid: false,
+      error: 'Password is required',
+    };
+  }
 
-    if (password.length < 6) {
-        return {
-            valid: false,
-            error: "Password must be at least 6 characters"
-        }
-    }
+  if (password.length < 6) {
+    return {
+      valid: false,
+      error: 'Password must be at least 6 characters',
+    };
+  }
 
-    return { valid: true }
-}
+  return {valid: true};
+};

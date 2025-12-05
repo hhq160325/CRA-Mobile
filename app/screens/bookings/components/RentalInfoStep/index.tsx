@@ -47,15 +47,15 @@ export default function RentalInfoStep({
         fetchParkLots()
     }, [])
 
-    // Auto-sync dropoff location with pickup location
+   
     useEffect(() => {
         if (pickupLocation && pickupMode === "parklot") {
-            // When pickup location changes in park lot mode, auto-set dropoff to same location
+          
             onDropoffLocationChange(pickupLocation)
         }
     }, [pickupLocation, pickupMode])
 
-    // Calculate distance when pickup is custom and user enters address
+
     useEffect(() => {
         const shouldCalculate =
             pickupMode === "custom" &&
@@ -89,7 +89,7 @@ export default function RentalInfoStep({
 
         if (pickupMode === "parklot") {
             onPickupLocationChange(parkLotAddress)
-            // Auto-set dropoff to same location
+            
             onDropoffLocationChange(parkLotAddress)
         }
         setShowPickupModal(false)

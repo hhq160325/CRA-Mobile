@@ -1,23 +1,29 @@
-import React, { useState } from 'react';
-import { Image, Text, View, Alert, ActivityIndicator, TextInput } from 'react-native';
+import React, {useState} from 'react';
+import {
+  Image,
+  Text,
+  View,
+  Alert,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
 import assets from '../../assets';
 import Button from '../../components/button/component';
 import OtpComponent from '../../components/otp/component';
-import { navigate } from '../../navigators/navigation-utilities';
-import { renderMarginTop } from '../../utils/ui-utils';
-import { createStyles } from './otp.styles';
-import { authService } from '../../../lib/api';
-import { useRoute } from '@react-navigation/native';
+import {navigate} from '../../navigators/navigation-utilities';
+import {renderMarginTop} from '../../utils/ui-utils';
+import {createStyles} from './otp.styles';
+import {authService} from '../../../lib/api';
+import {useRoute} from '@react-navigation/native';
 
-// OTP Screen for verification and password reset
 const OtpScreen = () => {
   const styles = createStyles();
-  const { logo_black } = assets;
+  const {logo_black} = assets;
   const route = useRoute();
   const params = route.params as any;
 
   const email = params?.email || '';
-  const type = params?.type || 'verify'; // 'verify' or 'reset'
+  const type = params?.type || 'verify';
 
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -40,7 +46,7 @@ const OtpScreen = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await authService.verifyResetCode(email, otp);
+      const {data, error} = await authService.verifyResetCode(email, otp);
 
       if (error) {
         Alert.alert('Error', 'Invalid verification code');
@@ -49,7 +55,7 @@ const OtpScreen = () => {
           setShowPasswordFields(true);
         } else {
           Alert.alert('Success', 'Verification successful!', [
-            { text: 'OK', onPress: () => navigate('SignInScreen') }
+            {text: 'OK', onPress: () => navigate('SignInScreen')},
           ]);
         }
       } else {
@@ -80,21 +86,21 @@ const OtpScreen = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await authService.resetPassword(email, otp, newPassword);
+      const {data, error} = await authService.resetPassword(
+        email,
+        otp,
+        newPassword,
+      );
 
       if (error) {
         Alert.alert('Error', error.message || 'Failed to reset password');
       } else {
-        Alert.alert(
-          'Success',
-          'Your password has been reset successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigate('SignInScreen'),
-            },
-          ]
-        );
+        Alert.alert('Success', 'Your password has been reset successfully!', [
+          {
+            text: 'OK',
+            onPress: () => navigate('SignInScreen'),
+          },
+        ]);
       }
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to reset password');
@@ -111,12 +117,15 @@ const OtpScreen = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await authService.forgotPassword(email);
+      const {data, error} = await authService.forgotPassword(email);
 
       if (error) {
         Alert.alert('Error', 'Failed to resend code');
       } else {
-        Alert.alert('Success', 'Verification code has been resent to your email');
+        Alert.alert(
+          'Success',
+          'Verification code has been resent to your email',
+        );
       }
     } catch (err: any) {
       Alert.alert('Error', 'Failed to resend code');
@@ -135,7 +144,9 @@ const OtpScreen = () => {
         <View style={styles.main}>
           <View style={styles.textContainer}>
             <Text style={[styles.textStyle, styles.textCenter]}>
-              {showPasswordFields ? 'Create New Password' : 'Enter verification code'}
+              {showPasswordFields
+                ? 'Create New Password'
+                : 'Enter verification code'}
             </Text>
             {renderMarginTop(12)}
             {!showPasswordFields && (
@@ -161,7 +172,8 @@ const OtpScreen = () => {
               <Text
                 onPress={handleResend}
                 style={[styles.dontHaveText, styles.textCenter]}>
-                Didn't receive the OTP? <Text style={{ fontWeight: 'bold' }}>Resend</Text>
+                Didn't receive the OTP?{' '}
+                <Text style={{fontWeight: 'bold'}}>Resend</Text>
               </Text>
             </>
           ) : (
@@ -204,7 +216,7 @@ const OtpScreen = () => {
           )}
 
           {loading && (
-            <View style={{ alignItems: 'center', marginTop: 12 }}>
+            <View style={{alignItems: 'center', marginTop: 12}}>
               <ActivityIndicator size="small" />
             </View>
           )}

@@ -88,7 +88,7 @@ export default function CarMapScreen() {
         const finalLocation = location || { latitude: 10.8231, longitude: 106.6297 }
         setUserLocation(finalLocation)
 
-        // Get address for user location using reverse geocoding
+      
         try {
             const { data: addressData, error } = await locationService.reverseGeocode(
                 finalLocation.latitude,

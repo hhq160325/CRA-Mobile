@@ -19,7 +19,7 @@ export default function PaymentInfoSection({ invoice, totalPrice, bookingDate, p
     const bookingFeePayment = payments?.find(p => p.item === "Booking Fee");
     const bookingFee = bookingFeePayment?.paidAmount || invoice?.amount || 0;
 
-    // Use booking fee as total price if available, otherwise use totalPrice prop
+
     const displayTotalPrice = bookingFee > 0 ? bookingFee : (totalPrice || 0);
     const hasBookingFee = bookingFee > 0;
 

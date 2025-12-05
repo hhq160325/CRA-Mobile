@@ -1,24 +1,24 @@
 import Slider from '@react-native-community/slider';
-import React, {useState} from 'react';
-import {Pressable, ScrollView, Text, View} from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {BottomSheet} from '../../../components/bottomSheet/BottomSheet';
+import { BottomSheet } from '../../../components/bottomSheet/BottomSheet';
 import TabSwitcher from '../../../components/tabSwitcher/component';
-import {colors} from '../../../theme/colors';
-import {scale} from '../../../theme/scale';
+import { colors } from '../../../theme/colors';
+import { scale } from '../../../theme/scale';
 import {
   renderBoderBottom,
   renderMarginBottom,
   renderMarginTop,
 } from '../../../utils/ui-utils';
-import {IFilterProps} from '../ISearch.props';
-import {createStyles} from '../search.styles';
+import { IFilterProps } from '../ISearch.props';
+import { createStyles } from '../search.styles';
 import InputComponent from '../../../components/input/component';
-import {data, FuelType, rentalData, sitingCapacity} from './filter.data';
+import { data, FuelType, rentalData, sitingCapacity } from './filter.data';
 import Button from '../../../components/button/component';
 import DateComponent from '../../../components/date/component';
 
-const FilterView = ({visible, setVisible}: IFilterProps) => {
+const FilterView = ({ visible, setVisible }: IFilterProps) => {
   const [value, setValue] = useState(0);
   const [min, setMin] = useState(0);
   const [max, setMax] = useState(100);
@@ -33,7 +33,7 @@ const FilterView = ({visible, setVisible}: IFilterProps) => {
             <MaterialIcons
               name="close"
               size={scale(22)}
-              color={colors.crossBg}
+              color={colors.placeholder}
               onPress={() => setVisible(false)}
             />
           </Pressable>

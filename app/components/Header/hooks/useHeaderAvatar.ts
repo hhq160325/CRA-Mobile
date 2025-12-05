@@ -48,7 +48,7 @@ export function useHeaderAvatar() {
     }
 
     const getAvatarSource = () => {
-        // Check userAvatar from API first
+      
         if (userAvatar) {
             if (userAvatar.startsWith("http://") || userAvatar.startsWith("https://")) {
                 return { uri: `${userAvatar}?t=${refreshKey}` }
@@ -57,7 +57,7 @@ export function useHeaderAvatar() {
             if (localAsset) return localAsset
         }
 
-        // Check user.avatar as fallback
+       
         if (user?.avatar) {
             if (user.avatar.startsWith("http://") || user.avatar.startsWith("https://")) {
                 return { uri: user.avatar }
@@ -66,7 +66,7 @@ export function useHeaderAvatar() {
             if (localAsset) return localAsset
         }
 
-        // Default avatar
+       
         return require("../../../../assets/admin-avatar.png")
     }
 

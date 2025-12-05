@@ -1,31 +1,27 @@
-// Parse date string to Date object
 export const parseDate = (dateStr: string): Date => {
-    if (!dateStr) return new Date()
-    const parsed = new Date(dateStr)
-    return isNaN(parsed.getTime()) ? new Date() : parsed
-}
+  if (!dateStr) return new Date();
+  const parsed = new Date(dateStr);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+};
 
-// Parse time string to Date object (for time picker)
 export const parseTime = (timeStr: string): Date => {
-    const now = new Date()
-    if (!timeStr) return now
-    const [hours, minutes] = timeStr.split(':').map(Number)
-    if (isNaN(hours) || isNaN(minutes)) return now
-    now.setHours(hours, minutes, 0, 0)
-    return now
-}
+  const now = new Date();
+  if (!timeStr) return now;
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  if (isNaN(hours) || isNaN(minutes)) return now;
+  now.setHours(hours, minutes, 0, 0);
+  return now;
+};
 
-// Format date to YYYY-MM-DD
 export const formatDate = (date: Date): string => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-}
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
-// Format time to HH:MM
 export const formatTime = (date: Date): string => {
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${hours}:${minutes}`
-}
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+};

@@ -1,4 +1,4 @@
-import {KeyboardTypeOptions} from 'react-native';
+import { KeyboardTypeOptions, ViewStyle } from 'react-native';
 
 export interface IInputProps {
   onChangeText: (e: string) => void;
@@ -7,4 +7,5 @@ export interface IInputProps {
   isSecure?: boolean;
   onSecurePress?: (e: any) => void;
   keyboardType?: KeyboardTypeOptions | undefined;
+  containerStyle?: ViewStyle;
 }

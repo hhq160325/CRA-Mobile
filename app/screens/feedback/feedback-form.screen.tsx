@@ -62,7 +62,7 @@ export default function FeedbackFormScreen() {
 
         setIsSubmitting(true)
         try {
-            // Combine category with content for better context
+     
             const content = `${message}\n\nCategory: ${category}`
 
             const { data, error } = await reviewsService.createFeedback({

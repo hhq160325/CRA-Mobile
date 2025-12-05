@@ -1,27 +1,30 @@
 import React from 'react';
-import { Image, ImageBackground, Text, View } from 'react-native';
+import {Image, ImageBackground, Text, View} from 'react-native';
 import assets from '../../assets';
 import Button from '../../components/button/component';
-import { createStyles } from './onboarding.styles';
-import { navigate } from '../../navigators/navigation-utilities';
-import { useAuth } from '@/lib/auth-context';
+import {createStyles} from './onboarding.styles';
+import {navigate} from '../../navigators/navigation-utilities';
+import {useAuth} from '@/lib/auth-context';
 
 const OnBoardingScreen = () => {
   const styles = createStyles();
-  const { logo, overlayBg, whiteCar } = assets;
-  const { isAuthenticated, user } = useAuth();
+  const {logo, overlayBg, whiteCar} = assets;
+  const {isAuthenticated, user} = useAuth();
 
   const handleGetStarted = () => {
     if (isAuthenticated && user) {
-      // Check user role and navigate accordingly
-      const userRole = user.role?.toLowerCase()
-      const isStaff = userRole === "staff" || user.roleId === 1002
+      const userRole = user.role?.toLowerCase();
+      const isStaff = userRole === 'staff' || user.roleId === 1002;
 
       if (isStaff) {
-        console.log("✅ Onboarding: Navigating to staffStack for staff user")
+        console.log('✅ Onboarding: Navigating to staffStack for staff user');
         navigate('staffStack' as any);
       } else {
-        console.log("✅ Onboarding: Navigating to tabStack for", user.role, "user")
+        console.log(
+          '✅ Onboarding: Navigating to tabStack for',
+          user.role,
+          'user',
+        );
         navigate('tabStack' as any);
       }
     } else {

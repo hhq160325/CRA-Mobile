@@ -1,28 +1,39 @@
-import React, { useState } from 'react';
-import { View, ScrollView, Alert, ActivityIndicator, Text } from 'react-native';
-import { colors } from '../../theme/colors';
-import { scale, verticalScale } from '../../theme/scale';
-import { useAuth } from '../../../lib/auth-context';
+import React, {useState} from 'react';
+import {View, ScrollView, Alert, ActivityIndicator, Text} from 'react-native';
+import {colors} from '../../theme/colors';
+import {scale, verticalScale} from '../../theme/scale';
+import {useAuth} from '../../../lib/auth-context';
 import Header from '../../components/Header/Header';
-import { userService } from '../../../lib/api/services/user.service';
+import {userService} from '../../../lib/api/services/user.service';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileField from './components/ProfileField';
 import DriverLicenseSection from './components/DriverLicenseSection';
 import PasswordVerificationModal from './components/PasswordVerificationModal';
 import EditFieldModal from './components/EditFieldModal';
-import { useProfileData } from './hooks/useProfileData';
-import { useFieldEditor } from './hooks/useFieldEditor';
-import { useProfileActions } from './hooks/useProfileActions';
-import { useImagePicker } from './hooks/useImagePicker';
-import { buildSafeUpdateData, getAvatarSource, getStatusColor } from './utils/profileHelpers';
-import { locationService } from '../../../lib/api';
+import {useProfileData} from './hooks/useProfileData';
+import {useFieldEditor} from './hooks/useFieldEditor';
+import {useProfileActions} from './hooks/useProfileActions';
+import {useImagePicker} from './hooks/useImagePicker';
+import {
+  buildSafeUpdateData,
+  getAvatarSource,
+  getStatusColor,
+} from './utils/profileHelpers';
+import {locationService} from '../../../lib/api';
 
 export default function ProfileScreen() {
-  const { user, refreshUser } = useAuth();
-  const { userData, setUserData, isLoading, licenseImage, setLicenseImage, fieldValues, setFieldValues } = useProfileData(user?.id);
+  const {user, refreshUser} = useAuth();
+  const {
+    userData,
+    setUserData,
+    isLoading,
+    licenseImage,
+    setLicenseImage,
+    fieldValues,
+    setFieldValues,
+  } = useProfileData(user?.id);
   const [licenseImages, setLicenseImages] = useState<string[]>([]);
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
-
 
   const fieldEditor = useFieldEditor(
     user?.id,
@@ -31,7 +42,7 @@ export default function ProfileScreen() {
     setUserData,
     fieldValues,
     setFieldValues,
-    buildSafeUpdateData
+    buildSafeUpdateData,
   );
 
   const profileActions = useProfileActions(
@@ -43,20 +54,22 @@ export default function ProfileScreen() {
     setLicenseImage,
     setLicenseImages,
     refreshUser,
-    buildSafeUpdateData
+    buildSafeUpdateData,
   );
 
   const imagePicker = useImagePicker();
-
 
   React.useEffect(() => {
     const fetchDriverLicense = async () => {
       if (!user?.id || !user?.email) return;
 
       try {
-        const { data, error } = await userService.getDriverLicense(user.id, user.email);
+        const {data, error} = await userService.getDriverLicense(
+          user.id,
+          user.email,
+        );
         if (error) {
-          console.error("Failed to fetch driver license:", error);
+          console.error('Failed to fetch driver license:', error);
           return;
         }
         if (data && data.urls && data.urls.length > 0) {
@@ -64,85 +77,91 @@ export default function ProfileScreen() {
           setLicenseImage(data.urls[0]);
         }
       } catch (err) {
-        console.error("Exception fetching driver license:", err);
+        console.error('Exception fetching driver license:', err);
       }
     };
 
     fetchDriverLicense();
   }, [user?.id, user?.email]);
 
-
   const handleUploadAvatar = () => {
-    Alert.alert(
-      "Change Profile Picture",
-      "Choose an option",
-      [
-        { text: "Take Photo", onPress: () => imagePicker.openCamera(profileActions.uploadAvatar, [1, 1]) },
-        { text: "Choose from Gallery", onPress: () => imagePicker.openGallery(profileActions.uploadAvatar, [1, 1]) },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
+    Alert.alert('Change Profile Picture', 'Choose an option', [
+      {
+        text: 'Take Photo',
+        onPress: () =>
+          imagePicker.openCamera(profileActions.uploadAvatar, [1, 1]),
+      },
+      {
+        text: 'Choose from Gallery',
+        onPress: () =>
+          imagePicker.openGallery(profileActions.uploadAvatar, [1, 1]),
+      },
+      {text: 'Cancel', style: 'cancel'},
+    ]);
   };
 
   const handleEditGender = () => {
-    Alert.alert(
-      "Select Gender",
-      "Choose your gender",
-      [
-        { text: "Male", onPress: () => profileActions.updateGender("Male") },
-        { text: "Female", onPress: () => profileActions.updateGender("Female") },
-        { text: "Other", onPress: () => profileActions.updateGender("Other") },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
+    Alert.alert('Select Gender', 'Choose your gender', [
+      {text: 'Male', onPress: () => profileActions.updateGender('Male')},
+      {text: 'Female', onPress: () => profileActions.updateGender('Female')},
+      {text: 'Other', onPress: () => profileActions.updateGender('Other')},
+      {text: 'Cancel', style: 'cancel'},
+    ]);
   };
 
   const handleUploadLicense = () => {
-    Alert.alert(
-      "Upload Driver's License",
-      "Choose an option",
-      [
-        { text: "Take Photo", onPress: () => imagePicker.openCamera(profileActions.uploadDriverLicense, [16, 9]) },
-        { text: "Choose from Gallery", onPress: () => imagePicker.openGallery(profileActions.uploadDriverLicense, [16, 9]) },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
+    Alert.alert("Upload Driver's License", 'Choose an option', [
+      {
+        text: 'Take Photo',
+        onPress: () =>
+          imagePicker.openCamera(profileActions.uploadDriverLicense, [16, 9]),
+      },
+      {
+        text: 'Choose from Gallery',
+        onPress: () =>
+          imagePicker.openGallery(profileActions.uploadDriverLicense, [16, 9]),
+      },
+      {text: 'Cancel', style: 'cancel'},
+    ]);
   };
 
   const handleAutoFillAddress = async () => {
     setIsAutoFillingAddress(true);
     try {
-      // Get current location
-      const { data: location, error: locationError } = await locationService.getCurrentLocation();
+      const {data: location, error: locationError} =
+        await locationService.getCurrentLocation();
 
       if (locationError || !location) {
         Alert.alert(
-          "Location Error",
-          locationError?.message || "Unable to get your current location. Please enable location services in your device settings.",
-          [{ text: "OK" }]
+          'Location Error',
+          locationError?.message ||
+            'Unable to get your current location. Please enable location services in your device settings.',
+          [{text: 'OK'}],
         );
         return;
       }
 
-      // Get address from coordinates using TrackAsia API
-      const { data: addressData, error: addressError } = await locationService.reverseGeocode(
-        location.latitude,
-        location.longitude
-      );
+      const {data: addressData, error: addressError} =
+        await locationService.reverseGeocode(
+          location.latitude,
+          location.longitude,
+        );
 
       if (addressError) {
-        Alert.alert("Error", `Unable to get address: ${addressError.message}`);
+        Alert.alert('Error', `Unable to get address: ${addressError.message}`);
         return;
       }
 
       if (!addressData) {
-        Alert.alert("Error", "No address data received from the API. Please try again.");
+        Alert.alert(
+          'Error',
+          'No address data received from the API. Please try again.',
+        );
         return;
       }
 
-      console.log("Profile: Received address data", addressData);
+      console.log('Profile: Received address data', addressData);
 
-      // Format the address - try multiple combinations
       let fullAddress = addressData.address;
 
       if (!fullAddress && addressData.city && addressData.country) {
@@ -157,36 +176,43 @@ export default function ProfileScreen() {
         fullAddress = addressData.country;
       }
 
-      // If still no address, use coordinates as fallback
       if (!fullAddress) {
-        fullAddress = `Lat: ${location.latitude.toFixed(6)}, Lng: ${location.longitude.toFixed(6)}`;
+        fullAddress = `Lat: ${location.latitude.toFixed(
+          6,
+        )}, Lng: ${location.longitude.toFixed(6)}`;
         Alert.alert(
-          "Location Saved",
-          "Could not determine address, but coordinates have been saved. You can edit this manually.",
-          [{ text: "OK" }]
+          'Location Saved',
+          'Could not determine address, but coordinates have been saved. You can edit this manually.',
+          [{text: 'OK'}],
         );
       }
 
-      // Update the address field
-      setFieldValues((prev) => ({ ...prev, address: fullAddress }));
+      setFieldValues(prev => ({...prev, address: fullAddress}));
 
-      // Save to backend
       if (user?.id) {
-        const { data: currentUserData } = await userService.getUserById(user.id);
+        const {data: currentUserData} = await userService.getUserById(user.id);
         const latestData = currentUserData || userData;
-        const updateData = buildSafeUpdateData(latestData, { address: fullAddress });
+        const updateData = buildSafeUpdateData(latestData, {
+          address: fullAddress,
+        });
 
-        const { error: updateError } = await userService.updateUserInfo(user.id, updateData);
+        const {error: updateError} = await userService.updateUserInfo(
+          user.id,
+          updateData,
+        );
 
         if (updateError) {
-          Alert.alert("Update Failed", "Address detected but failed to save. Please try manually.");
+          Alert.alert(
+            'Update Failed',
+            'Address detected but failed to save. Please try manually.',
+          );
         } else {
-          Alert.alert("Success", `Address updated to: ${fullAddress}`);
+          Alert.alert('Success', `Address updated to: ${fullAddress}`);
         }
       }
     } catch (err: any) {
-      console.error("Auto-fill address error:", err);
-      Alert.alert("Error", err?.message || "Failed to auto-fill address");
+      console.error('Auto-fill address error:', err);
+      Alert.alert('Error', err?.message || 'Failed to auto-fill address');
     } finally {
       setIsAutoFillingAddress(false);
     }
@@ -196,11 +222,12 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{flex: 1, backgroundColor: colors.background}}>
         <Header />
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
           <ActivityIndicator size="large" color={colors.morentBlue} />
-          <Text style={{ marginTop: verticalScale(16), color: colors.placeholder }}>
+          <Text
+            style={{marginTop: verticalScale(16), color: colors.placeholder}}>
             Loading profile...
           </Text>
         </View>
@@ -209,15 +236,15 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{flex: 1, backgroundColor: colors.background}}>
       <Header />
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{flex: 1}} showsVerticalScrollIndicator={false}>
         <ProfileHeader
           avatarSource={avatarSource}
           fullname={fieldValues.fullname}
           username={fieldValues.username}
           gender={fieldValues.gender}
-          status={userData?.status || "Active"}
+          status={userData?.status || 'Active'}
           onEditAvatar={handleUploadAvatar}
           onEditGender={handleEditGender}
         />
@@ -230,22 +257,21 @@ export default function ProfileScreen() {
             backgroundColor: colors.white,
             borderRadius: scale(12),
             padding: scale(16),
-          }}
-        >
+          }}>
           <ProfileField
             label="Phone Number"
             value={fieldValues.phone}
             placeholder="Add Phone Number"
-            onEdit={() => fieldEditor.handleEditField("phone")}
+            onEdit={() => fieldEditor.handleEditField('phone')}
             showStatusDot
-            statusColor={getStatusColor("phone", fieldValues, colors)}
+            statusColor={getStatusColor('phone', fieldValues, colors)}
             isSecure
           />
 
           <ProfileField
             label="Email"
             value={fieldValues.email}
-            onEdit={() => fieldEditor.handleEditField("email")}
+            onEdit={() => fieldEditor.handleEditField('email')}
             showStatusDot
             statusColor={colors.green}
             isSecure
@@ -266,7 +292,7 @@ export default function ProfileScreen() {
             label="Username"
             value={fieldValues.username}
             placeholder="Not set"
-            onEdit={() => fieldEditor.handleEditField("username")}
+            onEdit={() => fieldEditor.handleEditField('username')}
           />
         </View>
 
@@ -275,7 +301,7 @@ export default function ProfileScreen() {
           onUploadLicense={handleUploadLicense}
         />
 
-        <View style={{ height: verticalScale(20) }} />
+        <View style={{height: verticalScale(20)}} />
       </ScrollView>
 
       <PasswordVerificationModal
@@ -285,11 +311,13 @@ export default function ProfileScreen() {
         isSaving={fieldEditor.isSaving}
         pendingField={fieldEditor.pendingField}
         onPasswordChange={fieldEditor.setPassword}
-        onToggleSecure={() => fieldEditor.setIsPasswordSecure(!fieldEditor.isPasswordSecure)}
+        onToggleSecure={() =>
+          fieldEditor.setIsPasswordSecure(!fieldEditor.isPasswordSecure)
+        }
         onVerify={fieldEditor.handlePasswordVerification}
         onCancel={() => {
           fieldEditor.setShowPasswordModal(false);
-          fieldEditor.setPassword("");
+          fieldEditor.setPassword('');
           fieldEditor.setPendingField(null);
         }}
       />
@@ -303,7 +331,7 @@ export default function ProfileScreen() {
         onSave={fieldEditor.handleSaveField}
         onCancel={() => {
           fieldEditor.setEditingField(null);
-          fieldEditor.setEditValue("");
+          fieldEditor.setEditValue('');
         }}
       />
     </View>

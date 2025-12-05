@@ -11,8 +11,12 @@ interface MenuModalProps {
     onNavigate: (screen: string) => void
     onLogout: () => void
     onOpenLanguageModal: () => void
+    onOpenNotifications: () => void
+    onOpenFavorites: () => void
     isStaff: boolean
     language: string
+    notificationCount: number
+    favoritesCount: number
 }
 
 export default function MenuModal({
@@ -21,8 +25,12 @@ export default function MenuModal({
     onNavigate,
     onLogout,
     onOpenLanguageModal,
+    onOpenNotifications,
+    onOpenFavorites,
     isStaff,
     language,
+    notificationCount,
+    favoritesCount,
 }: MenuModalProps) {
     const { t } = useLanguage()
 
@@ -75,6 +83,98 @@ export default function MenuModal({
                     </Pressable>
 
                     <Pressable
+                        onPress={onOpenNotifications}
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: scale(12),
+                            paddingHorizontal: scale(12),
+                            borderRadius: 8,
+                        }}
+                    >
+                        <View style={{ position: "relative" }}>
+                            <MaterialIcons name="notifications" size={scale(20)} color={colors.primary} />
+                            {notificationCount > 0 && (
+                                <View
+                                    style={{
+                                        position: "absolute",
+                                        top: -4,
+                                        right: -4,
+                                        backgroundColor: colors.red,
+                                        borderRadius: scale(8),
+                                        minWidth: scale(14),
+                                        height: scale(14),
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        paddingHorizontal: scale(3),
+                                    }}
+                                >
+                                    <Text style={{ color: colors.white, fontSize: scale(8), fontWeight: "700" }}>
+                                        {notificationCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                        <Text
+                            style={{
+                                marginLeft: scale(12),
+                                fontSize: scale(14),
+                                color: colors.primary,
+                                fontWeight: "500",
+                            }}
+                        >
+                            {t("notifications")}
+                        </Text>
+                    </Pressable>
+
+                    {!isStaff && (
+                        <Pressable
+                            onPress={onOpenFavorites}
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                paddingVertical: scale(12),
+                                paddingHorizontal: scale(12),
+                                borderRadius: 8,
+                            }}
+                        >
+                            <View style={{ position: "relative" }}>
+                                <MaterialIcons name="favorite" size={scale(20)} color={colors.primary} />
+                                {favoritesCount > 0 && (
+                                    <View
+                                        style={{
+                                            position: "absolute",
+                                            top: -4,
+                                            right: -4,
+                                            backgroundColor: colors.morentBlue,
+                                            borderRadius: scale(8),
+                                            minWidth: scale(14),
+                                            height: scale(14),
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            paddingHorizontal: scale(3),
+                                        }}
+                                    >
+                                        <Text style={{ color: colors.white, fontSize: scale(8), fontWeight: "700" }}>
+                                            {favoritesCount}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text
+                                style={{
+                                    marginLeft: scale(12),
+                                    fontSize: scale(14),
+                                    color: colors.primary,
+                                    fontWeight: "500",
+                                }}
+                            >
+                                {t("favorites") || "Favorites"}
+                            </Text>
+                        </Pressable>
+                    )}
+
+                    <Pressable
                         onPress={() => onNavigate("Profile")}
                         style={{
                             flexDirection: "row",
@@ -123,7 +223,7 @@ export default function MenuModal({
                             </Pressable>
 
                             <Pressable
-                                onPress={() => onNavigate("Cars")}
+                                onPress={() => onNavigate("PaymentHistory")}
                                 style={{
                                     flexDirection: "row",
                                     alignItems: "center",
@@ -132,7 +232,7 @@ export default function MenuModal({
                                     borderRadius: 8,
                                 }}
                             >
-                                <MaterialIcons name="directions-car" size={scale(20)} color={colors.primary} />
+                                <MaterialIcons name="payment" size={scale(20)} color={colors.primary} />
                                 <Text
                                     style={{
                                         marginLeft: scale(12),
@@ -141,7 +241,7 @@ export default function MenuModal({
                                         fontWeight: "500",
                                     }}
                                 >
-                                    {t("cars")}
+                                    {language === 'vi' ? 'Lịch sử thanh toán' : 'Payment History'}
                                 </Text>
                             </Pressable>
                         </>

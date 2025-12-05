@@ -43,7 +43,7 @@ export default function CarDocumentsModal({ visible, onClose }: CarDocumentsModa
                                 <View style={{ flexDirection: 'row', marginBottom: scale(8) }}>
                                     <Text style={{ color: colors.primary, marginRight: scale(8) }}>•</Text>
                                     <Text style={{ fontSize: scale(13), color: colors.primary, flex: 1, lineHeight: scale(20) }}>
-                                        Driver's license (car owner compares the original or electronic copy (view on VN-eID/VN-eTraffic) with the verified driver's license information on the Mioto app & sends it back to you)
+                                        Driver's license (car owner compares the original or electronic copy (view on VN-eID/VN-eTraffic) with the verified driver's license information on the Morent app & sends it back to you)
                                     </Text>
                                 </View>
                                 <View style={{ flexDirection: 'row' }}>
@@ -69,7 +69,7 @@ export default function CarDocumentsModal({ visible, onClose }: CarDocumentsModa
                                 <View style={{ flexDirection: 'row', marginBottom: scale(8) }}>
                                     <Text style={{ color: colors.primary, marginRight: scale(8) }}>•</Text>
                                     <Text style={{ fontSize: scale(13), color: colors.primary, flex: 1, lineHeight: scale(20) }}>
-                                        Driver's license (car owner compares the original or electronic copy (view on VN-eID/VN-eTraffic) with the verified driver's license information on the Mioto app & sends it back to you)
+                                        Driver's license (car owner compares the original or electronic copy (view on VN-eID/VN-eTraffic) with the verified driver's license information on the Morent app & sends it back to you)
                                     </Text>
                                 </View>
                                 <View style={{ flexDirection: 'row' }}>

@@ -217,7 +217,7 @@ export default function CarRentalPolicies({
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: scale(10) }}>
                         <Text style={{ color: '#F57C00', marginRight: scale(8), fontSize: scale(14) }}>*</Text>
                         <Text style={{ fontSize: scale(12), color: colors.primary, flex: 1, lineHeight: scale(18) }}>
-                            The deposit and compensation due to the car owner canceling the trip (if any) will be refunded by Mioto to the renter by bank transfer within the next 1-3 working days.
+                            The deposit and compensation due to the car owner canceling the trip (if any) will be refunded by Morent to the renter by bank transfer within the next 1-3 working days.
                         </Text>
                     </View>
 

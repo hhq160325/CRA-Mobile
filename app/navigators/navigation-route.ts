@@ -17,7 +17,7 @@ export type NavigatorParamList = {
   ['BookingForm']: { id: string } | undefined;
   ['BookingPayment']: { bookingId: string; paymentMethod: string; amount: number };
   ['PayOSWebView']: { paymentUrl: string; bookingId?: string };
-  ['FeedbackForm']: { carId: string };
+  ['FeedbackForm']: { carId: string; bookingId?: string };
   ['CarMapScreen']: {
     pickupLocation: string;
     pickupDate: string;
@@ -51,6 +51,7 @@ export type NavigatorParamList = {
     dropoffTime?: string;
   };
   ['VehicleReturn']: { bookingId: string };
+  ['PaymentHistory']: undefined;
   ['auth']: undefined;
   ['tabStack']: undefined;
   ['staffStack']: undefined;

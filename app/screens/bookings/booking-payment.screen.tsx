@@ -12,10 +12,10 @@ import Header from "../../components/Header/Header"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 
 export default function BookingPaymentScreen() {
-    const route = useRoute<RouteProp<{ params: { bookingId: string; paymentMethod: string; amount: number } }, "params">>()
+    const route = useRoute<RouteProp<{ params: { bookingId: string; bookingNumber?: string; paymentMethod: string; amount: number } }, "params">>()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
 
-    const { bookingId, paymentMethod, amount } = (route.params as any) || {}
+    const { bookingId, bookingNumber, paymentMethod, amount } = (route.params as any) || {}
 
     const [loading, setLoading] = useState(false)
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
@@ -180,7 +180,7 @@ export default function BookingPaymentScreen() {
                     <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
                         <Text style={{ fontSize: 14, color: colors.placeholder }}>Booking ID</Text>
                         <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>
-                            {bookingId?.substring(0, 8)}...
+                            {bookingNumber || "N/A"}
                         </Text>
                     </View>
 

@@ -129,7 +129,9 @@ export default function BookingsListScreen() {
           <Text style={{ fontSize: scale(18), fontWeight: "bold", color: colors.primary, marginBottom: verticalScale(4) }}>
             {item.carName}
           </Text>
-          <Text style={{ fontSize: scale(12), color: "#6b7280" }}>Booking ID: {item.id}</Text>
+          <Text style={{ fontSize: scale(12), color: "#6b7280" }}>
+            Booking ID: {item.bookingNumber || "N/A"}
+          </Text>
         </View>
         <View
           style={{

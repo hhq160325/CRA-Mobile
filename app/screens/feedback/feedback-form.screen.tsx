@@ -34,6 +34,7 @@ export default function FeedbackFormScreen() {
     const route = useRoute()
     const { user } = useAuth()
     const carId = (route.params as any)?.carId || ""
+    const bookingId = (route.params as any)?.bookingId || ""
 
     const [rating, setRating] = useState(0)
     const [category, setCategory] = useState<string | null>(null)
@@ -54,22 +55,22 @@ export default function FeedbackFormScreen() {
             return
         }
 
-        if (!user?.id) {
-            Alert.alert("Error", "Please login to submit feedback")
+        if (!bookingId) {
+            Alert.alert("Error", "Booking information is missing. Feedback can only be submitted for completed bookings.")
             return
         }
 
         setIsSubmitting(true)
         try {
-            // Combine title, message, and category into comment
-            const comment = `${title}\n\n${message}\n\nCategory: ${category}`
+            // Combine category with content for better context
+            const content = `${message}\n\nCategory: ${category}`
 
             const { data, error } = await reviewsService.createFeedback({
                 carId: carId,
-                customerId: user.id,
+                bookingId: bookingId || undefined,
                 rating: rating,
-                comment: comment,
-                content: message, // Some APIs might use 'content' instead of 'comment'
+                title: title,
+                content: content,
             })
 
             if (error) {
@@ -144,6 +145,36 @@ export default function FeedbackFormScreen() {
                 >
                     We value your feedback and would love to hear about your experience with us.
                 </Text>
+
+                {/* Booking Info Notice */}
+                {bookingId && (
+                    <View
+                        style={{
+                            backgroundColor: colors.morentBlue + "15",
+                            borderRadius: scale(8),
+                            padding: scale(12),
+                            marginBottom: verticalScale(16),
+                            flexDirection: "row",
+                            alignItems: "center",
+                        }}
+                    >
+                        <Icon
+                            name="info"
+                            size={scale(20)}
+                            color={colors.morentBlue}
+                            style={{ marginRight: scale(8) }}
+                        />
+                        <Text
+                            style={{
+                                fontSize: scale(12),
+                                color: colors.morentBlue,
+                                flex: 1,
+                            }}
+                        >
+                            Feedback for your completed booking
+                        </Text>
+                    </View>
+                )}
 
                 {/* Rating Section */}
                 <View

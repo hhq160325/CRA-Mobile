@@ -15,7 +15,6 @@ import { useFavorites } from '../../../lib/favorites-context';
 export default function CarListScreen() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
 
@@ -44,9 +43,8 @@ export default function CarListScreen() {
     );
   }
 
-  const displayedCars = activeTab === 'favorites'
-    ? cars.filter(car => favorites.includes(car.id))
-    : cars;
+  // Only show favorite cars
+  const displayedCars = cars.filter(car => favorites.includes(car.id));
 
   const handleFavoritePress = (carId: string, e: any) => {
     e.stopPropagation();
@@ -57,60 +55,31 @@ export default function CarListScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
 
-      {/* Tabs */}
+      {/* Header Title */}
       <View style={{
-        flexDirection: 'row',
         paddingHorizontal: scale(16),
         paddingTop: scale(16),
-        paddingBottom: scale(8),
+        paddingBottom: scale(12),
         backgroundColor: colors.white,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border
+        borderBottomColor: colors.border,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
-        <Pressable
-          onPress={() => setActiveTab('all')}
-          style={{
-            flex: 1,
-            paddingVertical: scale(12),
-            borderBottomWidth: 2,
-            borderBottomColor: activeTab === 'all' ? colors.morentBlue : 'transparent',
-            alignItems: 'center'
-          }}
-        >
-          <Text style={{
-            fontSize: scale(14),
-            fontWeight: '600',
-            color: activeTab === 'all' ? colors.morentBlue : colors.placeholder
-          }}>
-            All Cars ({cars.length})
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setActiveTab('favorites')}
-          style={{
-            flex: 1,
-            paddingVertical: scale(12),
-            borderBottomWidth: 2,
-            borderBottomColor: activeTab === 'favorites' ? colors.morentBlue : 'transparent',
-            alignItems: 'center',
-            flexDirection: 'row',
-            justifyContent: 'center'
-          }}
-        >
-          <Ionicons
-            name="heart"
-            size={scale(16)}
-            color={activeTab === 'favorites' ? colors.morentBlue : colors.placeholder}
-            style={{ marginRight: scale(4) }}
-          />
-          <Text style={{
-            fontSize: scale(14),
-            fontWeight: '600',
-            color: activeTab === 'favorites' ? colors.morentBlue : colors.placeholder
-          }}>
-            Favorites ({favorites.length})
-          </Text>
-        </Pressable>
+        <Ionicons
+          name="heart"
+          size={scale(20)}
+          color={colors.morentBlue}
+          style={{ marginRight: scale(8) }}
+        />
+        <Text style={{
+          fontSize: scale(18),
+          fontWeight: '700',
+          color: colors.primary
+        }}>
+          My Favorite Cars ({favorites.length})
+        </Text>
       </View>
 
       <FlatList
@@ -118,32 +87,31 @@ export default function CarListScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: scale(16) }}
         ListEmptyComponent={
-          activeTab === 'favorites' ? (
-            <View style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-              paddingVertical: scale(60)
+          <View style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingVertical: scale(60)
+          }}>
+            <Ionicons name="heart-outline" size={scale(64)} color={colors.border} />
+            <Text style={{
+              fontSize: scale(16),
+              color: colors.placeholder,
+              marginTop: scale(16),
+              textAlign: 'center'
             }}>
-              <Ionicons name="heart-outline" size={scale(64)} color={colors.border} />
-              <Text style={{
-                fontSize: scale(16),
-                color: colors.placeholder,
-                marginTop: scale(16),
-                textAlign: 'center'
-              }}>
-                No favorite cars yet
-              </Text>
-              <Text style={{
-                fontSize: scale(12),
-                color: colors.placeholder,
-                marginTop: scale(4),
-                textAlign: 'center'
-              }}>
-                Tap the heart icon on any car to add it to favorites
-              </Text>
-            </View>
-          ) : null
+              No favorite cars yet
+            </Text>
+            <Text style={{
+              fontSize: scale(12),
+              color: colors.placeholder,
+              marginTop: scale(4),
+              textAlign: 'center',
+              paddingHorizontal: scale(32)
+            }}>
+              Browse cars on the home screen and tap the heart icon to add them to your favorites
+            </Text>
+          </View>
         }
         renderItem={({ item }) => (
           <Pressable

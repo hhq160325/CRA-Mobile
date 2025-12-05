@@ -1,5 +1,5 @@
-import {JSX} from 'react';
-import {TextStyle, ViewStyle} from 'react-native';
+import { JSX } from 'react';
+import { TextStyle, ViewStyle } from 'react-native';
 
 export interface IButtonProps {
   onPress?: (e: any) => void;
@@ -7,4 +7,5 @@ export interface IButtonProps {
   buttonStyles?: ViewStyle;
   textStyles?: TextStyle;
   component?: JSX.Element;
+  disabled?: boolean;
 }

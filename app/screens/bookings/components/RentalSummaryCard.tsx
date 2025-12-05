@@ -8,6 +8,8 @@ interface RentalSummaryCardProps {
     carImageSource: any
     subtotal: number
     tax: number
+    shippingFee: number
+    bookingFee: number
     discount: number
     total: number
     promoCode: string
@@ -20,6 +22,8 @@ export default function RentalSummaryCard({
     carImageSource,
     subtotal,
     tax,
+    shippingFee,
+    bookingFee,
     discount,
     total,
     promoCode,
@@ -82,10 +86,38 @@ export default function RentalSummaryCard({
                         <Text style={{ fontSize: 12, color: colors.placeholder }}>Subtotal</Text>
                         <Text style={{ fontSize: 12, fontWeight: "600" }}>{subtotal.toFixed(0)} VND</Text>
                     </View>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
                         <Text style={{ fontSize: 12, color: colors.placeholder }}>Tax</Text>
                         <Text style={{ fontSize: 12, fontWeight: "600" }}>{tax.toFixed(0)} VND</Text>
                     </View>
+                    {shippingFee > 0 && (
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                <MaterialIcons name="local-shipping" size={14} color={colors.morentBlue} style={{ marginRight: 4 }} />
+                                <Text style={{ fontSize: 12, color: colors.morentBlue, fontWeight: "600" }}>Shipping Fee</Text>
+                            </View>
+                            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.morentBlue }}>{shippingFee.toFixed(0)} VND</Text>
+                        </View>
+                    )}
+                    {!shippingFee && (
+                        <View style={{ marginBottom: 12 }} />
+                    )}
+
+                    {/* Booking Fee - shown above total */}
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                            <MaterialIcons name="receipt" size={14} color="#FF6B00" style={{ marginRight: 4 }} />
+                            <Text style={{ fontSize: 12, color: "#FF6B00", fontWeight: "600" }}>Booking Fee</Text>
+                        </View>
+                        <Text style={{ fontSize: 12, fontWeight: "600", color: "#FF6B00" }}>{bookingFee.toFixed(0)} VND</Text>
+                    </View>
+
+                    {discount > 0 && (
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
+                            <Text style={{ fontSize: 12, color: "#10B981", fontWeight: "600" }}>Discount</Text>
+                            <Text style={{ fontSize: 12, fontWeight: "600", color: "#10B981" }}>-{discount.toFixed(0)} VND</Text>
+                        </View>
+                    )}
 
                     {/* Promo Code */}
                     <View style={{ marginBottom: 12 }}>

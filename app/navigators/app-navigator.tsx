@@ -34,6 +34,7 @@ import StaffScreen from "../screens/staff/staff.screen"
 import PickupReturnConfirmScreen from "../screens/staff/pickup-return-confirm.screen"
 import VehicleReturnScreen from "../screens/staff/vehicle-return.screen"
 import FeedbackFormScreen from "../screens/feedback/feedback-form.screen"
+import PaymentHistoryScreen from "../screens/payments/payment-history.screen"
 
 type NavigationProps = Partial<React.ComponentProps<typeof NavigationContainer>>
 
@@ -345,6 +346,20 @@ const CombinedStack = () => {
       <Stack.Screen
         name="FeedbackForm"
         component={FeedbackFormScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="Bookings"
+        component={BookingsListScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="PaymentHistory"
+        component={PaymentHistoryScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

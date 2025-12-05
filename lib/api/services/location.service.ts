@@ -124,6 +124,65 @@ export const locationService = {
     },
 
 
+    async getCoordinatesFromAddress(
+        address: string
+    ): Promise<{ data: { latitude: string; longitude: string } | null; error: Error | null }> {
+        console.log("locationService.getCoordinatesFromAddress: geocoding address", address)
+
+        const result = await apiClient<{ latitude: string; longitude: string }>(
+            "/TrackAsia/GetCoordinateFromAddress",
+            {
+                method: "POST",
+                body: JSON.stringify(address),
+            }
+        )
+
+        console.log("locationService.getCoordinatesFromAddress: received response", {
+            hasError: !!result.error,
+            hasData: !!result.data,
+            data: result.data,
+        })
+
+        if (result.error) {
+            return { data: null, error: result.error }
+        }
+
+        return { data: result.data, error: null }
+    },
+
+    async getDistanceBetweenAddresses(
+        sourceAddress: string,
+        destinationAddress: string
+    ): Promise<{ data: { distanceInMeters: number } | null; error: Error | null }> {
+        console.log("locationService.getDistanceBetweenAddresses: calculating distance", {
+            sourceAddress,
+            destinationAddress
+        })
+
+        const result = await apiClient<{ distanceInMeters: number }>(
+            "/TrackAsia/GetDistanceBetweenAddresses",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    sourceAddress,
+                    destinationAddress
+                }),
+            }
+        )
+
+        console.log("locationService.getDistanceBetweenAddresses: received response", {
+            hasError: !!result.error,
+            hasData: !!result.data,
+            data: result.data,
+        })
+
+        if (result.error) {
+            return { data: null, error: result.error }
+        }
+
+        return { data: result.data, error: null }
+    },
+
     async reverseGeocode(
         latitude: number,
         longitude: number

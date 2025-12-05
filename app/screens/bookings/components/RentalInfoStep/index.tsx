@@ -37,7 +37,6 @@ export default function RentalInfoStep({
     const [parkLots, setParkLots] = useState<ParkLot[]>([])
     const [loading, setLoading] = useState(false)
     const [showPickupModal, setShowPickupModal] = useState(false)
-    const [showDropoffModal, setShowDropoffModal] = useState(false)
     const [calculatingDistance, setCalculatingDistance] = useState(false)
     const [showCustomPickupPicker, setShowCustomPickupPicker] = useState(false)
     const [showCustomDropoffPicker, setShowCustomDropoffPicker] = useState(false)
@@ -47,6 +46,14 @@ export default function RentalInfoStep({
     useEffect(() => {
         fetchParkLots()
     }, [])
+
+    // Auto-sync dropoff location with pickup location
+    useEffect(() => {
+        if (pickupLocation && pickupMode === "parklot") {
+            // When pickup location changes in park lot mode, auto-set dropoff to same location
+            onDropoffLocationChange(pickupLocation)
+        }
+    }, [pickupLocation, pickupMode])
 
     // Calculate distance when pickup is custom and user enters address
     useEffect(() => {
@@ -78,15 +85,14 @@ export default function RentalInfoStep({
 
     const handleSelectPickupParkLot = (parkLot: ParkLot) => {
         setSelectedParkLot(parkLot)
+        const parkLotAddress = parkLot.address || parkLot.name
+
         if (pickupMode === "parklot") {
-            onPickupLocationChange(parkLot.address || parkLot.name)
+            onPickupLocationChange(parkLotAddress)
+            // Auto-set dropoff to same location
+            onDropoffLocationChange(parkLotAddress)
         }
         setShowPickupModal(false)
-    }
-
-    const handleSelectDropoffParkLot = (parkLot: ParkLot) => {
-        onDropoffLocationChange(parkLot.address || parkLot.name)
-        setShowDropoffModal(false)
     }
 
     return (
@@ -113,15 +119,11 @@ export default function RentalInfoStep({
                 />
 
                 <DropoffSection
-                    dropoffMode={dropoffMode}
                     dropoffLocation={dropoffLocation}
                     dropoffDate={dropoffDate}
                     dropoffTime={dropoffTime}
                     dropoffDateError={dropoffDateError}
                     dropoffTimeError={dropoffTimeError}
-                    onDropoffModeChange={onDropoffModeChange}
-                    onDropoffLocationChange={onDropoffLocationChange}
-                    onShowParkLotModal={() => setShowDropoffModal(true)}
                     onShowDateTimePicker={() => setShowCustomDropoffPicker(true)}
                     t={t}
                 />
@@ -136,17 +138,6 @@ export default function RentalInfoStep({
                 emptyText={t("noParkLots")}
                 onClose={() => setShowPickupModal(false)}
                 onSelect={handleSelectPickupParkLot}
-            />
-
-            {/* Dropoff Location Modal */}
-            <ParkLotModal
-                visible={showDropoffModal}
-                loading={loading}
-                parkLots={parkLots}
-                title={t("selectDropoffLocation")}
-                emptyText={t("noParkLots")}
-                onClose={() => setShowDropoffModal(false)}
-                onSelect={handleSelectDropoffParkLot}
             />
 
             {/* Custom Pickup Date & Time Picker */}

@@ -37,18 +37,9 @@ export default function PickupReturnConfirmScreen() {
         }
     }, [initialDescription])
 
-    // Log user info for debugging
+    // User loaded
     useEffect(() => {
-        if (user) {
-            console.log("Staff user loaded:", {
-                id: user.id,
-                name: user.name,
-                role: user.role,
-                roleId: user.roleId
-            })
-        } else {
-            console.error("No user found in auth context")
-        }
+        // User info available
     }, [user])
 
     const formatDateTime = (dateString: string) => {
@@ -84,8 +75,6 @@ export default function PickupReturnConfirmScreen() {
                     onPress: async () => {
                         try {
                             setSubmitting(true)
-                            console.log("Confirming pickup for booking:", bookingId)
-                            console.log("Staff ID:", user.id)
 
                             const result = await scheduleService.checkIn(
                                 bookingId,
@@ -111,7 +100,7 @@ export default function PickupReturnConfirmScreen() {
                                 ]
                             )
                         } catch (error) {
-                            console.error("Error confirming pickup:", error)
+                            // Error confirming pickup
                             Alert.alert('Error', 'Failed to confirm pickup')
                             setSubmitting(false)
                         }

@@ -1,5 +1,5 @@
 export const vi = {
-    // Header
+
     home: "Trang chủ",
     profile: "Hồ sơ",
     bookings: "Đặt xe",
@@ -9,7 +9,7 @@ export const vi = {
     notifications: "Thông báo",
     noNotifications: "Chưa có thông báo",
 
-    // Home Screen
+
     searchPlaceholder: "Tìm kiếm ở đây",
     popularCar: "Xe phổ biến",
     recommendationCar: "Xe đề xuất",
@@ -27,7 +27,7 @@ export const vi = {
     rentNow: "Thuê ngay",
     perDay: "/ngày",
 
-    // Filters
+
     filters: "Bộ lọc",
     maxPrice: "Giá tối đa mỗi ngày",
     carType: "Loại xe",
@@ -35,14 +35,14 @@ export const vi = {
     clearAll: "Xóa tất cả",
     applyFilters: "Áp dụng",
 
-    // Car Types
+
     sports: "Thể thao",
     suv: "SUV",
     sedan: "Sedan",
     luxury: "Sang trọng",
     electric: "Điện",
 
-    // Booking Form
+
     rentalSummary: "Tóm tắt thuê xe",
     subtotal: "Tạm tính",
     tax: "Thuế",
@@ -53,7 +53,7 @@ export const vi = {
     step: "Bước",
     of: "của",
 
-    // Billing Info
+
     billingInfo: "Thông tin thanh toán",
     billingInfoDesc: "Vui lòng nhập thông tin thanh toán",
     fullName: "Họ và tên",
@@ -61,7 +61,7 @@ export const vi = {
     phoneNumber: "Số điện thoại",
     city: "Thành phố",
 
-    // Rental Info
+
     rentalInfo: "Thông tin thuê xe",
     rentalInfoDesc: "Vui lòng chọn ngày thuê xe",
     pickupLocation: "Địa điểm nhận xe",
@@ -74,25 +74,25 @@ export const vi = {
     selectDropoffLocation: "Chọn địa điểm trả xe",
     noParkLots: "Không có bãi đỗ xe",
 
-    // Payment Method
+
     paymentMethod: "Phương thức thanh toán",
     paymentMethodDesc: "Vui lòng chọn phương thức thanh toán",
     qrPayOS: "QR PayOS",
     scanQRCode: "Quét mã QR để thanh toán",
 
-    // Confirmation
+
     confirmation: "Xác nhận",
     confirmationDesc: "Chúng tôi sắp hoàn tất. Chỉ còn vài bước nữa và xe của bạn đã sẵn sàng!",
     agreeMarketing: "Tôi đồng ý nhận email marketing và bản tin. Không spam, hứa luôn!",
     agreeTerms: "Tôi đồng ý với điều khoản và điều kiện cũng như chính sách bảo mật.",
 
-    // Buttons
+
     back: "Quay lại",
     next: "Tiếp theo",
     rentalNow: "Thuê ngay",
     loading: "Đang tải...",
 
-    // Payment
+
     paymentSuccessful: "Thanh toán thành công",
     paymentSuccessDesc: "Thanh toán của bạn đã được hoàn tất thành công!",
     paymentCancelled: "Đã hủy thanh toán",
@@ -102,7 +102,7 @@ export const vi = {
     payosPayment: "Thanh toán PayOS",
     loadingPayment: "Đang tải trang thanh toán...",
 
-    // Errors
+
     error: "Lỗi",
     invalidEmail: "Email không hợp lệ",
     invalidPassword: "Mật khẩu không hợp lệ",
@@ -110,7 +110,7 @@ export const vi = {
     loginError: "Lỗi đăng nhập",
     carNotFound: "Không tìm thấy xe",
 
-    // Common
+
     yes: "Có",
     no: "Không",
     ok: "OK",
@@ -119,14 +119,14 @@ export const vi = {
     tryAgain: "Thử lại",
     close: "Đóng",
 
-    // Status
+
     completed: "Hoàn thành",
     upcoming: "Sắp tới",
     successful: "Thành công",
     pending: "Chờ xử lý",
     cancelled: "Đã hủy",
 
-    // Staff
+
     staffDashboard: "Bảng điều khiển nhân viên",
     confirmPickup: "Xác nhận giao xe",
     confirmReturn: "Xác nhận nhận xe",

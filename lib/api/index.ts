@@ -32,17 +32,17 @@ export { parkLotService, type ParkLot } from "./services/parklot.service"
 
 export { userService, type UserData } from "./services/user.service"
 
-// Storage service
+
 export { storageService } from "./services/storage.service"
 
-// Schedule service
+
 export { scheduleService, type Schedule } from "./services/schedule.service"
 
-// Notification service
+
 export { notificationService, type Notification } from "./services/notification.service"
 
-// Invoice service
+
 export { invoiceService, type Invoice as InvoiceData } from "./services/invoice.service"
 
-// Payment status checker
+
 export { checkAndUpdatePaymentStatuses, areAllPaymentsPaid } from "./services/payment-status-checker"

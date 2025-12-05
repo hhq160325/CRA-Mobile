@@ -1,9 +1,27 @@
+// Get base URL from environment variable
+// For React Native, we need to use a different approach than process.env
+const getBaseUrl = () => {
+  // In development, you can set this in .env file
+  // In production, this should be configured through your build process
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+
+  // Fallback for production - should be set via build configuration
+  // Never hardcode production URLs here
+  return "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api"
+}
 
 export const API_CONFIG = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api",
+  BASE_URL: getBaseUrl(),
   TIMEOUT: 60000,
   RETRY_ATTEMPTS: 2,
   RETRY_DELAY: 1000,
+}
+
+// Helper to get base URL without /api suffix for direct API calls
+export const getApiBaseUrl = () => {
+  return API_CONFIG.BASE_URL.replace('/api', '')
 }
 
 // API endpoints

@@ -80,8 +80,6 @@ export default function VehicleReturnScreen() {
                     onPress: async () => {
                         try {
                             setSubmitting(true)
-                            console.log("Confirming return for booking:", bookingId)
-                            console.log("Staff ID:", user.id)
 
                             const result = await scheduleService.checkOut(
                                 bookingId,
@@ -90,17 +88,10 @@ export default function VehicleReturnScreen() {
                                 description || "Return confirmed"
                             )
 
-                            console.log("VehicleReturn: checkOut result:", JSON.stringify(result, null, 2))
-
                             if (result.error) {
-                                console.error("VehicleReturn: checkOut error:", result.error)
                                 Alert.alert('Error', result.error.message)
                                 setSubmitting(false)
                                 return
-                            }
-
-                            if (result.data) {
-                                console.log("VehicleReturn: checkOut successful, response data:", result.data)
                             }
 
                             Alert.alert(
@@ -120,7 +111,6 @@ export default function VehicleReturnScreen() {
                                 ]
                             )
                         } catch (error) {
-                            console.error("Error confirming return:", error)
                             Alert.alert('Error', 'Failed to confirm return')
                             setSubmitting(false)
                         }

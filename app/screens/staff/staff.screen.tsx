@@ -11,6 +11,7 @@ import { userService } from "../../../lib/api/services/user.service"
 import { invoiceService } from "../../../lib/api/services/invoice.service"
 import { paymentService } from "../../../lib/api/services/payment.service"
 import { scheduleService } from "../../../lib/api/services/schedule.service"
+import { API_CONFIG } from "../../../lib/api/config"
 import { useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
@@ -55,15 +56,9 @@ export default function StaffScreen() {
         const result = await bookingsService.getAllBookings()
 
         if (result.error) {
-            console.error("Error fetching bookings:", result.error)
             setError(result.error.message)
             setLoading(false)
             return
-        }
-
-        console.log(`Fetched ${result.data?.length || 0} bookings from API`)
-        if (result.data && result.data.length > 0) {
-            console.log("Sample booking data:", result.data[0])
         }
 
         if (result.data) {
@@ -79,7 +74,7 @@ export default function StaffScreen() {
                     mappedStatus = "cancelled"
                 }
 
-                console.log(`Booking ${booking.id}: status="${booking.status}" -> mapped="${mappedStatus}"`)
+
 
                 // Format date
                 const bookingDate = new Date(booking.bookingDate)
@@ -94,59 +89,39 @@ export default function StaffScreen() {
 
                 if (booking.carId) {
                     try {
-                        console.log(`🚗 Fetching car details for carId: ${booking.carId}`)
                         const carResult = await carsService.getCarById(booking.carId)
-                        if (carResult.error) {
-                            console.error(`❌ Error fetching car ${booking.carId}:`, carResult.error.message)
-                        }
                         if (carResult.data) {
                             carName = carResult.data.name || "Unknown Car"
                             carBrand = carResult.data.brand || ""
                             carModel = carResult.data.model || ""
                             carLicensePlate = carResult.data.licensePlate || ""
                             carImage = carResult.data.image || ""
-                            console.log(`✅ Car fetched: ${carName}, Model: ${carModel}, License: ${carLicensePlate}`)
-                        } else {
-                            console.warn(`⚠️ No car data returned for carId: ${booking.carId}`)
                         }
                     } catch (err) {
-                        console.error(`💥 Exception fetching car ${booking.carId}:`, err)
+                        // Error fetching car
                     }
-                } else {
-                    console.warn(`⚠️ No carId in booking ${booking.id}`)
                 }
 
                 // Fetch user details using userId
                 let customerName = "Customer"
                 if (booking.userId) {
                     try {
-                        console.log(`👤 Fetching user details for userId: ${booking.userId}`)
                         const userResult = await userService.getUserById(booking.userId)
-                        if (userResult.error) {
-                            console.error(`❌ Error fetching user ${booking.userId}:`, userResult.error.message)
-                        }
                         if (userResult.data) {
                             customerName = userResult.data.fullname || userResult.data.username || "Customer"
-                            console.log(`✅ Customer fetched: ${customerName}`)
-                        } else {
-                            console.warn(`⚠️ No user data returned for userId: ${booking.userId}`)
                         }
                     } catch (err) {
-                        console.error(`💥 Exception fetching user ${booking.userId}:`, err)
+                        // Error fetching user
                     }
-                } else {
-                    console.warn(`⚠️ No userId in booking ${booking.id}`)
                 }
 
                 // Fetch payments for this booking to get Rental Fee
                 let invoiceAmount = 0
                 let invoiceStatus = "pending"
 
-                console.log(`💰 Fetching payments for booking: ${booking.id}`)
-
                 // Direct fetch to payments API
                 try {
-                    const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net'
+                    const baseUrl = API_CONFIG.BASE_URL.replace('/api', '')
                     const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`
 
                     let token: string | null = null
@@ -176,25 +151,20 @@ export default function StaffScreen() {
                             if (rentalFeePayment) {
                                 invoiceAmount = Number(rentalFeePayment.paidAmount) || 0
                                 invoiceStatus = rentalFeePayment.status?.toLowerCase() || "pending"
-                                console.log(`✅ Rental Fee found for ${booking.id}: ${invoiceAmount} VND`)
                             }
                         }
                     }
                 } catch (err) {
-                    console.error(`💥 Error fetching payments for ${booking.id}:`, err)
+                    // Error fetching payments
                 }
 
                 // Fallback to booking.totalPrice if still 0
                 if (invoiceAmount === 0 && booking.totalPrice > 0) {
-                    console.log(`Using booking.totalPrice as fallback: ${booking.totalPrice}`)
                     invoiceAmount = booking.totalPrice
                 }
 
-                console.log(`💵 Final amount for booking ${booking.id}: ${invoiceAmount}`)
-
                 // Update invoice status based on booking status if payment is confirmed
                 if (mappedStatus === "successfully" && invoiceStatus === "pending") {
-                    console.log(`Booking is confirmed, updating invoice status to paid`)
                     invoiceStatus = "paid"
                 }
 
@@ -203,29 +173,21 @@ export default function StaffScreen() {
                 let hasCheckOut = false
 
                 try {
-                    console.log(`🔍 Checking check-in status for booking ${booking.id}`)
                     const checkInResult = await scheduleService.getCheckInImages(booking.id)
                     if (checkInResult.data && checkInResult.data.images.length > 0) {
                         hasCheckIn = true
-                        console.log(`✅ Check-in data exists for booking ${booking.id}`)
-                    } else {
-                        console.log(`⚠️ No check-in data for booking ${booking.id}`)
                     }
                 } catch (err) {
-                    console.error(`💥 Error checking check-in for booking ${booking.id}:`, err)
+                    // Error checking check-in
                 }
 
                 try {
-                    console.log(`🔍 Checking check-out status for booking ${booking.id}`)
                     const checkOutResult = await scheduleService.getCheckOutImages(booking.id)
                     if (checkOutResult.data && checkOutResult.data.images.length > 0) {
                         hasCheckOut = true
-                        console.log(`✅ Check-out data exists for booking ${booking.id}`)
-                    } else {
-                        console.log(`⚠️ No check-out data for booking ${booking.id}`)
                     }
                 } catch (err) {
-                    console.error(`💥 Error checking check-out for booking ${booking.id}:`, err)
+                    // Error checking check-out
                 }
 
                 return {
@@ -250,7 +212,6 @@ export default function StaffScreen() {
             })
 
             const mappedBookings = await Promise.all(mappedBookingsPromises)
-            console.log(`📊 Final mapped bookings count: ${mappedBookings.length}`)
             setBookings(mappedBookings)
         }
 
@@ -266,7 +227,6 @@ export default function StaffScreen() {
     // Refresh when screen comes into focus (after returning from payment)
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            console.log("📱 Staff screen focused, refreshing bookings...")
             fetchBookings()
         })
 
@@ -283,23 +243,17 @@ export default function StaffScreen() {
     const handleRequestPayment = async (bookingId: string) => {
         try {
             setProcessingPayment(bookingId)
-            console.log(`💳 Requesting payment for booking: ${bookingId}`)
 
             // Call the CreateRentalPayment API
             const result = await paymentService.createRentalPayment(bookingId)
 
             if (result.error) {
-                console.error(`❌ Error creating rental payment:`, result.error.message)
                 alert(`Failed to create payment: ${result.error.message}`)
                 setProcessingPayment(null)
                 return
             }
 
             if (result.data && result.data.checkoutUrl) {
-                console.log(`✅ Payment created successfully`)
-                console.log(`Order Code: ${result.data.orderCode}`)
-                console.log(`Checkout URL: ${result.data.checkoutUrl}`)
-
                 // Navigate to PayOS WebView with the checkout URL
                 navigation.navigate("PayOSWebView" as any, {
                     paymentUrl: result.data.checkoutUrl,
@@ -307,13 +261,11 @@ export default function StaffScreen() {
                     returnScreen: "StaffScreen", // Return to staff screen after payment
                 })
             } else {
-                console.error(`❌ No checkout URL in response`)
                 alert("Failed to create payment: No checkout URL received")
             }
 
             setProcessingPayment(null)
         } catch (error) {
-            console.error(`💥 Exception in handleRequestPayment:`, error)
             alert(`Error: ${error instanceof Error ? error.message : "Unknown error"}`)
             setProcessingPayment(null)
         }

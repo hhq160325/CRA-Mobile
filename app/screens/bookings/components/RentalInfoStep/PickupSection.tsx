@@ -34,7 +34,7 @@ export default function PickupSection({
     t
 }: PickupSectionProps) {
     return (
-        <>
+        <View>
             <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 {t("pickUp")}</Text>
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{t("locations")}</Text>
@@ -135,6 +135,6 @@ export default function PickupSection({
                     ⚠️ {pickupDateError || pickupTimeError}
                 </Text>
             )}
-        </>
+        </View>
     )
 }

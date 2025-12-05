@@ -160,9 +160,7 @@ export const userService = {
             formData.append('userId', userId)
 
             const url = API_ENDPOINTS.UPLOAD_AVATAR(userId)
-            const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
-
-            console.log("userService.uploadAvatar: uploading to", `${baseUrl}${url}`, "with userId:", userId)
+            const baseUrl = API_CONFIG.BASE_URL
 
             const response = await fetch(`${baseUrl}${url}`, {
                 method: "PATCH",
@@ -218,9 +216,7 @@ export const userService = {
             formData.append('userId', userId)
 
             const url = API_ENDPOINTS.UPLOAD_DRIVER_LICENSE(userId)
-            const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api'
-
-            console.log("userService.uploadDriverLicense: uploading to", `${baseUrl}${url}`)
+            const baseUrl = API_CONFIG.BASE_URL
 
             const response = await fetch(`${baseUrl}${url}`, {
                 method: "POST",

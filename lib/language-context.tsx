@@ -8,7 +8,7 @@ interface LanguageContextType {
     language: Language
     setLanguage: (lang: Language) => void
     t: (key: string) => string
-    version: number // Force re-render trigger
+    version: number
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
@@ -36,8 +36,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const setLanguage = (lang: Language) => {
         console.log("Setting language to:", lang)
         setLanguageState(lang)
-        setVersion(v => v + 1) // Force re-render
-        // Save to storage asynchronously without blocking
+        setVersion(v => v + 1)
+
         AsyncStorage.setItem("language", lang)
             .then(() => console.log("Language saved to storage:", lang))
             .catch((e) => console.log("Failed to save language", e))
@@ -45,7 +45,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     const t = (key: string): string => {
         const translation = translations[language][key as TranslationKey] || key
-        // Debug log (remove in production)
+
         if (key === "home") {
             console.log(`Translation for "${key}": "${translation}" (language: ${language})`)
         }

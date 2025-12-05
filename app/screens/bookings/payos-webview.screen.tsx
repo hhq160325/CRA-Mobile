@@ -7,6 +7,7 @@ import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 import { colors } from "../../theme/colors"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
+import { API_CONFIG } from "../../../lib/api/config"
 
 type PayOSWebViewRouteProp = RouteProp<{ params: { paymentUrl: string; bookingId?: string; returnScreen?: string } }, "params">
 
@@ -44,7 +45,7 @@ export default function PayOSWebViewScreen() {
             if (bookingId && bookingId !== "pending") {
                 console.log("Updating booking status to Confirmed for:", bookingId)
 
-                const updateUrl = "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Booking/UpdateBooking"
+                const updateUrl = `${API_CONFIG.BASE_URL}/Booking/UpdateBooking`
 
                 // First update booking status - using "Confirmed" (capital C as per API response format)
                 const updatePayload = {
@@ -78,7 +79,7 @@ export default function PayOSWebViewScreen() {
                     .then(() => {
                         // Update payment status using the UpdatePayment API
                         console.log("Updating payment status...")
-                        const paymentUpdateUrl = "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/UpdatePayment/Booking/BookingPayment"
+                        const paymentUpdateUrl = `${API_CONFIG.BASE_URL.replace('/api', '')}/UpdatePayment/Booking/BookingPayment`
 
                         return fetch(paymentUpdateUrl, {
                             method: "PATCH",
@@ -172,7 +173,7 @@ export default function PayOSWebViewScreen() {
             if (bookingId && bookingId !== "pending") {
                 console.log("Updating booking status to Canceled for:", bookingId)
 
-                const updateUrl = "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Booking/UpdateBooking"
+                const updateUrl = `${API_CONFIG.BASE_URL}/Booking/UpdateBooking`
 
                 fetch(updateUrl, {
                     method: "PATCH",

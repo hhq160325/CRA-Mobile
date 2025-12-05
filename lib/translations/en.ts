@@ -1,5 +1,5 @@
 export const en = {
-    // Header
+
     home: "Home",
     profile: "Profile",
     bookings: "Bookings",
@@ -9,7 +9,7 @@ export const en = {
     notifications: "Notifications",
     noNotifications: "No notifications yet",
 
-    // Home Screen
+
     searchPlaceholder: "Search something here",
     popularCar: "Popular Car",
     recommendationCar: "Recomendation Car",
@@ -27,7 +27,7 @@ export const en = {
     rentNow: "Rent Now",
     perDay: "/day",
 
-    // Filters
+
     filters: "Filters",
     maxPrice: "Max Price per Day",
     carType: "Car Type",
@@ -35,14 +35,14 @@ export const en = {
     clearAll: "Clear All",
     applyFilters: "Apply Filters",
 
-    // Car Types
+
     sports: "Sports",
     suv: "SUV",
     sedan: "Sedan",
     luxury: "Luxury",
     electric: "Electric",
 
-    // Booking Form
+
     rentalSummary: "Rental Summary",
     subtotal: "Subtotal",
     tax: "Tax",
@@ -53,7 +53,7 @@ export const en = {
     step: "Step",
     of: "of",
 
-    // Billing Info
+
     billingInfo: "Billing Info",
     billingInfoDesc: "Please enter your billing info",
     fullName: "Full Name",
@@ -61,7 +61,7 @@ export const en = {
     phoneNumber: "Phone Number",
     city: "City",
 
-    // Rental Info
+
     rentalInfo: "Rental Info",
     rentalInfoDesc: "Please select your rental date",
     pickupLocation: "Pickup Location",
@@ -74,25 +74,25 @@ export const en = {
     selectDropoffLocation: "Select Dropoff Location",
     noParkLots: "No park lots available",
 
-    // Payment Method
+
     paymentMethod: "Payment Method",
     paymentMethodDesc: "Please enter your payment method",
     qrPayOS: "QR PayOS",
     scanQRCode: "Scan QR code to pay",
 
-    // Confirmation
+
     confirmation: "Confirmation",
     confirmationDesc: "We are getting to the end. Just few clicks and your rental is ready!",
     agreeMarketing: "I agree with sending marketing and newsletter emails. No spam, promised!",
     agreeTerms: "I agree with our terms and conditions and privacy policy.",
 
-    // Buttons
+
     back: "Back",
     next: "Next",
     rentalNow: "Rental Now",
     loading: "Loading...",
 
-    // Payment
+
     paymentSuccessful: "Payment Successful",
     paymentSuccessDesc: "Your payment has been completed successfully!",
     paymentCancelled: "Payment Cancelled",
@@ -102,7 +102,7 @@ export const en = {
     payosPayment: "PayOS Payment",
     loadingPayment: "Loading payment page...",
 
-    // Errors
+
     error: "Error",
     invalidEmail: "Invalid Email",
     invalidPassword: "Invalid Password",
@@ -110,7 +110,7 @@ export const en = {
     loginError: "Login Error",
     carNotFound: "Car not found",
 
-    // Common
+
     yes: "Yes",
     no: "No",
     ok: "OK",
@@ -119,14 +119,14 @@ export const en = {
     tryAgain: "Try Again",
     close: "Close",
 
-    // Status
+
     completed: "Completed",
     upcoming: "Upcoming",
     successful: "Successful",
     pending: "Pending",
     cancelled: "Cancelled",
 
-    // Staff
+
     staffDashboard: "Staff Dashboard",
     confirmPickup: "Confirm Pickup",
     confirmReturn: "Confirm Return",

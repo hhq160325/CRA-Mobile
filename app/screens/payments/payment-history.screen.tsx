@@ -6,6 +6,7 @@ import { colors } from "../../theme/colors"
 import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import { bookingsService } from "../../../lib/api/services/bookings.service"
+import { API_CONFIG } from "../../../lib/api/config"
 import { useAuth } from "../../../lib/auth-context"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 
@@ -60,12 +61,11 @@ export default function PaymentHistoryScreen() {
             const paymentsPromises = bookingsResult.data.map(async (booking) => {
                 // Security check: ensure booking belongs to current user
                 if (booking.userId !== user.id) {
-                    console.warn(`Skipping booking ${booking.id} - does not belong to user ${user.id}`)
                     return null
                 }
 
                 try {
-                    const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net'
+                    const baseUrl = API_CONFIG.BASE_URL.replace('/api', '')
                     const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`
 
                     let token: string | null = null
@@ -103,7 +103,7 @@ export default function PaymentHistoryScreen() {
                         }
                     }
                 } catch (err) {
-                    console.error(`Error fetching payments for booking ${booking.id}:`, err)
+                    // Error fetching payments
                 }
 
                 return null
@@ -114,7 +114,6 @@ export default function PaymentHistoryScreen() {
 
             setBookingPayments(validResults)
         } catch (err) {
-            console.error("Error fetching payment history:", err)
             setError("An error occurred while loading payment history")
         } finally {
             setLoading(false)

@@ -5,22 +5,22 @@ import {
   PartialState,
   StackActions,
 } from '@react-navigation/native';
-import {useEffect, useRef} from 'react';
-import {BackHandler} from 'react-native';
-import {ScreenName} from './navigation-route';
+import { useEffect, useRef } from 'react';
+import { BackHandler } from 'react-native';
+import { ScreenName } from './navigation-route';
 
 export const RootNavigation = {
-  navigate(_name: string, _params?: any) {},
-  replace(_name: string, _params?: any) {},
-  goBack() {},
-  resetRoot(_state?: PartialState<NavigationState> | NavigationState) {},
+  navigate(_name: string, _params?: any) { },
+  replace(_name: string, _params?: any) { },
+  goBack() { },
+  resetRoot(_state?: PartialState<NavigationState> | NavigationState) { },
   getRootState(): NavigationState {
     return {} as any;
   },
-  dispatch(_action: NavigationAction) {},
+  dispatch(_action: NavigationAction) { },
 };
 
-export const navigationRef = createNavigationContainerRef();
+export const navigationRef = createNavigationContainerRef<any>();
 
 
 export function getActiveRouteName(
@@ -29,7 +29,7 @@ export function getActiveRouteName(
   if (state?.index) {
     const route = state.routes[state.index];
 
-  
+
     if (!route.state) {
       return route.name;
     }
@@ -49,22 +49,22 @@ export function useBackButtonHandler(canExit: (routeName: string) => boolean) {
   }, [canExit]);
 
   useEffect(() => {
-  
+
     const onBackPress = () => {
       if (!navigationRef.isReady()) {
         return false;
       }
 
-  
+
       const routeName = getActiveRouteName(navigationRef.getRootState());
 
-  
+
       if (canExitRef.current(routeName)) {
-   
+
         return false;
       }
 
-      
+
       if (navigationRef.canGoBack()) {
         navigationRef.goBack();
         return true;
@@ -73,12 +73,11 @@ export function useBackButtonHandler(canExit: (routeName: string) => boolean) {
       return false;
     };
 
-  
-    BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
-  
-    return () =>
-      BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+
+    return () => subscription.remove();
   }, []);
 }
 
@@ -126,7 +125,7 @@ export function popToTop() {
 export function navigateDispatch(screenName: string) {
   if (navigationRef.isReady()) {
     navigationRef.dispatch(
-      StackActions.replace('innerProfileStack', {screen: screenName}),
+      StackActions.replace('innerProfileStack', { screen: screenName }),
     );
   }
 }

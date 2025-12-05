@@ -12,33 +12,224 @@ export class APIError extends Error {
   }
 }
 
+
+export async function testConnection(): Promise<{ success: boolean; message: string; latency?: number }> {
+  const startTime = Date.now()
+  try {
+    console.log("Testing connection to:", API_CONFIG.BASE_URL)
+
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const response = await fetch(API_CONFIG.BASE_URL, {
+      method: "HEAD",
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+    const latency = Date.now() - startTime
+
+    console.log("Connection test result:", response.status, "latency:", latency, "ms")
+
+    return {
+      success: response.status < 500,
+      message: `Server reachable (${latency}ms)`,
+      latency,
+    }
+  } catch (error) {
+    const latency = Date.now() - startTime
+    console.error("Connection test failed:", error)
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        success: false,
+        message: `Connection timeout after ${latency}ms - Server may be unreachable`,
+        latency,
+      }
+    }
+
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Connection failed",
+      latency,
+    }
+  }
+}
+
+async function makeRequest<T>(
+  url: string,
+  options: RequestInit,
+  timeout: number,
+): Promise<T> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => {
+    console.log("apiClient: request timeout after", timeout, "ms")
+    controller.abort()
+  }, timeout)
+
+  try {
+    console.log("apiClient: fetch starting...")
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+    console.log("apiClient: response received, status:", response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+
+      // Only log non-404 errors to reduce noise (404s are expected for missing data)
+      if (response.status !== 404) {
+        console.error("apiClient: error response status:", response.status)
+        console.error("apiClient: error response body:", errorText)
+      }
+
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(errorText)
+        if (response.status !== 404) {
+          console.error("apiClient: parsed error data:", JSON.stringify(errorData, null, 2))
+        }
+      } catch {
+        errorData = { message: errorText }
+      }
+
+      // Provide more helpful error messages for common status codes
+      let errorMessage = errorData.message || errorData.title || "Request failed"
+      if (!errorMessage || errorMessage === "Request failed") {
+        if (response.status === 500) {
+          errorMessage = "Server error occurred. Please try again later or contact support if the issue persists."
+        } else if (response.status === 400) {
+          errorMessage = "Invalid request data. Please check your input and try again."
+        } else if (response.status === 401) {
+          errorMessage = "Authentication required. Please log in again."
+        } else if (response.status === 403) {
+          errorMessage = "You don't have permission to perform this action."
+        } else if (response.status === 404) {
+          errorMessage = "The requested resource was not found."
+        }
+      }
+
+      throw new APIError(errorMessage, response.status, errorData)
+    }
+
+    const responseText = await response.text()
+    console.log("apiClient: success response length:", responseText.length)
+
+    let data: any
+    try {
+      data = JSON.parse(responseText)
+    } catch {
+      // If JSON parse fails, check if it's a plain text response (like a URL)
+      console.log("apiClient: response is not JSON, treating as text:", responseText)
+      // If response looks like a URL or plain text, return it as-is
+      if (responseText.startsWith('http') || responseText.length < 500) {
+        return responseText as any
+      }
+      console.error("apiClient: failed to parse JSON response")
+      throw new APIError("Invalid JSON response from server")
+    }
+
+    return data
+  } catch (fetchError) {
+    clearTimeout(timeoutId)
+    throw fetchError
+  }
+}
+
 export async function apiClient<T>(
   endpoint: string,
   options?: RequestInit,
 ): Promise<{ data: T; error: null } | { data: null; error: APIError }> {
   try {
     const url = `${API_CONFIG.BASE_URL}${endpoint}`
+    console.log("apiClient: making request to", url)
+    console.log("apiClient: request body", options?.body)
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
-      signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
-    })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new APIError(errorData.message || "Request failed", response.status, errorData)
+    let token: string | null = null
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+        token = localStorage.getItem("token")
+      }
+    } catch (e) {
+      console.error("Failed to get token from localStorage:", e)
     }
 
-    const data = await response.json()
-    return { data, error: null }
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options?.headers as Record<string, string>),
+    }
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+      console.log("apiClient: using auth token (length:", token.length, ")")
+    }
+    // Note: Some endpoints don't require authentication, so missing token is not always an error
+
+    const fetchOptions: RequestInit = {
+      ...options,
+      headers,
+    }
+
+
+    let lastError: Error | null = null
+    const maxRetries = API_CONFIG.RETRY_ATTEMPTS || 2
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          console.log(`apiClient: retry attempt ${attempt}/${maxRetries}`)
+
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+        }
+
+        const data = await makeRequest<T>(url, fetchOptions, API_CONFIG.TIMEOUT)
+        return { data, error: null }
+      } catch (error) {
+        lastError = error as Error
+        console.error(`apiClient: attempt ${attempt + 1} failed:`, error)
+
+
+        if (error instanceof APIError && error.status && error.status >= 400 && error.status < 500) {
+
+          throw error
+        }
+
+
+        if (attempt === maxRetries) {
+          throw error
+        }
+      }
+    }
+
+    throw lastError || new Error("Request failed after retries")
   } catch (error) {
+    console.error("apiClient: caught error", error)
+
     if (error instanceof APIError) {
       return { data: null, error }
     }
+
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        data: null,
+        error: new APIError("Request timeout - The server took too long to respond. Please check your internet connection or try again later."),
+      }
+    }
+
+
+    if (error instanceof Error && error.message.includes("Network request failed")) {
+      return {
+        data: null,
+        error: new APIError("Network error - Please check your internet connection"),
+      }
+    }
+
     return {
       data: null,
       error: new APIError(error instanceof Error ? error.message : "Unknown error occurred"),

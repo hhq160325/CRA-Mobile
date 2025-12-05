@@ -6,6 +6,8 @@ export type NavigatorParamList = {
   ['ResetScreen']: undefined;
   ['VerifyScreen']: undefined;
   ['OtpScreen']: undefined;
+  ['GoogleLoginWebView']: undefined;
+  ['GoogleOAuthHandler']: undefined;
   ['Home']: undefined;
   ['Bookings']: undefined;
   ['Cars']: undefined;
@@ -13,11 +15,46 @@ export type NavigatorParamList = {
   ['CarDetail']: { id: string };
   ['BookingDetail']: { id: string };
   ['BookingForm']: { id: string } | undefined;
+  ['BookingPayment']: { bookingId: string; paymentMethod: string; amount: number };
+  ['PayOSWebView']: { paymentUrl: string; bookingId?: string };
+  ['FeedbackForm']: { carId: string; bookingId?: string };
+  ['CarMapScreen']: {
+    pickupLocation: string;
+    pickupDate: string;
+    pickupTime: string;
+    dropoffLocation: string;
+    dropoffDate: string;
+    dropoffTime: string;
+    showRoute?: boolean;
+  };
+  ['CarMapRouteScreen']: {
+    pickupLocation: string;
+    pickupDate: string;
+    pickupTime: string;
+    dropoffLocation: string;
+    dropoffDate: string;
+    dropoffTime: string;
+  };
   ['Staff']: undefined;
   ['StaffScreen']: undefined;
-  ['PickupReturnConfirm']: { paymentId: string };
+  ['PickupReturnConfirm']: {
+    paymentId: string;
+    bookingId?: string;
+    carName?: string;
+    carType?: string;
+    customerName?: string;
+    pickupLocation?: string;
+    pickupDate?: string;
+    pickupTime?: string;
+    dropoffLocation?: string;
+    dropoffDate?: string;
+    dropoffTime?: string;
+  };
+  ['VehicleReturn']: { bookingId: string };
+  ['PaymentHistory']: undefined;
   ['auth']: undefined;
   ['tabStack']: undefined;
+  ['staffStack']: undefined;
   ['authStack']: undefined;
   ['rootStack']: undefined;
 };

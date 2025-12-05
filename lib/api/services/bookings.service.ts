@@ -5,6 +5,7 @@ import { apiClient } from "../client"
 // API Response from backend
 interface ApiBookingResponse {
   id: string
+  bookingNumber?: string
   pickupPlace: string
   pickupTime: string
   dropoffPlace: string
@@ -23,6 +24,7 @@ interface ApiBookingResponse {
 // App Booking model
 export interface Booking {
   id: string
+  bookingNumber?: string
   userId: string
   carId: string
   invoiceId: string
@@ -66,6 +68,7 @@ function mapApiBookingToBooking(apiBooking: ApiBookingResponse): Booking {
 
   return {
     id: apiBooking.id,
+    bookingNumber: apiBooking.bookingNumber,
     userId: apiBooking.userId,
     carId: apiBooking.carId,
     invoiceId: apiBooking.invoiceId,

@@ -6,6 +6,7 @@ import { scale } from "../../../theme/scale"
 import { useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../../navigators/navigation-route"
+import CustomDateTimePicker from "../../bookings/components/CustomDateTimePicker"
 
 interface LocationSectionProps {
     type: "pickup" | "dropoff"
@@ -13,8 +14,7 @@ interface LocationSectionProps {
     date: string
     time: string
     onLocationChange: (value: string) => void
-    onDateChange: (value: string) => void
-    onTimeChange: (value: string) => void
+    onOpenDateTimePicker: () => void
 }
 
 function LocationSection({
@@ -23,8 +23,7 @@ function LocationSection({
     date,
     time,
     onLocationChange,
-    onDateChange,
-    onTimeChange,
+    onOpenDateTimePicker,
 }: LocationSectionProps) {
     const isPickup = type === "pickup"
 
@@ -66,47 +65,25 @@ function LocationSection({
                     />
                 </View>
 
-                {/* Date Input */}
-                <View style={{ flex: 1, borderRightWidth: 1, borderRightColor: colors.border, paddingHorizontal: scale(8) }}>
+                {/* Date & Time Picker Button */}
+                <Pressable
+                    onPress={onOpenDateTimePicker}
+                    style={{ flex: 2, paddingLeft: scale(8), justifyContent: "center" }}
+                >
                     <Text style={{ fontSize: scale(12), fontWeight: "700", color: colors.primary, marginBottom: scale(4) }}>
-                        Date
+                        Date & Time
                     </Text>
-                    <TextInput
-                        placeholder="DD/MM/YYYY"
-                        placeholderTextColor={colors.placeholder}
-                        value={date}
-                        onChangeText={onDateChange}
-                        keyboardType="numeric"
-                        maxLength={10}
-                        style={{
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text style={{
                             fontSize: scale(11),
-                            color: colors.primary,
-                            padding: 0,
-                            margin: 0,
-                        }}
-                    />
-                </View>
-
-                {/* Time Input */}
-                <View style={{ flex: 1, paddingLeft: scale(8) }}>
-                    <Text style={{ fontSize: scale(12), fontWeight: "700", color: colors.primary, marginBottom: scale(4) }}>
-                        Time
-                    </Text>
-                    <TextInput
-                        placeholder="HH:MM"
-                        placeholderTextColor={colors.placeholder}
-                        value={time}
-                        onChangeText={onTimeChange}
-                        keyboardType="numeric"
-                        maxLength={5}
-                        style={{
-                            fontSize: scale(11),
-                            color: colors.primary,
-                            padding: 0,
-                            margin: 0,
-                        }}
-                    />
-                </View>
+                            color: date && time ? colors.primary : colors.placeholder,
+                            flex: 1
+                        }}>
+                            {date && time ? `${date} ${time}` : "Select date and time"}
+                        </Text>
+                        <MaterialIcons name="event" size={scale(16)} color={colors.morentBlue} />
+                    </View>
+                </Pressable>
             </View>
         </View>
     )
@@ -125,50 +102,35 @@ export default function PickupDropoffSection() {
     const [dropoffDate, setDropoffDate] = useState("")
     const [dropoffTime, setDropoffTime] = useState("")
 
-    // Format date input (auto-add slashes)
-    const formatDateInput = (text: string): string => {
-        // Remove non-numeric characters
-        const numbers = text.replace(/[^\d]/g, "")
+    // Date/Time picker modals
+    const [showPickupPicker, setShowPickupPicker] = useState(false)
+    const [showDropoffPicker, setShowDropoffPicker] = useState(false)
 
-        // Add slashes automatically
-        if (numbers.length <= 2) {
-            return numbers
-        } else if (numbers.length <= 4) {
-            return `${numbers.slice(0, 2)}/${numbers.slice(2)}`
-        } else {
-            return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`
-        }
+    // Parse date string to Date object
+    const parseDate = (dateStr: string): Date => {
+        if (!dateStr) return new Date()
+        const parsed = new Date(dateStr)
+        return isNaN(parsed.getTime()) ? new Date() : parsed
     }
 
-    // Format time input (auto-add colon)
-    const formatTimeInput = (text: string): string => {
-        // Remove non-numeric characters
-        const numbers = text.replace(/[^\d]/g, "")
-
-        // Add colon automatically
-        if (numbers.length <= 2) {
-            return numbers
-        } else {
-            return `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}`
-        }
+    // Handle pickup date/time confirmation
+    const handlePickupConfirm = (date: Date, time: string) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        setPickupDate(`${year}-${month}-${day}`)
+        setPickupTime(time)
+        setShowPickupPicker(false)
     }
 
-    // Handle date change with formatting
-    const handlePickupDateChange = (text: string) => {
-        setPickupDate(formatDateInput(text))
-    }
-
-    const handleDropoffDateChange = (text: string) => {
-        setDropoffDate(formatDateInput(text))
-    }
-
-    // Handle time change with formatting
-    const handlePickupTimeChange = (text: string) => {
-        setPickupTime(formatTimeInput(text))
-    }
-
-    const handleDropoffTimeChange = (text: string) => {
-        setDropoffTime(formatTimeInput(text))
+    // Handle dropoff date/time confirmation
+    const handleDropoffConfirm = (date: Date, time: string) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        setDropoffDate(`${year}-${month}-${day}`)
+        setDropoffTime(time)
+        setShowDropoffPicker(false)
     }
 
     // Swap pickup and dropoff
@@ -186,59 +148,6 @@ export default function PickupDropoffSection() {
         setDropoffTime(tempTime)
     }
 
-    // Validate date format (DD/MM/YYYY)
-    const validateDate = (dateStr: string): boolean => {
-        const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
-        const match = dateStr.match(dateRegex)
-
-        if (!match) return false
-
-        const day = parseInt(match[1], 10)
-        const month = parseInt(match[2], 10)
-        const year = parseInt(match[3], 10)
-
-        if (month < 1 || month > 12) return false
-        if (day < 1 || day > 31) return false
-        if (year < new Date().getFullYear()) return false
-
-        return true
-    }
-
-    // Validate time format (HH:MM)
-    const validateTime = (timeStr: string): boolean => {
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/
-        return timeRegex.test(timeStr)
-    }
-
-    // Check if pickup date/time is in the future
-    const isPickupInFuture = (dateStr: string, timeStr: string): boolean => {
-        const [day, month, year] = dateStr.split("/").map(Number)
-        const [hours, minutes] = timeStr.split(":").map(Number)
-
-        const pickupDateTime = new Date(year, month - 1, day, hours, minutes)
-        const now = new Date()
-
-        return pickupDateTime > now
-    }
-
-    // Check if dropoff is after pickup
-    const isDropoffAfterPickup = (
-        pickupDateStr: string,
-        pickupTimeStr: string,
-        dropoffDateStr: string,
-        dropoffTimeStr: string
-    ): boolean => {
-        const [pDay, pMonth, pYear] = pickupDateStr.split("/").map(Number)
-        const [pHours, pMinutes] = pickupTimeStr.split(":").map(Number)
-        const pickupDateTime = new Date(pYear, pMonth - 1, pDay, pHours, pMinutes)
-
-        const [dDay, dMonth, dYear] = dropoffDateStr.split("/").map(Number)
-        const [dHours, dMinutes] = dropoffTimeStr.split(":").map(Number)
-        const dropoffDateTime = new Date(dYear, dMonth - 1, dDay, dHours, dMinutes)
-
-        return dropoffDateTime > pickupDateTime
-    }
-
     // Validate and open map
     const handleGo = () => {
         // Check required fields
@@ -250,47 +159,13 @@ export default function PickupDropoffSection() {
             Alert.alert("Missing Information", "Please enter dropoff location")
             return
         }
-        if (!pickupDate.trim()) {
-            Alert.alert("Missing Information", "Please enter pickup date")
+        if (!pickupDate.trim() || !pickupTime.trim()) {
+            Alert.alert("Missing Information", "Please select pickup date and time")
             return
         }
-        if (!pickupTime.trim()) {
-            Alert.alert("Missing Information", "Please enter pickup time")
+        if (!dropoffDate.trim() || !dropoffTime.trim()) {
+            Alert.alert("Missing Information", "Please select dropoff date and time")
             return
-        }
-
-        // Validate date format
-        if (!validateDate(pickupDate)) {
-            Alert.alert("Invalid Date", "Please enter pickup date in DD/MM/YYYY format (e.g., 25/12/2024)")
-            return
-        }
-
-        // Validate time format
-        if (!validateTime(pickupTime)) {
-            Alert.alert("Invalid Time", "Please enter pickup time in HH:MM format (e.g., 14:30)")
-            return
-        }
-
-        // Check if pickup is in the future
-        if (!isPickupInFuture(pickupDate, pickupTime)) {
-            Alert.alert("Invalid Pickup Time", "Pickup date and time must be in the future")
-            return
-        }
-
-        // Validate dropoff if provided
-        if (dropoffDate && dropoffTime) {
-            if (!validateDate(dropoffDate)) {
-                Alert.alert("Invalid Date", "Please enter dropoff date in DD/MM/YYYY format (e.g., 26/12/2024)")
-                return
-            }
-            if (!validateTime(dropoffTime)) {
-                Alert.alert("Invalid Time", "Please enter dropoff time in HH:MM format (e.g., 16:30)")
-                return
-            }
-            if (!isDropoffAfterPickup(pickupDate, pickupTime, dropoffDate, dropoffTime)) {
-                Alert.alert("Invalid Dropoff Time", "Dropoff date and time must be after pickup")
-                return
-            }
         }
 
         // Navigate to map with route and charging stations
@@ -299,14 +174,14 @@ export default function PickupDropoffSection() {
             pickupDate,
             pickupTime,
             dropoffLocation,
-            dropoffDate: dropoffDate || pickupDate,
-            dropoffTime: dropoffTime || pickupTime,
+            dropoffDate,
+            dropoffTime,
             showRoute: true,
         })
     }
 
     // Check if all required fields are filled
-    const isFormValid = pickupLocation.trim() && dropoffLocation.trim() && pickupDate.trim() && pickupTime.trim()
+    const isFormValid = pickupLocation.trim() && dropoffLocation.trim() && pickupDate.trim() && pickupTime.trim() && dropoffDate.trim() && dropoffTime.trim()
 
     return (
         <>
@@ -318,8 +193,7 @@ export default function PickupDropoffSection() {
                     date={pickupDate}
                     time={pickupTime}
                     onLocationChange={setPickupLocation}
-                    onDateChange={handlePickupDateChange}
-                    onTimeChange={handlePickupTimeChange}
+                    onOpenDateTimePicker={() => setShowPickupPicker(true)}
                 />
             </View>
 
@@ -353,8 +227,7 @@ export default function PickupDropoffSection() {
                     date={dropoffDate}
                     time={dropoffTime}
                     onLocationChange={setDropoffLocation}
-                    onDateChange={handleDropoffDateChange}
-                    onTimeChange={handleDropoffTimeChange}
+                    onOpenDateTimePicker={() => setShowDropoffPicker(true)}
                 />
             </View>
 
@@ -390,6 +263,28 @@ export default function PickupDropoffSection() {
                     </Text>
                 </Pressable>
             </View>
+
+            {/* Pickup Date/Time Picker */}
+            <CustomDateTimePicker
+                visible={showPickupPicker}
+                onClose={() => setShowPickupPicker(false)}
+                onConfirm={handlePickupConfirm}
+                initialDate={pickupDate ? parseDate(pickupDate) : new Date()}
+                initialTime={pickupTime || '10:00'}
+                minimumDate={new Date()}
+                title="Select Pickup Date & Time"
+            />
+
+            {/* Dropoff Date/Time Picker */}
+            <CustomDateTimePicker
+                visible={showDropoffPicker}
+                onClose={() => setShowDropoffPicker(false)}
+                onConfirm={handleDropoffConfirm}
+                initialDate={dropoffDate ? parseDate(dropoffDate) : pickupDate ? parseDate(pickupDate) : new Date()}
+                initialTime={dropoffTime || '23:00'}
+                minimumDate={pickupDate ? parseDate(pickupDate) : new Date()}
+                title="Select Dropoff Date & Time"
+            />
         </>
     )
 }

@@ -350,16 +350,20 @@ export const scheduleService = {
             }
 
             const responseText = await response.text()
+            console.log("scheduleService.checkOut: raw response text:", responseText)
+
             let data: any
 
             try {
                 data = JSON.parse(responseText)
-            } catch {
+                console.log("scheduleService.checkOut: parsed JSON response:", JSON.stringify(data, null, 2))
+            } catch (parseError) {
                 console.log("scheduleService.checkOut: non-JSON response, treating as success")
-                data = { success: true }
+                console.log("scheduleService.checkOut: response text was:", responseText)
+                data = { success: true, message: responseText }
             }
 
-            console.log("scheduleService.checkOut: success", data)
+            console.log("scheduleService.checkOut: returning success with data:", data)
             return { data, error: null }
         } catch (error) {
             console.error("scheduleService.checkOut: caught error", error)

@@ -33,7 +33,34 @@ export default function FeedbackListScreen() {
                 return
             }
 
-            setFeedback(data || [])
+            // Enrich feedback with user names if needed
+            if (data && data.length > 0) {
+                const { userService } = require("../../../lib/api/services/user.service")
+
+                const enrichedFeedback = await Promise.all(
+                    data.map(async (review) => {
+                        // If userName is "Anonymous" or empty, try to fetch from user service
+                        if (!review.userName || review.userName === "Anonymous") {
+                            try {
+                                const userResult = await userService.getUserById(review.userId)
+                                if (userResult.data) {
+                                    return {
+                                        ...review,
+                                        userName: userResult.data.fullname || userResult.data.username || "Anonymous"
+                                    }
+                                }
+                            } catch (err) {
+                                console.log(`Could not fetch user details for ${review.userId}`)
+                            }
+                        }
+                        return review
+                    })
+                )
+
+                setFeedback(enrichedFeedback)
+            } else {
+                setFeedback(data || [])
+            }
         } catch (err) {
             console.error("Error loading feedback:", err)
             setError("Failed to load feedback. Please try again.")

@@ -43,8 +43,8 @@ export const API_ENDPOINTS = {
 
   // Feedback (Reviews)
   ALL_FEEDBACK: "/Feedback/All",
-  FEEDBACK_BY_CAR: (carId: string) => `/Feedback/GetFeedbacksForCar/${carId}`,
-  CREATE_FEEDBACK: "/Feedback/CreateFeedback",
+  FEEDBACK_BY_CAR: (carId: string) => `/Feedback/${carId}`,
+  CREATE_FEEDBACK: "/Feedback",
   UPDATE_FEEDBACK: (id: string) => `/Feedback/UpdateFeedback/${id}`,
   DELETE_FEEDBACK: (id: string) => `/Feedback/DeleteFeedback/${id}`,
 

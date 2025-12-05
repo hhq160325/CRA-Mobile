@@ -33,7 +33,7 @@ export default function CarRefundModal({ visible, onClose }: CarRefundModalProps
                             <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: scale(8) }}>
                                 <Icon name="account-balance" size={scale(20)} color={colors.morentBlue} style={{ marginRight: scale(8), marginTop: scale(2) }} />
                                 <Text style={{ fontSize: scale(13), color: colors.primary, flex: 1, lineHeight: scale(20) }}>
-                                    Mioto will refund the deposit (& compensation for cancellation by the car owner (if any) according to the cancellation policy) via the renter's bank account within <Text style={{ fontWeight: '700' }}>1-3 working days</Text> from the time of cancellation.
+                                    Morent will refund the deposit (& compensation for cancellation by the car owner (if any) according to the cancellation policy) via the renter's bank account within <Text style={{ fontWeight: '700' }}>1-3 working days</Text> from the time of cancellation.
                                 </Text>
                             </View>
                         </View>
@@ -42,7 +42,7 @@ export default function CarRefundModal({ visible, onClose }: CarRefundModalProps
                             <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: scale(12) }}>
                                 <Text style={{ color: '#F57C00', marginRight: scale(8), fontSize: scale(14) }}>*</Text>
                                 <Text style={{ fontSize: scale(13), color: colors.primary, flex: 1, lineHeight: scale(20) }}>
-                                    Mioto staff will contact the renter (via the phone number registered on Mioto) to request bank account information, or the renter can proactively send information to Mioto via:
+                                    Morent staff will contact the renter (via the phone number registered on Morent) to request bank account information, or the renter can proactively send information to Morent via:
                                 </Text>
                             </View>
 
@@ -50,17 +50,17 @@ export default function CarRefundModal({ visible, onClose }: CarRefundModalProps
                                 <Icon name="email" size={scale(20)} color={colors.morentBlue} style={{ marginRight: scale(12) }} />
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: scale(11), color: colors.placeholder, marginBottom: scale(2) }}>Email</Text>
-                                    <Text style={{ fontSize: scale(13), fontWeight: '600', color: colors.morentBlue }}>contact@mioto.vn</Text>
+                                    <Text style={{ fontSize: scale(13), fontWeight: '600', color: colors.morentBlue }}>morent@carrental.com</Text>
                                 </View>
                             </View>
 
-                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, padding: scale(12), borderRadius: scale(8) }}>
+                            {/* <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, padding: scale(12), borderRadius: scale(8) }}>
                                 <Icon name="facebook" size={scale(20)} color="#1877F2" style={{ marginRight: scale(12) }} />
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: scale(11), color: colors.placeholder, marginBottom: scale(2) }}>Facebook</Text>
-                                    <Text style={{ fontSize: scale(13), fontWeight: '600', color: '#1877F2' }}>Mioto Fanpage</Text>
+                                    <Text style={{ fontSize: scale(13), fontWeight: '600', color: '#1877F2' }}>Morent Fanpage</Text>
                                 </View>
-                            </View>
+                            </View> */}
                         </View>
 
                         <View style={{ marginTop: scale(16), padding: scale(16), backgroundColor: '#E8F5E9', borderRadius: scale(8), alignItems: 'center' }}>

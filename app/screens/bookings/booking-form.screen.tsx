@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { View, Text, Pressable, Alert, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native"
-import { bookingsService, carsService, userService, type Car } from "../../../lib/api"
+import { bookingsService, carsService, userService, locationService, type Car } from "../../../lib/api"
 import { useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
@@ -84,22 +84,74 @@ export default function BookingFormScreen({ route }: any) {
 
   const subtotal = car ? car.price * 1 : 0
   const tax = 0
-  const total = subtotal + tax - formState.discount
+  // Calculate shipping fee: distance (km) × 20,000 VND
+  const shippingFee = formState.pickupMode === "custom" && formState.distanceInKm
+    ? Math.round(formState.distanceInKm * 20000)
+    : 0
+  // Calculate booking fee: (Subtotal × 15%) + Shipping Fee
+  const bookingFee = Math.round(subtotal * 0.15) + shippingFee
+  // Total = Subtotal + Tax + Shipping Fee - Discount
+  const total = subtotal + tax + shippingFee - formState.discount
 
-  const handleNextStep = () => {
+  const handleCalculateDistance = async (parkLotAddress: string) => {
+    console.log("handleCalculateDistance called", {
+      pickupMode: formState.pickupMode,
+      parkLotAddress,
+      customPickupAddress: formState.pickupLocation
+    })
+
+    // Only calculate when pickup is custom mode
+    // Source = park lot address, Destination = custom pickup address
+    if (formState.pickupMode === "custom" &&
+      parkLotAddress.trim() &&
+      formState.pickupLocation.trim()) {
+      console.log("Calculating distance from park lot to custom pickup address...")
+
+      try {
+        const result = await locationService.getDistanceBetweenAddresses(
+          parkLotAddress, // Source: park lot
+          formState.pickupLocation // Destination: custom pickup address
+        )
+
+        console.log("Distance API result:", result)
+
+        if (result.data && result.data.distanceInMeters) {
+          const distanceInKm = result.data.distanceInMeters / 1000
+          console.log("✅ Distance calculated:", distanceInKm, "km")
+          formState.setDistanceInKm(distanceInKm)
+        } else {
+          console.log("❌ Could not calculate distance - no data")
+          formState.setDistanceInKm(null)
+        }
+      } catch (error) {
+        console.error("❌ Error calculating distance:", error)
+        formState.setDistanceInKm(null)
+      }
+    } else {
+      console.log("Resetting distance - pickup not custom or addresses empty")
+      formState.setDistanceInKm(null)
+    }
+  }
+
+  const handleNextStep = async () => {
     if (currentStep === 1) {
       if (validation.validateStep1(formState.name, formState.address, formState.phone, formState.city)) {
         setCurrentStep(2)
       }
     } else if (currentStep === 2) {
-      const result = validation.validateStep2(
+      setLoading(true)
+      const result = await validation.validateStep2(
         formState.pickupLocation,
         formState.pickupDate,
         formState.pickupTime,
         formState.dropoffLocation,
         formState.dropoffDate,
-        formState.dropoffTime
+        formState.dropoffTime,
+        formState.pickupMode,
+        formState.dropoffMode,
+        (distance) => formState.setDistanceInKm(distance)
       )
+      setLoading(false)
       if (result.valid) {
         setCurrentStep(3)
       }
@@ -121,13 +173,16 @@ export default function BookingFormScreen({ route }: any) {
     setLoading(true)
     try {
       // Validate all fields again before submission
-      const step2Validation = validation.validateStep2(
+      const step2Validation = await validation.validateStep2(
         formState.pickupLocation,
         formState.pickupDate,
         formState.pickupTime,
         formState.dropoffLocation,
         formState.dropoffDate,
-        formState.dropoffTime
+        formState.dropoffTime,
+        formState.pickupMode,
+        formState.dropoffMode,
+        (distance) => formState.setDistanceInKm(distance)
       )
 
       if (!step2Validation.valid || !step2Validation.pickupDateTime || !step2Validation.dropoffDateTime) {
@@ -278,6 +333,8 @@ export default function BookingFormScreen({ route }: any) {
             carImageSource={carImageSource}
             subtotal={subtotal}
             tax={tax}
+            shippingFee={shippingFee}
+            bookingFee={bookingFee}
             discount={formState.discount}
             total={total}
             promoCode={formState.promoCode}
@@ -314,12 +371,18 @@ export default function BookingFormScreen({ route }: any) {
               pickupTimeError={formState.pickupTimeError}
               dropoffDateError={formState.dropoffDateError}
               dropoffTimeError={formState.dropoffTimeError}
+              pickupMode={formState.pickupMode}
+              dropoffMode={formState.dropoffMode}
+              distanceInKm={formState.distanceInKm}
               onPickupLocationChange={formState.setPickupLocation}
               onPickupDateChange={formState.handlePickupDateChange}
               onPickupTimeChange={formState.handlePickupTimeChange}
               onDropoffLocationChange={formState.setDropoffLocation}
               onDropoffDateChange={formState.handleDropoffDateChange}
               onDropoffTimeChange={formState.handleDropoffTimeChange}
+              onPickupModeChange={formState.setPickupMode}
+              onDropoffModeChange={formState.setDropoffMode}
+              onCalculateDistance={handleCalculateDistance}
             />
           )}
 

@@ -9,10 +9,14 @@ export function useHeaderNavigation() {
 
     const handleLogout = () => {
         logout()
-        navigation.navigate("authStack" as any)
+        // Reset navigation stack completely to prevent going back to authenticated screens
+        navigation.reset({
+            index: 0,
+            routes: [{ name: "authStack" as any }],
+        })
     }
 
-    const handleMenuNavigation = (screen: string) => {
+    const handleMenuNavigation = async (screen: string) => {
         const isStaff = user?.role === "staff" || user?.roleId === 1002
 
         console.log("Header navigation:", { screen, isStaff, userRole: user?.role, roleId: user?.roleId })
@@ -23,10 +27,11 @@ export function useHeaderNavigation() {
                 navigation.navigate("Profile" as any)
             } else if (screen === "Bookings") {
                 console.log("Navigating to Bookings")
+                // Navigate within the current stack (MainStack/tabStack)
                 navigation.navigate("Bookings" as any)
-            } else if (screen === "Cars") {
-                console.log("Navigating to Cars")
-                navigation.navigate("Cars" as any)
+            } else if (screen === "PaymentHistory") {
+                console.log("Navigating to PaymentHistory")
+                navigation.navigate("PaymentHistory" as any)
             } else if (screen === "Home") {
                 console.log("Navigating to Home")
                 navigation.reset({

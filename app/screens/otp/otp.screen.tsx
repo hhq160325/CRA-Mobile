@@ -9,6 +9,7 @@ import { createStyles } from './otp.styles';
 import { authService } from '../../../lib/api';
 import { useRoute } from '@react-navigation/native';
 
+// OTP Screen for verification and password reset
 const OtpScreen = () => {
   const styles = createStyles();
   const { logo_black } = assets;

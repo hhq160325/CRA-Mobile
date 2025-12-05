@@ -10,6 +10,7 @@ import { carsService } from "../../../lib/api/services/cars.service"
 import { userService } from "../../../lib/api/services/user.service"
 import { invoiceService } from "../../../lib/api/services/invoice.service"
 import { paymentService } from "../../../lib/api/services/payment.service"
+import { scheduleService } from "../../../lib/api/services/schedule.service"
 import { useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
@@ -18,6 +19,7 @@ type PaymentStatus = "all" | "successfully" | "pending" | "cancelled"
 
 interface BookingItem {
     id: string
+    bookingNumber?: string
     carId: string
     carName: string
     carBrand: string
@@ -31,6 +33,8 @@ interface BookingItem {
     invoiceStatus: string
     status: string
     date: string
+    hasCheckIn: boolean
+    hasCheckOut: boolean
 }
 
 export default function StaffScreen() {
@@ -134,36 +138,59 @@ export default function StaffScreen() {
                     console.warn(`⚠️ No userId in booking ${booking.id}`)
                 }
 
-                // Fetch invoice details using invoiceId
+                // Fetch payments for this booking to get Rental Fee
                 let invoiceAmount = 0
                 let invoiceStatus = "pending"
 
-                if (booking.invoiceId) {
+                console.log(`💰 Fetching payments for booking: ${booking.id}`)
+
+                // Direct fetch to payments API
+                try {
+                    const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net'
+                    const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`
+
+                    let token: string | null = null
                     try {
-                        console.log(`💰 Fetching invoice details for invoiceId: ${booking.invoiceId}`)
-                        const invoiceResult = await invoiceService.getInvoiceById(booking.invoiceId)
-                        if (invoiceResult.error) {
-                            console.error(`❌ Error fetching invoice ${booking.invoiceId}:`, invoiceResult.error.message)
+                        if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                            token = localStorage.getItem("token")
                         }
-                        if (invoiceResult.data) {
-                            invoiceAmount = invoiceResult.data.amount || 0
-                            invoiceStatus = invoiceResult.data.status?.toLowerCase() || "pending"
-                            console.log(`✅ Invoice fetched: Amount: ${invoiceAmount}, Status: ${invoiceStatus}`)
-                        } else {
-                            console.warn(`⚠️ No invoice data returned for invoiceId: ${booking.invoiceId}`)
-                        }
-                    } catch (err) {
-                        console.error(`💥 Exception fetching invoice ${booking.invoiceId}:`, err)
+                    } catch (e) {
+                        // Ignore
                     }
-                } else {
-                    console.warn(`⚠️ No invoiceId in booking ${booking.id}`)
+
+                    const response = await fetch(paymentsUrl, {
+                        method: "GET",
+                        headers: {
+                            'Authorization': token ? `Bearer ${token}` : '',
+                            'Content-Type': 'application/json',
+                        },
+                    })
+
+                    if (response.ok) {
+                        const paymentsData = await response.json()
+
+                        if (Array.isArray(paymentsData) && paymentsData.length > 0) {
+                            // Find the "Rental Fee" payment
+                            const rentalFeePayment = paymentsData.find(p => p.item === "Rental Fee")
+
+                            if (rentalFeePayment) {
+                                invoiceAmount = Number(rentalFeePayment.paidAmount) || 0
+                                invoiceStatus = rentalFeePayment.status?.toLowerCase() || "pending"
+                                console.log(`✅ Rental Fee found for ${booking.id}: ${invoiceAmount} VND`)
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error(`💥 Error fetching payments for ${booking.id}:`, err)
                 }
 
-                // If invoice amount is 0, try to get it from booking.totalPrice
+                // Fallback to booking.totalPrice if still 0
                 if (invoiceAmount === 0 && booking.totalPrice > 0) {
                     console.log(`Using booking.totalPrice as fallback: ${booking.totalPrice}`)
                     invoiceAmount = booking.totalPrice
                 }
+
+                console.log(`💵 Final amount for booking ${booking.id}: ${invoiceAmount}`)
 
                 // Update invoice status based on booking status if payment is confirmed
                 if (mappedStatus === "successfully" && invoiceStatus === "pending") {
@@ -171,8 +198,39 @@ export default function StaffScreen() {
                     invoiceStatus = "paid"
                 }
 
+                // Check for check-in and check-out data
+                let hasCheckIn = false
+                let hasCheckOut = false
+
+                try {
+                    console.log(`🔍 Checking check-in status for booking ${booking.id}`)
+                    const checkInResult = await scheduleService.getCheckInImages(booking.id)
+                    if (checkInResult.data && checkInResult.data.images.length > 0) {
+                        hasCheckIn = true
+                        console.log(`✅ Check-in data exists for booking ${booking.id}`)
+                    } else {
+                        console.log(`⚠️ No check-in data for booking ${booking.id}`)
+                    }
+                } catch (err) {
+                    console.error(`💥 Error checking check-in for booking ${booking.id}:`, err)
+                }
+
+                try {
+                    console.log(`🔍 Checking check-out status for booking ${booking.id}`)
+                    const checkOutResult = await scheduleService.getCheckOutImages(booking.id)
+                    if (checkOutResult.data && checkOutResult.data.images.length > 0) {
+                        hasCheckOut = true
+                        console.log(`✅ Check-out data exists for booking ${booking.id}`)
+                    } else {
+                        console.log(`⚠️ No check-out data for booking ${booking.id}`)
+                    }
+                } catch (err) {
+                    console.error(`💥 Error checking check-out for booking ${booking.id}:`, err)
+                }
+
                 return {
                     id: booking.id,
+                    bookingNumber: booking.bookingNumber,
                     carId: booking.carId,
                     carName: carName,
                     carBrand: carBrand,
@@ -186,6 +244,8 @@ export default function StaffScreen() {
                     invoiceStatus: invoiceStatus,
                     status: mappedStatus,
                     date: formattedDate,
+                    hasCheckIn: hasCheckIn,
+                    hasCheckOut: hasCheckOut,
                 }
             })
 
@@ -294,7 +354,9 @@ export default function StaffScreen() {
                                 License: {item.carLicensePlate}
                             </Text>
                         )}
-                        <Text style={{ fontSize: scale(12), color: "#6b7280" }}>Booking ID: {item.id.substring(0, 8)}...</Text>
+                        <Text style={{ fontSize: scale(12), color: "#6b7280" }}>
+                            Booking ID: {item.bookingNumber || "N/A"}
+                        </Text>
                     </View>
                     <View
                         style={{
@@ -347,7 +409,7 @@ export default function StaffScreen() {
                             AMOUNT
                         </Text>
                         <Text style={{ fontSize: scale(13), fontWeight: "bold", color: colors.primary }}>
-                            ${item.amount.toFixed(2)}
+                            {item.amount.toLocaleString()} VND
                         </Text>
                     </View>
                     <View style={{ flex: 1 }}>
@@ -393,12 +455,12 @@ export default function StaffScreen() {
                                 style={{
                                     fontSize: scale(13),
                                     fontWeight: "600",
-                                    color: colors.primary
+                                    color: item.hasCheckIn && item.hasCheckOut ? "#00B050" : colors.primary
                                 }}
                             >
                                 → Tap to confirm pickup
                             </Text>
-                            <Text style={{ fontSize: scale(20) }}>→</Text>
+                            <Text style={{ fontSize: scale(20), color: item.hasCheckIn && item.hasCheckOut ? "#00B050" : colors.primary }}>→</Text>
                         </Pressable>
                     )}
                 </View>

@@ -48,6 +48,9 @@ export function useBookingForm() {
     const [paymentMethod, setPaymentMethod] = useState("qr-payos")
     const [agreeMarketing, setAgreeMarketing] = useState(false)
     const [agreeTerms, setAgreeTerms] = useState(false)
+    const [pickupMode, setPickupMode] = useState<"parklot" | "custom">("parklot")
+    const [dropoffMode, setDropoffMode] = useState<"parklot" | "custom">("parklot")
+    const [distanceInKm, setDistanceInKm] = useState<number | null>(null)
 
     const validateDateFormat = (date: string): string => {
         if (!date) return ""
@@ -116,6 +119,9 @@ export function useBookingForm() {
         paymentMethod, setPaymentMethod,
         agreeMarketing, setAgreeMarketing,
         agreeTerms, setAgreeTerms,
+        pickupMode, setPickupMode,
+        dropoffMode, setDropoffMode,
+        distanceInKm, setDistanceInKm,
         handlePickupDateChange,
         handlePickupTimeChange,
         handleDropoffDateChange,

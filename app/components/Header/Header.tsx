@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from "react"
 import { View, Text, Pressable, Image } from "react-native"
-import { useFocusEffect } from "@react-navigation/native"
+import { useFocusEffect, useNavigation } from "@react-navigation/native"
+import type { StackNavigationProp } from "@react-navigation/stack"
+import type { NavigatorParamList } from "../../navigators/navigation-route"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
+import Ionicons from "react-native-vector-icons/Ionicons"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import { useAuth } from "../../../lib/auth-context"
 import { useLanguage } from "../../../lib/language-context"
+import { useFavorites } from "../../../lib/favorites-context"
 
-// Components
+
 import Noti from "../Noti/Noti"
 import MenuModal from "./components/MenuModal"
 import LanguageModal from "./components/LanguageModal"
 
-// Hooks
+
 import { useHeaderAvatar } from "./hooks/useHeaderAvatar"
 import { useHeaderNotifications } from "./hooks/useHeaderNotifications"
 import { useHeaderNavigation } from "./hooks/useHeaderNavigation"
@@ -20,24 +24,26 @@ import { useHeaderNavigation } from "./hooks/useHeaderNavigation"
 export default function Header() {
     const { user } = useAuth()
     const { language, setLanguage, version } = useLanguage()
+    const { favorites } = useFavorites()
+    const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
 
-    // State
+
     const [menuVisible, setMenuVisible] = useState(false)
     const [languageModalVisible, setLanguageModalVisible] = useState(false)
     const [notificationModalVisible, setNotificationModalVisible] = useState(false)
 
-    // Custom hooks
+
     const { avatarSource, refreshKey, loadUserAvatar } = useHeaderAvatar()
     const { notifications, loadingNotifications, loadNotifications, handleNotificationClick } =
         useHeaderNotifications()
     const { handleLogout, handleMenuNavigation } = useHeaderNavigation()
 
-    // Debug: Log when language changes
+
     useEffect(() => {
         console.log("Header: Language changed to:", language, "version:", version)
     }, [language, version])
 
-    // Reload data when screen is focused
+
     useFocusEffect(
         React.useCallback(() => {
             if (user?.id) {
@@ -48,9 +54,9 @@ export default function Header() {
         }, [user?.id])
     )
 
-    const handleMenuNavigationWrapper = (screen: string) => {
+    const handleMenuNavigationWrapper = async (screen: string) => {
         setMenuVisible(false)
-        handleMenuNavigation(screen)
+        await handleMenuNavigation(screen)
     }
 
     const handleLogoutWrapper = () => {
@@ -66,6 +72,17 @@ export default function Header() {
     const handleNotificationClickWrapper = (notification: any) => {
         setNotificationModalVisible(false)
         handleNotificationClick(notification)
+    }
+
+    const handleOpenNotifications = () => {
+        setMenuVisible(false)
+        setNotificationModalVisible(true)
+        loadNotifications()
+    }
+
+    const handleOpenFavorites = () => {
+        setMenuVisible(false)
+        navigation.navigate("Cars" as any)
     }
 
     const isStaff = user?.role === "staff" || user?.roleId === 1002
@@ -98,38 +115,6 @@ export default function Header() {
                 </Pressable>
 
                 <View style={{ flexDirection: "row", alignItems: "center", gap: scale(16) }}>
-                    {/* Notification Icon */}
-                    <Pressable
-                        onPress={() => {
-                            setNotificationModalVisible(true)
-                            loadNotifications()
-                        }}
-                    >
-                        <View style={{ position: "relative" }}>
-                            <MaterialIcons name="notifications" size={scale(28)} color={colors.primary} />
-                            {notifications.filter((n) => !n.isRead).length > 0 && (
-                                <View
-                                    style={{
-                                        position: "absolute",
-                                        top: -4,
-                                        right: -4,
-                                        backgroundColor: colors.red,
-                                        borderRadius: scale(10),
-                                        minWidth: scale(18),
-                                        height: scale(18),
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        paddingHorizontal: scale(4),
-                                    }}
-                                >
-                                    <Text style={{ color: colors.white, fontSize: scale(10), fontWeight: "700" }}>
-                                        {notifications.filter((n) => !n.isRead).length}
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    </Pressable>
-
                     {/* Avatar */}
                     <Pressable onPress={() => setMenuVisible(true)}>
                         <View key={`avatar-${refreshKey}`}>
@@ -149,8 +134,12 @@ export default function Header() {
                 onNavigate={handleMenuNavigationWrapper}
                 onLogout={handleLogoutWrapper}
                 onOpenLanguageModal={handleOpenLanguageModal}
+                onOpenNotifications={handleOpenNotifications}
+                onOpenFavorites={handleOpenFavorites}
                 isStaff={isStaff}
                 language={language}
+                notificationCount={notifications.filter((n) => !n.isRead).length}
+                favoritesCount={favorites.length}
             />
 
             {/* Language Selection Modal */}

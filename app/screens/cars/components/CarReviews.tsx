@@ -6,15 +6,11 @@ import type { Review } from "../../../../lib/api"
 
 interface CarReviewsProps {
     reviews: Review[]
-    hasBookedCar: boolean
-    onAddReview: () => void
     onViewAllReviews: () => void
 }
 
 export default function CarReviews({
     reviews,
-    hasBookedCar,
-    onAddReview,
     onViewAllReviews,
 }: CarReviewsProps) {
     const calculateAverageRating = (): string => {
@@ -39,14 +35,20 @@ export default function CarReviews({
         )
     }
 
-    const extractTitle = (comment: string) => {
-        const lines = comment.split('\n')
+    const getTitle = (review: Review) => {
+        // Use title field if available, otherwise extract from comment
+        if (review.title) return review.title
+        if (!review.comment) return "Customer Review"
+        const lines = review.comment.split('\n')
         return lines[0] || "Customer Review"
     }
 
-    const extractMessage = (comment: string) => {
-        const lines = comment.split('\n')
-        return lines.slice(2).join('\n').replace(/Category:.*$/, '').trim() || comment
+    const getContent = (review: Review) => {
+        // Use content field if available, otherwise extract from comment
+        if (review.content) return review.content
+        if (!review.comment) return ""
+        const lines = review.comment.split('\n')
+        return lines.slice(2).join('\n').replace(/Category:.*$/, '').trim() || review.comment
     }
 
     const formatDate = (dateString: string) => {
@@ -63,42 +65,17 @@ export default function CarReviews({
             marginBottom: scale(16)
         }}>
             {/* Reviews Header */}
-            <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: scale(16)
-            }}>
-                <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: scale(18), fontWeight: '700', color: colors.primary }}>
-                        Customer Reviews
-                    </Text>
-                    {reviews.length > 0 && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: scale(4) }}>
-                            {renderStars(Math.round(parseFloat(calculateAverageRating())), 16)}
-                            <Text style={{ fontSize: scale(14), fontWeight: '600', color: colors.primary, marginLeft: scale(8) }}>
-                                {calculateAverageRating()} ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
-                            </Text>
-                        </View>
-                    )}
-                </View>
-                {hasBookedCar && (
-                    <Pressable
-                        onPress={onAddReview}
-                        style={{
-                            backgroundColor: colors.morentBlue,
-                            paddingHorizontal: scale(16),
-                            paddingVertical: scale(8),
-                            borderRadius: scale(6),
-                            flexDirection: 'row',
-                            alignItems: 'center'
-                        }}
-                    >
-                        <Icon name="add" size={scale(16)} color={colors.white} />
-                        <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600", marginLeft: scale(4) }}>
-                            Add Review
+            <View style={{ marginBottom: scale(16) }}>
+                <Text style={{ fontSize: scale(18), fontWeight: '700', color: colors.primary }}>
+                    Customer Reviews
+                </Text>
+                {reviews.length > 0 && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: scale(4) }}>
+                        {renderStars(Math.round(parseFloat(calculateAverageRating())), 16)}
+                        <Text style={{ fontSize: scale(14), fontWeight: '600', color: colors.primary, marginLeft: scale(8) }}>
+                            {calculateAverageRating()} ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
                         </Text>
-                    </Pressable>
+                    </View>
                 )}
             </View>
 
@@ -154,7 +131,7 @@ export default function CarReviews({
                                 color: colors.primary,
                                 marginBottom: scale(4)
                             }}>
-                                {extractTitle(review.comment)}
+                                {getTitle(review)}
                             </Text>
 
                             <Text style={{
@@ -162,7 +139,7 @@ export default function CarReviews({
                                 color: colors.placeholder,
                                 lineHeight: scale(18)
                             }}>
-                                {extractMessage(review.comment)}
+                                {getContent(review)}
                             </Text>
                         </View>
                     ))}

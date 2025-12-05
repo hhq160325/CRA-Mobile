@@ -1,4 +1,5 @@
 import { Alert } from "react-native"
+import { locationService } from "../../../../lib/api"
 
 export function useBookingValidation() {
     const validateDateTime = (date: string, time: string, fieldName: string): Date | null => {
@@ -70,14 +71,36 @@ export function useBookingValidation() {
         return true
     }
 
-    const validateStep2 = (
+    const validateAddress = async (address: string, fieldName: string): Promise<boolean> => {
+        console.log(`Validating ${fieldName} address:`, address)
+
+        // Try to geocode the address
+        const result = await locationService.getCoordinatesFromAddress(address)
+
+        if (result.error || !result.data) {
+            console.log(`${fieldName} address validation failed:`, result.error)
+            Alert.alert(
+                "Invalid Address",
+                `Unable to find coordinates for ${fieldName} address: "${address}". Please check the address and try again.`
+            )
+            return false
+        }
+
+        console.log(`${fieldName} address validated:`, result.data)
+        return true
+    }
+
+    const validateStep2 = async (
         pickupLocation: string,
         pickupDate: string,
         pickupTime: string,
         dropoffLocation: string,
         dropoffDate: string,
-        dropoffTime: string
-    ): { valid: boolean; pickupDateTime?: Date; dropoffDateTime?: Date } => {
+        dropoffTime: string,
+        pickupMode?: "parklot" | "custom",
+        dropoffMode?: "parklot" | "custom",
+        onDistanceCalculated?: (distanceInKm: number) => void
+    ): Promise<{ valid: boolean; pickupDateTime?: Date; dropoffDateTime?: Date }> => {
         if (!pickupLocation.trim()) {
             Alert.alert("Error", "Please enter pick-up location")
             return { valid: false }
@@ -93,6 +116,40 @@ export function useBookingValidation() {
         if (!dropoffDate.trim() || !dropoffTime.trim()) {
             Alert.alert("Error", "Please enter drop-off date and time")
             return { valid: false }
+        }
+
+        // Validate custom addresses with geocoding API
+        if (pickupMode === "custom") {
+            const isValid = await validateAddress(pickupLocation, "Pick-up")
+            if (!isValid) return { valid: false }
+        }
+
+        if (dropoffMode === "custom") {
+            const isValid = await validateAddress(dropoffLocation, "Drop-off")
+            if (!isValid) return { valid: false }
+        }
+
+        // Calculate distance if both addresses are custom
+        if (pickupMode === "custom" && dropoffMode === "custom" && onDistanceCalculated) {
+            console.log("Calculating distance between custom addresses")
+            const distanceResult = await locationService.getDistanceBetweenAddresses(
+                pickupLocation,
+                dropoffLocation
+            )
+
+            if (distanceResult.data && distanceResult.data.distanceInMeters) {
+                const distanceInKm = distanceResult.data.distanceInMeters / 1000
+                console.log("Distance calculated:", distanceInKm, "km")
+                onDistanceCalculated(distanceInKm)
+            } else {
+                console.log("Could not calculate distance, but continuing")
+                onDistanceCalculated(0)
+            }
+        } else {
+            // Reset distance if not both custom
+            if (onDistanceCalculated) {
+                onDistanceCalculated(0)
+            }
         }
 
         const pickupDateTime = validateDateTime(pickupDate, pickupTime, "Pick-up")
@@ -148,5 +205,6 @@ export function useBookingValidation() {
         validateStep2,
         validateStep3,
         validateStep4,
+        validateAddress,
     }
 }

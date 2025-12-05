@@ -1,6 +1,6 @@
 import React from 'react';
-import {View} from 'react-native';
-import {scale} from '../theme/scale';
+import { View } from 'react-native';
+import { scale } from '../theme/scale';
 
 export const UI_Constants = {
   paddingH: scale(10),
@@ -8,34 +8,39 @@ export const UI_Constants = {
   HeaderIconSize: scale(26),
 };
 const renderMarginVertical = (value: number) => {
-  return <View style={{marginVertical: scale(value || 0)}} />;
+  return <View style={{ marginVertical: scale(value || 0) }} />;
 };
 
 const renderMarginBottom = (value: number) => {
-  return <View style={{marginBottom: scale(value || 0)}} />;
+  return <View style={{ marginBottom: scale(value || 0) }} />;
 };
 
 const renderMarginTop = (value: number) => {
-  return <View style={{marginTop: scale(value || 0)}} />;
+  return <View style={{ marginTop: scale(value || 0) }} />;
 };
 
 const renderPaddingVertical = (value: number) => {
-  return <View style={{paddingVertical: scale(value || 0)}} />;
+  return <View style={{ paddingVertical: scale(value || 0) }} />;
 };
 
 const renderPaddingBottom = (value: number) => {
-  return <View style={{paddingBottom: scale(value || 0)}} />;
+  return <View style={{ paddingBottom: scale(value || 0) }} />;
 };
 
 const renderPaddingTop = (value: number) => {
-  return <View style={{paddingTop: scale(value || 0)}} />;
+  return <View style={{ paddingTop: scale(value || 0) }} />;
 };
 
 const renderMarginHorizontal = (value: number) => {
-  return <View style={{marginHorizontal: scale(value || 0)}} />;
+  return <View style={{ marginHorizontal: scale(value || 0) }} />;
 };
+
 const renderFlexView = () => {
-  return <View style={{flex: 1}} />;
+  return <View style={{ flex: 1 }} />;
+};
+
+const renderBoderBottom = (value: number) => {
+  return <View style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginVertical: scale(value || 0) }} />;
 };
 
 export {
@@ -47,4 +52,5 @@ export {
   renderPaddingBottom,
   renderPaddingTop,
   renderPaddingVertical,
+  renderBoderBottom,
 };

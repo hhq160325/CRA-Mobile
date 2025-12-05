@@ -9,14 +9,25 @@ import {useAuth} from '@/lib/auth-context';
 const OnBoardingScreen = () => {
   const styles = createStyles();
   const {logo, overlayBg, whiteCar} = assets;
-  const {isAuthenticated} = useAuth();
+  const {isAuthenticated, user} = useAuth();
 
   const handleGetStarted = () => {
-    if (isAuthenticated) {
-    
-      navigate('tabStack' as any);
+    if (isAuthenticated && user) {
+      const userRole = user.role?.toLowerCase();
+      const isStaff = userRole === 'staff' || user.roleId === 1002;
+
+      if (isStaff) {
+        console.log('✅ Onboarding: Navigating to staffStack for staff user');
+        navigate('staffStack' as any);
+      } else {
+        console.log(
+          '✅ Onboarding: Navigating to tabStack for',
+          user.role,
+          'user',
+        );
+        navigate('tabStack' as any);
+      }
     } else {
- 
       navigate('OnBoardingScreenTwo');
     }
   };

@@ -1,811 +1,503 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { View, Text, TextInput, Pressable, Alert, ScrollView, Image, ActivityIndicator } from "react-native"
-import { bookingsService } from "../../../lib/api"
-import { useNavigation } from "@react-navigation/native"
-import type { StackNavigationProp } from "@react-navigation/stack"
-import type { NavigatorParamList } from "../../navigators/navigation-route"
-import { colors } from "../../theme/colors"
-import { getCarById } from "../../../lib/mock-data/cars"
-import getAsset from "../../../lib/getAsset"
-import Header from "../../components/Header/Header"
+import {useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import {
+  bookingsService,
+  carsService,
+  userService,
+  locationService,
+  type Car,
+} from '../../../lib/api';
+import {useNavigation} from '@react-navigation/native';
+import type {StackNavigationProp} from '@react-navigation/stack';
+import type {NavigatorParamList} from '../../navigators/navigation-route';
+import {colors} from '../../theme/colors';
+import getAsset from '../../../lib/getAsset';
+import Header from '../../components/Header/Header';
+import {useAuth} from '../../../lib/auth-context';
 
-export default function BookingFormScreen({ route }: any) {
-  const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
-  const carId = route?.params?.id
-  const car = getCarById(carId)
+import RentalSummaryCard from './components/RentalSummaryCard';
+import BillingInfoStep from './components/BillingInfoStep';
+import RentalInfoStep from './components/RentalInfoStep';
+import PaymentMethodStep from './components/PaymentMethodStep';
+import ConfirmationStep from './components/ConfirmationStep';
 
-  const [currentStep, setCurrentStep] = useState(1)
-  const [loading, setLoading] = useState(false)
+import {useBookingForm} from './hooks/useBookingForm';
+import {useBookingValidation} from './hooks/useBookingValidation';
+import {useLanguage} from '../../../lib/language-context';
 
-  // Billing Info
-  const [name, setName] = useState("")
-  const [address, setAddress] = useState("")
-  const [phone, setPhone] = useState("")
-  const [city, setCity] = useState("")
+export default function BookingFormScreen({route}: any) {
+  const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
+  const {user} = useAuth();
+  const {t} = useLanguage();
+  const carId = route?.params?.id;
+  const [car, setCar] = useState<Car | null>(null);
+  const [carLoading, setCarLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  // Rental Info
-  const [pickupLocation, setPickupLocation] = useState("Semarang")
-  const [pickupDate, setPickupDate] = useState("20 July 2022")
-  const [pickupTime, setPickupTime] = useState("07.00")
-  const [dropoffLocation, setDropoffLocation] = useState("Semarang")
-  const [dropoffDate, setDropoffDate] = useState("21 July 2022")
-  const [dropoffTime, setDropoffTime] = useState("01.00")
+  const formState = useBookingForm();
+  const validation = useBookingValidation();
 
-  // Promo code
-  const [promoCode, setPromoCode] = useState("")
-  const [discount, setDiscount] = useState(0)
+  useEffect(() => {
+    if (route?.params?.pickupLocation)
+      formState.setPickupLocation(route.params.pickupLocation);
+    if (route?.params?.dropoffLocation)
+      formState.setDropoffLocation(route.params.dropoffLocation);
+  }, [route?.params]);
 
-  // Payment method
-  const [paymentMethod, setPaymentMethod] = useState("credit-card")
-  const [cardNumber, setCardNumber] = useState("")
-  const [cardHolder, setCardHolder] = useState("")
-  const [expirationDate, setExpirationDate] = useState("")
-  const [cvc, setCvc] = useState("")
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!carId) return;
+      setCarLoading(true);
 
-  // Confirmation checkboxes
-  const [agreeMarketing, setAgreeMarketing] = useState(false)
-  const [agreeTerms, setAgreeTerms] = useState(false)
+      const {data} = await carsService.getCarById(carId);
+      if (data) setCar(data);
 
-  const subtotal = car ? car.price * 1 : 0 // 1 day rental
-  const tax = 0
-  const total = subtotal + tax - discount
+      if (user?.id) {
+        try {
+          const userResult = await userService.getUserById(user.id);
+          if (userResult.data) {
+            const userData = userResult.data;
+            formState.setName(
+              userData.fullname || userData.username || user.name || '',
+            );
+            formState.setAddress(userData.address || '');
+            formState.setPhone(userData.phoneNumber || user.phone || '');
 
-  const handleApplyPromo = () => {
-    if (promoCode.toLowerCase() === "save10") {
-      setDiscount(subtotal * 0.1)
-      Alert.alert("Success", "10% discount applied!")
-    } else {
-      Alert.alert("Invalid", "Promo code not found")
-    }
-  }
-
-  const handleNextStep = () => {
-    if (currentStep === 1) {
-      if (!name || !address || !phone || !city) {
-        Alert.alert("Error", "Please fill in all billing information")
-        return
-      }
-      setCurrentStep(2)
-    } else if (currentStep === 2) {
-      setCurrentStep(3)
-    } else if (currentStep === 3) {
-      if (paymentMethod === "credit-card") {
-        if (!cardNumber || !cardHolder || !expirationDate || !cvc) {
-          Alert.alert("Error", "Please fill in all card details")
-          return
+            if (userData.address) {
+              const addressParts = userData.address.split(',');
+              if (addressParts.length > 0) {
+                formState.setCity(addressParts[addressParts.length - 1].trim());
+              }
+            }
+          }
+        } catch (err) {
+          console.log('Could not fetch user profile, using auth context data');
+          formState.setName(user.username || user.name || '');
+          formState.setAddress(user.address || '');
+          formState.setPhone(user.phone || '');
         }
       }
-      setCurrentStep(4)
-    } else if (currentStep === 4) {
-      if (!agreeMarketing || !agreeTerms) {
-        Alert.alert("Error", "Please agree to all terms and conditions")
-        return
+
+      setCarLoading(false);
+    };
+    fetchData();
+  }, [carId, user?.id]);
+
+  const subtotal = car ? car.price * 1 : 0;
+  const tax = 0;
+
+  const shippingFee =
+    formState.pickupMode === 'custom' && formState.distanceInKm
+      ? Math.round(formState.distanceInKm * 20000)
+      : 0;
+
+  const bookingFee = Math.round(subtotal * 0.15) + shippingFee;
+
+  const total = subtotal + tax + shippingFee - formState.discount;
+
+  const handleCalculateDistance = async (parkLotAddress: string) => {
+    console.log('handleCalculateDistance called', {
+      pickupMode: formState.pickupMode,
+      parkLotAddress,
+      customPickupAddress: formState.pickupLocation,
+    });
+
+    if (
+      formState.pickupMode === 'custom' &&
+      parkLotAddress.trim() &&
+      formState.pickupLocation.trim()
+    ) {
+      console.log(
+        'Calculating distance from park lot to custom pickup address...',
+      );
+
+      try {
+        const result = await locationService.getDistanceBetweenAddresses(
+          parkLotAddress,
+          formState.pickupLocation,
+        );
+
+        console.log('Distance API result:', result);
+
+        if (result.data && result.data.distanceInMeters) {
+          const distanceInKm = result.data.distanceInMeters / 1000;
+          console.log('✅ Distance calculated:', distanceInKm, 'km');
+          formState.setDistanceInKm(distanceInKm);
+        } else {
+          console.log('❌ Could not calculate distance - no data');
+          formState.setDistanceInKm(null);
+        }
+      } catch (error) {
+        console.error('❌ Error calculating distance:', error);
+        formState.setDistanceInKm(null);
       }
-      handleCreate()
+    } else {
+      console.log('Resetting distance - pickup not custom or addresses empty');
+      formState.setDistanceInKm(null);
     }
-  }
+  };
+
+  const handleNextStep = async () => {
+    if (currentStep === 1) {
+      if (
+        validation.validateStep1(
+          formState.name,
+          formState.address,
+          formState.phone,
+          formState.city,
+        )
+      ) {
+        setCurrentStep(2);
+      }
+    } else if (currentStep === 2) {
+      setLoading(true);
+      const result = await validation.validateStep2(
+        formState.pickupLocation,
+        formState.pickupDate,
+        formState.pickupTime,
+        formState.dropoffLocation,
+        formState.dropoffDate,
+        formState.dropoffTime,
+        formState.pickupMode,
+        formState.dropoffMode,
+        distance => formState.setDistanceInKm(distance),
+      );
+      setLoading(false);
+      if (result.valid) {
+        setCurrentStep(3);
+      }
+    } else if (currentStep === 3) {
+      if (validation.validateStep3(formState.paymentMethod)) {
+        setCurrentStep(4);
+      }
+    } else if (currentStep === 4) {
+      if (
+        validation.validateStep4(formState.agreeMarketing, formState.agreeTerms)
+      ) {
+        handleCreate();
+      }
+    }
+  };
 
   const handleCreate = async () => {
-    setLoading(true)
+    if (!user?.id || !validation.validateUUID(user.id, 'User ID')) return;
+    if (!carId || !validation.validateUUID(carId, 'Car ID')) return;
+
+    setLoading(true);
     try {
-      const res = await bookingsService.createBooking({
-        carId,
-        startDate: pickupDate,
-        endDate: dropoffDate,
-        pickupLocation,
-        dropoffLocation,
-        driverInfo: {
-          name,
-          email: "guest@example.com",
-          phone,
-          licenseNumber: "N/A",
-        },
-        paymentMethod,
-        cardNumber,
-        cardHolder,
-        expirationDate,
-        cvc,
-      } as any)
+      const step2Validation = await validation.validateStep2(
+        formState.pickupLocation,
+        formState.pickupDate,
+        formState.pickupTime,
+        formState.dropoffLocation,
+        formState.dropoffDate,
+        formState.dropoffTime,
+        formState.pickupMode,
+        formState.dropoffMode,
+        distance => formState.setDistanceInKm(distance),
+      );
+
+      if (
+        !step2Validation.valid ||
+        !step2Validation.pickupDateTime ||
+        !step2Validation.dropoffDateTime
+      ) {
+        setLoading(false);
+        return;
+      }
+
+      const pickupDateTime = step2Validation.pickupDateTime;
+      const dropoffDateTime = step2Validation.dropoffDateTime;
+
+      if (
+        !formState.pickupLocation.trim() ||
+        !formState.dropoffLocation.trim()
+      ) {
+        Alert.alert('Error', 'Pick-up and drop-off locations are required');
+        setLoading(false);
+        return;
+      }
+
+      const durationMs = dropoffDateTime.getTime() - pickupDateTime.getTime();
+      const rentime = Math.max(
+        1,
+        Math.ceil(durationMs / (1000 * 60 * 60 * 24)),
+      );
+      const carPrice = car?.price || 0;
+
+      if (carPrice <= 0) {
+        Alert.alert('Error', 'Invalid car rental price');
+        setLoading(false);
+        return;
+      }
+
+      const bookingData = {
+        customerId: String(user.id),
+        carId: String(carId),
+        pickupPlace: String(formState.pickupLocation.trim()),
+        pickupTime: pickupDateTime.toISOString(),
+        dropoffPlace: String(formState.dropoffLocation.trim()),
+        dropoffTime: dropoffDateTime.toISOString(),
+        bookingFee: 15,
+        carRentPrice: Math.floor(Number(carPrice)),
+        rentime: Number(rentime),
+        rentType: 'daily',
+        request: 'Standard rental request',
+      };
+
+      console.log(
+        'Creating booking with data:',
+        JSON.stringify(bookingData, null, 2),
+      );
+      console.log('Data types:', {
+        customerId: typeof bookingData.customerId,
+        carId: typeof bookingData.carId,
+        pickupPlace: typeof bookingData.pickupPlace,
+        pickupTime: typeof bookingData.pickupTime,
+        dropoffPlace: typeof bookingData.dropoffPlace,
+        dropoffTime: typeof bookingData.dropoffTime,
+        bookingFee: typeof bookingData.bookingFee,
+        carRentPrice: typeof bookingData.carRentPrice,
+        rentime: typeof bookingData.rentime,
+        rentType: typeof bookingData.rentType,
+        request: typeof bookingData.request,
+      });
+
+      let res = await bookingsService.createBooking(bookingData);
+
+      if (res.error && res.error.message.includes('Server error')) {
+        console.log('First attempt failed, trying without bookingFee...');
+        const {bookingFee, ...bookingDataWithoutFee} = bookingData;
+        res = await bookingsService.createBooking(bookingDataWithoutFee as any);
+      }
+
+      if (res.error) {
+        console.error('Booking creation failed:', res.error);
+        const errorMessage = res.error?.message || 'Failed to create booking';
+        Alert.alert(
+          t('error') || 'Error',
+          errorMessage +
+            '\n\nPlease check your booking details and try again.\n\nIf the problem persists, please contact support with this information:\n- Car ID: ' +
+            carId +
+            '\n- User ID: ' +
+            user.id,
+        );
+        return;
+      }
+
       if (res.data) {
-        navigation.navigate("BookingDetail" as any, { id: res.data.id })
-      } else {
-        Alert.alert("Error", res.error?.message || "Failed to create booking")
+        const bookingResponse = res.data;
+        let createdBookingId: string | null = null;
+        let payosUrl: string | null = null;
+
+        if (typeof bookingResponse === 'string') {
+          payosUrl = bookingResponse;
+        } else if (
+          typeof bookingResponse === 'object' &&
+          bookingResponse !== null
+        ) {
+          if (bookingResponse.payment) payosUrl = bookingResponse.payment;
+          if (bookingResponse.booking && bookingResponse.booking.id)
+            createdBookingId = bookingResponse.booking.id;
+          if (!createdBookingId)
+            createdBookingId =
+              bookingResponse.bookingId || bookingResponse.id || null;
+          if (!payosUrl)
+            payosUrl =
+              bookingResponse.paymentUrl || bookingResponse.checkoutUrl || null;
+        }
+
+        navigation.navigate('PayOSWebView' as any, {
+          paymentUrl: payosUrl,
+          bookingId: createdBookingId || 'pending',
+        });
       }
     } catch (e: any) {
-      Alert.alert("Error", e.message || "Failed")
+      Alert.alert('Error', e.message || 'Failed to create booking');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
+  };
+
+  if (carLoading) {
+    return (
+      <View style={{flex: 1, backgroundColor: colors.background}}>
+        <Header />
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </View>
+    );
   }
 
   if (!car) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Car not found</Text>
+      <View style={{flex: 1, backgroundColor: colors.background}}>
+        <Header />
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <Text>{t('carNotFound')}</Text>
+        </View>
       </View>
-    )
+    );
   }
 
-  const carImage = getAsset(car.image)
+  const getCarImageSource = () => {
+    if (car.imageUrls && car.imageUrls.length > 0)
+      return {uri: car.imageUrls[0]};
+    if (car.images && car.images.length > 0) return {uri: car.images[0]};
+    if (car.image) {
+      if (car.image.startsWith('http://') || car.image.startsWith('https://'))
+        return {uri: car.image};
+      const localAsset = getAsset(car.image);
+      if (localAsset) return localAsset;
+    }
+    return null;
+  };
+
+  const carImageSource = getCarImageSource();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header />
-      <ScrollView
-        contentContainerStyle={{
-          paddingBottom: 24,
-        }}
-      >
+    <KeyboardAvoidingView
+      style={{flex: 1, backgroundColor: colors.background}}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
+      <View style={{flex: 1, backgroundColor: colors.background}}>
+        <Header />
+        <ScrollView
+          contentContainerStyle={{paddingBottom: 24}}
+          keyboardShouldPersistTaps="handled">
+          <RentalSummaryCard
+            car={car}
+            carImageSource={carImageSource}
+            subtotal={subtotal}
+            tax={tax}
+            shippingFee={shippingFee}
+            bookingFee={bookingFee}
+            discount={formState.discount}
+            total={total}
+            promoCode={formState.promoCode}
+            onPromoCodeChange={formState.setPromoCode}
+            onApplyPromo={() => formState.handleApplyPromo(subtotal)}
+          />
 
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 8 }}>Rental Summary</Text>
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.placeholder,
-              marginBottom: 12,
-            }}
-          >
-            Prices may change depending on the length of the rental and the price of your rental car.
-          </Text>
+          <View style={{paddingHorizontal: 16, marginBottom: 16}}>
+            <Text style={{fontSize: 12, color: colors.placeholder}}>
+              {t('step')} {currentStep} {t('of')} 4
+            </Text>
+          </View>
 
-          {/* Car Card */}
+          {currentStep === 1 && (
+            <BillingInfoStep
+              name={formState.name}
+              address={formState.address}
+              phone={formState.phone}
+              city={formState.city}
+              onNameChange={formState.setName}
+              onAddressChange={formState.setAddress}
+              onPhoneChange={formState.setPhone}
+              onCityChange={formState.setCity}
+            />
+          )}
+
+          {currentStep === 2 && (
+            <RentalInfoStep
+              pickupLocation={formState.pickupLocation}
+              pickupDate={formState.pickupDate}
+              pickupTime={formState.pickupTime}
+              dropoffLocation={formState.dropoffLocation}
+              dropoffDate={formState.dropoffDate}
+              dropoffTime={formState.dropoffTime}
+              pickupDateError={formState.pickupDateError}
+              pickupTimeError={formState.pickupTimeError}
+              dropoffDateError={formState.dropoffDateError}
+              dropoffTimeError={formState.dropoffTimeError}
+              pickupMode={formState.pickupMode}
+              dropoffMode={formState.dropoffMode}
+              distanceInKm={formState.distanceInKm}
+              onPickupLocationChange={formState.setPickupLocation}
+              onPickupDateChange={formState.handlePickupDateChange}
+              onPickupTimeChange={formState.handlePickupTimeChange}
+              onDropoffLocationChange={formState.setDropoffLocation}
+              onDropoffDateChange={formState.handleDropoffDateChange}
+              onDropoffTimeChange={formState.handleDropoffTimeChange}
+              onPickupModeChange={formState.setPickupMode}
+              onDropoffModeChange={formState.setDropoffMode}
+              onCalculateDistance={handleCalculateDistance}
+            />
+          )}
+
+          {currentStep === 3 && (
+            <PaymentMethodStep
+              paymentMethod={formState.paymentMethod}
+              onPaymentMethodChange={formState.setPaymentMethod}
+            />
+          )}
+
+          {currentStep === 4 && (
+            <ConfirmationStep
+              agreeMarketing={formState.agreeMarketing}
+              agreeTerms={formState.agreeTerms}
+              onAgreeMarketingChange={formState.setAgreeMarketing}
+              onAgreeTermsChange={formState.setAgreeTerms}
+            />
+          )}
+
           <View
             style={{
-              backgroundColor: colors.white,
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 16,
-            }}
-          >
-            {carImage && (
-              <Image
-                source={carImage}
+              flexDirection: 'row',
+              gap: 12,
+              paddingHorizontal: 16,
+              paddingTop: 24,
+            }}>
+            {currentStep > 1 && (
+              <Pressable
+                onPress={() => setCurrentStep(currentStep - 1)}
                 style={{
-                  width: "100%",
-                  height: 120,
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: colors.morentBlue,
+                  paddingVertical: 12,
                   borderRadius: 8,
-                  marginBottom: 12,
-                }}
-              />
+                  alignItems: 'center',
+                }}>
+                <Text style={{color: colors.morentBlue, fontWeight: '600'}}>
+                  {t('back')}
+                </Text>
+              </Pressable>
             )}
-            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 4 }}>{car.name}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-              <Text style={{ fontSize: 12, fontWeight: "600", marginRight: 4 }}>★ {car.rating}</Text>
-              <Text style={{ fontSize: 12, color: colors.placeholder }}>{car.reviews}+ Reviewer</Text>
-            </View>
-
-            {/* Pricing */}
-            <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
-                }}
-              >
-                <Text style={{ fontSize: 12, color: colors.placeholder }}>Subtotal</Text>
-                <Text style={{ fontSize: 12, fontWeight: "600" }}>${subtotal.toFixed(2)}</Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 12,
-                }}
-              >
-                <Text style={{ fontSize: 12, color: colors.placeholder }}>Tax</Text>
-                <Text style={{ fontSize: 12, fontWeight: "600" }}>${tax.toFixed(2)}</Text>
-              </View>
-
-              {/* Promo Code */}
-              <View style={{ marginBottom: 12 }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    gap: 8,
-                  }}
-                >
-                  <TextInput
-                    placeholder="Apply promo code"
-                    value={promoCode}
-                    onChangeText={setPromoCode}
-                    style={{
-                      flex: 1,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      borderRadius: 6,
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      fontSize: 12,
-                      color: colors.morentBlue,
-                    }}
-                  />
-                  <Pressable
-                    onPress={handleApplyPromo}
-                    style={{
-                      backgroundColor: colors.morentBlue,
-                      paddingHorizontal: 16,
-                      borderRadius: 6,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={{ color: colors.white, fontSize: 12, fontWeight: "600" }}>Apply now</Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              {/* Total */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
-                  paddingTop: 12,
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: "700" }}>Total Rental Price</Text>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.morentBlue }}>${total.toFixed(2)}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View
-          style={{
-            paddingHorizontal: 16,
-            marginBottom: 16,
-          }}
-        >
-          <Text style={{ fontSize: 12, color: colors.placeholder }}>Step {currentStep} of 4</Text>
-        </View>
-
-        {currentStep === 1 && (
-          <View style={{ paddingHorizontal: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 4 }}>Billing Info</Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.placeholder,
-                marginBottom: 16,
-              }}
-            >
-              Please enter your billing info
-            </Text>
-
-            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12 }}>
-              {/* Name */}
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Name</Text>
-              <TextInput
-                placeholder="Your name"
-                value={name}
-                onChangeText={setName}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 16,
-                  fontSize: 12,
-                }}
-              />
-
-              {/* Address */}
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Address</Text>
-              <TextInput
-                placeholder="Address"
-                value={address}
-                onChangeText={setAddress}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 16,
-                  fontSize: 12,
-                }}
-              />
-
-              {/* Phone Number */}
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Phone Number</Text>
-              <TextInput
-                placeholder="Phone number"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 16,
-                  fontSize: 12,
-                }}
-              />
-
-              {/* Town/City */}
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Town/City</Text>
-              <TextInput
-                placeholder="Town or city"
-                value={city}
-                onChangeText={setCity}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  fontSize: 12,
-                }}
-              />
-            </View>
-          </View>
-        )}
-
-        {currentStep === 2 && (
-          <View style={{ paddingHorizontal: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 4 }}>Rental Info</Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.placeholder,
-                marginBottom: 16,
-              }}
-            >
-              Please select your rental date
-            </Text>
-
-            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12 }}>
-              {/* Pick-Up */}
-              <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 Pick - Up</Text>
-
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Locations</Text>
-              <TextInput
-                placeholder="Select your city"
-                value={pickupLocation}
-                onChangeText={setPickupLocation}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 12,
-                  fontSize: 12,
-                }}
-              />
-
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Time</Text>
-              <TextInput
-                placeholder="Select your time"
-                value={pickupTime}
-                onChangeText={setPickupTime}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 12,
-                  fontSize: 12,
-                }}
-              />
-
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Date</Text>
-              <TextInput
-                placeholder="Select your date"
-                value={pickupDate}
-                onChangeText={setPickupDate}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 16,
-                  fontSize: 12,
-                }}
-              />
-
-              {/* Drop-Off */}
-              <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 Drop - Off</Text>
-
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Locations</Text>
-              <TextInput
-                placeholder="Select your city"
-                value={dropoffLocation}
-                onChangeText={setDropoffLocation}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 12,
-                  fontSize: 12,
-                }}
-              />
-
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Time</Text>
-              <TextInput
-                placeholder="Select your time"
-                value={dropoffTime}
-                onChangeText={setDropoffTime}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  marginBottom: 12,
-                  fontSize: 12,
-                }}
-              />
-
-              <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Date</Text>
-              <TextInput
-                placeholder="Select your date"
-                value={dropoffDate}
-                onChangeText={setDropoffDate}
-                style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 6,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  fontSize: 12,
-                }}
-              />
-            </View>
-          </View>
-        )}
-
-        {currentStep === 3 && (
-          <View style={{ paddingHorizontal: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 4 }}>Payment Method</Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.placeholder,
-                marginBottom: 16,
-              }}
-            >
-              Please enter your payment method
-            </Text>
-
-            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12 }}>
-              {/* Credit Card Option */}
-              <Pressable
-                onPress={() => setPaymentMethod("credit-card")}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 16,
-                  paddingBottom: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                }}
-              >
-                <View
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    borderWidth: 2,
-                    borderColor: colors.morentBlue,
-                    marginRight: 12,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  {paymentMethod === "credit-card" && (
-                    <View
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 5,
-                        backgroundColor: colors.morentBlue,
-                      }}
-                    />
-                  )}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "600" }}>Credit Card</Text>
-                  <View style={{ flexDirection: "row", marginTop: 4, gap: 8 }}>
-                    <Text style={{ fontSize: 10, color: colors.placeholder }}>VISA</Text>
-                    <Text style={{ fontSize: 10, color: colors.placeholder }}>Mastercard</Text>
-                  </View>
-                </View>
-              </Pressable>
-
-              {/* Credit Card Form */}
-              {paymentMethod === "credit-card" && (
-                <View style={{ marginBottom: 16 }}>
-                  <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Card Number</Text>
-                  <TextInput
-                    placeholder="Card number"
-                    value={cardNumber}
-                    onChangeText={setCardNumber}
-                    keyboardType="numeric"
-                    style={{
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      borderRadius: 6,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      marginBottom: 12,
-                      fontSize: 12,
-                    }}
-                  />
-
-                  <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Card Holder</Text>
-                  <TextInput
-                    placeholder="Card holder"
-                    value={cardHolder}
-                    onChangeText={setCardHolder}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      borderRadius: 6,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      marginBottom: 12,
-                      fontSize: 12,
-                    }}
-                  />
-
-                  <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Expiration Date</Text>
-                      <TextInput
-                        placeholder="DD/MM/YY"
-                        value={expirationDate}
-                        onChangeText={setExpirationDate}
-                        style={{
-                          borderWidth: 1,
-                          borderColor: colors.border,
-                          borderRadius: 6,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          fontSize: 12,
-                        }}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>CVC</Text>
-                      <TextInput
-                        placeholder="CVC"
-                        value={cvc}
-                        onChangeText={setCvc}
-                        keyboardType="numeric"
-                        style={{
-                          borderWidth: 1,
-                          borderColor: colors.border,
-                          borderRadius: 6,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          fontSize: 12,
-                        }}
-                      />
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              {/* PayPal Option */}
-              <Pressable
-                onPress={() => setPaymentMethod("paypal")}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 16,
-                  paddingBottom: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                }}
-              >
-                <View
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    borderWidth: 2,
-                    borderColor: paymentMethod === "paypal" ? colors.morentBlue : colors.border,
-                    marginRight: 12,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  {paymentMethod === "paypal" && (
-                    <View
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 5,
-                        backgroundColor: colors.morentBlue,
-                      }}
-                    />
-                  )}
-                </View>
-                <Text style={{ fontSize: 14, fontWeight: "600" }}>PayPal</Text>
-              </Pressable>
-
-              {/* Bitcoin Option */}
-              <Pressable
-                onPress={() => setPaymentMethod("bitcoin")}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-              >
-                <View
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    borderWidth: 2,
-                    borderColor: paymentMethod === "bitcoin" ? colors.morentBlue : colors.border,
-                    marginRight: 12,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  {paymentMethod === "bitcoin" && (
-                    <View
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 5,
-                        backgroundColor: colors.morentBlue,
-                      }}
-                    />
-                  )}
-                </View>
-                <Text style={{ fontSize: 14, fontWeight: "600" }}>Bitcoin</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-        {currentStep === 4 && (
-          <View style={{ paddingHorizontal: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 4 }}>Confirmation</Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.placeholder,
-                marginBottom: 16,
-              }}
-            >
-              We are getting to the end. Just few clicks and your rental is ready!
-            </Text>
-
-            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12, marginBottom: 16 }}>
-              {/* Marketing Checkbox */}
-              <Pressable
-                onPress={() => setAgreeMarketing(!agreeMarketing)}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                  marginBottom: 16,
-                }}
-              >
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    borderRadius: 4,
-                    marginRight: 12,
-                    marginTop: 2,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: agreeMarketing ? colors.morentBlue : colors.white,
-                  }}
-                >
-                  {agreeMarketing && <Text style={{ color: colors.white, fontSize: 12 }}>✓</Text>}
-                </View>
-                <Text style={{ fontSize: 12, flex: 1, color: colors.primary }}>
-                  I agree with sending an Marketing and newsletter emails. No spam, promised!
-                </Text>
-              </Pressable>
-
-              {/* Terms Checkbox */}
-              <Pressable
-                onPress={() => setAgreeTerms(!agreeTerms)}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                }}
-              >
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    borderRadius: 4,
-                    marginRight: 12,
-                    marginTop: 2,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: agreeTerms ? colors.morentBlue : colors.white,
-                  }}
-                >
-                  {agreeTerms && <Text style={{ color: colors.white, fontSize: 12 }}>✓</Text>}
-                </View>
-                <Text style={{ fontSize: 12, flex: 1, color: colors.primary }}>
-                  I agree with our terms and conditions and privacy policy!
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Security Message */}
-            <View
-              style={{
-                backgroundColor: colors.white,
-                borderRadius: 8,
-                padding: 12,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 4 }}>🛡️ All your data are safe</Text>
-              <Text style={{ fontSize: 12, color: colors.placeholder, textAlign: "center" }}>
-                We are using the most advanced security to provide you the best experience ever.
-              </Text>
-            </View>
-          </View>
-        )}
-
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 12,
-            paddingHorizontal: 16,
-            paddingTop: 24,
-          }}
-        >
-          {currentStep > 1 && (
             <Pressable
-              onPress={() => setCurrentStep(currentStep - 1)}
+              onPress={handleNextStep}
+              disabled={loading}
               style={{
                 flex: 1,
-                borderWidth: 1,
-                borderColor: colors.morentBlue,
+                backgroundColor: colors.morentBlue,
                 paddingVertical: 12,
                 borderRadius: 8,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: colors.morentBlue, fontWeight: "600" }}>Back</Text>
+                alignItems: 'center',
+              }}>
+              {loading ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={{color: colors.white, fontWeight: '600'}}>
+                  {currentStep === 4 ? t('rentalNow') : t('next')}
+                </Text>
+              )}
             </Pressable>
-          )}
-          <Pressable
-            onPress={handleNextStep}
-            disabled={loading}
-            style={{
-              flex: 1,
-              backgroundColor: colors.morentBlue,
-              paddingVertical: 12,
-              borderRadius: 8,
-              alignItems: "center",
-            }}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={{ color: colors.white, fontWeight: "600" }}>{currentStep === 4 ? "Rental Now" : "Next"}</Text>
-            )}
-          </Pressable>
-        </View>
-      </ScrollView>
-    </View>
-  )
+          </View>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
+  );
 }

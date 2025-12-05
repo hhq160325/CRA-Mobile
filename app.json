@@ -2,13 +2,14 @@
   "expo": {
     "name": "CarApp",
     "slug": "car-app",
+    "scheme": "carapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/images/logo.png",
+    "icon": "./app/assets/images/whitecar.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./app/assets/images/logo.png",
-      "resizeMode": "contain",
+      "image": "./app/assets/images/whitecar.png",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
@@ -20,12 +21,17 @@
       "infoPlist": {
         "NSCameraUsageDescription": "We need access to your camera to take photos of the car for pickup and return confirmation.",
         "NSPhotoLibraryUsageDescription": "We need access to your photo library to select photos for pickup and return confirmation.",
-        "NSPhotoLibraryAddUsageDescription": "We need access to save photos to your photo library."
+        "NSPhotoLibraryAddUsageDescription": "We need access to save photos to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "We need your location to show nearby cars and calculate routes.",
+        "NSLocationAlwaysUsageDescription": "We need your location to show nearby cars and calculate routes."
+      },
+      "config": {
+        "googleMapsApiKey": "YOUR_IOS_GOOGLE_MAPS_API_KEY"
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./app/assets/images/logo.png",
+        "foregroundImage": "./app/assets/images/whitecar.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.carapp.app",
@@ -33,14 +39,22 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
-        "READ_MEDIA_IMAGES"
-      ]
+        "READ_MEDIA_IMAGES",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_ANDROID_GOOGLE_MAPS_API_KEY"
+        }
+      }
     },
     "web": {
       "favicon": "./favicon.ico"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-web-browser"
     ]
   }
 }

@@ -1,12 +1,12 @@
-import React, {useRef, useState} from 'react';
-import {TextInput, View} from 'react-native';
-import {createStyles} from './otp.styles';
+import React, { useRef, useState } from 'react';
+import { TextInput, View } from 'react-native';
+import { createStyles } from './otp.styles';
 
 interface IOtpComponentProps {
   onOTPChange?: (otp: string) => void;
 }
 
-const OtpComponent = ({onOTPChange}: IOtpComponentProps) => {
+const OtpComponent = ({ onOTPChange }: IOtpComponentProps) => {
   const length = 4;
   const styles = createStyles();
   const inputRef = useRef<Array<TextInput | null>>([]);
@@ -43,7 +43,9 @@ const OtpComponent = ({onOTPChange}: IOtpComponentProps) => {
       {otp.map((_, index) => (
         <TextInput
           key={index}
-          ref={ref => (inputRef.current[index] = ref)}
+          ref={ref => {
+            inputRef.current[index] = ref;
+          }}
           style={styles.input}
           keyboardType="numeric"
           maxLength={1}

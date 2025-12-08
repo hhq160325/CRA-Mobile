@@ -1,8 +1,8 @@
-import {useState, useEffect} from 'react';
-import {bookingsService} from '../../../../lib/api/services/bookings.service';
-import {carsService} from '../../../../lib/api/services/cars.service';
-import {userService} from '../../../../lib/api/services/user.service';
-import {scheduleService} from '../../../../lib/api/services/schedule.service';
+import { useState, useEffect } from 'react';
+import { bookingsService } from '../../../../lib/api/services/bookings.service';
+import { carsService } from '../../../../lib/api/services/cars.service';
+import { userService } from '../../../../lib/api/services/user.service';
+import { scheduleService } from '../../../../lib/api/services/schedule.service';
 
 interface BookingDetails {
   id: string;
@@ -37,15 +37,20 @@ export function usePickupConfirm(bookingId: string) {
         console.log('Fetching booking details for:', bookingId);
 
         const checkInResult = await scheduleService.getCheckInImages(bookingId);
+        console.log('🔍 Check-in result:', {
+          hasData: !!checkInResult.data,
+          hasError: !!checkInResult.error,
+          imagesCount: checkInResult.data?.images.length || 0,
+          description: checkInResult.data?.description || '',
+        });
+
         if (checkInResult.data && checkInResult.data.images.length > 0) {
-          console.log('✅ Check-in data found:', checkInResult.data);
+          console.log('✅ Check-in data found - pickup already completed');
           setIsAlreadyCheckedIn(true);
           setExistingCheckInData(checkInResult.data);
           setInitialDescription(checkInResult.data.description);
         } else {
-          console.log(
-            'ℹ️ No check-in data found, proceeding with check-in flow',
-          );
+          console.log('ℹ️ No check-in data found, proceeding with check-in flow');
           setIsAlreadyCheckedIn(false);
         }
 

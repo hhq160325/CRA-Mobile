@@ -112,11 +112,11 @@ export default function CarDetailScreen() {
     }
 
     try {
-      
+
       const { data: licenseData, error: licenseError } = await userService.getDriverLicense(user.id, user.email)
 
       if (licenseError || !licenseData || !licenseData.urls || licenseData.urls.length === 0) {
-        
+
         Alert.alert(
           "Driver's License Required",
           "You must upload your driver's license before booking a car. Would you like to upload it now?",
@@ -240,12 +240,33 @@ export default function CarDetailScreen() {
             </View>
           </View>
 
+          {/* Contact Owner Button */}
+          <Pressable
+            onPress={() => navigation.navigate("Chat" as any, { carId: car.id })}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#E3F2FD',
+              paddingVertical: scale(12),
+              borderRadius: scale(8),
+              marginTop: scale(20),
+              borderWidth: 1,
+              borderColor: colors.morentBlue
+            }}
+          >
+            <Text style={{ fontSize: scale(20), marginRight: scale(8) }}>💬</Text>
+            <Text style={{ color: colors.morentBlue, fontSize: scale(14), fontWeight: "600" }}>
+              Contact Car Owner
+            </Text>
+          </Pressable>
+
           {/* Price and Book Button */}
           <View style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: scale(24),
+            marginTop: scale(16),
             paddingTop: scale(16),
             borderTopWidth: 1,
             borderTopColor: colors.border,

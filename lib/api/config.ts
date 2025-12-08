@@ -131,9 +131,11 @@ export const API_ENDPOINTS = {
   GET_SCHEDULES_BY_BOOKING: (bookingId: string) => `/Schedule/booking?bookingId=${bookingId}`,
   CHECK_IN: "/Schedule/checkIn",
   CHECK_OUT: "/Schedule/checkOut",
+  CHECK_IN_OUT_INFO: (bookingId: string, isCheckIn: boolean) => `/Schedule/checkInOut/info?BookingId=${bookingId}&isCheckIn=${isCheckIn}`,
   UPLOAD_SCHEDULE_IMAGE: (scheduleId: string) => `/Schedule/UploadImage/${scheduleId}`,
   UPLOAD_CHECKIN_IMAGES: "/Schedule/checkIn/images",
 
   // Inquiry
   CREATE_INQUIRY: "/Inquiry/initial",
+  CHAT_LOG: (senderId: string, receiverId: string) => `/Inquiry/chatLog?senderId=${senderId}&receiverId=${receiverId}`,
 }

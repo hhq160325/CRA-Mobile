@@ -1,7 +1,12 @@
 import React from "react"
-import { View, Text, Image, StyleSheet } from "react-native"
+import { View, Text, Image, StyleSheet, Dimensions } from "react-native"
 import { colors } from "../../../theme/colors"
 import { scale, verticalScale } from "../../../theme/scale"
+
+const { width: screenWidth } = Dimensions.get('window')
+// Responsive image height based on screen width
+const cardWidth = screenWidth - scale(32) // accounting for margins
+const imageHeight = Math.min(cardWidth * 0.5, verticalScale(200))
 
 interface BookingCardProps {
     carImage: string
@@ -75,7 +80,7 @@ const styles = StyleSheet.create({
     },
     carImage: {
         width: "100%",
-        height: verticalScale(180),
+        height: imageHeight,
         backgroundColor: "#e5e7eb",
     },
     cardHeader: {

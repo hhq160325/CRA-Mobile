@@ -37,7 +37,6 @@ export default function RentalInfoStep({
     const [parkLots, setParkLots] = useState<ParkLot[]>([])
     const [loading, setLoading] = useState(false)
     const [showPickupModal, setShowPickupModal] = useState(false)
-    const [calculatingDistance, setCalculatingDistance] = useState(false)
     const [showCustomPickupPicker, setShowCustomPickupPicker] = useState(false)
     const [showCustomDropoffPicker, setShowCustomDropoffPicker] = useState(false)
     const [selectedParkLot, setSelectedParkLot] = useState<ParkLot | null>(null)
@@ -47,38 +46,33 @@ export default function RentalInfoStep({
         fetchParkLots()
     }, [])
 
-   
+
     useEffect(() => {
         if (pickupLocation && pickupMode === "parklot") {
-          
+
             onDropoffLocationChange(pickupLocation)
         }
     }, [pickupLocation, pickupMode])
 
 
-    useEffect(() => {
-        const shouldCalculate =
-            pickupMode === "custom" &&
-            selectedParkLot &&
-            pickupLocation.trim().length > 5 &&
-            onCalculateDistance
 
-        if (shouldCalculate) {
-            const timer = setTimeout(async () => {
-                setCalculatingDistance(true)
-                await onCalculateDistance(selectedParkLot.address || selectedParkLot.name)
-                setCalculatingDistance(false)
-            }, 1500)
-
-            return () => clearTimeout(timer)
-        }
-    }, [pickupLocation, pickupMode, selectedParkLot, onCalculateDistance])
 
     const fetchParkLots = async () => {
         setLoading(true)
         const result = await parkLotService.getAllParkLots()
         if (result.data) {
             setParkLots(result.data)
+
+            // Set ThuDucLot as default if not already set
+            if (!selectedParkLot && !pickupLocation) {
+                const thuDucLot = result.data.find(lot => lot.name === "ThuDucLot")
+                if (thuDucLot) {
+                    setSelectedParkLot(thuDucLot)
+                    const parkLotAddress = thuDucLot.address || thuDucLot.name
+                    onPickupLocationChange(parkLotAddress)
+                    onDropoffLocationChange(parkLotAddress)
+                }
+            }
         }
         setLoading(false)
     }
@@ -89,7 +83,7 @@ export default function RentalInfoStep({
 
         if (pickupMode === "parklot") {
             onPickupLocationChange(parkLotAddress)
-            
+
             onDropoffLocationChange(parkLotAddress)
         }
         setShowPickupModal(false)
@@ -125,6 +119,7 @@ export default function RentalInfoStep({
                     dropoffDateError={dropoffDateError}
                     dropoffTimeError={dropoffTimeError}
                     onShowDateTimePicker={() => setShowCustomDropoffPicker(true)}
+                    onDropoffLocationChange={onDropoffLocationChange}
                     t={t}
                 />
             </View>
@@ -156,6 +151,7 @@ export default function RentalInfoStep({
                 initialTime={pickupTime || '06:00'}
                 minimumDate={new Date()}
                 title={t("selectPickupDateTime") || "Select Pickup Date & Time"}
+                isPickup={true}
             />
 
             {/* Custom Dropoff Date & Time Picker */}
@@ -174,16 +170,10 @@ export default function RentalInfoStep({
                 initialTime={dropoffTime || '23:00'}
                 minimumDate={pickupDate ? new Date(pickupDate) : new Date()}
                 title={t("selectDropoffDateTime") || "Select Dropoff Date & Time"}
+                isPickup={false}
             />
 
-            {/* Distance Display */}
-            {pickupMode === "custom" && selectedParkLot && (
-                <DistanceCard
-                    distanceInKm={distanceInKm}
-                    calculatingDistance={calculatingDistance}
-                    t={t}
-                />
-            )}
+
         </View>
     )
 }

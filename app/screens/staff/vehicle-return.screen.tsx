@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,34 +7,35 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import type {RouteProp} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../navigators/navigation-route';
-import {colors} from '../../theme/colors';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
+import { colors } from '../../theme/colors';
 import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {scheduleService} from '../../../lib/api/services/schedule.service';
-import {useAuth} from '../../../lib/auth-context';
-import {useVehicleReturn} from './hooks/useVehicleReturn';
-import {useImagePicker} from './hooks/useImagePicker';
+import { scheduleService } from '../../../lib/api/services/schedule.service';
+import { useAuth } from '../../../lib/auth-context';
+import { useVehicleReturn } from './hooks/useVehicleReturn';
+import { useImagePicker } from './hooks/useImagePicker';
 import BookingCard from './components/BookingCard';
 import ImageGallerySection from './components/ImageGallerySection';
 import LocationInfoSection from './components/LocationInfoSection';
 import NotesSection from './components/NotesSection';
 import ActionButton from './components/ActionButton';
-import {vehicleReturnStyles as styles} from './styles/vehicleReturn.styles';
+import AdditionalPaymentSection from './components/AdditionalPaymentSection';
+import { vehicleReturnStyles as styles } from './styles/vehicleReturn.styles';
 
 type VehicleReturnRouteProp = RouteProp<
-  {params: {bookingId: string}},
+  { params: { bookingId: string } },
   'params'
 >;
 
 export default function VehicleReturnScreen() {
   const route = useRoute<VehicleReturnRouteProp>();
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-  const {user} = useAuth();
-  const {bookingId} = (route.params as any) || {};
+  const { user } = useAuth();
+  const { bookingId } = (route.params as any) || {};
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,7 +52,7 @@ export default function VehicleReturnScreen() {
 
   const [description, setDescription] = useState(initialDescription);
 
-  const {selectedImages, showImagePickerOptions, removeImage} =
+  const { selectedImages, showImagePickerOptions, removeImage } =
     useImagePicker(5);
 
   React.useEffect(() => {
@@ -93,7 +94,7 @@ export default function VehicleReturnScreen() {
       'Confirm Return',
       'Are you sure you want to confirm this vehicle return?',
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
           onPress: async () => {
@@ -119,7 +120,7 @@ export default function VehicleReturnScreen() {
                   onPress: () => {
                     navigation.reset({
                       index: 0,
-                      routes: [{name: 'staffStack' as any}],
+                      routes: [{ name: 'staffStack' as any }],
                     });
                   },
                 },
@@ -244,6 +245,11 @@ export default function VehicleReturnScreen() {
           onRemoveImage={!isAlreadyCheckedOut ? removeImage : undefined}
           isReadOnly={isAlreadyCheckedOut}
         />
+
+        {/* Additional Payment Section */}
+        {!isAlreadyCheckedOut && (
+          <AdditionalPaymentSection bookingId={bookingId} />
+        )}
 
         {/* Action Button */}
         <ActionButton

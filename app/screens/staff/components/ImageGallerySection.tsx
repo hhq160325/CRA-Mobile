@@ -1,8 +1,15 @@
 import React from "react"
-import { View, Text, Image, Pressable, StyleSheet } from "react-native"
+import { View, Text, Image, Pressable, StyleSheet, Dimensions } from "react-native"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import { colors } from "../../../theme/colors"
 import { scale, verticalScale } from "../../../theme/scale"
+
+const { width: screenWidth } = Dimensions.get('window')
+// Calculate image size: 3 images per row with gaps
+const imageGap = scale(8)
+const containerPadding = scale(16) * 2 + scale(16) * 2 // section margin + content padding
+const imagesPerRow = screenWidth > 400 ? 4 : 3
+const imageSize = (screenWidth - containerPadding - (imageGap * (imagesPerRow - 1))) / imagesPerRow
 
 interface ImageGallerySectionProps {
     title: string
@@ -123,8 +130,8 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         position: "relative",
-        width: scale(80),
-        height: scale(80),
+        width: imageSize,
+        height: imageSize,
     },
     thumbnail: {
         width: "100%",

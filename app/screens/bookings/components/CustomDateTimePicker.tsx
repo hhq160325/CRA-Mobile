@@ -11,6 +11,7 @@ interface CustomDateTimePickerProps {
     initialTime?: string;
     minimumDate?: Date;
     title: string;
+    isPickup?: boolean; // true for pickup (10-day limit), false for dropoff (unlimited)
 }
 
 export default function CustomDateTimePicker({
@@ -20,7 +21,8 @@ export default function CustomDateTimePicker({
     initialDate = new Date(),
     initialTime = '06:00',
     minimumDate = new Date(),
-    title
+    title,
+    isPickup = true
 }: CustomDateTimePickerProps) {
     const [selectedDate, setSelectedDate] = useState(initialDate);
     const [selectedTime, setSelectedTime] = useState(initialTime);
@@ -31,7 +33,20 @@ export default function CustomDateTimePicker({
         'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
     const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-    
+    // Helper function to check if a time is in the past
+    const isTimeInPast = (hour: string, minute: string): boolean => {
+        const now = new Date();
+        const selectedDateTime = new Date(selectedDate);
+        selectedDateTime.setHours(parseInt(hour), parseInt(minute), 0, 0);
+
+        // Only check if selected date is today
+        const isToday = selectedDate.toDateString() === now.toDateString();
+        if (!isToday) return false;
+
+        return selectedDateTime < now;
+    };
+
+
     const timeOptions = [];
     for (let hour = 6; hour <= 23; hour++) {
         timeOptions.push(`${String(hour).padStart(2, '0')}:00`);
@@ -53,12 +68,12 @@ export default function CustomDateTimePicker({
         const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
         const days = [];
 
-     
+
         for (let i = 0; i < firstDay; i++) {
             days.push(<View key={`empty-${i}`} style={{ width: '14.28%', padding: 8 }} />);
         }
 
-        
+
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(currentYear, currentMonth, day);
             const isSelected = selectedDate.getDate() === day &&
@@ -66,10 +81,18 @@ export default function CustomDateTimePicker({
                 selectedDate.getFullYear() === currentYear;
             const isPast = date < minimumDate && date.toDateString() !== minimumDate.toDateString();
 
+            // Calculate maximum date (10 days from now) - only for pickup
+            const maxDate = new Date();
+            maxDate.setDate(maxDate.getDate() + 10);
+            maxDate.setHours(23, 59, 59, 999); // End of the 10th day
+            const isBeyond10Days = isPickup && date > maxDate; // Only apply limit for pickup
+
+            const isDisabled = isPast || isBeyond10Days;
+
             days.push(
                 <Pressable
                     key={day}
-                    disabled={isPast}
+                    disabled={isDisabled}
                     onPress={() => setSelectedDate(date)}
                     style={{
                         width: '14.28%',
@@ -88,7 +111,7 @@ export default function CustomDateTimePicker({
                     }}>
                         <Text style={{
                             fontSize: 14,
-                            color: isPast ? '#ccc' : isSelected ? colors.white : colors.primary,
+                            color: isDisabled ? '#ccc' : isSelected ? colors.white : colors.primary,
                             fontWeight: isSelected ? '600' : '400'
                         }}>
                             {day}
@@ -120,6 +143,29 @@ export default function CustomDateTimePicker({
     };
 
     const handleConfirm = () => {
+        // Validate that selected time is not in the past
+        const [hours, minutes] = selectedTime.split(':');
+        const selectedDateTime = new Date(selectedDate);
+        selectedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+        const now = new Date();
+        if (selectedDateTime < now) {
+            alert('Cannot select a time in the past. Please choose a future date and time.');
+            return;
+        }
+
+        // Validate that selected date is within 10 days (only for pickup)
+        if (isPickup) {
+            const maxDate = new Date();
+            maxDate.setDate(maxDate.getDate() + 10);
+            maxDate.setHours(23, 59, 59, 999);
+
+            if (selectedDateTime > maxDate) {
+                alert('Pickup date must be within 10 days from today. Please choose an earlier date.');
+                return;
+            }
+        }
+
         onConfirm(selectedDate, selectedTime);
         onClose();
     };
@@ -190,52 +236,131 @@ export default function CustomDateTimePicker({
                                 {renderCalendar()}
                             </View>
 
-                            {/* Time Selection */}
+                            {/* Time Selection - Wheel Picker Style */}
                             <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border, marginTop: 16 }}>
                                 <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary, marginBottom: 12 }}>
-                                    Chọn giờ
+                                    Time Picker
                                 </Text>
-                                <Pressable
-                                    style={{
-                                        borderWidth: 1,
-                                        borderColor: colors.border,
-                                        borderRadius: 8,
-                                        padding: 12,
-                                        flexDirection: 'row',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}
-                                >
-                                    <Text style={{ fontSize: 16, color: colors.primary, fontWeight: '600' }}>
+
+                                <View style={{
+                                    flexDirection: 'row',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    backgroundColor: colors.background,
+                                    borderRadius: 12,
+                                    padding: 16,
+                                    height: 200,
+                                    borderWidth: 1,
+                                    borderColor: colors.border
+                                }}>
+                                    {/* Hour Picker */}
+                                    <View style={{ flex: 1 }}>
+                                        <ScrollView
+                                            showsVerticalScrollIndicator={true}
+                                            snapToInterval={50}
+                                            decelerationRate="fast"
+                                            nestedScrollEnabled={true}
+                                            contentContainerStyle={{ paddingVertical: 75 }}
+                                        >
+                                            {Array.from({ length: 24 }, (_, i) => i).map((hour) => {
+                                                const hourStr = String(hour).padStart(2, '0');
+                                                const isSelected = selectedTime.split(':')[0] === hourStr;
+                                                const minute = selectedTime.split(':')[1];
+                                                const isPast = isTimeInPast(hourStr, minute);
+                                                return (
+                                                    <Pressable
+                                                        key={hour}
+                                                        disabled={isPast}
+                                                        onPress={() => {
+                                                            const minute = selectedTime.split(':')[1];
+                                                            setSelectedTime(`${hourStr}:${minute}`);
+                                                        }}
+                                                        style={{
+                                                            height: 50,
+                                                            justifyContent: 'center',
+                                                            alignItems: 'center',
+                                                            backgroundColor: isSelected ? '#4A5568' : 'transparent',
+                                                            borderRadius: 8,
+                                                            marginVertical: 2,
+                                                            opacity: isPast ? 0.3 : 1
+                                                        }}
+                                                    >
+                                                        <Text style={{
+                                                            fontSize: isSelected ? 32 : 24,
+                                                            color: isPast ? '#D1D5DB' : isSelected ? colors.white : '#9CA3AF',
+                                                            fontWeight: isSelected ? '700' : '400'
+                                                        }}>
+                                                            {hourStr}
+                                                        </Text>
+                                                    </Pressable>
+                                                );
+                                            })}
+                                        </ScrollView>
+                                    </View>
+
+                                    {/* Separator */}
+                                    <Text style={{ fontSize: 32, color: colors.primary, fontWeight: '600', marginHorizontal: 8 }}>:</Text>
+
+                                    {/* Minute Picker */}
+                                    <View style={{ flex: 1 }}>
+                                        <ScrollView
+                                            showsVerticalScrollIndicator={true}
+                                            snapToInterval={50}
+                                            decelerationRate="fast"
+                                            nestedScrollEnabled={true}
+                                            contentContainerStyle={{ paddingVertical: 75 }}
+                                        >
+                                            {Array.from({ length: 60 }, (_, i) => i).map((minute) => {
+                                                const minuteStr = String(minute).padStart(2, '0');
+                                                const isSelected = selectedTime.split(':')[1] === minuteStr;
+                                                const hour = selectedTime.split(':')[0];
+                                                const isPast = isTimeInPast(hour, minuteStr);
+                                                return (
+                                                    <Pressable
+                                                        key={minute}
+                                                        disabled={isPast}
+                                                        onPress={() => {
+                                                            const hour = selectedTime.split(':')[0];
+                                                            setSelectedTime(`${hour}:${minuteStr}`);
+                                                        }}
+                                                        style={{
+                                                            height: 50,
+                                                            justifyContent: 'center',
+                                                            alignItems: 'center',
+                                                            backgroundColor: isSelected ? '#4A5568' : 'transparent',
+                                                            borderRadius: 8,
+                                                            marginVertical: 2,
+                                                            opacity: isPast ? 0.3 : 1
+                                                        }}
+                                                    >
+                                                        <Text style={{
+                                                            fontSize: isSelected ? 32 : 24,
+                                                            color: isPast ? '#D1D5DB' : isSelected ? colors.white : '#9CA3AF',
+                                                            fontWeight: isSelected ? '700' : '400'
+                                                        }}>
+                                                            {minuteStr}
+                                                        </Text>
+                                                    </Pressable>
+                                                );
+                                            })}
+                                        </ScrollView>
+                                    </View>
+                                </View>
+
+                                {/* Selected Time Display */}
+                                <View style={{
+                                    marginTop: 16,
+                                    padding: 12,
+                                    backgroundColor: colors.background,
+                                    borderRadius: 8,
+                                    alignItems: 'center'
+                                }}>
+                                    <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 4 }}>
+                                        Selected time
+                                    </Text>
+                                    <Text style={{ fontSize: 20, fontWeight: '700', color: colors.morentBlue }}>
                                         {selectedTime}
                                     </Text>
-                                    <MaterialIcons name="access-time" size={20} color={colors.placeholder} />
-                                </Pressable>
-
-                                {/* Time Options Grid */}
-                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, gap: 8 }}>
-                                    {timeOptions.map((time) => (
-                                        <Pressable
-                                            key={time}
-                                            onPress={() => setSelectedTime(time)}
-                                            style={{
-                                                paddingHorizontal: 16,
-                                                paddingVertical: 8,
-                                                borderRadius: 6,
-                                                backgroundColor: selectedTime === time ? colors.morentBlue : colors.background,
-                                                borderWidth: 1,
-                                                borderColor: selectedTime === time ? colors.morentBlue : colors.border
-                                            }}
-                                        >
-                                            <Text style={{
-                                                fontSize: 13,
-                                                color: selectedTime === time ? colors.white : colors.primary,
-                                                fontWeight: selectedTime === time ? '600' : '400'
-                                            }}>
-                                                {time}
-                                            </Text>
-                                        </Pressable>
-                                    ))}
                                 </View>
                             </View>
                         </ScrollView>
@@ -252,7 +377,7 @@ export default function CustomDateTimePicker({
                                 }}
                             >
                                 <Text style={{ color: colors.white, fontSize: 16, fontWeight: '600' }}>
-                                    Xác nhận
+                                    Save
                                 </Text>
                             </Pressable>
                         </View>

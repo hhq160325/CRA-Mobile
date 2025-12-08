@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { Linking } from "react-native"
 import { authService, type User } from "./api"
+import { useGoogleLogin } from "./hooks/useGoogleLogin"
 
 interface AuthContextType {
   user: User | null
@@ -11,6 +12,7 @@ interface AuthContextType {
   logout: () => void
   isAuthenticated: boolean
   refreshUser: () => void
+  isGoogleReady: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -18,12 +20,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
+  // Use the Google login hook
+  const {
+    loginWithGoogle: googleLogin,
+    isReady: isGoogleReady,
+    error: googleError
+  } = useGoogleLogin()
+
   useEffect(() => {
     const currentUser = authService.getCurrentUser()
     if (currentUser) {
       setUser(currentUser)
     }
-
 
     const handleDeepLink = async (event: { url: string }) => {
       console.log("🔗 Deep link received:", event.url)
@@ -35,9 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const url = new URL(event.url)
           const params = url.searchParams
 
-
           let jwtToken = params.get("jwtToken") || params.get("token")
-
 
           if (!jwtToken && url.hash) {
             const hashParams = new URLSearchParams(url.hash.substring(1))
@@ -46,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (jwtToken) {
             console.log("✅ JWT token found in callback, auto-logging in...")
-
 
             const currentUser = authService.getCurrentUser()
             if (currentUser) {
@@ -64,9 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-
     const subscription = Linking.addEventListener("url", handleDeepLink)
-
 
     Linking.getInitialURL().then((url) => {
       if (url) {
@@ -82,24 +85,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-
       console.log('auth-context: calling authService.login', { email })
       const { data, error } = await authService.login({ email, password })
 
       console.log('auth-context: authService.login result', { data: data ? 'user data received' : null, error: error?.message })
 
       if (data && !error) {
-
         console.log('auth-context: setting user in state', { userId: data.id, userRole: data.role })
         setUser(data)
         return true
       }
 
-
       console.log('auth-context: login failed', { hasData: !!data, hasError: !!error })
       return false
     } catch (err) {
-
       console.error('auth-context: login exception', err)
       return false
     }
@@ -108,15 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
       console.log('auth-context: Google login initiated')
+      console.log('auth-context: isGoogleReady:', isGoogleReady)
 
-
-      const { performGoogleLogin } = require("./utils/googleLogin")
-
-      const result = await performGoogleLogin()
+      const result = await googleLogin()
 
       if (result.success) {
         console.log('auth-context: Google login successful')
-
 
         if (result.user) {
           console.log('auth-context: setting user from result', { userId: result.user.id, userRole: result.user.role })
@@ -124,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return true
         }
 
-
+        // Fallback: check localStorage
         const currentUser = authService.getCurrentUser()
         if (currentUser) {
           console.log('auth-context: setting user from localStorage', { userId: currentUser.id, userRole: currentUser.role })
@@ -163,7 +159,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, isAuthenticated: !!user, refreshUser }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{
+      user,
+      login,
+      loginWithGoogle,
+      logout,
+      isAuthenticated: !!user,
+      refreshUser,
+      isGoogleReady
+    }}>
+      {children}
+    </AuthContext.Provider>
   )
 }
 

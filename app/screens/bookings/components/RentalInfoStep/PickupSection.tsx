@@ -64,47 +64,22 @@ export default function PickupSection({
                     </Text>
                 </Pressable>
             ) : (
-                <>
-                    <Text style={{ fontSize: 11, color: colors.placeholder, marginBottom: 6 }}>
-                        Step 1: Select park lot (starting point)
-                    </Text>
-                    <Pressable
-                        onPress={onShowParkLotModal}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: selectedParkLot ? colors.morentBlue : colors.border,
-                            borderRadius: 6,
-                            paddingHorizontal: 12,
-                            paddingVertical: 10,
-                            marginBottom: 12,
-                            backgroundColor: colors.white
-                        }}
-                    >
-                        <Text style={{ fontSize: 12, color: selectedParkLot ? colors.primary : colors.placeholder }}>
-                            {selectedParkLot ? (selectedParkLot.address || selectedParkLot.name) : t("selectParkLot")}
-                        </Text>
-                    </Pressable>
-                    <Text style={{ fontSize: 11, color: colors.placeholder, marginBottom: 6 }}>
-                        Step 2: Enter custom pickup address
-                    </Text>
-                    <TextInput
-                        placeholder={t("enterCustomAddress")}
-                        value={pickupLocation}
-                        onChangeText={onPickupLocationChange}
-                        editable={!!selectedParkLot}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: selectedParkLot ? colors.border : colors.placeholder,
-                            borderRadius: 6,
-                            paddingHorizontal: 12,
-                            paddingVertical: 10,
-                            marginBottom: 12,
-                            fontSize: 12,
-                            backgroundColor: selectedParkLot ? colors.white : '#f5f5f5',
-                            color: selectedParkLot ? colors.primary : colors.placeholder
-                        }}
-                    />
-                </>
+                <TextInput
+                    placeholder="Enter custom pickup address"
+                    value={pickupLocation}
+                    onChangeText={onPickupLocationChange}
+                    style={{
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: 6,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        marginBottom: 12,
+                        fontSize: 12,
+                        backgroundColor: colors.white,
+                        color: colors.primary
+                    }}
+                />
             )}
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>

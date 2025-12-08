@@ -1,15 +1,16 @@
-import {useState, useEffect} from 'react';
-import {Alert} from 'react-native';
-import {bookingsService} from '../../../../lib/api';
-import {invoiceService} from '../../../../lib/api/services/invoice.service';
-import {paymentService} from '../../../../lib/api/services/payment.service';
-import {useAuth} from '../../../../lib/auth-context';
+import { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
+import { bookingsService } from '../../../../lib/api';
+import { invoiceService } from '../../../../lib/api/services/invoice.service';
+import { paymentService } from '../../../../lib/api/services/payment.service';
+import { useAuth } from '../../../../lib/auth-context';
 
 export function useBookingDetail(bookingId: string, navigation: any) {
-  const {user} = useAuth();
+  const { user } = useAuth();
   const [booking, setBooking] = useState<any>(null);
   const [invoice, setInvoice] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
+  const [bookingFee, setBookingFee] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export function useBookingDetail(bookingId: string, navigation: any) {
             Alert.alert(
               'Access Denied',
               "You don't have permission to view this booking.",
-              [{text: 'OK', onPress: () => navigation.goBack()}],
+              [{ text: 'OK', onPress: () => navigation.goBack() }],
             );
             setLoading(false);
             return;
@@ -72,6 +73,18 @@ export function useBookingDetail(bookingId: string, navigation: any) {
                 paymentsRes.data,
               );
               setPayments(paymentsRes.data);
+
+              // Extract booking fee from payments
+              const bookingFeePayment = paymentsRes.data.find(
+                (payment: any) => payment.item === 'Booking Fee'
+              );
+              if (bookingFeePayment) {
+                console.log(
+                  'BookingDetail: Booking fee found:',
+                  bookingFeePayment.paidAmount,
+                );
+                setBookingFee(bookingFeePayment.paidAmount);
+              }
             }
           } catch (err) {
             console.log('BookingDetail: Error fetching payments:', err);
@@ -119,5 +132,5 @@ export function useBookingDetail(bookingId: string, navigation: any) {
     };
   }, [bookingId, user?.id]);
 
-  return {booking, invoice, payments, loading};
+  return { booking, invoice, payments, bookingFee, loading };
 }

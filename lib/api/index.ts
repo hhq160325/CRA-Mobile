@@ -46,3 +46,5 @@ export { invoiceService, type Invoice as InvoiceData } from "./services/invoice.
 
 
 export { checkAndUpdatePaymentStatuses, areAllPaymentsPaid } from "./services/payment-status-checker"
+
+export { inquiryService, type CreateInquiryData } from "./services/inquiry.service"

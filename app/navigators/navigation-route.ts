@@ -52,6 +52,7 @@ export type NavigatorParamList = {
   };
   ['VehicleReturn']: { bookingId: string };
   ['PaymentHistory']: undefined;
+  ['Messages']: { bookingId: string };
   ['auth']: undefined;
   ['tabStack']: undefined;
   ['staffStack']: undefined;

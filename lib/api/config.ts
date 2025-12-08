@@ -133,4 +133,7 @@ export const API_ENDPOINTS = {
   CHECK_OUT: "/Schedule/checkOut",
   UPLOAD_SCHEDULE_IMAGE: (scheduleId: string) => `/Schedule/UploadImage/${scheduleId}`,
   UPLOAD_CHECKIN_IMAGES: "/Schedule/checkIn/images",
+
+  // Inquiry
+  CREATE_INQUIRY: "/Inquiry/initial",
 }

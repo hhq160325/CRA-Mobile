@@ -29,9 +29,9 @@ export default function CustomDateTimePicker({
     const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth());
     const [currentYear, setCurrentYear] = useState(initialDate.getFullYear());
 
-    const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-        'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const monthNames = ['JaJanuary', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     // Helper function to check if a time is in the past
     const isTimeInPast = (hour: string, minute: string): boolean => {

@@ -1,5 +1,5 @@
 import React from "react"
-import { View, Text, Pressable, Image } from "react-native"
+import { View, Text, Pressable, Image, Dimensions } from "react-native"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import Ionicons from "react-native-vector-icons/Ionicons"
 import { colors } from "../../../theme/colors"
@@ -8,6 +8,10 @@ import { getAsset } from "../../../../lib/getAsset"
 import type { Car } from "../../../../lib/api"
 import { useFavorites } from "../../../../lib/favorites-context"
 import { useLanguage } from "../../../../lib/language-context"
+
+const { width: screenWidth } = Dimensions.get('window')
+// Responsive card width for horizontal scroll
+const horizontalCardWidth = Math.min(scale(240), screenWidth * 0.65)
 
 interface CarCardProps {
     car: Car
@@ -35,7 +39,7 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                 padding: scale(16),
                 marginRight: isHorizontal ? scale(12) : 0,
                 marginBottom: scale(16),
-                width: isHorizontal ? scale(240) : "100%",
+                width: isHorizontal ? horizontalCardWidth : "100%",
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.05,

@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from "react-native"
+import { View, Text, Pressable, TextInput } from "react-native"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import { colors } from "../../../../theme/colors"
 
@@ -9,6 +9,7 @@ interface DropoffSectionProps {
     dropoffDateError: string
     dropoffTimeError: string
     onShowDateTimePicker: () => void
+    onDropoffLocationChange?: (location: string) => void
     t: (key: string) => string
 }
 
@@ -19,6 +20,7 @@ export default function DropoffSection({
     dropoffDateError,
     dropoffTimeError,
     onShowDateTimePicker,
+    onDropoffLocationChange,
     t
 }: DropoffSectionProps) {
     return (
@@ -26,19 +28,23 @@ export default function DropoffSection({
             <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 {t("dropOff")}</Text>
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{t("locations")}</Text>
-            <View style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 6,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                marginBottom: 12,
-                backgroundColor: '#f5f5f5'
-            }}>
-                <Text style={{ fontSize: 12, color: colors.placeholder }}>
-                    {dropoffLocation || "Same as pickup location"}
-                </Text>
-            </View>
+            <TextInput
+                value={dropoffLocation}
+                onChangeText={onDropoffLocationChange}
+                placeholder="Enter drop-off location or same as pickup"
+                placeholderTextColor={colors.placeholder}
+                style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 6,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    marginBottom: 12,
+                    backgroundColor: colors.white,
+                    fontSize: 12,
+                    color: colors.primary
+                }}
+            />
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>
                 {t("dateAndTime") || "Date & Time"}

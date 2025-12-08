@@ -1,29 +1,28 @@
 'use client';
 
-import {useState, useEffect} from 'react';
-import {Image, ScrollView, Text, View, Alert} from 'react-native';
+import { useState, useEffect } from 'react';
+import { Image, ScrollView, Text, View, Alert } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import assets from '../../assets';
 import Button from '../../components/button/component';
 import CheckBoxComponent from '../../components/checkbox/component';
 import InputComponent from '../../components/input/component';
-import {scale} from '../../theme/scale';
-import {createStyles} from './signin.styles';
-import {useSignin} from './signin.hook';
-import {useAuth} from '../../../lib/auth-context';
-import {navigate} from '../../navigators/navigation-utilities';
-import {renderMarginBottom} from '../../utils/ui-utils';
-import {validateEmail, validatePassword} from './signin.validation';
+import { scale } from '../../theme/scale';
+import { createStyles } from './signin.styles';
+import { useSignin } from './signin.hook';
+import { useAuth } from '../../../lib/auth-context';
+import { navigate } from '../../navigators/navigation-utilities';
+import { renderMarginBottom } from '../../utils/ui-utils';
+import { validateEmail, validatePassword } from './signin.validation';
 
 const SignInScreen = () => {
   const styles = createStyles();
-  const {isSecure, setIsSecure} = useSignin();
+  const { isSecure, setIsSecure } = useSignin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
-  const [showGoogleHint, setShowGoogleHint] = useState(false);
-  const {login, loginWithGoogle, user, refreshUser} = useAuth();
+  const { login, loginWithGoogle, user, refreshUser, isGoogleReady } = useAuth();
 
   useEffect(() => {
     console.log('=== Navigation useEffect triggered ===');
@@ -36,7 +35,7 @@ const SignInScreen = () => {
       console.log('Role:', user.role);
       console.log('RoleId:', user.roleId);
 
-      const {navigationRef} = require('../../navigators/navigation-utilities');
+      const { navigationRef } = require('../../navigators/navigation-utilities');
       console.log('navigationRef exists:', !!navigationRef);
       console.log('navigationRef.isReady:', navigationRef?.isReady?.());
 
@@ -52,13 +51,13 @@ const SignInScreen = () => {
           console.log('✅ Navigating to staffStack for staff user');
           navigationRef.reset({
             index: 0,
-            routes: [{name: 'staffStack'}],
+            routes: [{ name: 'staffStack' }],
           });
         } else {
           console.log('✅ Navigating to tabStack for', user.role, 'user');
           navigationRef.reset({
             index: 0,
-            routes: [{name: 'tabStack'}],
+            routes: [{ name: 'tabStack' }],
           });
         }
       } else {
@@ -97,7 +96,7 @@ const SignInScreen = () => {
       if (success) {
         await new Promise(resolve => setTimeout(resolve, 200));
 
-        const {authService} = require('../../../lib/api');
+        const { authService } = require('../../../lib/api');
         const currentUser = authService.getCurrentUser();
         console.log('Current user after login:', currentUser);
 
@@ -123,13 +122,13 @@ const SignInScreen = () => {
               console.log('✅ IMMEDIATE NAVIGATION to staffStack');
               navigationRef.reset({
                 index: 0,
-                routes: [{name: 'staffStack'}],
+                routes: [{ name: 'staffStack' }],
               });
             } else {
               console.log('✅ IMMEDIATE NAVIGATION to tabStack');
               navigationRef.reset({
                 index: 0,
-                routes: [{name: 'tabStack'}],
+                routes: [{ name: 'tabStack' }],
               });
             }
           } else {
@@ -147,8 +146,8 @@ const SignInScreen = () => {
           'Login Failed',
           'Unable to sign in. This could be due to:\n\n• Invalid email or password\n• Server is starting up (try again in a moment)\n• Network connection issue',
           [
-            {text: 'Cancel', style: 'cancel'},
-            {text: 'Try Again', onPress: () => handleLogin()},
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Try Again', onPress: () => handleLogin() },
           ],
         );
       }
@@ -162,51 +161,58 @@ const SignInScreen = () => {
         : err?.message || 'Something went wrong';
 
       Alert.alert('Login Error', message, [
-        {text: 'Cancel', style: 'cancel'},
-        {text: 'Try Again', onPress: () => handleLogin()},
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Try Again', onPress: () => handleLogin() },
       ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    console.log('=== Opening Google OAuth Handler ===');
-    setShowGoogleHint(false);
+  const handleGoogleLogin = async () => {
+    console.log('=== Starting Google Login ===');
+    console.log('isGoogleReady:', isGoogleReady);
 
-    navigate('GoogleOAuthHandler');
-
-    setTimeout(() => {
-      refreshUser();
-      const {authService} = require('../../../lib/api');
-      const currentUser = authService.getCurrentUser();
-      if (currentUser) {
-        console.log('✅ User logged in via Google OAuth Handler');
-        setJustLoggedIn(true);
-      }
-    }, 1000);
-  };
-
-  const handleCheckLoginStatus = (showAlert: boolean = true) => {
-    console.log('Checking login status...');
-    refreshUser();
-
-    const {authService} = require('../../../lib/api');
-    const currentUser = authService.getCurrentUser();
-
-    if (currentUser) {
-      console.log('✅ User found after refresh:', currentUser.email);
-      setJustLoggedIn(true);
-      setShowGoogleHint(false);
-    } else if (showAlert) {
+    if (!isGoogleReady) {
       Alert.alert(
-        'Not Logged In Yet',
-        "Please make sure you:\n1. Completed Google login in the browser\n2. Closed the browser\n\nThen tap 'Check Login Status' again.",
-        [{text: 'OK'}],
+        'Please Wait',
+        'Google Sign-In is initializing. Please try again in a moment.',
+        [{ text: 'OK' }]
       );
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const success = await loginWithGoogle();
+
+      if (success) {
+        console.log('✅ Google login successful');
+        // Small delay to ensure state is updated
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        refreshUser();
+        const { authService } = require('../../../lib/api');
+        const currentUser = authService.getCurrentUser();
+
+        if (currentUser) {
+          console.log('✅ User found:', currentUser.email);
+          setJustLoggedIn(true);
+        }
+      } else {
+        console.log('❌ Google login failed or cancelled');
+        // Don't show alert for cancelled logins
+      }
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      Alert.alert('Error', error.message || 'Failed to login with Google');
+    } finally {
+      setIsLoading(false);
     }
   };
-  const {logo_black} = assets;
+
+  const { logo_black } = assets;
   return (
     <ScrollView style={styles.container}>
       <View style={styles.flexRow}>
@@ -252,7 +258,7 @@ const SignInScreen = () => {
           text={isLoading ? 'Signing in...' : 'Login'}
           textStyles={styles.buttonText}
           onPress={handleLogin}
-          buttonStyles={isLoading ? {opacity: 0.7} : undefined}
+          buttonStyles={isLoading ? { opacity: 0.7 } : undefined}
         />
         <Button
           onPress={() => navigate('SignUpScreen')}
@@ -268,40 +274,16 @@ const SignInScreen = () => {
       </View>
       <View style={[styles.buttonContainer, styles.mt14]}>
         <Button
-          text="Sign in with Google"
+          text={isGoogleReady ? "Sign in with Google" : "Loading..."}
           textStyles={styles.outlineButtonText}
-          buttonStyles={styles.iconButtonStyle}
+          buttonStyles={{
+            ...styles.iconButtonStyle,
+            ...(isGoogleReady ? {} : { opacity: 0.6 })
+          }}
           component={<AntDesign name="google" size={scale(20)} />}
           onPress={handleGoogleLogin}
         />
       </View>
-
-      {showGoogleHint && (
-        <View style={[styles.buttonContainer, {marginTop: scale(12)}]}>
-          <View
-            style={{
-              backgroundColor: '#FFF3CD',
-              padding: scale(12),
-              borderRadius: scale(8),
-              marginBottom: scale(8),
-            }}>
-            <Text
-              style={{
-                fontSize: scale(12),
-                color: '#856404',
-                textAlign: 'center',
-              }}>
-              ℹ️ After completing Google login, close the browser and tap below
-            </Text>
-          </View>
-          <Button
-            text="Check Login Status"
-            textStyles={styles.outlineButtonText}
-            buttonStyles={styles.outlineButton}
-            onPress={() => handleCheckLoginStatus(true)}
-          />
-        </View>
-      )}
       <View style={styles.haveAccountContainer}>
         <Text style={styles.dontHaveText}>
           Don't have an account ? {'\t'}

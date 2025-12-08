@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, Image } from "react-native"
+import { View, Text, Image } from "react-native"
 import { colors } from "../../../theme/colors"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import type { Car } from "../../../../lib/api"
@@ -7,28 +7,26 @@ interface RentalSummaryCardProps {
     car: Car
     carImageSource: any
     subtotal: number
-    tax: number
     shippingFee: number
     bookingFee: number
     discount: number
     total: number
-    promoCode: string
-    onPromoCodeChange: (code: string) => void
-    onApplyPromo: () => void
+    distanceInKm?: number | null
+    rentalDays?: number
+    pricePerDay?: number
 }
 
 export default function RentalSummaryCard({
     car,
     carImageSource,
     subtotal,
-    tax,
     shippingFee,
     bookingFee,
     discount,
     total,
-    promoCode,
-    onPromoCodeChange,
-    onApplyPromo,
+    distanceInKm,
+    rentalDays = 1,
+    pricePerDay = 0,
 }: RentalSummaryCardProps) {
     return (
         <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
@@ -82,21 +80,32 @@ export default function RentalSummaryCard({
 
                 {/* Pricing */}
                 <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                        <Text style={{ fontSize: 12, color: colors.placeholder }}>Price per day</Text>
+                        <Text style={{ fontSize: 12, fontWeight: "600" }}>{pricePerDay.toFixed(0)} VND</Text>
+                    </View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                        <Text style={{ fontSize: 12, color: colors.placeholder }}>Rental days</Text>
+                        <Text style={{ fontSize: 12, fontWeight: "600" }}>{rentalDays} {rentalDays === 1 ? 'day' : 'days'}</Text>
+                    </View>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
                         <Text style={{ fontSize: 12, color: colors.placeholder }}>Subtotal</Text>
                         <Text style={{ fontSize: 12, fontWeight: "600" }}>{subtotal.toFixed(0)} VND</Text>
                     </View>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-                        <Text style={{ fontSize: 12, color: colors.placeholder }}>Tax</Text>
-                        <Text style={{ fontSize: 12, fontWeight: "600" }}>{tax.toFixed(0)} VND</Text>
-                    </View>
                     {shippingFee > 0 && (
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
-                            <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                <MaterialIcons name="local-shipping" size={14} color={colors.morentBlue} style={{ marginRight: 4 }} />
-                                <Text style={{ fontSize: 12, color: colors.morentBlue, fontWeight: "600" }}>Shipping Fee</Text>
+                        <View style={{ marginBottom: 12 }}>
+                            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                    <MaterialIcons name="local-shipping" size={14} color={colors.morentBlue} style={{ marginRight: 4 }} />
+                                    <Text style={{ fontSize: 12, color: colors.morentBlue, fontWeight: "600" }}>Shipping Fee</Text>
+                                </View>
+                                <Text style={{ fontSize: 12, fontWeight: "600", color: colors.morentBlue }}>{shippingFee.toFixed(0)} VND</Text>
                             </View>
-                            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.morentBlue }}>{shippingFee.toFixed(0)} VND</Text>
+                            {distanceInKm && (
+                                <Text style={{ fontSize: 10, color: colors.placeholder, marginLeft: 18 }}>
+                                    Distance: {distanceInKm.toFixed(1)} km × 20,000 VND/km
+                                </Text>
+                            )}
                         </View>
                     )}
                     {!shippingFee && (
@@ -118,21 +127,6 @@ export default function RentalSummaryCard({
                             <Text style={{ fontSize: 12, fontWeight: "600", color: "#10B981" }}>-{discount.toFixed(0)} VND</Text>
                         </View>
                     )}
-
-                    {/* Promo Code */}
-                    <View style={{ marginBottom: 12 }}>
-                        <View style={{ flexDirection: "row", gap: 8 }}>
-                            <TextInput
-                                placeholder="Apply promo code"
-                                value={promoCode}
-                                onChangeText={onPromoCodeChange}
-                                style={{ flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, color: colors.morentBlue }}
-                            />
-                            <Pressable onPress={onApplyPromo} style={{ backgroundColor: colors.morentBlue, paddingHorizontal: 16, borderRadius: 6, justifyContent: "center" }}>
-                                <Text style={{ color: colors.white, fontSize: 12, fontWeight: "600" }}>Apply now</Text>
-                            </Pressable>
-                        </View>
-                    </View>
 
                     {/* Total */}
                     <View style={{ flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }}>

@@ -1,0 +1,139 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" version="29.2.4">
+  <diagram id="CarApp-Package-Diagram" name="Package Diagram">
+    <mxGraphModel dx="1426" dy="743" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1" value="CarApp - Package Diagram&#xa;React Native Car Rental Application" vertex="1">
+          <mxGeometry height="60" width="530" x="320" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="presentation-layer" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" value="PRESENTATION LAYER" vertex="1">
+          <mxGeometry height="480" width="1080" x="40" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="app-root" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;" value="App.tsx (Root)&#xa;- LanguageProvider&#xa;- AuthProvider&#xa;- FavoritesProvider&#xa;- AppNavigator" vertex="1">
+          <mxGeometry height="80" width="1040" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="navigators" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;" value="app/navigators/&#xa;AppNavigator&#xa;- CombinedStack&#xa;- AuthStack (Onboarding, SignIn, SignUp, Reset, OTP)&#xa;- MainStack (Home, Bookings, Cars, Profile)&#xa;- StaffStack (Staff Dashboard, Pickup/Return)" vertex="1">
+          <mxGeometry height="90" width="1040" x="20" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="screens-container" parent="presentation-layer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=center;verticalAlign=top;fontStyle=1;fontSize=12;" value="app/screens/" vertex="1">
+          <mxGeometry height="180" width="1040" x="20" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-auth" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="onboarding/&#xa;singin/&#xa;signup/&#xa;otp/&#xa;reset/&#xa;verify/" vertex="1">
+          <mxGeometry height="130" width="150" x="40" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-home" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="home/&#xa;- HomeScreen" vertex="1">
+          <mxGeometry height="60" width="150" x="210" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-cars" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="cars/&#xa;- CarList&#xa;- CarDetail&#xa;- CarMap&#xa;- CarMapRoute" vertex="1">
+          <mxGeometry height="90" width="150" x="380" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-bookings" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="bookings/&#xa;- BookingsList&#xa;- BookingForm&#xa;- BookingDetail&#xa;- Payment" vertex="1">
+          <mxGeometry height="90" width="150" x="550" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-profile" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="profile/&#xa;- ProfileScreen" vertex="1">
+          <mxGeometry height="60" width="150" x="720" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-staff" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="staff/&#xa;- StaffScreen&#xa;- PickupReturn&#xa;- VehicleReturn" vertex="1">
+          <mxGeometry height="70" width="150" x="210" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-feedback" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="feedback/&#xa;- FeedbackForm&#xa;- FeedbackList" vertex="1">
+          <mxGeometry height="60" width="150" x="380" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="screen-payments" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="payments/&#xa;- PaymentHistory&#xa;- PayOSWebView" vertex="1">
+          <mxGeometry height="60" width="150" x="550" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="components" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=center;" value="app/components/&#xa;bottomSheet, button, checkbox, countrypicker, date, Header, input, Map, Noti, otp, tabSwitcher" vertex="1">
+          <mxGeometry height="50" width="680" x="20" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="theme" parent="presentation-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=center;" value="app/theme/&#xa;colors, font-size, scale, typography" vertex="1">
+          <mxGeometry height="50" width="340" x="720" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="business-layer" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" value="BUSINESS LOGIC LAYER" vertex="1">
+          <mxGeometry height="180" width="1080" x="40" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="context-providers" parent="business-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;" value="Context Providers&#xa;- auth-context.tsx (Authentication &amp; User State)&#xa;- language-context.tsx (Internationalization)&#xa;- favorites-context.tsx (Favorites Management)" vertex="1">
+          <mxGeometry height="80" width="500" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="hooks" parent="business-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=center;" value="lib/hooks/&#xa;Custom React Hooks" vertex="1">
+          <mxGeometry height="50" width="240" x="540" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="translations" parent="business-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=center;" value="lib/translations/&#xa;Multi-language Support" vertex="1">
+          <mxGeometry height="50" width="260" x="800" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="utils" parent="business-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=center;" value="lib/utils/&#xa;Utility Functions &amp; Helpers" vertex="1">
+          <mxGeometry height="40" width="1040" x="20" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="data-layer" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="DATA ACCESS LAYER (API)" vertex="1">
+          <mxGeometry height="380" width="1080" x="40" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="api-core" parent="data-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;" value="Core API Infrastructure&#xa;- client.ts (HTTP Client)&#xa;- config.ts (API Config)&#xa;- supabase.config.ts (Backend)&#xa;- diagnostics.ts (Monitoring)" vertex="1">
+          <mxGeometry height="80" width="1040" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="services-container" parent="data-layer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=center;verticalAlign=top;fontStyle=1;fontSize=12;" value="lib/api/services/" vertex="1">
+          <mxGeometry height="240" width="1040" x="20" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="service-auth" parent="data-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;" value="Authentication&#xa;- auth.service.ts&#xa;  * Login, Register&#xa;  * Google OAuth&#xa;  * Token Mgmt&#xa;- user.service.ts&#xa;  * User Profile CRUD" vertex="1">
+          <mxGeometry height="120" width="200" x="40" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="service-business" parent="data-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;" value="Core Business&#xa;- cars.service.ts&#xa;  * Listings, Search&#xa;- bookings.service.ts&#xa;  * Booking CRUD&#xa;- booking-flow.helper.ts&#xa;  * Workflow&#xa;- reviews.service.ts&#xa;  * Feedback" vertex="1">
+          <mxGeometry height="120" width="200" x="260" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="service-payment" parent="data-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;" value="Payment &amp; Financial&#xa;- payment.service.ts&#xa;  * PayOS Integration&#xa;  * Refunds&#xa;- invoice.service.ts&#xa;  * Invoice Mgmt&#xa;- payment-status-checker.ts&#xa;  * Status Validation" vertex="1">
+          <mxGeometry height="120" width="200" x="480" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="service-ops" parent="data-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;" value="Operational&#xa;- confirmations.service.ts&#xa;  * Pickup/Return&#xa;- schedule.service.ts&#xa;  * Scheduling&#xa;- notification.service.ts&#xa;  * Push Notifications" vertex="1">
+          <mxGeometry height="70" width="200" x="40" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="service-infra" parent="data-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;spacingLeft=5;spacingTop=5;" value="Infrastructure&#xa;- location.service.ts (Maps, Geo)&#xa;- parklot.service.ts (Parking)&#xa;- storage.service.ts (File Upload)" vertex="1">
+          <mxGeometry height="70" width="200" x="260" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="external-layer" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" value="EXTERNAL DEPENDENCIES" vertex="1">
+          <mxGeometry height="570" width="1080" x="40" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-react" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="React Native&#xa;Core Framework" vertex="1">
+          <mxGeometry height="60" width="1080" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-expo" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Expo SDK&#xa;Platform APIs" vertex="1">
+          <mxGeometry height="60" width="1080" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-navigation" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="React Navigation&#xa;Routing" vertex="1">
+          <mxGeometry height="60" width="1080" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-google" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Google Services&#xa;OAuth, Sign-In" vertex="1">
+          <mxGeometry height="60" width="1080" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-maps" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Maps &amp; Location&#xa;Google Maps, Geo" vertex="1">
+          <mxGeometry height="60" width="1080" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-payment" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Payment Gateway&#xa;PayOS" vertex="1">
+          <mxGeometry height="60" width="1080" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-supabase" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Backend&#xa;Supabase REST API" vertex="1">
+          <mxGeometry height="60" width="1080" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-storage" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Storage&#xa;AsyncStorage, FileSystem" vertex="1">
+          <mxGeometry height="60" width="1080" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-ui" parent="external-layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="UI Libraries&#xa;Vector Icons, Reanimated" vertex="1">
+          <mxGeometry height="60" width="1080" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1" edge="1" parent="1" source="presentation-layer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#dae8fc;strokeColor=#6c8ebf;" target="business-layer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2" edge="1" parent="1" source="business-layer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#f8cecc;strokeColor=#b85450;" target="data-layer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3" edge="1" parent="1" source="data-layer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" target="external-layer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" value="LEGEND" vertex="1">
+          <mxGeometry height="180" width="1080" x="40" y="1430" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-content" parent="legend" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=11;" value="🔐 Authentication: Email/Password, Google OAuth, OTP, Password Reset, Role-based Access&#xa;🚗 Car Management: Listings, Details, Map View, Favorites&#xa;📅 Booking: Creation, Management, Status Tracking, History&#xa;💳 Payment: PayOS Integration, Invoices, Payment History, Refunds&#xa;👤 Profile: User Management, Settings, Language Selection&#xa;⭐ Feedback: Ratings, Reviews, Feedback Submission&#xa;👔 Staff: Dashboard, Pickup/Return Confirmation, Photo Documentation&#xa;🌍 Location: Map Integration, Route Planning, Parking Lots&#xa;🔔 Notifications: Push Notifications, Booking Alerts" vertex="1">
+          <mxGeometry height="150" width="1080" y="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

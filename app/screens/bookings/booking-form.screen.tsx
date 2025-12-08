@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,13 +18,13 @@ import {
   locationService,
   type Car,
 } from '../../../lib/api';
-import {useNavigation} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../navigators/navigation-route';
-import {colors} from '../../theme/colors';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
+import { colors } from '../../theme/colors';
 import getAsset from '../../../lib/getAsset';
 import Header from '../../components/Header/Header';
-import {useAuth} from '../../../lib/auth-context';
+import { useAuth } from '../../../lib/auth-context';
 
 import RentalSummaryCard from './components/RentalSummaryCard';
 import BillingInfoStep from './components/BillingInfoStep';
@@ -32,19 +32,20 @@ import RentalInfoStep from './components/RentalInfoStep';
 import PaymentMethodStep from './components/PaymentMethodStep';
 import ConfirmationStep from './components/ConfirmationStep';
 
-import {useBookingForm} from './hooks/useBookingForm';
-import {useBookingValidation} from './hooks/useBookingValidation';
-import {useLanguage} from '../../../lib/language-context';
+import { useBookingForm } from './hooks/useBookingForm';
+import { useBookingValidation } from './hooks/useBookingValidation';
+import { useLanguage } from '../../../lib/language-context';
 
-export default function BookingFormScreen({route}: any) {
+export default function BookingFormScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-  const {user} = useAuth();
-  const {t} = useLanguage();
+  const { user } = useAuth();
+  const { t } = useLanguage();
   const carId = route?.params?.id;
   const [car, setCar] = useState<Car | null>(null);
   const [carLoading, setCarLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [customAddressInitialized, setCustomAddressInitialized] = useState(false);
 
   const formState = useBookingForm();
   const validation = useBookingValidation();
@@ -56,12 +57,77 @@ export default function BookingFormScreen({route}: any) {
       formState.setDropoffLocation(route.params.dropoffLocation);
   }, [route?.params]);
 
+  // Pre-fill custom pickup address with billing address when switching to custom mode
+  useEffect(() => {
+    if (
+      formState.pickupMode === 'custom' &&
+      !customAddressInitialized &&
+      formState.address
+    ) {
+      formState.setPickupLocation(formState.address);
+      formState.setDropoffLocation(formState.address);
+      setCustomAddressInitialized(true);
+    }
+  }, [formState.pickupMode, customAddressInitialized, formState.address]);
+
+  // Sync drop-off location with pickup location whenever pickup changes
+  useEffect(() => {
+    if (formState.pickupLocation) {
+      formState.setDropoffLocation(formState.pickupLocation);
+    }
+  }, [formState.pickupLocation]);
+
+  // Calculate distance and shipping fee when in custom mode
+  useEffect(() => {
+    const calculateShippingDistance = async () => {
+      if (
+        formState.pickupMode === 'custom' &&
+        formState.pickupLocation &&
+        formState.pickupLocation.trim().length > 5
+      ) {
+        try {
+          // Calculate distance from ThuDucLot (default park lot) to custom address
+          const thuDucLotAddress = 'An Tư Công Chúa, Phường Linh Xuân, Thành phố Hồ Chí Minh';
+
+          console.log('Calculating shipping distance from ThuDucLot to:', formState.pickupLocation);
+
+          const result = await locationService.getDistanceBetweenAddresses(
+            thuDucLotAddress,
+            formState.pickupLocation,
+          );
+
+          if (result.data && result.data.distanceInMeters) {
+            const distanceInKm = result.data.distanceInMeters / 1000;
+            console.log('✅ Shipping distance calculated:', distanceInKm, 'km');
+            formState.setDistanceInKm(distanceInKm);
+          } else {
+            console.log('❌ Could not calculate shipping distance');
+            formState.setDistanceInKm(null);
+          }
+        } catch (error) {
+          console.error('❌ Error calculating shipping distance:', error);
+          formState.setDistanceInKm(null);
+        }
+      } else if (formState.pickupMode === 'parklot') {
+        // No shipping fee for park lot mode
+        formState.setDistanceInKm(null);
+      }
+    };
+
+    // Debounce the calculation to avoid too many API calls
+    const timer = setTimeout(() => {
+      calculateShippingDistance();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [formState.pickupMode, formState.pickupLocation]);
+
   useEffect(() => {
     const fetchData = async () => {
       if (!carId) return;
       setCarLoading(true);
 
-      const {data} = await carsService.getCarById(carId);
+      const { data } = await carsService.getCarById(carId);
       if (data) setCar(data);
 
       if (user?.id) {
@@ -95,8 +161,34 @@ export default function BookingFormScreen({route}: any) {
     fetchData();
   }, [carId, user?.id]);
 
-  const subtotal = car ? car.price * 1 : 0;
-  const tax = 0;
+  // Calculate rental days based on pickup and drop-off dates/times
+  const calculateRentalDays = (): number => {
+    if (!formState.pickupDate || !formState.pickupTime || !formState.dropoffDate || !formState.dropoffTime) {
+      return 1; // Default to 1 day if dates not set
+    }
+
+    try {
+      const pickupDateTime = new Date(`${formState.pickupDate}T${formState.pickupTime}:00`);
+      const dropoffDateTime = new Date(`${formState.dropoffDate}T${formState.dropoffTime}:00`);
+
+      if (isNaN(pickupDateTime.getTime()) || isNaN(dropoffDateTime.getTime())) {
+        return 1;
+      }
+
+      const durationMs = dropoffDateTime.getTime() - pickupDateTime.getTime();
+      const durationDays = durationMs / (1000 * 60 * 60 * 24);
+
+      // Round up to nearest day (minimum 1 day)
+      return Math.max(1, Math.ceil(durationDays));
+    } catch (error) {
+      console.error('Error calculating rental days:', error);
+      return 1;
+    }
+  };
+
+  const rentalDays = calculateRentalDays();
+  const pricePerDay = car ? car.price : 0;
+  const subtotal = pricePerDay * rentalDays;
 
   const shippingFee =
     formState.pickupMode === 'custom' && formState.distanceInKm
@@ -105,7 +197,7 @@ export default function BookingFormScreen({route}: any) {
 
   const bookingFee = Math.round(subtotal * 0.15) + shippingFee;
 
-  const total = subtotal + tax + shippingFee - formState.discount;
+  const total = subtotal + shippingFee - formState.discount;
 
   const handleCalculateDistance = async (parkLotAddress: string) => {
     console.log('handleCalculateDistance called', {
@@ -279,7 +371,7 @@ export default function BookingFormScreen({route}: any) {
 
       if (res.error && res.error.message.includes('Server error')) {
         console.log('First attempt failed, trying without bookingFee...');
-        const {bookingFee, ...bookingDataWithoutFee} = bookingData;
+        const { bookingFee, ...bookingDataWithoutFee } = bookingData;
         res = await bookingsService.createBooking(bookingDataWithoutFee as any);
       }
 
@@ -289,10 +381,10 @@ export default function BookingFormScreen({route}: any) {
         Alert.alert(
           t('error') || 'Error',
           errorMessage +
-            '\n\nPlease check your booking details and try again.\n\nIf the problem persists, please contact support with this information:\n- Car ID: ' +
-            carId +
-            '\n- User ID: ' +
-            user.id,
+          '\n\nPlease check your booking details and try again.\n\nIf the problem persists, please contact support with this information:\n- Car ID: ' +
+          carId +
+          '\n- User ID: ' +
+          user.id,
         );
         return;
       }
@@ -333,9 +425,9 @@ export default function BookingFormScreen({route}: any) {
 
   if (carLoading) {
     return (
-      <View style={{flex: 1, backgroundColor: colors.background}}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Header />
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
@@ -344,9 +436,9 @@ export default function BookingFormScreen({route}: any) {
 
   if (!car) {
     return (
-      <View style={{flex: 1, backgroundColor: colors.background}}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Header />
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Text>{t('carNotFound')}</Text>
         </View>
       </View>
@@ -355,11 +447,11 @@ export default function BookingFormScreen({route}: any) {
 
   const getCarImageSource = () => {
     if (car.imageUrls && car.imageUrls.length > 0)
-      return {uri: car.imageUrls[0]};
-    if (car.images && car.images.length > 0) return {uri: car.images[0]};
+      return { uri: car.imageUrls[0] };
+    if (car.images && car.images.length > 0) return { uri: car.images[0] };
     if (car.image) {
       if (car.image.startsWith('http://') || car.image.startsWith('https://'))
-        return {uri: car.image};
+        return { uri: car.image };
       const localAsset = getAsset(car.image);
       if (localAsset) return localAsset;
     }
@@ -370,30 +462,29 @@ export default function BookingFormScreen({route}: any) {
 
   return (
     <KeyboardAvoidingView
-      style={{flex: 1, backgroundColor: colors.background}}
+      style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
-      <View style={{flex: 1, backgroundColor: colors.background}}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Header />
         <ScrollView
-          contentContainerStyle={{paddingBottom: 24}}
+          contentContainerStyle={{ paddingBottom: 24 }}
           keyboardShouldPersistTaps="handled">
           <RentalSummaryCard
             car={car}
             carImageSource={carImageSource}
             subtotal={subtotal}
-            tax={tax}
             shippingFee={shippingFee}
             bookingFee={bookingFee}
             discount={formState.discount}
             total={total}
-            promoCode={formState.promoCode}
-            onPromoCodeChange={formState.setPromoCode}
-            onApplyPromo={() => formState.handleApplyPromo(subtotal)}
+            distanceInKm={formState.distanceInKm}
+            rentalDays={rentalDays}
+            pricePerDay={pricePerDay}
           />
 
-          <View style={{paddingHorizontal: 16, marginBottom: 16}}>
-            <Text style={{fontSize: 12, color: colors.placeholder}}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <Text style={{ fontSize: 12, color: colors.placeholder }}>
               {t('step')} {currentStep} {t('of')} 4
             </Text>
           </View>
@@ -472,7 +563,7 @@ export default function BookingFormScreen({route}: any) {
                   borderRadius: 8,
                   alignItems: 'center',
                 }}>
-                <Text style={{color: colors.morentBlue, fontWeight: '600'}}>
+                <Text style={{ color: colors.morentBlue, fontWeight: '600' }}>
                   {t('back')}
                 </Text>
               </Pressable>
@@ -490,7 +581,7 @@ export default function BookingFormScreen({route}: any) {
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={{color: colors.white, fontWeight: '600'}}>
+                <Text style={{ color: colors.white, fontWeight: '600' }}>
                   {currentStep === 4 ? t('rentalNow') : t('next')}
                 </Text>
               )}

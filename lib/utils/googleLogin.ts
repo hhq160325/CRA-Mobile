@@ -1,244 +1,244 @@
-import * as WebBrowser from "expo-web-browser"
+import * as Google from 'expo-auth-session/providers/google'
+import * as WebBrowser from 'expo-web-browser'
+import { makeRedirectUri } from 'expo-auth-session'
 import { API_CONFIG, API_ENDPOINTS } from "../api/config"
 
+// Complete auth session for web
 WebBrowser.maybeCompleteAuthSession()
 
-
-let pollingInterval: NodeJS.Timeout | null = null
-
-function startTokenPolling(onTokenFound: (user: any) => void): void {
-    console.log("🔄 Starting token polling...")
-
-    pollingInterval = setInterval(() => {
-        try {
-            if (typeof localStorage !== "undefined" && localStorage?.getItem) {
-                const token = localStorage.getItem("token")
-                const userStr = localStorage.getItem("user")
-
-                if (token && userStr) {
-                    console.log("✅ Token found via polling!")
-                    stopTokenPolling()
-
-                    const user = JSON.parse(userStr)
-                    onTokenFound(user)
-                }
-            }
-        } catch (e) {
-            console.error("Polling error:", e)
-        }
-    }, 1000)
+// Google OAuth Client IDs - Get these from Google Cloud Console
+// Create OAuth 2.0 credentials for each platform
+export const GOOGLE_CONFIG = {
+    // Web Client ID (required) - Create "Web application" type in Google Cloud Console
+    webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+    // Android Client ID - Create "Android" type with your package name and SHA-1
+    androidClientId: "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
+    // iOS Client ID - Create "iOS" type with your bundle ID
+    iosClientId: "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
 }
 
-function stopTokenPolling(): void {
-    if (pollingInterval) {
-        clearInterval(pollingInterval)
-        pollingInterval = null
-        console.log("⏹️ Stopped token polling")
+// Create redirect URI for Expo
+export const getRedirectUri = () => {
+    return makeRedirectUri({
+        scheme: 'carapp',
+        path: 'auth/callback',
+    })
+}
+
+// Log redirect URI for debugging
+console.log("Google OAuth Redirect URI:", getRedirectUri())
+
+// Hook for Google Auth - use this in components
+export function useGoogleAuth() {
+    const redirectUri = getRedirectUri()
+
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        webClientId: GOOGLE_CONFIG.webClientId,
+        androidClientId: GOOGLE_CONFIG.androidClientId,
+        iosClientId: GOOGLE_CONFIG.iosClientId,
+        scopes: ['profile', 'email'],
+        redirectUri,
+    })
+
+    return { request, response, promptAsync, redirectUri }
+}
+
+// Process Google auth response
+export async function processGoogleAuthResponse(
+    response: any
+): Promise<{ success: boolean; error?: string; user?: any }> {
+    try {
+        if (response?.type === 'success') {
+            const { authentication } = response
+
+            if (!authentication?.accessToken) {
+                return { success: false, error: "No access token received" }
+            }
+
+            console.log("✅ Got Google access token")
+
+            // Get user info from Google
+            const userInfo = await fetchGoogleUserInfo(authentication.accessToken)
+
+            if (!userInfo) {
+                return { success: false, error: "Failed to get user info" }
+            }
+
+            console.log("✅ Got Google user info:", userInfo.email)
+
+            // Try to exchange with backend, or use Google data directly
+            const result = await exchangeWithBackend(authentication, userInfo)
+            return result
+
+        } else if (response?.type === 'cancel') {
+            return { success: false, error: "Login cancelled" }
+        } else if (response?.type === 'error') {
+            return { success: false, error: response.error?.message || "Authentication error" }
+        }
+
+        return { success: false, error: "Authentication failed" }
+
+    } catch (error: any) {
+        console.error("❌ Process auth response error:", error)
+        return { success: false, error: error.message }
     }
 }
 
-export async function performGoogleLogin(): Promise<{ success: boolean; error?: string; user?: any }> {
+// Fetch user info from Google API
+async function fetchGoogleUserInfo(accessToken: string): Promise<any | null> {
     try {
-        console.log("=== Starting Google Login ===")
-
-
-        const googleLoginUrl = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`
-        console.log("Opening URL:", googleLoginUrl)
-
-
-        let tokenFoundViaPolling = false
-        let pollingUser: any = null
-
-        startTokenPolling((user) => {
-            tokenFoundViaPolling = true
-            pollingUser = user
-            console.log("✅ Token detected via polling, dismissing browser...")
-            WebBrowser.dismissBrowser()
+        const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+            headers: { Authorization: `Bearer ${accessToken}` },
         })
 
-
-        const result = await WebBrowser.openAuthSessionAsync(
-            googleLoginUrl,
-            "carapp://auth/callback"
-        )
-
-
-        stopTokenPolling()
-
-        console.log("Browser result type:", result.type)
-        console.log("Browser result:", JSON.stringify(result, null, 2))
-
-
-        if (tokenFoundViaPolling && pollingUser) {
-            console.log("✅ Login successful via polling")
-            return { success: true, user: pollingUser }
+        if (!response.ok) {
+            console.error("Failed to fetch Google user info:", response.status)
+            return null
         }
 
-        if (result.type === "success" && result.url) {
-            console.log("✅ Authentication successful")
-            console.log("Callback URL:", result.url)
-            console.log("Full result object:", result)
+        const userInfo = await response.json()
+        return userInfo
 
+    } catch (error) {
+        console.error("Error fetching Google user info:", error)
+        return null
+    }
+}
 
-            const url = new URL(result.url)
-            const params = url.searchParams
+// Exchange Google token with backend
+async function exchangeWithBackend(
+    authentication: { accessToken: string; idToken?: string | null },
+    googleUser: { id: string; email: string; name: string; picture?: string }
+): Promise<{ success: boolean; error?: string; user?: any }> {
+    try {
+        // Try to authenticate with backend using Google token
+        const token = authentication.idToken || authentication.accessToken
 
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/json",
+            },
+        })
 
-            let jwtToken = params.get("jwtToken") || params.get("token")
-            let username = params.get("username")
-            let email = params.get("email")
-            let refreshToken = params.get("refreshToken")
+        console.log("Backend response status:", response.status)
 
+        if (response.ok) {
+            const data = await response.json()
+            console.log("Backend response:", data)
 
-            if (!jwtToken && url.hash) {
-                const hashParams = new URLSearchParams(url.hash.substring(1))
-                jwtToken = hashParams.get("jwtToken") || hashParams.get("token")
-                username = hashParams.get("username")
-                email = hashParams.get("email")
-                refreshToken = hashParams.get("refreshToken")
-            }
-
-            console.log("Parsed data:", {
-                hasToken: !!jwtToken,
-                username,
-                email,
-                refreshToken,
-            })
-
+            const jwtToken = data.jwtToken || data.token
             if (jwtToken) {
-                console.log("✅ Got JWT token from callback")
-
-
-                const tokenParts = jwtToken.split('.')
-                let decodedToken: any = {}
-
-                if (tokenParts.length === 3) {
-                    try {
-                        const payload = tokenParts[1]
-                        const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-                        const jsonPayload = decodeURIComponent(
-                            atob(base64)
-                                .split('')
-                                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                                .join('')
-                        )
-                        decodedToken = JSON.parse(jsonPayload)
-                        console.log("Decoded JWT:", decodedToken)
-                    } catch (e) {
-                        console.error("Failed to decode JWT:", e)
-                    }
-                }
-
-
-                let role: "customer" | "staff" | "car-owner" = "customer"
-                const roleFromToken = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
-                const roleId = decodedToken.roleId || decodedToken.RoleId
-
-                if (roleId === 1002 || roleId === "1002") {
-                    role = "staff"
-                } else if (roleFromToken === "2" || roleFromToken === 2) {
-                    role = "staff"
-                } else if (decodedToken.IsCarOwner === "True" || decodedToken.IsCarOwner === true) {
-                    role = "car-owner"
-                }
-
-
-                try {
-                    if (typeof localStorage !== "undefined" && localStorage?.setItem) {
-                        localStorage.setItem("token", jwtToken)
-
-                        if (refreshToken && refreshToken !== "null") {
-                            localStorage.setItem("refreshToken", refreshToken)
-                        }
-
-
-                        const user = {
-                            id: decodedToken.sub || "",
-                            name: username || decodedToken.name || "",
-                            email: email || decodedToken.email || "",
-                            role: role,
-                            roleId: parseInt(roleFromToken) || 1,
-                            createdAt: new Date().toISOString(),
-                            isGoogle: true,
-                        }
-
-                        localStorage.setItem("user", JSON.stringify(user))
-                        console.log("✅ Saved user data to localStorage:", user)
-                        console.log("✅ User logged in with email:", user.email)
-                        console.log("✅ User role:", user.role)
-
-                        return { success: true, user }
-                    }
-                } catch (e) {
-                    console.error("Failed to save to localStorage:", e)
-
-                    const user = {
-                        id: decodedToken.sub || "",
-                        name: username || decodedToken.name || "",
-                        email: email || decodedToken.email || "",
-                        role: role,
-                        roleId: parseInt(roleFromToken) || 1,
-                        createdAt: new Date().toISOString(),
-                        isGoogle: true,
-                    }
-                    return { success: true, user }
-                }
-
-
-                const user = {
-                    id: decodedToken.sub || "",
-                    name: username || decodedToken.name || "",
-                    email: email || decodedToken.email || "",
-                    role: role,
-                    roleId: parseInt(roleFromToken) || 1,
-                    createdAt: new Date().toISOString(),
-                    isGoogle: true,
-                }
+                const user = processBackendResponse(jwtToken, data, googleUser)
                 return { success: true, user }
-            } else {
-                console.error("❌ No JWT token in callback URL")
-                console.log("Full URL:", result.url)
-                return { success: false, error: "No authentication token received" }
             }
-
-        } else if (result.type === "cancel") {
-            console.log("⚠️ User cancelled Google login")
-            return { success: false, error: "Login cancelled" }
-        } else if (result.type === "dismiss") {
-            console.log("⚠️ Browser dismissed")
-
-
-            if (tokenFoundViaPolling && pollingUser) {
-                console.log("✅ Login successful (dismissed after token found)")
-                return { success: true, user: pollingUser }
-            }
-
-
-            try {
-                if (typeof localStorage !== "undefined" && localStorage?.getItem) {
-                    const token = localStorage.getItem("token")
-                    const userStr = localStorage.getItem("user")
-
-                    if (token && userStr) {
-                        console.log("✅ Found token in localStorage after dismiss")
-                        const user = JSON.parse(userStr)
-                        return { success: true, user }
-                    }
-                }
-            } catch (e) {
-                console.error("Error checking localStorage:", e)
-            }
-
-            return { success: false, error: "Login cancelled or incomplete" }
-        } else {
-            console.log("❌ Authentication failed:", result.type)
-            return { success: false, error: "Authentication failed" }
         }
+
+        // Backend didn't return JWT - use Google data directly
+        console.log("Using Google user data directly")
+        return createUserFromGoogle(googleUser, authentication.accessToken)
+
     } catch (error: any) {
-        console.error("❌ Google login error:", error)
-        return {
-            success: false,
-            error: error.message || "An error occurred during Google login",
+        console.error("Backend exchange error:", error)
+        // Fallback to Google data
+        return createUserFromGoogle(googleUser, authentication.accessToken)
+    }
+}
+
+// Process backend JWT response
+function processBackendResponse(
+    jwtToken: string,
+    backendData: any,
+    googleUser: { id: string; email: string; name: string; picture?: string }
+): any {
+    let decodedToken: any = {}
+
+    try {
+        const tokenParts = jwtToken.split('.')
+        if (tokenParts.length === 3) {
+            const payload = tokenParts[1]
+            const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            )
+            decodedToken = JSON.parse(jsonPayload)
         }
+    } catch (e) {
+        console.error("Failed to decode JWT:", e)
+    }
+
+    // Determine role
+    let role: "customer" | "staff" | "car-owner" = "customer"
+    const roleFromToken = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
+
+    if (roleFromToken === "1002" || decodedToken.roleId === 1002) {
+        role = "staff"
+    } else if (decodedToken.IsCarOwner === "True") {
+        role = "car-owner"
+    }
+
+    const user = {
+        id: decodedToken.sub || backendData.userId || googleUser.id,
+        name: backendData.username || decodedToken.name || googleUser.name,
+        email: backendData.email || decodedToken.email || googleUser.email,
+        avatar: googleUser.picture,
+        role,
+        roleId: parseInt(roleFromToken) || 1,
+        createdAt: new Date().toISOString(),
+        isGoogle: true,
+    }
+
+    saveAuthData(jwtToken, user, backendData.refreshToken)
+    return user
+}
+
+// Create user from Google data
+function createUserFromGoogle(
+    googleUser: { id: string; email: string; name: string; picture?: string },
+    accessToken: string
+): { success: boolean; user: any } {
+    const user = {
+        id: googleUser.id,
+        name: googleUser.name,
+        email: googleUser.email,
+        avatar: googleUser.picture,
+        role: "customer" as const,
+        roleId: 1,
+        createdAt: new Date().toISOString(),
+        isGoogle: true,
+    }
+
+    saveAuthData(accessToken, user)
+    console.log("✅ User created from Google:", user.email)
+    return { success: true, user }
+}
+
+// Save auth data
+function saveAuthData(token: string, user: any, refreshToken?: string) {
+    try {
+        if (typeof localStorage !== "undefined" && localStorage?.setItem) {
+            localStorage.setItem("token", token)
+            localStorage.setItem("user", JSON.stringify(user))
+            if (refreshToken) {
+                localStorage.setItem("refreshToken", refreshToken)
+            }
+            console.log("✅ Auth data saved")
+        }
+    } catch (e) {
+        console.error("Failed to save auth data:", e)
+    }
+}
+
+// Legacy function for compatibility - now returns instruction
+export async function performGoogleLogin(): Promise<{ success: boolean; error?: string; user?: any }> {
+    // This function is now just a placeholder
+    // The actual login is done via useGoogleAuth hook + promptAsync
+    return {
+        success: false,
+        error: "Use useGoogleAuth hook with promptAsync instead"
     }
 }

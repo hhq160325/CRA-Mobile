@@ -1,5 +1,5 @@
-import {Alert} from 'react-native';
-import {locationService} from '../../../../lib/api';
+import { Alert } from 'react-native';
+import { locationService } from '../../../../lib/api';
 
 export function useBookingValidation() {
   const validateDateTime = (
@@ -123,29 +123,29 @@ export function useBookingValidation() {
   }> => {
     if (!pickupLocation.trim()) {
       Alert.alert('Error', 'Please enter pick-up location');
-      return {valid: false};
+      return { valid: false };
     }
     if (!pickupDate.trim() || !pickupTime.trim()) {
       Alert.alert('Error', 'Please enter pick-up date and time');
-      return {valid: false};
+      return { valid: false };
     }
     if (!dropoffLocation.trim()) {
       Alert.alert('Error', 'Please enter drop-off location');
-      return {valid: false};
+      return { valid: false };
     }
     if (!dropoffDate.trim() || !dropoffTime.trim()) {
       Alert.alert('Error', 'Please enter drop-off date and time');
-      return {valid: false};
+      return { valid: false };
     }
 
     if (pickupMode === 'custom') {
       const isValid = await validateAddress(pickupLocation, 'Pick-up');
-      if (!isValid) return {valid: false};
+      if (!isValid) return { valid: false };
     }
 
     if (dropoffMode === 'custom') {
       const isValid = await validateAddress(dropoffLocation, 'Drop-off');
-      if (!isValid) return {valid: false};
+      if (!isValid) return { valid: false };
     }
 
     if (
@@ -174,19 +174,29 @@ export function useBookingValidation() {
     }
 
     const pickupDateTime = validateDateTime(pickupDate, pickupTime, 'Pick-up');
-    if (!pickupDateTime) return {valid: false};
+    if (!pickupDateTime) return { valid: false };
 
     const dropoffDateTime = validateDateTime(
       dropoffDate,
       dropoffTime,
       'Drop-off',
     );
-    if (!dropoffDateTime) return {valid: false};
+    if (!dropoffDateTime) return { valid: false };
 
     const now = new Date();
     if (pickupDateTime < now) {
       Alert.alert('Error', 'Pick-up date and time cannot be in the past');
-      return {valid: false};
+      return { valid: false };
+    }
+
+    // Validate that pickup is within 10 days from now
+    const maxPickupDate = new Date();
+    maxPickupDate.setDate(maxPickupDate.getDate() + 10);
+    maxPickupDate.setHours(23, 59, 59, 999);
+
+    if (pickupDateTime > maxPickupDate) {
+      Alert.alert('Error', 'Pick-up date must be within 10 days from today');
+      return { valid: false };
     }
 
     if (dropoffDateTime <= pickupDateTime) {
@@ -194,17 +204,17 @@ export function useBookingValidation() {
         'Error',
         'Drop-off date and time must be after pick-up date and time',
       );
-      return {valid: false};
+      return { valid: false };
     }
 
     const durationHours =
       (dropoffDateTime.getTime() - pickupDateTime.getTime()) / (1000 * 60 * 60);
     if (durationHours < 1) {
       Alert.alert('Error', 'Minimum rental duration is 1 hour');
-      return {valid: false};
+      return { valid: false };
     }
 
-    return {valid: true, pickupDateTime, dropoffDateTime};
+    return { valid: true, pickupDateTime, dropoffDateTime };
   };
 
   const validateStep3 = (paymentMethod: string): boolean => {

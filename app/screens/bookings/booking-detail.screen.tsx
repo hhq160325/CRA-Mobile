@@ -20,7 +20,7 @@ export default function BookingDetailScreen() {
   const route = useRoute<RouteProp<{ params: { id: string } }, 'params'>>();
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const { id } = (route.params as any) || {};
-  const { booking, invoice, payments, loading } = useBookingDetail(id, navigation);
+  const { booking, invoice, payments, bookingFee, loading } = useBookingDetail(id, navigation);
 
   if (loading) {
     return (
@@ -91,7 +91,7 @@ export default function BookingDetailScreen() {
           totalPrice={booking.totalPrice}
           bookingDate={booking.bookingDate}
           payments={payments}
-          bookingFee={booking.bookingFee}
+          bookingFee={bookingFee}
         />
 
         {booking.status?.toLowerCase() === 'completed' && (

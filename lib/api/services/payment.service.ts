@@ -531,66 +531,55 @@ export const paymentService = {
     async getBookingPayments(bookingId: string): Promise<{ data: any[] | null; error: Error | null }> {
         console.log("paymentService.getBookingPayments: fetching payments for booking", bookingId)
 
-        // Try with /api prefix first
-        let result = await apiClient<any[]>(API_ENDPOINTS.GET_BOOKING_PAYMENTS(bookingId), {
-            method: "GET",
-        })
+        // Try direct fetch without /api prefix (matching your curl command)
+        const baseUrl = API_CONFIG.BASE_URL.replace('/api', '')
+        const fullUrl = `${baseUrl}/Booking/${bookingId}/Payments`
 
-        console.log("paymentService.getBookingPayments: first attempt result", {
-            hasError: !!result.error,
-            errorMessage: result.error?.message,
-            dataLength: Array.isArray(result.data) ? result.data.length : 0
-        })
+        console.log("paymentService.getBookingPayments: calling URL", fullUrl)
 
-        // If failed with 404, try without /api prefix
-        if (result.error && result.error.message.includes('404')) {
-            console.log("paymentService.getBookingPayments: trying without /api prefix")
-            const baseUrl = API_CONFIG.BASE_URL.replace('/api', '')
-            const fullUrl = `${baseUrl}/Booking/${bookingId}/Payments`
-
+        try {
+            let token: string | null = null
             try {
-                let token: string | null = null
-                try {
-                    if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                        token = localStorage.getItem("token")
-                    }
-                } catch (e) {
-                    console.error("Failed to get token:", e)
+                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+                    token = localStorage.getItem("token")
                 }
-
-                const response = await fetch(fullUrl, {
-                    method: "GET",
-                    headers: {
-                        'Authorization': token ? `Bearer ${token}` : '',
-                        'Content-Type': 'application/json',
-                    },
-                })
-
-                console.log("paymentService.getBookingPayments: direct fetch status", response.status)
-
-                if (!response.ok) {
-                    const errorText = await response.text()
-                    console.error("paymentService.getBookingPayments: error", errorText)
-                    return { data: null, error: new Error(`Failed to fetch payments: ${response.status}`) }
-                }
-
-                const data = await response.json()
-                console.log("paymentService.getBookingPayments: success with direct fetch", {
-                    dataLength: Array.isArray(data) ? data.length : 0,
-                    payments: data
-                })
-                return { data, error: null }
-            } catch (error: any) {
-                console.error("paymentService.getBookingPayments: exception", error)
-                return { data: null, error: new Error(error?.message || "Failed to fetch payments") }
+            } catch (e) {
+                console.error("Failed to get token:", e)
             }
-        }
 
-        console.log("paymentService.getBookingPayments: final result", {
-            hasError: !!result.error,
-            dataLength: Array.isArray(result.data) ? result.data.length : 0,
-            payments: result.data
-        })
-        return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
+            const headers: Record<string, string> = {
+                'accept': '*/*',
+                'Content-Type': 'application/json',
+            }
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`
+            }
+
+            console.log("paymentService.getBookingPayments: headers", { hasAuth: !!token })
+
+            const response = await fetch(fullUrl, {
+                method: "GET",
+                headers,
+            })
+
+            console.log("paymentService.getBookingPayments: response status", response.status)
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("paymentService.getBookingPayments: error response", errorText)
+                return { data: null, error: new Error(`Failed to fetch payments: ${response.status}`) }
+            }
+
+            const data = await response.json()
+            console.log("paymentService.getBookingPayments: success", {
+                dataLength: Array.isArray(data) ? data.length : 0,
+                payments: data
+            })
+            return { data, error: null }
+        } catch (error: any) {
+            console.error("paymentService.getBookingPayments: exception", error)
+            return { data: null, error: new Error(error?.message || "Failed to fetch payments") }
+        }
     },
 }

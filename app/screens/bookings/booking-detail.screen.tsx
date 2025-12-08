@@ -52,7 +52,13 @@ export default function BookingDetailScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-        <StatusBadge status={booking.status} />
+        <StatusBadge
+          status={booking.status}
+          bookingId={booking.id}
+          onMessagesPress={() => {
+            navigation.navigate('Messages' as any, { bookingId: booking.id });
+          }}
+        />
 
         <BookingInfoSection
           bookingNumber={booking.bookingNumber}
@@ -85,6 +91,7 @@ export default function BookingDetailScreen() {
           totalPrice={booking.totalPrice}
           bookingDate={booking.bookingDate}
           payments={payments}
+          bookingFee={booking.bookingFee}
         />
 
         {booking.status?.toLowerCase() === 'completed' && (

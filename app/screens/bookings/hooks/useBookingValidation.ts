@@ -229,12 +229,25 @@ export function useBookingValidation() {
     agreeMarketing: boolean,
     agreeTerms: boolean,
   ): boolean => {
+    if (!agreeMarketing && !agreeTerms) {
+      Alert.alert(
+        'Required',
+        'Please check both boxes:\n\n✓ Marketing and newsletter emails\n✓ Terms and conditions',
+      );
+      return false;
+    }
     if (!agreeMarketing) {
-      Alert.alert('Error', 'Please agree to marketing terms');
+      Alert.alert(
+        'Required',
+        'Please agree to receive marketing and newsletter emails to continue.',
+      );
       return false;
     }
     if (!agreeTerms) {
-      Alert.alert('Error', 'Please agree to terms and conditions');
+      Alert.alert(
+        'Required',
+        'Please agree to our terms and conditions and privacy policy to continue.',
+      );
       return false;
     }
     return true;

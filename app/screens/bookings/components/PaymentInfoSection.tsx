@@ -12,12 +12,13 @@ interface PaymentInfoSectionProps {
     totalPrice?: number;
     bookingDate: string;
     payments?: any[];
+    bookingFee?: number;
 }
 
-export default function PaymentInfoSection({ invoice, totalPrice, bookingDate, payments }: PaymentInfoSectionProps) {
+export default function PaymentInfoSection({ invoice, totalPrice, bookingDate, payments, bookingFee: propBookingFee }: PaymentInfoSectionProps) {
 
     const bookingFeePayment = payments?.find(p => p.item === "Booking Fee");
-    const bookingFee = bookingFeePayment?.paidAmount || invoice?.amount || 0;
+    const bookingFee = propBookingFee || bookingFeePayment?.paidAmount || invoice?.amount || 0;
 
 
     const displayTotalPrice = bookingFee > 0 ? bookingFee : (totalPrice || 0);

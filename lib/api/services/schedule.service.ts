@@ -66,36 +66,36 @@ export const scheduleService = {
         return { data: result.data, error: null }
     },
 
-    async getCheckInImages(
-        bookingId: string
+    async getCheckInOutInfo(
+        bookingId: string,
+        isCheckIn: boolean
     ): Promise<{ data: { images: string[]; description: string } | null; error: Error | null }> {
         try {
             const baseUrl = API_CONFIG.BASE_URL
-            const url = `/Schedule/checkIn/images?BookingId=${bookingId}&isCheckIn=true`
+            const url = API_ENDPOINTS.CHECK_IN_OUT_INFO(bookingId, isCheckIn)
             const fullUrl = `${baseUrl}${url}`
 
-            console.log('📸 getCheckInImages: fetching from', fullUrl)
+            console.log(`📸 getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): fetching from`, fullUrl)
 
             const token = getAuthToken()
-            console.log('📸 getCheckInImages: token available:', !!token)
 
             const response = await fetch(fullUrl, {
                 method: "GET",
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
-                    'Accept': 'application/json',
+                    'Accept': '*/*',
                 },
             })
 
-            console.log('📸 getCheckInImages: response status', response.status)
+            console.log(`📸 getCheckInOutInfo: response status`, response.status)
 
             if (!response.ok) {
                 const errorText = await response.text()
-                console.log('📸 getCheckInImages: error response', errorText)
+                console.log(`📸 getCheckInOutInfo: error response`, errorText)
 
-                // 500 error with "Object reference" means no checkin data exists yet - this is normal
+                // 500 error with "Object reference" means no data exists yet - this is normal
                 if (response.status === 500 && errorText.includes('Object reference')) {
-                    console.log('📸 getCheckInImages: No checkin data exists yet (normal for new bookings)')
+                    console.log(`📸 getCheckInOutInfo: No data exists yet (normal)`)
                     return { data: { images: [], description: '' }, error: null }
                 }
 
@@ -104,77 +104,39 @@ export const scheduleService = {
                     return { data: { images: [], description: '' }, error: null }
                 }
 
-                return { data: null, error: new Error(`Failed to fetch check-in images: ${response.status}`) }
+                return { data: null, error: new Error(`Failed to fetch info: ${response.status}`) }
             }
 
             const responseData = await response.json()
-            console.log('📸 getCheckInImages: response data', JSON.stringify(responseData, null, 2))
+            console.log(`📸 getCheckInOutInfo: response data`, JSON.stringify(responseData, null, 2))
 
-            // Extract images and description from the view object
-            const images = responseData?.view?.urls || responseData?.urls || []
-            const description = responseData?.view?.description || responseData?.description || ""
+            // Extract images and description from the response
+            // API returns data in a "view" object
+            const viewData = responseData?.view || responseData
+            const images = viewData?.urls || []
+            const description = viewData?.description || ""
 
-            console.log('📸 getCheckInImages: extracted', { imagesCount: images.length, description })
+            console.log(`📸 getCheckInOutInfo: extracted`, { imagesCount: images.length, description })
 
             return { data: { images, description }, error: null }
         } catch (error) {
-            console.error('📸 getCheckInImages: exception', error)
+            console.error(`📸 getCheckInOutInfo: exception`, error)
             return { data: null, error: error as Error }
         }
+    },
+
+    async getCheckInImages(
+        bookingId: string
+    ): Promise<{ data: { images: string[]; description: string } | null; error: Error | null }> {
+        // Use the new unified endpoint
+        return this.getCheckInOutInfo(bookingId, true)
     },
 
     async getCheckOutImages(
         bookingId: string
     ): Promise<{ data: { images: string[]; description: string } | null; error: Error | null }> {
-        try {
-            const baseUrl = API_CONFIG.BASE_URL
-            const url = `/Schedule/checkIn/images?BookingId=${bookingId}&isCheckIn=false`
-            const fullUrl = `${baseUrl}${url}`
-
-            console.log('📸 getCheckOutImages: fetching from', fullUrl)
-
-            const token = getAuthToken()
-
-            const response = await fetch(fullUrl, {
-                method: "GET",
-                headers: {
-                    'Authorization': token ? `Bearer ${token}` : '',
-                    'Accept': 'application/json',
-                },
-            })
-
-            console.log('📸 getCheckOutImages: response status', response.status)
-
-            if (!response.ok) {
-                const errorText = await response.text()
-                console.log('📸 getCheckOutImages: error response', errorText)
-
-                // 500 error with "Object reference" means no checkout data exists yet - this is normal
-                if (response.status === 500 && errorText.includes('Object reference')) {
-                    console.log('📸 getCheckOutImages: No checkout data exists yet (normal for pending returns)')
-                    return { data: { images: [], description: '' }, error: null }
-                }
-
-                // 404 also means no data - return empty instead of error
-                if (response.status === 404) {
-                    return { data: { images: [], description: '' }, error: null }
-                }
-
-                return { data: null, error: new Error(`Failed to fetch check-out images: ${response.status}`) }
-            }
-
-            const responseData = await response.json()
-            console.log('📸 getCheckOutImages: response data', JSON.stringify(responseData, null, 2))
-
-            // Extract images and description from the view object
-            const images = responseData?.view?.urls || responseData?.urls || []
-            const description = responseData?.view?.description || responseData?.description || ""
-
-            return { data: { images, description }, error: null }
-        } catch (error) {
-            console.error('📸 getCheckOutImages: exception', error)
-            return { data: null, error: error as Error }
-        }
+        // Use the new unified endpoint
+        return this.getCheckInOutInfo(bookingId, false)
     },
 
     async checkIn(
@@ -268,11 +230,13 @@ export const scheduleService = {
 
             let data: any
             try {
-                data = JSON.parse(responseText)
+                data = responseText ? JSON.parse(responseText) : { success: true }
             } catch {
+                // If response is not JSON, treat as success with the text as message
                 data = { success: true, message: responseText || 'Check-in successful' }
             }
 
+            console.log('✅ checkIn: parsed data', data)
             return { data, error: null }
         } catch (error) {
             console.error('✅ checkIn: exception', error)

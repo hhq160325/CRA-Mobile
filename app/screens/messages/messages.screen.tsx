@@ -79,14 +79,14 @@ export default function MessagesScreen() {
 
     const fetchCarOwner = async () => {
         if (!bookingId) {
-            Alert.alert('Error', 'Booking ID is missing');
+            Alert.alert('Error', 'Booking ID is required');
             navigation.goBack();
             return;
         }
 
         setFetchingOwner(true);
         try {
-            // Step 1: Get booking details to extract carId
+            // Get booking details to extract carId
             const bookingRes = await bookingsService.getBookingById(bookingId);
             if (bookingRes.error || !bookingRes.data) {
                 Alert.alert('Error', 'Failed to load booking details');
@@ -101,7 +101,7 @@ export default function MessagesScreen() {
                 return;
             }
 
-            // Step 2: Get car details by ID directly from API (includes owner object)
+            // Get car details by ID directly from API (includes owner object)
             const carRes = await apiClient<any>(API_ENDPOINTS.CAR_DETAILS(carId), {
                 method: 'GET',
             });
@@ -112,7 +112,7 @@ export default function MessagesScreen() {
                 return;
             }
 
-            // Step 3: Extract owner information from raw API response
+            // Extract owner information from raw API response
             const carData = carRes.data;
             const owner = carData.owner;
 

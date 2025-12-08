@@ -36,6 +36,8 @@ import VehicleReturnScreen from "../screens/staff/vehicle-return.screen"
 import FeedbackFormScreen from "../screens/feedback/feedback-form.screen"
 import PaymentHistoryScreen from "../screens/payments/payment-history.screen"
 import MessagesScreen from "../screens/messages/messages.screen"
+import ChatHeadsScreen from "../screens/chat/chat-heads.screen"
+import ChatScreen from "../screens/chat/chat.screen"
 
 type NavigationProps = Partial<React.ComponentProps<typeof NavigationContainer>>
 
@@ -368,6 +370,20 @@ const CombinedStack = () => {
       <Stack.Screen
         name="Messages"
         component={MessagesScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="ChatHeads"
+        component={ChatHeadsScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="Chat"
+        component={ChatScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

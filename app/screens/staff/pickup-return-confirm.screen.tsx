@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,33 +7,33 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import type {RouteProp} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../navigators/navigation-route';
-import {colors} from '../../theme/colors';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
+import { colors } from '../../theme/colors';
 import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {scheduleService} from '../../../lib/api/services/schedule.service';
-import {useAuth} from '../../../lib/auth-context';
-import {usePickupConfirm} from './hooks/usePickupConfirm';
-import {useImagePicker} from './hooks/useImagePicker';
+import { scheduleService } from '../../../lib/api/services/schedule.service';
+import { useAuth } from '../../../lib/auth-context';
+import { usePickupConfirm } from './hooks/usePickupConfirm';
+import { useImagePicker } from './hooks/useImagePicker';
 import BookingCard from './components/BookingCard';
 import LocationInfoSection from './components/LocationInfoSection';
 import NotesSection from './components/NotesSection';
 import ImageGallerySection from './components/ImageGallerySection';
-import {styles} from './styles/pickupConfirm.styles';
+import { styles } from './styles/pickupConfirm.styles';
 
 type PickupReturnConfirmRouteProp = RouteProp<
-  {params: {bookingId: string}},
+  { params: { bookingId: string } },
   'params'
 >;
 
 export default function PickupReturnConfirmScreen() {
   const route = useRoute<PickupReturnConfirmRouteProp>();
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-  const {user} = useAuth();
-  const {bookingId} = (route.params as any) || {};
+  const { user } = useAuth();
+  const { bookingId } = (route.params as any) || {};
 
   const {
     booking,
@@ -43,7 +43,7 @@ export default function PickupReturnConfirmScreen() {
     existingCheckInData,
     initialDescription,
   } = usePickupConfirm(bookingId);
-  const {selectedImages, showImagePickerOptions, removeImage} =
+  const { selectedImages, showImagePickerOptions, removeImage } =
     useImagePicker(5);
   const [description, setDescription] = useState(initialDescription);
   const [submitting, setSubmitting] = useState(false);
@@ -54,7 +54,20 @@ export default function PickupReturnConfirmScreen() {
     }
   }, [initialDescription]);
 
-  useEffect(() => {}, [user]);
+  // Auto-navigate to return screen if pickup is already done
+  useEffect(() => {
+    if (!loading && isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0) {
+      console.log('✅ Pickup already completed, auto-navigating to return screen...');
+      // Small delay to allow user to see the screen briefly
+      const timer = setTimeout(() => {
+        navigation.navigate('VehicleReturn' as any, { bookingId });
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, isAlreadyCheckedIn, existingCheckInData, bookingId, navigation]);
+
+  useEffect(() => { }, [user]);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -72,7 +85,7 @@ export default function PickupReturnConfirmScreen() {
   };
 
   const handleProceedToReturn = () => {
-    navigation.navigate('VehicleReturn' as any, {bookingId});
+    navigation.navigate('VehicleReturn' as any, { bookingId });
   };
 
   const handleConfirmPickup = async () => {
@@ -93,12 +106,17 @@ export default function PickupReturnConfirmScreen() {
       'Confirm Pickup',
       'Are you sure you want to confirm this pickup?',
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
           onPress: async () => {
             try {
               setSubmitting(true);
+
+              console.log('🚀 Starting pickup confirmation...');
+              console.log('📋 Booking ID:', bookingId);
+              console.log('👤 Staff ID:', user.id);
+              console.log('📸 Images count:', selectedImages.length);
 
               const result = await scheduleService.checkIn(
                 bookingId,
@@ -107,20 +125,34 @@ export default function PickupReturnConfirmScreen() {
                 description || 'Pickup confirmed',
               );
 
+              console.log('✅ Check-in result:', result);
+
               if (result.error) {
+                console.error('❌ Check-in error:', result.error);
                 Alert.alert('Error', result.error.message);
                 setSubmitting(false);
                 return;
               }
 
+              // Success - navigate back to StaffScreen
+              console.log('✅ Pickup confirmed successfully, navigating to StaffScreen');
+              setSubmitting(false);
+
               Alert.alert('Success', 'Pickup confirmed successfully!', [
                 {
                   text: 'OK',
-                  onPress: () => navigation.goBack(),
+                  onPress: () => {
+                    // Navigate to StaffScreen to refresh the list
+                    navigation.navigate('StaffScreen' as any);
+                  },
                 },
               ]);
             } catch (error) {
-              Alert.alert('Error', 'Failed to confirm pickup');
+              console.error('❌ Exception during pickup confirmation:', error);
+              Alert.alert(
+                'Error',
+                `Failed to confirm pickup: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              );
               setSubmitting(false);
             }
           },
@@ -128,6 +160,24 @@ export default function PickupReturnConfirmScreen() {
       ],
     );
   };
+
+  // Show auto-navigation message if pickup is already done
+  if (!loading && isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0) {
+    return (
+      <View style={styles.container}>
+        <Header />
+        <View style={styles.loadingContainer}>
+          <MaterialIcons name="check-circle" size={64} color="#10b981" />
+          <Text style={[styles.loadingText, { color: '#10b981', marginTop: 16 }]}>
+            Pickup already completed!
+          </Text>
+          <Text style={[styles.loadingText, { fontSize: 14, marginTop: 8 }]}>
+            Redirecting to return screen...
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -251,7 +301,7 @@ export default function PickupReturnConfirmScreen() {
               style={[
                 styles.confirmButton,
                 (submitting || selectedImages.length === 0) &&
-                  styles.confirmButtonDisabled,
+                styles.confirmButtonDisabled,
               ]}>
               {submitting ? (
                 <ActivityIndicator size="small" color={colors.white} />

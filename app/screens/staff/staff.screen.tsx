@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,19 +10,19 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import {colors} from '../../theme/colors';
-import {scale, verticalScale} from '../../theme/scale';
+import { colors } from '../../theme/colors';
+import { scale, verticalScale } from '../../theme/scale';
 import Header from '../../components/Header/Header';
-import {bookingsService} from '../../../lib/api/services/bookings.service';
-import {carsService} from '../../../lib/api/services/cars.service';
-import {userService} from '../../../lib/api/services/user.service';
-import {invoiceService} from '../../../lib/api/services/invoice.service';
-import {paymentService} from '../../../lib/api/services/payment.service';
-import {scheduleService} from '../../../lib/api/services/schedule.service';
-import {API_CONFIG} from '../../../lib/api/config';
-import {useNavigation} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../navigators/navigation-route';
+import { bookingsService } from '../../../lib/api/services/bookings.service';
+import { carsService } from '../../../lib/api/services/cars.service';
+import { userService } from '../../../lib/api/services/user.service';
+import { invoiceService } from '../../../lib/api/services/invoice.service';
+import { paymentService } from '../../../lib/api/services/payment.service';
+import { scheduleService } from '../../../lib/api/services/schedule.service';
+import { API_CONFIG } from '../../../lib/api/config';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
 
 type PaymentStatus = 'all' | 'successfully' | 'pending' | 'cancelled';
 
@@ -84,7 +84,7 @@ export default function StaffScreen() {
         const bookingDate = new Date(booking.bookingDate);
         const formattedDate = `${bookingDate.getDate()} ${bookingDate.toLocaleString(
           'en',
-          {month: 'short'},
+          { month: 'short' },
         )}`;
 
         let carName = 'Unknown Car';
@@ -103,7 +103,7 @@ export default function StaffScreen() {
               carLicensePlate = carResult.data.licensePlate || '';
               carImage = carResult.data.image || '';
             }
-          } catch (err) {}
+          } catch (err) { }
         }
 
         let customerName = 'Customer';
@@ -116,7 +116,7 @@ export default function StaffScreen() {
                 userResult.data.username ||
                 'Customer';
             }
-          } catch (err) {}
+          } catch (err) { }
         }
 
         let invoiceAmount = 0;
@@ -131,7 +131,7 @@ export default function StaffScreen() {
             if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
               token = localStorage.getItem('token');
             }
-          } catch (e) {}
+          } catch (e) { }
 
           const response = await fetch(paymentsUrl, {
             method: 'GET',
@@ -156,7 +156,7 @@ export default function StaffScreen() {
               }
             }
           }
-        } catch (err) {}
+        } catch (err) { }
 
         if (invoiceAmount === 0 && booking.totalPrice > 0) {
           invoiceAmount = booking.totalPrice;
@@ -176,7 +176,7 @@ export default function StaffScreen() {
           if (checkInResult.data && checkInResult.data.images.length > 0) {
             hasCheckIn = true;
           }
-        } catch (err) {}
+        } catch (err) { }
 
         try {
           const checkOutResult = await scheduleService.getCheckOutImages(
@@ -185,7 +185,7 @@ export default function StaffScreen() {
           if (checkOutResult.data && checkOutResult.data.images.length > 0) {
             hasCheckOut = true;
           }
-        } catch (err) {}
+        } catch (err) { }
 
         return {
           id: booking.id,
@@ -222,6 +222,7 @@ export default function StaffScreen() {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
+      console.log('🔄 StaffScreen focused - refreshing bookings...');
       fetchBookings();
     });
 
@@ -267,14 +268,36 @@ export default function StaffScreen() {
   const filteredPayments = bookings.filter(payment => {
     const matchesStatus =
       statusFilter === 'all' || payment.status === statusFilter;
+
+    // If no search query, just filter by status
+    if (!searchQuery || searchQuery.trim() === '') {
+      return matchesStatus;
+    }
+
+    // Normalize search query
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+
+    // Check all searchable fields
     const matchesSearch =
-      payment.carName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.id.toLowerCase().includes(searchQuery.toLowerCase());
+      payment.carName.toLowerCase().includes(normalizedQuery) ||
+      payment.customerName.toLowerCase().includes(normalizedQuery) ||
+      payment.id.toLowerCase().includes(normalizedQuery) ||
+      (payment.bookingNumber && payment.bookingNumber.toLowerCase().includes(normalizedQuery));
+
     return matchesStatus && matchesSearch;
   });
 
-  const renderPaymentCard = ({item}: {item: BookingItem}) => {
+  // Debug logging
+  if (searchQuery && searchQuery.trim() !== '') {
+    console.log('🔍 Search Results:', {
+      query: searchQuery,
+      totalBookings: bookings.length,
+      filteredCount: filteredPayments.length,
+      sampleBookingNumbers: bookings.slice(0, 3).map(b => b.bookingNumber),
+    });
+  }
+
+  const renderPaymentCard = ({ item }: { item: BookingItem }) => {
     return (
       <Pressable
         style={{
@@ -283,7 +306,7 @@ export default function StaffScreen() {
           padding: scale(16),
           marginBottom: verticalScale(12),
           shadowColor: '#000',
-          shadowOffset: {width: 0, height: 2},
+          shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.1,
           shadowRadius: 4,
           elevation: 3,
@@ -294,7 +317,7 @@ export default function StaffScreen() {
             justifyContent: 'space-between',
             marginBottom: verticalScale(12),
           }}>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <Text
               style={{
                 fontSize: scale(18),
@@ -314,7 +337,7 @@ export default function StaffScreen() {
                 License: {item.carLicensePlate}
               </Text>
             )}
-            <Text style={{fontSize: scale(12), color: '#6b7280'}}>
+            <Text style={{ fontSize: scale(12), color: '#6b7280' }}>
               Booking ID: {item.bookingNumber || 'N/A'}
             </Text>
           </View>
@@ -324,8 +347,8 @@ export default function StaffScreen() {
                 item.status === 'successfully'
                   ? '#d1fae5'
                   : item.status === 'cancelled'
-                  ? '#fee2e2'
-                  : '#fef3c7',
+                    ? '#fee2e2'
+                    : '#fef3c7',
               paddingHorizontal: scale(12),
               paddingVertical: verticalScale(6),
               borderRadius: scale(16),
@@ -340,14 +363,14 @@ export default function StaffScreen() {
                   item.status === 'successfully'
                     ? '#059669'
                     : item.status === 'cancelled'
-                    ? '#991b1b'
-                    : '#d97706',
+                      ? '#991b1b'
+                      : '#d97706',
               }}>
               {item.status === 'successfully'
                 ? 'Successful'
                 : item.status === 'cancelled'
-                ? 'Cancelled'
-                : 'Pending'}
+                  ? 'Cancelled'
+                  : 'Pending'}
             </Text>
           </View>
         </View>
@@ -361,7 +384,7 @@ export default function StaffScreen() {
             borderBottomColor: '#e5e7eb',
             marginBottom: verticalScale(12),
           }}>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <Text
               style={{
                 fontSize: scale(10),
@@ -380,7 +403,7 @@ export default function StaffScreen() {
               {item.customerName}
             </Text>
           </View>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <Text
               style={{
                 fontSize: scale(10),
@@ -399,7 +422,7 @@ export default function StaffScreen() {
               {item.amount.toLocaleString()} VND
             </Text>
           </View>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <Text
               style={{
                 fontSize: scale(10),
@@ -493,11 +516,11 @@ export default function StaffScreen() {
   };
 
   return (
-    <View style={{flex: 1, backgroundColor: '#f9fafb'}}>
+    <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
       <Header />
 
       {loading ? (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text
             style={{
@@ -536,7 +559,7 @@ export default function StaffScreen() {
         </View>
       ) : (
         <FlatList
-          style={{flex: 1}}
+          style={{ flex: 1 }}
           data={filteredPayments}
           renderItem={renderPaymentCard}
           keyExtractor={item => item.id}
@@ -566,10 +589,10 @@ export default function StaffScreen() {
                   borderColor: '#e5e7eb',
                 }}>
                 <TextInput
-                  placeholder="Search by car name, customer, or payment ID..."
+                  placeholder="Search by car, customer, booking number, or ID..."
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  style={{height: verticalScale(44), fontSize: scale(14)}}
+                  style={{ height: verticalScale(44), fontSize: scale(14) }}
                 />
               </View>
 
@@ -612,10 +635,10 @@ export default function StaffScreen() {
                       {status === 'all'
                         ? 'All'
                         : status === 'successfully'
-                        ? 'Success'
-                        : status === 'pending'
-                        ? 'Pending'
-                        : 'Cancelled'}
+                          ? 'Success'
+                          : status === 'pending'
+                            ? 'Pending'
+                            : 'Cancelled'}
                     </Text>
                   </Pressable>
                 ))}
@@ -623,8 +646,8 @@ export default function StaffScreen() {
             </>
           }
           ListEmptyComponent={
-            <View style={{padding: scale(32), alignItems: 'center'}}>
-              <Text style={{fontSize: scale(16), color: '#6b7280'}}>
+            <View style={{ padding: scale(32), alignItems: 'center' }}>
+              <Text style={{ fontSize: scale(16), color: '#6b7280' }}>
                 No payments found
               </Text>
             </View>

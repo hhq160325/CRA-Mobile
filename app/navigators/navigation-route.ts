@@ -53,6 +53,8 @@ export type NavigatorParamList = {
   ['VehicleReturn']: { bookingId: string };
   ['PaymentHistory']: undefined;
   ['Messages']: { bookingId: string };
+  ['ChatHeads']: undefined;
+  ['Chat']: { carId: string };
   ['auth']: undefined;
   ['tabStack']: undefined;
   ['staffStack']: undefined;

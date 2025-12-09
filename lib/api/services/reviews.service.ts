@@ -35,7 +35,7 @@ export interface CreateFeedbackData {
   rating: number
   title: string
   content: string
-  medias?: any[] // Image files
+  medias?: any[]
 }
 
 export interface UpdateFeedbackData {
@@ -62,13 +62,13 @@ export const reviewsService = {
 
     const result = await apiClient<any[]>(API_ENDPOINTS.FEEDBACK_BY_CAR(carId), { method: "GET" })
 
-    // If error, return empty array instead of error to not break the UI
+
     if (result.error) {
       console.log("reviewsService.getCarReviews: returning empty array due to error", result.error.message)
       return { data: [], error: null }
     }
 
-    // Map API response to app Review model
+
     const mappedReviews: Review[] = (result.data || []).map((feedback: any, index: number) => ({
       id: feedback.id || `feedback-${index}`,
       carId: feedback.car?.id || carId,
@@ -109,14 +109,13 @@ export const reviewsService = {
         formData.append('BookingId', data.bookingId)
       }
 
-      // Add media files - API requires this field
+
       if (data.medias && data.medias.length > 0) {
         data.medias.forEach((media) => {
           formData.append('Medias', media)
         })
       } else {
-        // API requires Medias field, send empty blob if no images
-        // Create a minimal 1x1 transparent PNG as placeholder
+
         const emptyBlob = {
           uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
           type: 'image/png',
@@ -125,7 +124,7 @@ export const reviewsService = {
         formData.append('Medias', emptyBlob as any)
       }
 
-      // Get token for authorization
+
       let token: string | null = null
       try {
         if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
@@ -140,7 +139,7 @@ export const reviewsService = {
         headers["Authorization"] = `Bearer ${token}`
       }
 
-      // Make direct fetch call for multipart/form-data
+
       const { API_CONFIG } = require("../config")
       const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREATE_FEEDBACK}`
 
@@ -171,7 +170,7 @@ export const reviewsService = {
           errorData = { message: errorText }
         }
 
-        // Extract detailed validation errors if available
+
         let errorMessage = errorData.message || errorData.title || `Request failed with status ${response.status}`
 
         if (errorData.errors) {

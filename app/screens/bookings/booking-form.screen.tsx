@@ -35,6 +35,19 @@ import ConfirmationStep from './components/ConfirmationStep';
 import { useBookingForm } from './hooks/useBookingForm';
 import { useBookingValidation } from './hooks/useBookingValidation';
 import { useLanguage } from '../../../lib/language-context';
+import { styles } from './booking-form.styles';
+import {
+  calculateRentalDays,
+  calculateShippingFee,
+  calculateBookingFee,
+  calculateTotal,
+} from './helpers/calculations';
+import { getCarImageSource } from './helpers/carImageHelper';
+import {
+  handleCalculateDistance as calculateDistance,
+  calculateShippingDistance,
+} from './helpers/distanceCalculator';
+import { createBooking } from './helpers/bookingCreator';
 
 export default function BookingFormScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
@@ -79,44 +92,12 @@ export default function BookingFormScreen({ route }: any) {
 
   // Calculate distance and shipping fee when in custom mode
   useEffect(() => {
-    const calculateShippingDistance = async () => {
-      if (
-        formState.pickupMode === 'custom' &&
-        formState.pickupLocation &&
-        formState.pickupLocation.trim().length > 5
-      ) {
-        try {
-          // Calculate distance from ThuDucLot (default park lot) to custom address
-          const thuDucLotAddress = 'An Tư Công Chúa, Phường Linh Xuân, Thành phố Hồ Chí Minh';
-
-          console.log('Calculating shipping distance from ThuDucLot to:', formState.pickupLocation);
-
-          const result = await locationService.getDistanceBetweenAddresses(
-            thuDucLotAddress,
-            formState.pickupLocation,
-          );
-
-          if (result.data && result.data.distanceInMeters) {
-            const distanceInKm = result.data.distanceInMeters / 1000;
-            console.log('✅ Shipping distance calculated:', distanceInKm, 'km');
-            formState.setDistanceInKm(distanceInKm);
-          } else {
-            console.log('❌ Could not calculate shipping distance');
-            formState.setDistanceInKm(null);
-          }
-        } catch (error) {
-          console.error('❌ Error calculating shipping distance:', error);
-          formState.setDistanceInKm(null);
-        }
-      } else if (formState.pickupMode === 'parklot') {
-        // No shipping fee for park lot mode
-        formState.setDistanceInKm(null);
-      }
-    };
-
-    // Debounce the calculation to avoid too many API calls
     const timer = setTimeout(() => {
-      calculateShippingDistance();
+      calculateShippingDistance(
+        formState.pickupMode,
+        formState.pickupLocation,
+        formState.setDistanceInKm
+      );
     }, 1000);
 
     return () => clearTimeout(timer);
@@ -161,84 +142,26 @@ export default function BookingFormScreen({ route }: any) {
     fetchData();
   }, [carId, user?.id]);
 
-  // Calculate rental days based on pickup and drop-off dates/times
-  const calculateRentalDays = (): number => {
-    if (!formState.pickupDate || !formState.pickupTime || !formState.dropoffDate || !formState.dropoffTime) {
-      return 1; // Default to 1 day if dates not set
-    }
-
-    try {
-      const pickupDateTime = new Date(`${formState.pickupDate}T${formState.pickupTime}:00`);
-      const dropoffDateTime = new Date(`${formState.dropoffDate}T${formState.dropoffTime}:00`);
-
-      if (isNaN(pickupDateTime.getTime()) || isNaN(dropoffDateTime.getTime())) {
-        return 1;
-      }
-
-      const durationMs = dropoffDateTime.getTime() - pickupDateTime.getTime();
-      const durationDays = durationMs / (1000 * 60 * 60 * 24);
-
-      // Round up to nearest day (minimum 1 day)
-      return Math.max(1, Math.ceil(durationDays));
-    } catch (error) {
-      console.error('Error calculating rental days:', error);
-      return 1;
-    }
-  };
-
-  const rentalDays = calculateRentalDays();
+  // Calculate rental days and prices
+  const rentalDays = calculateRentalDays(
+    formState.pickupDate,
+    formState.pickupTime,
+    formState.dropoffDate,
+    formState.dropoffTime
+  );
   const pricePerDay = car ? car.price : 0;
   const subtotal = pricePerDay * rentalDays;
+  const shippingFee = calculateShippingFee(formState.pickupMode, formState.distanceInKm);
+  const bookingFee = calculateBookingFee(subtotal, shippingFee);
+  const total = calculateTotal(subtotal, shippingFee, formState.discount);
 
-  const shippingFee =
-    formState.pickupMode === 'custom' && formState.distanceInKm
-      ? Math.round(formState.distanceInKm * 20000)
-      : 0;
-
-  const bookingFee = Math.round(subtotal * 0.15) + shippingFee;
-
-  const total = subtotal + shippingFee - formState.discount;
-
-  const handleCalculateDistance = async (parkLotAddress: string) => {
-    console.log('handleCalculateDistance called', {
-      pickupMode: formState.pickupMode,
+  const handleCalculateDistanceWrapper = async (parkLotAddress: string) => {
+    await calculateDistance(
       parkLotAddress,
-      customPickupAddress: formState.pickupLocation,
-    });
-
-    if (
-      formState.pickupMode === 'custom' &&
-      parkLotAddress.trim() &&
-      formState.pickupLocation.trim()
-    ) {
-      console.log(
-        'Calculating distance from park lot to custom pickup address...',
-      );
-
-      try {
-        const result = await locationService.getDistanceBetweenAddresses(
-          parkLotAddress,
-          formState.pickupLocation,
-        );
-
-        console.log('Distance API result:', result);
-
-        if (result.data && result.data.distanceInMeters) {
-          const distanceInKm = result.data.distanceInMeters / 1000;
-          console.log('✅ Distance calculated:', distanceInKm, 'km');
-          formState.setDistanceInKm(distanceInKm);
-        } else {
-          console.log('❌ Could not calculate distance - no data');
-          formState.setDistanceInKm(null);
-        }
-      } catch (error) {
-        console.error('❌ Error calculating distance:', error);
-        formState.setDistanceInKm(null);
-      }
-    } else {
-      console.log('Resetting distance - pickup not custom or addresses empty');
-      formState.setDistanceInKm(null);
-    }
+      formState.pickupMode,
+      formState.pickupLocation,
+      formState.setDistanceInKm
+    );
   };
 
   const handleNextStep = async () => {
@@ -310,112 +233,19 @@ export default function BookingFormScreen({ route }: any) {
         return;
       }
 
-      const pickupDateTime = step2Validation.pickupDateTime;
-      const dropoffDateTime = step2Validation.dropoffDateTime;
-
-      if (
-        !formState.pickupLocation.trim() ||
-        !formState.dropoffLocation.trim()
-      ) {
-        Alert.alert('Error', 'Pick-up and drop-off locations are required');
-        setLoading(false);
-        return;
-      }
-
-      const durationMs = dropoffDateTime.getTime() - pickupDateTime.getTime();
-      const rentime = Math.max(
-        1,
-        Math.ceil(durationMs / (1000 * 60 * 60 * 24)),
+      await createBooking(
+        {
+          userId: user.id,
+          carId,
+          carPrice: car?.price || 0,
+          pickupLocation: formState.pickupLocation,
+          dropoffLocation: formState.dropoffLocation,
+          pickupDateTime: step2Validation.pickupDateTime,
+          dropoffDateTime: step2Validation.dropoffDateTime,
+          t,
+        },
+        navigation
       );
-      const carPrice = car?.price || 0;
-
-      if (carPrice <= 0) {
-        Alert.alert('Error', 'Invalid car rental price');
-        setLoading(false);
-        return;
-      }
-
-      const bookingData = {
-        customerId: String(user.id),
-        carId: String(carId),
-        pickupPlace: String(formState.pickupLocation.trim()),
-        pickupTime: pickupDateTime.toISOString(),
-        dropoffPlace: String(formState.dropoffLocation.trim()),
-        dropoffTime: dropoffDateTime.toISOString(),
-        bookingFee: 15,
-        carRentPrice: Math.floor(Number(carPrice)),
-        rentime: Number(rentime),
-        rentType: 'daily',
-        request: 'Standard rental request',
-      };
-
-      console.log(
-        'Creating booking with data:',
-        JSON.stringify(bookingData, null, 2),
-      );
-      console.log('Data types:', {
-        customerId: typeof bookingData.customerId,
-        carId: typeof bookingData.carId,
-        pickupPlace: typeof bookingData.pickupPlace,
-        pickupTime: typeof bookingData.pickupTime,
-        dropoffPlace: typeof bookingData.dropoffPlace,
-        dropoffTime: typeof bookingData.dropoffTime,
-        bookingFee: typeof bookingData.bookingFee,
-        carRentPrice: typeof bookingData.carRentPrice,
-        rentime: typeof bookingData.rentime,
-        rentType: typeof bookingData.rentType,
-        request: typeof bookingData.request,
-      });
-
-      let res = await bookingsService.createBooking(bookingData);
-
-      if (res.error && res.error.message.includes('Server error')) {
-        console.log('First attempt failed, trying without bookingFee...');
-        const { bookingFee, ...bookingDataWithoutFee } = bookingData;
-        res = await bookingsService.createBooking(bookingDataWithoutFee as any);
-      }
-
-      if (res.error) {
-        console.error('Booking creation failed:', res.error);
-        const errorMessage = res.error?.message || 'Failed to create booking';
-        Alert.alert(
-          t('error') || 'Error',
-          errorMessage +
-          '\n\nPlease check your booking details and try again.\n\nIf the problem persists, please contact support with this information:\n- Car ID: ' +
-          carId +
-          '\n- User ID: ' +
-          user.id,
-        );
-        return;
-      }
-
-      if (res.data) {
-        const bookingResponse = res.data;
-        let createdBookingId: string | null = null;
-        let payosUrl: string | null = null;
-
-        if (typeof bookingResponse === 'string') {
-          payosUrl = bookingResponse;
-        } else if (
-          typeof bookingResponse === 'object' &&
-          bookingResponse !== null
-        ) {
-          if (bookingResponse.payment) payosUrl = bookingResponse.payment;
-          if (bookingResponse.booking && bookingResponse.booking.id)
-            createdBookingId = bookingResponse.booking.id;
-          if (!createdBookingId)
-            createdBookingId =
-              bookingResponse.bookingId || bookingResponse.id || null;
-          if (!payosUrl)
-            payosUrl =
-              bookingResponse.paymentUrl || bookingResponse.checkoutUrl || null;
-        }
-
-        navigation.navigate('PayOSWebView' as any, {
-          paymentUrl: payosUrl,
-          bookingId: createdBookingId || 'pending',
-        });
-      }
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to create booking');
     } finally {
@@ -425,9 +255,9 @@ export default function BookingFormScreen({ route }: any) {
 
   if (carLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={styles.container}>
         <Header />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
@@ -436,39 +266,26 @@ export default function BookingFormScreen({ route }: any) {
 
   if (!car) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={styles.container}>
         <Header />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.loadingContainer}>
           <Text>{t('carNotFound')}</Text>
         </View>
       </View>
     );
   }
 
-  const getCarImageSource = () => {
-    if (car.imageUrls && car.imageUrls.length > 0)
-      return { uri: car.imageUrls[0] };
-    if (car.images && car.images.length > 0) return { uri: car.images[0] };
-    if (car.image) {
-      if (car.image.startsWith('http://') || car.image.startsWith('https://'))
-        return { uri: car.image };
-      const localAsset = getAsset(car.image);
-      if (localAsset) return localAsset;
-    }
-    return null;
-  };
-
-  const carImageSource = getCarImageSource();
+  const carImageSource = getCarImageSource(car);
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={styles.container}>
         <Header />
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled">
           <RentalSummaryCard
             car={car}
@@ -483,8 +300,8 @@ export default function BookingFormScreen({ route }: any) {
             pricePerDay={pricePerDay}
           />
 
-          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{ fontSize: 12, color: colors.placeholder }}>
+          <View style={styles.stepIndicator}>
+            <Text style={styles.stepText}>
               {t('step')} {currentStep} {t('of')} 4
             </Text>
           </View>
@@ -525,7 +342,7 @@ export default function BookingFormScreen({ route }: any) {
               onDropoffTimeChange={formState.handleDropoffTimeChange}
               onPickupModeChange={formState.setPickupMode}
               onDropoffModeChange={formState.setDropoffMode}
-              onCalculateDistance={handleCalculateDistance}
+              onCalculateDistance={handleCalculateDistanceWrapper}
             />
           )}
 
@@ -545,25 +362,12 @@ export default function BookingFormScreen({ route }: any) {
             />
           )}
 
-          <View
-            style={{
-              flexDirection: 'row',
-              gap: 12,
-              paddingHorizontal: 16,
-              paddingTop: 24,
-            }}>
+          <View style={styles.buttonContainer}>
             {currentStep > 1 && (
               <Pressable
                 onPress={() => setCurrentStep(currentStep - 1)}
-                style={{
-                  flex: 1,
-                  borderWidth: 1,
-                  borderColor: colors.morentBlue,
-                  paddingVertical: 12,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                }}>
-                <Text style={{ color: colors.morentBlue, fontWeight: '600' }}>
+                style={styles.backButton}>
+                <Text style={styles.backButtonText}>
                   {t('back')}
                 </Text>
               </Pressable>
@@ -571,17 +375,11 @@ export default function BookingFormScreen({ route }: any) {
             <Pressable
               onPress={handleNextStep}
               disabled={loading}
-              style={{
-                flex: 1,
-                backgroundColor: colors.morentBlue,
-                paddingVertical: 12,
-                borderRadius: 8,
-                alignItems: 'center',
-              }}>
+              style={styles.nextButton}>
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={{ color: colors.white, fontWeight: '600' }}>
+                <Text style={styles.nextButtonText}>
                   {currentStep === 4 ? t('rentalNow') : t('next')}
                 </Text>
               )}

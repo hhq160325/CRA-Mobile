@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   RefreshControl,
   Pressable,
 } from 'react-native';
-import {colors} from '../../theme/colors';
-import {scale, verticalScale} from '../../theme/scale';
+import { colors } from '../../theme/colors';
+import { scale } from '../../theme/scale';
 import Header from '../../components/Header/Header';
-import {bookingsService} from '../../../lib/api/services/bookings.service';
-import {API_CONFIG} from '../../../lib/api/config';
-import {useAuth} from '../../../lib/auth-context';
+import { bookingsService } from '../../../lib/api/services/bookings.service';
+import { API_CONFIG } from '../../../lib/api/config';
+import { useAuth } from '../../../lib/auth-context';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { styles } from './payment-history.styles';
 
 interface PaymentItem {
   orderCode: number;
@@ -38,7 +39,7 @@ interface BookingPayments {
 }
 
 export default function PaymentHistoryScreen() {
-  const {user} = useAuth();
+  const { user } = useAuth();
   const [bookingPayments, setBookingPayments] = useState<BookingPayments[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,6 +47,60 @@ export default function PaymentHistoryScreen() {
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(
     new Set(),
   );
+
+  const getAuthToken = (): string | null => {
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
+        return localStorage.getItem('token');
+      }
+    } catch (e) {
+      console.error('Error getting auth token:', e);
+    }
+    return null;
+  };
+
+  const fetchBookingPayments = async (booking: any): Promise<BookingPayments | null> => {
+    if (booking.userId !== user?.id) {
+      return null;
+    }
+
+    try {
+      const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
+      const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`;
+      const token = getAuthToken();
+
+      const response = await fetch(paymentsUrl, {
+        method: 'GET',
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const paymentsData = await response.json();
+
+        if (Array.isArray(paymentsData) && paymentsData.length > 0) {
+          const userPayments = paymentsData.filter(
+            p => p.userId === user?.id,
+          );
+
+          if (userPayments.length > 0) {
+            return {
+              bookingId: booking.id,
+              bookingNumber: booking.bookingNumber,
+              carName: booking.carName,
+              payments: userPayments,
+            };
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching booking payments:', err);
+    }
+
+    return null;
+  };
 
   const fetchPaymentHistory = async () => {
     if (!user?.id) {
@@ -65,58 +120,13 @@ export default function PaymentHistoryScreen() {
         return;
       }
 
-      const paymentsPromises = bookingsResult.data.map(async booking => {
-        if (booking.userId !== user.id) {
-          return null;
-        }
-
-        try {
-          const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
-          const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`;
-
-          let token: string | null = null;
-          try {
-            if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-              token = localStorage.getItem('token');
-            }
-          } catch (e) {}
-
-          const response = await fetch(paymentsUrl, {
-            method: 'GET',
-            headers: {
-              Authorization: token ? `Bearer ${token}` : '',
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const paymentsData = await response.json();
-
-            if (Array.isArray(paymentsData) && paymentsData.length > 0) {
-              const userPayments = paymentsData.filter(
-                p => p.userId === user.id,
-              );
-
-              if (userPayments.length > 0) {
-                return {
-                  bookingId: booking.id,
-                  bookingNumber: booking.bookingNumber,
-                  carName: booking.carName,
-                  payments: userPayments,
-                };
-              }
-            }
-          }
-        } catch (err) {}
-
-        return null;
-      });
-
+      const paymentsPromises = bookingsResult.data.map(fetchBookingPayments);
       const results = await Promise.all(paymentsPromises);
       const validResults = results.filter(r => r !== null) as BookingPayments[];
 
       setBookingPayments(validResults);
     } catch (err) {
+      console.error('Error loading payment history:', err);
       setError('An error occurred while loading payment history');
     } finally {
       setLoading(false);
@@ -164,43 +174,82 @@ export default function PaymentHistoryScreen() {
     return payments.reduce((sum, payment) => sum + payment.paidAmount, 0);
   };
 
-  const renderBookingPayments = ({item}: {item: BookingPayments}) => {
+  const renderPaymentItem = (payment: PaymentItem, index: number, totalItems: number) => (
+    <View
+      key={payment.orderCode}
+      style={[
+        styles.paymentItem,
+        index < totalItems - 1 && styles.paymentItemWithBorder,
+      ]}>
+      <View style={styles.paymentHeader}>
+        <View style={styles.paymentHeaderContent}>
+          <Text style={styles.paymentItemName}>{payment.item}</Text>
+          <Text style={styles.orderCode}>Order: {payment.orderCode}</Text>
+        </View>
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getStatusBgColor(payment.status) },
+          ]}>
+          <Text
+            style={[
+              styles.statusText,
+              { color: getStatusColor(payment.status) },
+            ]}>
+            {payment.status}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.paymentFooter}>
+        <View>
+          <Text style={styles.paymentMethod}>{payment.paymentMethod}</Text>
+          <Text style={styles.paymentDate}>{formatDate(payment.createDate)}</Text>
+        </View>
+        <Text style={styles.paymentAmount}>
+          {payment.paidAmount.toLocaleString()} VND
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={styles.loadingText}>Loading payment history...</Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View style={styles.errorContainer}>
+      <MaterialIcons name="error-outline" size={scale(48)} color="#ef4444" />
+      <Text style={styles.errorText}>{error}</Text>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialIcons
+        name="receipt-long"
+        size={scale(48)}
+        color={colors.placeholder}
+      />
+      <Text style={styles.emptyText}>No payment history found</Text>
+    </View>
+  );
+
+  const renderBookingPayments = ({ item }: { item: BookingPayments }) => {
     const isExpanded = expandedBookings.has(item.bookingId);
     const totalAmount = calculateTotal(item.payments);
 
     return (
       <Pressable
         onPress={() => toggleExpanded(item.bookingId)}
-        style={{
-          backgroundColor: colors.white,
-          borderRadius: scale(12),
-          padding: scale(16),
-          marginBottom: verticalScale(16),
-          shadowColor: '#000',
-          shadowOffset: {width: 0, height: 2},
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
-        }}>
-        {/* Booking Header */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: verticalScale(12),
-          }}>
-          <View style={{flex: 1}}>
-            <Text
-              style={{
-                fontSize: scale(16),
-                fontWeight: 'bold',
-                color: colors.primary,
-                marginBottom: verticalScale(4),
-              }}>
-              {item.carName}
-            </Text>
-            <Text style={{fontSize: scale(12), color: colors.placeholder}}>
+        style={styles.bookingCard}>
+        <View style={styles.bookingHeader}>
+          <View style={styles.bookingHeaderContent}>
+            <Text style={styles.carName}>{item.carName}</Text>
+            <Text style={styles.bookingId}>
               Booking ID: {item.bookingNumber || 'N/A'}
             </Text>
           </View>
@@ -211,125 +260,18 @@ export default function PaymentHistoryScreen() {
           />
         </View>
 
-        {/* Total Amount - Always Visible */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingTop: verticalScale(12),
-            borderTopWidth: 1,
-            borderTopColor: colors.border,
-          }}>
-          <Text
-            style={{
-              fontSize: scale(14),
-              fontWeight: '600',
-              color: colors.primary,
-            }}>
-            Total Amount
-          </Text>
-          <Text
-            style={{
-              fontSize: scale(18),
-              fontWeight: 'bold',
-              color: colors.morentBlue,
-            }}>
+        <View style={styles.totalSection}>
+          <Text style={styles.totalLabel}>Total Amount</Text>
+          <Text style={styles.totalAmount}>
             {totalAmount.toLocaleString()} VND
           </Text>
         </View>
 
-        {/* Expanded Details */}
         {isExpanded && (
-          <View
-            style={{
-              marginTop: verticalScale(12),
-              paddingTop: verticalScale(12),
-              borderTopWidth: 1,
-              borderTopColor: colors.border,
-            }}>
-            {item.payments.map((payment, index) => (
-              <View
-                key={payment.orderCode}
-                style={{
-                  paddingVertical: verticalScale(12),
-                  borderBottomWidth: index < item.payments.length - 1 ? 1 : 0,
-                  borderBottomColor: colors.border,
-                }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: verticalScale(8),
-                  }}>
-                  <View style={{flex: 1}}>
-                    <Text
-                      style={{
-                        fontSize: scale(14),
-                        fontWeight: '600',
-                        color: colors.primary,
-                      }}>
-                      {payment.item}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: scale(11),
-                        color: colors.placeholder,
-                        marginTop: verticalScale(2),
-                      }}>
-                      Order: {payment.orderCode}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      backgroundColor: getStatusBgColor(payment.status),
-                      paddingHorizontal: scale(10),
-                      paddingVertical: verticalScale(4),
-                      borderRadius: scale(12),
-                    }}>
-                    <Text
-                      style={{
-                        fontSize: scale(11),
-                        fontWeight: '600',
-                        color: getStatusColor(payment.status),
-                      }}>
-                      {payment.status}
-                    </Text>
-                  </View>
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}>
-                  <View>
-                    <Text
-                      style={{fontSize: scale(11), color: colors.placeholder}}>
-                      {payment.paymentMethod}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: scale(10),
-                        color: colors.placeholder,
-                        marginTop: verticalScale(2),
-                      }}>
-                      {formatDate(payment.createDate)}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      fontSize: scale(16),
-                      fontWeight: 'bold',
-                      color: colors.morentBlue,
-                    }}>
-                    {payment.paidAmount.toLocaleString()} VND
-                  </Text>
-                </View>
-              </View>
-            ))}
+          <View style={styles.expandedSection}>
+            {item.payments.map((payment, index) =>
+              renderPaymentItem(payment, index, item.payments.length)
+            )}
           </View>
         )}
       </Pressable>
@@ -337,69 +279,23 @@ export default function PaymentHistoryScreen() {
   };
 
   return (
-    <View style={{flex: 1, backgroundColor: '#f9fafb'}}>
+    <View style={styles.container}>
       <Header />
 
-      <View
-        style={{
-          paddingHorizontal: scale(16),
-          paddingTop: scale(16),
-          paddingBottom: scale(8),
-        }}>
-        <Text
-          style={{
-            fontSize: scale(24),
-            fontWeight: 'bold',
-            color: colors.primary,
-          }}>
-          Payment History
-        </Text>
+      <View style={styles.headerSection}>
+        <Text style={styles.headerTitle}>Payment History</Text>
       </View>
 
       {loading ? (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text
-            style={{
-              marginTop: verticalScale(16),
-              fontSize: scale(14),
-              color: '#6b7280',
-            }}>
-            Loading payment history...
-          </Text>
-        </View>
+        renderLoadingState()
       ) : error ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: scale(32),
-          }}>
-          <MaterialIcons
-            name="error-outline"
-            size={scale(48)}
-            color="#ef4444"
-          />
-          <Text
-            style={{
-              fontSize: scale(16),
-              color: '#ef4444',
-              textAlign: 'center',
-              marginTop: verticalScale(16),
-            }}>
-            {error}
-          </Text>
-        </View>
+        renderErrorState()
       ) : (
         <FlatList
           data={bookingPayments}
           renderItem={renderBookingPayments}
           keyExtractor={item => item.bookingId}
-          contentContainerStyle={{
-            paddingHorizontal: scale(16),
-            paddingBottom: verticalScale(100),
-          }}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -408,23 +304,7 @@ export default function PaymentHistoryScreen() {
               tintColor={colors.primary}
             />
           }
-          ListEmptyComponent={
-            <View style={{padding: scale(32), alignItems: 'center'}}>
-              <MaterialIcons
-                name="receipt-long"
-                size={scale(48)}
-                color={colors.placeholder}
-              />
-              <Text
-                style={{
-                  fontSize: scale(16),
-                  color: colors.placeholder,
-                  marginTop: verticalScale(16),
-                }}>
-                No payment history found
-              </Text>
-            </View>
-          }
+          ListEmptyComponent={renderEmptyState()}
         />
       )}
     </View>

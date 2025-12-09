@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect, useCallback} from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,15 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import {bookingsService, type Booking} from '../../../lib/api';
-import {useAuth} from '../../../lib/auth-context';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../navigators/navigation-route';
-import {colors} from '../../theme/colors';
-import {scale, verticalScale} from '../../theme/scale';
+import { bookingsService, type Booking } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth-context';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
+import { colors } from '../../theme/colors';
 import getAsset from '../../../lib/getAsset';
 import Header from '../../components/Header/Header';
+import { styles } from './bookings-list.styles';
 
 type StatusFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
 
@@ -27,7 +27,7 @@ export default function BookingsListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   const fetchBookings = useCallback(async () => {
     if (!user?.id) {
@@ -40,7 +40,7 @@ export default function BookingsListScreen() {
     setLoading(true);
 
     try {
-      const {data, error} = await bookingsService.getBookings(user.id);
+      const { data, error } = await bookingsService.getBookings(user.id);
 
       if (error) {
         console.log(
@@ -117,60 +117,27 @@ export default function BookingsListScreen() {
 
   const formatDate = (date: string | Date) => {
     const d = new Date(date);
-    return `${d.getDate()} ${d.toLocaleString('default', {month: 'short'})}`;
+    return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
   };
 
-  const renderBookingCard = ({item}: {item: Booking}) => (
+  const renderBookingCard = ({ item }: { item: Booking }) => (
     <Pressable
-      onPress={() => navigation.navigate('BookingDetail' as any, {id: item.id})}
-      style={{
-        backgroundColor: 'white',
-        borderRadius: scale(12),
-        padding: scale(16),
-        marginBottom: verticalScale(12),
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      }}>
+      onPress={() => navigation.navigate('BookingDetail' as any, { id: item.id })}
+      style={styles.bookingCard}>
       {/* Header: Car name and status */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginBottom: verticalScale(12),
-        }}>
-        <View style={{flex: 1}}>
-          <Text
-            style={{
-              fontSize: scale(18),
-              fontWeight: 'bold',
-              color: colors.primary,
-              marginBottom: verticalScale(4),
-            }}>
-            {item.carName}
-          </Text>
-          <Text style={{fontSize: scale(12), color: '#6b7280'}}>
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderLeft}>
+          <Text style={styles.carName}>{item.carName}</Text>
+          <Text style={styles.bookingId}>
             Booking ID: {item.bookingNumber || 'N/A'}
           </Text>
         </View>
         <View
-          style={{
-            backgroundColor: getStatusBgColor(item.status),
-            paddingHorizontal: scale(12),
-            paddingVertical: verticalScale(6),
-            borderRadius: scale(16),
-            height: scale(28),
-            justifyContent: 'center',
-          }}>
-          <Text
-            style={{
-              fontSize: scale(12),
-              fontWeight: '600',
-              color: getStatusColor(item.status),
-              textTransform: 'capitalize',
-            }}>
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getStatusBgColor(item.status) },
+          ]}>
+          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
             {item.status}
           </Text>
         </View>
@@ -178,163 +145,64 @@ export default function BookingsListScreen() {
 
       {/* Car Image */}
       {item.carImage && (
-        <View
-          style={{
-            borderRadius: scale(8),
-            overflow: 'hidden',
-            marginBottom: verticalScale(12),
-          }}>
+        <View style={styles.carImageContainer}>
           <Image
             source={
               item.carImage.startsWith('http://') ||
-              item.carImage.startsWith('https://')
-                ? {uri: item.carImage}
+                item.carImage.startsWith('https://')
+                ? { uri: item.carImage }
                 : getAsset(item.carImage)
             }
-            style={{
-              width: '100%',
-              height: scale(140),
-              resizeMode: 'cover',
-            }}
+            style={styles.carImage}
           />
         </View>
       )}
 
       {/* Location */}
-      <View style={{marginBottom: verticalScale(12)}}>
-        <Text
-          style={{
-            fontSize: scale(10),
-            color: '#6b7280',
-            fontWeight: '600',
-            marginBottom: verticalScale(4),
-          }}>
-          ROUTE
-        </Text>
-        <Text
-          style={{
-            fontSize: scale(13),
-            fontWeight: '600',
-            color: colors.primary,
-          }}>
+      <View style={styles.locationSection}>
+        <Text style={styles.sectionLabel}>ROUTE</Text>
+        <Text style={styles.locationText}>
           {item.pickupLocation} → {item.dropoffLocation}
         </Text>
       </View>
 
       {/* Details Grid */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          paddingBottom: verticalScale(12),
-          borderBottomWidth: 1,
-          borderBottomColor: '#e5e7eb',
-          marginBottom: verticalScale(12),
-        }}>
-        <View style={{flex: 1}}>
-          <Text
-            style={{
-              fontSize: scale(10),
-              color: '#6b7280',
-              fontWeight: '600',
-              marginBottom: verticalScale(4),
-            }}>
-            START DATE
-          </Text>
-          <Text
-            style={{
-              fontSize: scale(13),
-              fontWeight: '600',
-              color: colors.primary,
-            }}>
-            {formatDate(item.startDate)}
-          </Text>
+      <View style={styles.detailsGrid}>
+        <View style={styles.detailColumn}>
+          <Text style={styles.sectionLabel}>START DATE</Text>
+          <Text style={styles.detailValue}>{formatDate(item.startDate)}</Text>
         </View>
-        <View style={{flex: 1}}>
-          <Text
-            style={{
-              fontSize: scale(10),
-              color: '#6b7280',
-              fontWeight: '600',
-              marginBottom: verticalScale(4),
-            }}>
-            END DATE
-          </Text>
-          <Text
-            style={{
-              fontSize: scale(13),
-              fontWeight: '600',
-              color: colors.primary,
-            }}>
-            {formatDate(item.endDate)}
-          </Text>
+        <View style={styles.detailColumn}>
+          <Text style={styles.sectionLabel}>END DATE</Text>
+          <Text style={styles.detailValue}>{formatDate(item.endDate)}</Text>
         </View>
-        <View style={{flex: 1, alignItems: 'flex-end'}}>
-          <Text
-            style={{
-              fontSize: scale(10),
-              color: '#6b7280',
-              fontWeight: '600',
-              marginBottom: verticalScale(4),
-            }}>
-            TOTAL
-          </Text>
-          <Text
-            style={{
-              fontSize: scale(16),
-              fontWeight: 'bold',
-              color: colors.primary,
-            }}>
-            {item.totalPrice} VND
-          </Text>
+        <View style={styles.detailColumnRight}>
+          <Text style={styles.sectionLabel}>TOTAL</Text>
+          <Text style={styles.totalValue}>{item.totalPrice} VND</Text>
         </View>
       </View>
 
       {/* Add-ons */}
       {item.addons && item.addons.length > 0 && (
-        <View>
-          <Text
-            style={{
-              fontSize: scale(10),
-              color: '#6b7280',
-              fontWeight: '600',
-              marginBottom: verticalScale(4),
-            }}>
-            ADD-ONS
-          </Text>
-          <Text style={{fontSize: scale(12), color: colors.primary}}>
-            {item.addons.join(', ')}
-          </Text>
+        <View style={styles.addonsSection}>
+          <Text style={styles.sectionLabel}>ADD-ONS</Text>
+          <Text style={styles.addonsText}>{item.addons.join(', ')}</Text>
         </View>
       )}
 
       {/* Action indicator */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          marginTop: verticalScale(8),
-        }}>
-        <Text
-          style={{
-            fontSize: scale(13),
-            fontWeight: '600',
-            color: colors.morentBlue,
-            marginRight: scale(4),
-          }}>
-          View Details
-        </Text>
-        <Text style={{fontSize: scale(18), color: colors.morentBlue}}>→</Text>
+      <View style={styles.actionContainer}>
+        <Text style={styles.actionText}>View Details</Text>
+        <Text style={styles.actionArrow}>→</Text>
       </View>
     </Pressable>
   );
 
   if (loading) {
     return (
-      <View style={{flex: 1, backgroundColor: '#f9fafb'}}>
+      <View style={styles.container}>
         <Header />
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
@@ -342,69 +210,43 @@ export default function BookingsListScreen() {
   }
 
   return (
-    <View style={{flex: 1, backgroundColor: '#f9fafb'}}>
+    <View style={styles.container}>
       <Header />
 
-      <View
-        style={{
-          paddingHorizontal: scale(16),
-          paddingTop: scale(8),
-          marginBottom: verticalScale(8),
-        }}>
-        <Text
-          style={{
-            fontSize: scale(24),
-            fontWeight: 'bold',
-            color: colors.primary,
-          }}>
-          My Bookings
-        </Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>My Bookings</Text>
       </View>
 
       <FlatList
-        style={{flex: 1}}
+        style={styles.listContainer}
         data={filteredBookings}
         renderItem={renderBookingCard}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: scale(16),
-          paddingBottom: verticalScale(100),
-        }}
+        contentContainerStyle={styles.listContent}
         refreshing={refreshing}
         onRefresh={onRefresh}
         ListHeaderComponent={
-          <View
-            style={{
-              flexDirection: 'row',
-              backgroundColor: 'white',
-              padding: scale(12),
-              borderRadius: scale(8),
-              marginBottom: verticalScale(16),
-              gap: scale(8),
-            }}>
+          <View style={styles.filterContainer}>
             {(
               ['all', 'upcoming', 'completed', 'cancelled'] as StatusFilter[]
             ).map(status => (
               <Pressable
                 key={status}
                 onPress={() => setStatusFilter(status)}
-                style={{
-                  flex: 1,
-                  paddingVertical: verticalScale(8),
-                  paddingHorizontal: scale(12),
-                  borderRadius: scale(20),
-                  backgroundColor:
-                    statusFilter === status ? colors.primary : '#f3f4f6',
-                }}>
+                style={[
+                  styles.filterButton,
+                  statusFilter === status
+                    ? styles.filterButtonActive
+                    : styles.filterButtonInactive,
+                ]}>
                 <Text
-                  style={{
-                    fontSize: scale(12),
-                    fontWeight: '600',
-                    color: statusFilter === status ? 'white' : '#6b7280',
-                    textAlign: 'center',
-                    textTransform: 'capitalize',
-                  }}>
+                  style={[
+                    styles.filterText,
+                    statusFilter === status
+                      ? styles.filterTextActive
+                      : styles.filterTextInactive,
+                  ]}>
                   {status === 'all' ? 'All' : status}
                 </Text>
               </Pressable>
@@ -412,10 +254,8 @@ export default function BookingsListScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View style={{padding: scale(32), alignItems: 'center'}}>
-            <Text style={{fontSize: scale(16), color: '#6b7280'}}>
-              No bookings found
-            </Text>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No bookings found</Text>
           </View>
         }
       />

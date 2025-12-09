@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from "react"
-import { View, Text, Pressable, Image } from "react-native"
+import { View, Text, Pressable, Image, StyleSheet } from "react-native"
 import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
-import MaterialIcons from "react-native-vector-icons/MaterialIcons"
-import Ionicons from "react-native-vector-icons/Ionicons"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import { useAuth } from "../../../lib/auth-context"
 import { useLanguage } from "../../../lib/language-context"
 import { useFavorites } from "../../../lib/favorites-context"
 
-
 import Noti from "../Noti/Noti"
 import MenuModal from "./components/MenuModal"
 import LanguageModal from "./components/LanguageModal"
-
 
 import { useHeaderAvatar } from "./hooks/useHeaderAvatar"
 import { useHeaderNotifications } from "./hooks/useHeaderNotifications"
@@ -90,38 +86,16 @@ export default function Header() {
     return (
         <>
             {/* Header Bar */}
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingHorizontal: scale(20),
-                    paddingTop: scale(50),
-                    paddingBottom: scale(16),
-                    backgroundColor: colors.white,
-                }}
-            >
+            <View style={styles.headerContainer}>
                 <Pressable onPress={() => handleMenuNavigationWrapper("Home")}>
-                    <Text
-                        style={{
-                            fontSize: scale(28),
-                            fontWeight: "700",
-                            color: colors.morentBlue,
-                            letterSpacing: 1,
-                        }}
-                    >
-                        MORENT
-                    </Text>
+                    <Text style={styles.logo}>MORENT</Text>
                 </Pressable>
 
-                <View style={{ flexDirection: "row", alignItems: "center", gap: scale(16) }}>
+                <View style={styles.rightSection}>
                     {/* Avatar */}
                     <Pressable onPress={() => setMenuVisible(true)}>
                         <View key={`avatar-${refreshKey}`}>
-                            <Image
-                                source={avatarSource}
-                                style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
-                            />
+                            <Image source={avatarSource} style={styles.avatar} />
                         </View>
                     </Pressable>
                 </View>
@@ -161,3 +135,31 @@ export default function Header() {
         </>
     )
 }
+
+const styles = StyleSheet.create({
+    headerContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: scale(20),
+        paddingTop: scale(50),
+        paddingBottom: scale(16),
+        backgroundColor: colors.white,
+    },
+    logo: {
+        fontSize: scale(28),
+        fontWeight: "700",
+        color: colors.morentBlue,
+        letterSpacing: 1,
+    },
+    rightSection: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: scale(16),
+    },
+    avatar: {
+        width: scale(40),
+        height: scale(40),
+        borderRadius: scale(20),
+    },
+})

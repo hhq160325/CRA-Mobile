@@ -1,14 +1,7 @@
 import { paymentService } from "./payment.service"
 import { API_CONFIG } from "../config"
 
-/**
- * Payment Status Checker
- * 
- * Flow:
- * 1. Get booking payments (Booking Fee + Rental Fee) by orderCode
- * 2. Check PayOS status for each payment
- * 3. Update payment status if PAID
- */
+
 
 interface PaymentStatusResult {
     orderCode: number
@@ -18,11 +11,7 @@ interface PaymentStatusResult {
     updated: boolean
 }
 
-/**
- * Check and update payment statuses for a booking
- * @param bookingId - The booking ID
- * @returns Array of payment status results
- */
+
 export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<{
     results: PaymentStatusResult[]
     allPaid: boolean
@@ -32,7 +21,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
         console.log("\n🔍 === Payment Status Checker ===")
         console.log(`📦 Booking: ${bookingId}`)
 
-        // Step 1: Get booking details to find invoiceId
+
         const bookingUrl = `${API_CONFIG.BASE_URL}/Booking/GetBookingById/${bookingId}`
 
         const bookingResponse = await fetch(bookingUrl)
@@ -49,7 +38,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
         console.log(`📋 Booking ${bookingId} - Invoice: ${invoiceId}`)
 
-        // Step 2: Get payments for this booking directly
+
         const paymentsUrl = `${API_CONFIG.BASE_URL}/Booking/${bookingId}/Payments`
 
         const paymentsResponse = await fetch(paymentsUrl)
@@ -70,7 +59,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             }
         }
 
-        // Step 3: Check PayOS status for each payment
+
         const results: PaymentStatusResult[] = []
 
         for (const payment of payments) {
@@ -78,7 +67,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
             console.log(`💰 ${item}: ${originalStatus} (order: ${orderCode})`)
 
-            // Get PayOS status
+
             const { data: payosData, error: payosError } = await paymentService.getPayOSPayment(orderCode.toString())
 
             if (payosError || !payosData) {
@@ -96,25 +85,25 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             const payosStatus = payosData.status
             console.log(`  → PayOS: ${payosStatus}`)
 
-            // Step 4: Update payment status based on PayOS status (PAID/CANCELLED/EXPIRED)
+
             let updated = false
             let newStatus: string | null = null
 
-            // Determine what status to update to
+
             if (payosStatus === "PAID" && originalStatus !== "Success" && originalStatus !== "Paid") {
                 newStatus = "paid"
             } else if (payosStatus === "CANCELLED" && originalStatus !== "Cancelled" && originalStatus !== "Canceled") {
                 newStatus = "cancelled"
             } else if (payosStatus === "EXPIRED" && originalStatus !== "Expired" && originalStatus !== "Cancelled") {
-                newStatus = "cancelled" // Treat expired as cancelled
+                newStatus = "cancelled"
             }
 
-            // Update if status needs to change
+
             if (newStatus) {
                 console.log(`  ⟳ Updating ${item}: ${originalStatus} → ${newStatus}`)
 
                 try {
-                    // Update payment status via API - use different endpoint based on payment type
+
                     const isRentalPayment = item.toLowerCase().includes("rental")
                     const updateUrl = isRentalPayment
                         ? `${API_CONFIG.BASE_URL}/UpdatePayment/Booking/RentalPayment`
@@ -152,14 +141,14 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             })
         }
 
-        // Check if all payments are paid
+
         const allPaid = results.every(r =>
             r.payosStatus === "PAID" ||
             r.originalStatus === "Success" ||
             r.originalStatus === "Paid"
         )
 
-        // Check if any payment is cancelled
+
         const anyCancelled = results.some(r =>
             r.payosStatus === "CANCELLED" ||
             r.payosStatus === "EXPIRED"
@@ -167,7 +156,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
         console.log(`\n✅ Payment Check Complete - All Paid: ${allPaid}, Any Cancelled: ${anyCancelled}`)
 
-        // Step 5: Update booking status based on payment status
+
         if (allPaid) {
             console.log("📝 Updating booking status to Confirmed...")
             try {
@@ -235,11 +224,6 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
     }
 }
 
-/**
- * Quick check if all payments for a booking are paid
- * @param bookingId - The booking ID
- * @returns true if all payments are paid
- */
 export async function areAllPaymentsPaid(bookingId: string): Promise<boolean> {
     const { allPaid } = await checkAndUpdatePaymentStatuses(bookingId)
     return allPaid

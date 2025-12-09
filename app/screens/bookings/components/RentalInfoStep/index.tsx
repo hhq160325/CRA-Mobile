@@ -1,6 +1,5 @@
 import { View, Text } from "react-native"
 import { useState, useEffect } from "react"
-import { colors } from "../../../../theme/colors"
 import { parkLotService, type ParkLot } from "../../../../../lib/api"
 import { useLanguage } from "../../../../../lib/language-context"
 import CustomDateTimePicker from "../CustomDateTimePicker"
@@ -9,6 +8,7 @@ import PickupSection from "./PickupSection"
 import DropoffSection from "./DropoffSection"
 import DistanceCard from "./DistanceCard"
 import type { RentalInfoStepProps } from "./types"
+import { styles } from "./styles"
 
 export default function RentalInfoStep({
     pickupLocation,
@@ -63,7 +63,7 @@ export default function RentalInfoStep({
         if (result.data) {
             setParkLots(result.data)
 
-            // Set ThuDucLot as default if not already set
+
             if (!selectedParkLot && !pickupLocation) {
                 const thuDucLot = result.data.find(lot => lot.name === "ThuDucLot")
                 if (thuDucLot) {
@@ -90,13 +90,13 @@ export default function RentalInfoStep({
     }
 
     return (
-        <View style={{ paddingHorizontal: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 4 }}>{t("rentalInfo")}</Text>
-            <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 16 }}>
+        <View style={styles.container}>
+            <Text style={styles.title}>{t("rentalInfo")}</Text>
+            <Text style={styles.description}>
                 {t("rentalInfoDesc")}
             </Text>
 
-            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12 }}>
+            <View style={styles.contentCard}>
                 <PickupSection
                     pickupMode={pickupMode}
                     pickupLocation={pickupLocation}

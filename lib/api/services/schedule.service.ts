@@ -18,7 +18,7 @@ export interface Schedule {
     createdAt: string
 }
 
-// Helper function to get token consistently
+
 const getAuthToken = (): string | null => {
     try {
         if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
@@ -93,13 +93,13 @@ export const scheduleService = {
                 const errorText = await response.text()
                 console.log(`📸 getCheckInOutInfo: error response`, errorText)
 
-                // 500 error with "Object reference" means no data exists yet - this is normal
+
                 if (response.status === 500 && errorText.includes('Object reference')) {
                     console.log(`📸 getCheckInOutInfo: No data exists yet (normal)`)
                     return { data: { images: [], description: '' }, error: null }
                 }
 
-                // 404 also means no data - return empty instead of error
+
                 if (response.status === 404) {
                     return { data: { images: [], description: '' }, error: null }
                 }
@@ -110,8 +110,7 @@ export const scheduleService = {
             const responseData = await response.json()
             console.log(`📸 getCheckInOutInfo: response data`, JSON.stringify(responseData, null, 2))
 
-            // Extract images and description from the response
-            // API returns data in a "view" object
+
             const viewData = responseData?.view || responseData
             const images = viewData?.urls || []
             const description = viewData?.description || ""
@@ -128,14 +127,14 @@ export const scheduleService = {
     async getCheckInImages(
         bookingId: string
     ): Promise<{ data: { images: string[]; description: string } | null; error: Error | null }> {
-        // Use the new unified endpoint
+
         return this.getCheckInOutInfo(bookingId, true)
     },
 
     async getCheckOutImages(
         bookingId: string
     ): Promise<{ data: { images: string[]; description: string } | null; error: Error | null }> {
-        // Use the new unified endpoint
+
         return this.getCheckInOutInfo(bookingId, false)
     },
 
@@ -156,16 +155,16 @@ export const scheduleService = {
 
             const formData = new FormData()
 
-            // Append BookingId (capital B as per API spec)
+
             formData.append('BookingId', bookingId)
 
-            // Append ResponsibleStaffId (capital R and S as per API spec)
+
             formData.append('ResponsibleStaffId', responsibleStaffId)
 
-            // Append Description (capital D as per API spec)
+
             formData.append('Description', description)
 
-            // Append multiple images - React Native requires specific format
+
             imageUris.forEach((imageUri, index) => {
                 const filename = imageUri.split('/').pop() || `pickup_${index}.jpg`
                 const match = /\.(\w+)$/.exec(filename)
@@ -174,7 +173,7 @@ export const scheduleService = {
 
                 console.log(`✅ checkIn: adding image ${index + 1}:`, { filename, type, uri: imageUri.substring(0, 50) + '...' })
 
-                // React Native FormData requires this specific object format for files
+
                 formData.append('images', {
                     uri: imageUri,
                     name: filename,
@@ -193,7 +192,7 @@ export const scheduleService = {
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
                     'Accept': '*/*',
-                    // Note: Don't set Content-Type for FormData, let fetch set it with boundary
+
                 },
                 body: formData,
             })
@@ -204,7 +203,7 @@ export const scheduleService = {
                 const errorText = await response.text()
                 console.error('✅ checkIn: error response', errorText)
 
-                // Parse error message for user-friendly display
+
                 let userMessage = "Check-in failed. Please try again."
                 try {
                     const errorJson = JSON.parse(errorText)
@@ -216,7 +215,7 @@ export const scheduleService = {
                         userMessage = Object.values(errorJson.errors).flat().join(', ')
                     }
                 } catch {
-                    // If not JSON, use the raw error text if it's short enough
+
                     if (errorText.length < 200) {
                         userMessage = errorText
                     }
@@ -232,7 +231,7 @@ export const scheduleService = {
             try {
                 data = responseText ? JSON.parse(responseText) : { success: true }
             } catch {
-                // If response is not JSON, treat as success with the text as message
+
                 data = { success: true, message: responseText || 'Check-in successful' }
             }
 
@@ -261,16 +260,16 @@ export const scheduleService = {
 
             const formData = new FormData()
 
-            // Append BookingId (capital B as per API spec)
+
             formData.append('BookingId', bookingId)
 
-            // Append ResponsibleStaffId (capital R and S as per API spec)
+
             formData.append('ResponsibleStaffId', responsibleStaffId)
 
-            // Append Description (capital D as per API spec)
+
             formData.append('Description', description)
 
-            // Append multiple images - React Native requires specific format
+
             imageUris.forEach((imageUri, index) => {
                 const filename = imageUri.split('/').pop() || `return_${index}.jpg`
                 const match = /\.(\w+)$/.exec(filename)
@@ -279,7 +278,7 @@ export const scheduleService = {
 
                 console.log(`🔄 checkOut: adding image ${index + 1}:`, { filename, type })
 
-                // React Native FormData requires this specific object format for files
+
                 formData.append('images', {
                     uri: imageUri,
                     name: filename,
@@ -308,7 +307,7 @@ export const scheduleService = {
                 const errorText = await response.text()
                 console.error('🔄 checkOut: error response', errorText)
 
-                // Parse error message for user-friendly display
+
                 let userMessage = "Check-out failed. Please try again."
                 try {
                     const errorJson = JSON.parse(errorText)
@@ -320,7 +319,7 @@ export const scheduleService = {
                         userMessage = Object.values(errorJson.errors).flat().join(', ')
                     }
                 } catch {
-                    // If not JSON, use the raw error text if it's short enough
+
                     if (errorText.length < 200) {
                         userMessage = errorText
                     }

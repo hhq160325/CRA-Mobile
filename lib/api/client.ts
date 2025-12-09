@@ -81,7 +81,7 @@ async function makeRequest<T>(
     if (!response.ok) {
       const errorText = await response.text()
 
-      // Only log non-404 errors to reduce noise (404s are expected for missing data)
+
       if (response.status !== 404) {
         console.error("apiClient: error response status:", response.status)
         console.error("apiClient: error response body:", errorText)
@@ -123,9 +123,9 @@ async function makeRequest<T>(
     try {
       data = JSON.parse(responseText)
     } catch {
-      // If JSON parse fails, check if it's a plain text response (like a URL)
+
       console.log("apiClient: response is not JSON, treating as text:", responseText)
-      // If response looks like a URL or plain text, return it as-is
+
       if (responseText.startsWith('http') || responseText.length < 500) {
         return responseText as any
       }
@@ -168,7 +168,7 @@ export async function apiClient<T>(
       headers["Authorization"] = `Bearer ${token}`
       console.log("apiClient: using auth token (length:", token.length, ")")
     }
-    // Note: Some endpoints don't require authentication, so missing token is not always an error
+
 
     const fetchOptions: RequestInit = {
       ...options,

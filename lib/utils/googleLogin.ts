@@ -3,21 +3,20 @@ import * as WebBrowser from 'expo-web-browser'
 import { makeRedirectUri } from 'expo-auth-session'
 import { API_CONFIG, API_ENDPOINTS } from "../api/config"
 
-// Complete auth session for web
+
 WebBrowser.maybeCompleteAuthSession()
 
-// Google OAuth Client IDs - Get these from Google Cloud Console
-// Create OAuth 2.0 credentials for each platform
+
 export const GOOGLE_CONFIG = {
-    // Web Client ID (required) - Create "Web application" type in Google Cloud Console
+
     webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
-    // Android Client ID - Create "Android" type with your package name and SHA-1
+
     androidClientId: "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
-    // iOS Client ID - Create "iOS" type with your bundle ID
+
     iosClientId: "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
 }
 
-// Create redirect URI for Expo
+
 export const getRedirectUri = () => {
     return makeRedirectUri({
         scheme: 'carapp',
@@ -25,10 +24,10 @@ export const getRedirectUri = () => {
     })
 }
 
-// Log redirect URI for debugging
+
 console.log("Google OAuth Redirect URI:", getRedirectUri())
 
-// Hook for Google Auth - use this in components
+
 export function useGoogleAuth() {
     const redirectUri = getRedirectUri()
 
@@ -43,7 +42,7 @@ export function useGoogleAuth() {
     return { request, response, promptAsync, redirectUri }
 }
 
-// Process Google auth response
+
 export async function processGoogleAuthResponse(
     response: any
 ): Promise<{ success: boolean; error?: string; user?: any }> {
@@ -57,7 +56,7 @@ export async function processGoogleAuthResponse(
 
             console.log("✅ Got Google access token")
 
-            // Get user info from Google
+
             const userInfo = await fetchGoogleUserInfo(authentication.accessToken)
 
             if (!userInfo) {
@@ -66,7 +65,7 @@ export async function processGoogleAuthResponse(
 
             console.log("✅ Got Google user info:", userInfo.email)
 
-            // Try to exchange with backend, or use Google data directly
+
             const result = await exchangeWithBackend(authentication, userInfo)
             return result
 
@@ -84,7 +83,7 @@ export async function processGoogleAuthResponse(
     }
 }
 
-// Fetch user info from Google API
+
 async function fetchGoogleUserInfo(accessToken: string): Promise<any | null> {
     try {
         const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
@@ -105,13 +104,13 @@ async function fetchGoogleUserInfo(accessToken: string): Promise<any | null> {
     }
 }
 
-// Exchange Google token with backend
+
 async function exchangeWithBackend(
     authentication: { accessToken: string; idToken?: string | null },
     googleUser: { id: string; email: string; name: string; picture?: string }
 ): Promise<{ success: boolean; error?: string; user?: any }> {
     try {
-        // Try to authenticate with backend using Google token
+
         const token = authentication.idToken || authentication.accessToken
 
         const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`, {
@@ -135,18 +134,18 @@ async function exchangeWithBackend(
             }
         }
 
-        // Backend didn't return JWT - use Google data directly
+
         console.log("Using Google user data directly")
         return createUserFromGoogle(googleUser, authentication.accessToken)
 
     } catch (error: any) {
         console.error("Backend exchange error:", error)
-        // Fallback to Google data
+
         return createUserFromGoogle(googleUser, authentication.accessToken)
     }
 }
 
-// Process backend JWT response
+
 function processBackendResponse(
     jwtToken: string,
     backendData: any,
@@ -171,7 +170,7 @@ function processBackendResponse(
         console.error("Failed to decode JWT:", e)
     }
 
-    // Determine role
+
     let role: "customer" | "staff" | "car-owner" = "customer"
     const roleFromToken = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
 
@@ -196,7 +195,7 @@ function processBackendResponse(
     return user
 }
 
-// Create user from Google data
+
 function createUserFromGoogle(
     googleUser: { id: string; email: string; name: string; picture?: string },
     accessToken: string
@@ -217,7 +216,7 @@ function createUserFromGoogle(
     return { success: true, user }
 }
 
-// Save auth data
+
 function saveAuthData(token: string, user: any, refreshToken?: string) {
     try {
         if (typeof localStorage !== "undefined" && localStorage?.setItem) {
@@ -233,10 +232,9 @@ function saveAuthData(token: string, user: any, refreshToken?: string) {
     }
 }
 
-// Legacy function for compatibility - now returns instruction
+
 export async function performGoogleLogin(): Promise<{ success: boolean; error?: string; user?: any }> {
-    // This function is now just a placeholder
-    // The actual login is done via useGoogleAuth hook + promptAsync
+
     return {
         success: false,
         error: "Use useGoogleAuth hook with promptAsync instead"

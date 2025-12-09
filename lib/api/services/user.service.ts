@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "../config"
+import { API_CONFIG, API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
 
 interface UserData {
@@ -106,14 +106,12 @@ export const userService = {
     async updateUserInfo(userId: string, updateData: Partial<UserData>): Promise<{ data: UserData | null; error: Error | null }> {
         console.log("userService.updateUserInfo: updating user", userId)
 
-        // IMPORTANT: Only send fields that need to be updated
-        // Fields NOT included in the request will remain unchanged on the backend
-        // This is especially important for sensitive fields like password
+
         const result = await apiClient<UserData>(API_ENDPOINTS.UPDATE_USER_INFO, {
             method: "PATCH",
             body: JSON.stringify({
                 id: userId,
-                status: "Active", // Required field by API
+                status: "Active",
                 ...updateData,
             }),
         })
@@ -156,7 +154,7 @@ export const userService = {
                 type: type,
             } as any)
 
-            // Add userId to FormData as per API requirement
+
             formData.append('userId', userId)
 
             const url = API_ENDPOINTS.UPLOAD_AVATAR(userId)

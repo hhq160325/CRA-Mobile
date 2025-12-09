@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
-  // Use the Google login hook
+
   const {
     loginWithGoogle: googleLogin,
     isReady: isGoogleReady,
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return true
         }
 
-        // Fallback: check localStorage
+
         const currentUser = authService.getCurrentUser()
         if (currentUser) {
           console.log('auth-context: setting user from localStorage', { userId: currentUser.id, userRole: currentUser.role })
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar: currentUser.avatar,
         imageAvatar: (currentUser as any).imageAvatar
       })
-      // Create a completely new object to force React to detect the change
+
       setUser(null)
       setTimeout(() => {
         setUser({ ...currentUser })

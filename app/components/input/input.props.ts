@@ -8,4 +8,6 @@ export interface IInputProps {
   onSecurePress?: (e: any) => void;
   keyboardType?: KeyboardTypeOptions | undefined;
   containerStyle?: ViewStyle;
+  value?: string;
+  maxLength?: number;
 }

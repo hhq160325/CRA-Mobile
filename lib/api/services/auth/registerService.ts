@@ -5,7 +5,7 @@ import { saveAuthToStorage } from './storageHelpers';
 
 export const register = async (
     data: RegisterData
-): Promise<{ data: User | null; error: Error | null }> => {
+): Promise<{ data: { message: string } | null; error: Error | null }> => {
     console.log("registerService.register: sending request with", data);
 
     const requestBody = {
@@ -15,12 +15,12 @@ export const register = async (
         phoneNumber: data.phoneNumber || "",
         fullname: data.fullname,
         address: data.address || "",
-        gender: data.gender !== undefined ? data.gender : 2, // Default to "Other" (2)
+        gender: data.gender !== undefined ? data.gender : 0, // Default to 0 as per API example
     };
 
     console.log("registerService.register: request body", requestBody);
 
-    const result = await apiClient<{ user: User; token: string }>(API_ENDPOINTS.REGISTER, {
+    const result = await apiClient<{ message: string }>(API_ENDPOINTS.REGISTER, {
         method: "POST",
         body: JSON.stringify(requestBody),
     });
@@ -28,6 +28,7 @@ export const register = async (
     console.log("registerService.register: received response", {
         hasError: !!result.error,
         hasData: !!result.data,
+        message: result.data?.message,
     });
 
     if (result.error) {
@@ -35,11 +36,7 @@ export const register = async (
         return { data: null, error: result.error };
     }
 
-    try {
-        saveAuthToStorage(result.data.token, result.data.user);
-        return { data: result.data.user, error: null };
-    } catch (e) {
-        console.error("registerService.register: error saving to storage", e);
-        return { data: result.data.user, error: null }; // Still return user even if storage fails
-    }
+    // The API now returns { "message": "Check your email for a verification code!" }
+    // No user data or token is returned until OTP verification is complete
+    return { data: result.data, error: null };
 };

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   Image,
   Text,
@@ -10,15 +10,15 @@ import {
 import assets from '../../assets';
 import Button from '../../components/button/component';
 import OtpComponent from '../../components/otp/component';
-import {navigate} from '../../navigators/navigation-utilities';
-import {renderMarginTop} from '../../utils/ui-utils';
-import {createStyles} from './otp.styles';
-import {authService} from '../../../lib/api';
-import {useRoute} from '@react-navigation/native';
+import { navigate } from '../../navigators/navigation-utilities';
+import { renderMarginTop } from '../../utils/ui-utils';
+import { createStyles } from './otp.styles';
+import { authService } from '../../../lib/api';
+import { useRoute } from '@react-navigation/native';
 
 const OtpScreen = () => {
   const styles = createStyles();
-  const {logo_black} = assets;
+  const { logo_black } = assets;
   const route = useRoute();
   const params = route.params as any;
 
@@ -39,14 +39,14 @@ const OtpScreen = () => {
   };
 
   const handleVerifyCode = async () => {
-    if (!otp || otp.length < 4) {
-      Alert.alert('Error', 'Please enter the verification code');
+    if (!otp || otp.length < 6) {
+      Alert.alert('Error', 'Please enter the 6-digit verification code');
       return;
     }
 
     setLoading(true);
     try {
-      const {data, error} = await authService.verifyResetCode(email, otp);
+      const { data, error } = await authService.verifyResetCode(email, otp);
 
       if (error) {
         Alert.alert('Error', 'Invalid verification code');
@@ -55,7 +55,7 @@ const OtpScreen = () => {
           setShowPasswordFields(true);
         } else {
           Alert.alert('Success', 'Verification successful!', [
-            {text: 'OK', onPress: () => navigate('SignInScreen')},
+            { text: 'OK', onPress: () => navigate('SignInScreen') },
           ]);
         }
       } else {
@@ -86,7 +86,7 @@ const OtpScreen = () => {
 
     setLoading(true);
     try {
-      const {data, error} = await authService.resetPassword(
+      const { data, error } = await authService.resetPassword(
         email,
         otp,
         newPassword,
@@ -117,7 +117,7 @@ const OtpScreen = () => {
 
     setLoading(true);
     try {
-      const {data, error} = await authService.forgotPassword(email);
+      const { data, error } = await authService.forgotPassword(email);
 
       if (error) {
         Alert.alert('Error', 'Failed to resend code');
@@ -173,7 +173,7 @@ const OtpScreen = () => {
                 onPress={handleResend}
                 style={[styles.dontHaveText, styles.textCenter]}>
                 Didn't receive the OTP?{' '}
-                <Text style={{fontWeight: 'bold'}}>Resend</Text>
+                <Text style={{ fontWeight: 'bold' }}>Resend</Text>
               </Text>
             </>
           ) : (
@@ -216,7 +216,7 @@ const OtpScreen = () => {
           )}
 
           {loading && (
-            <View style={{alignItems: 'center', marginTop: 12}}>
+            <View style={{ alignItems: 'center', marginTop: 12 }}>
               <ActivityIndicator size="small" />
             </View>
           )}

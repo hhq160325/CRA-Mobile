@@ -30,7 +30,8 @@ export const API_ENDPOINTS = {
   LOGIN: "/Authen/authenticate",
   REGISTER: "/Authen/SignUp",
   LOGOUT: "/Authen/Logout",
-  VERIFY_OTP: "/Authen/verify-otp",
+  SEND_OTP: "/Authen/otp/send",
+  VERIFY_OTP: "/Authen/otp/verify",
 
   // Alternative paths to try: /Authen/forgotPassword, /Authen/request-reset, /User/forgot-password
   FORGOT_PASSWORD: "/Authen/ForgotPassword",

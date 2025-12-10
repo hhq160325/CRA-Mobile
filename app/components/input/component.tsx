@@ -13,6 +13,8 @@ const InputComponent = ({
   onSecurePress,
   keyboardType,
   containerStyle,
+  value,
+  maxLength,
 }: IInputProps) => {
   const styles = createStyles();
   const { eye } = assets;
@@ -26,6 +28,8 @@ const InputComponent = ({
         secureTextEntry={secureTextEntry}
         onChangeText={onChangeText}
         keyboardType={keyboardType}
+        value={value}
+        maxLength={maxLength}
       />
       {isSecure && (
         <Pressable onPress={onSecurePress}>

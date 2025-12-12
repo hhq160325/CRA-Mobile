@@ -11,13 +11,14 @@ export type NavigatorParamList = {
   ['Home']: undefined;
   ['Bookings']: undefined;
   ['Cars']: undefined;
+  ['AllCars']: undefined;
   ['Profile']: undefined;
   ['CarDetail']: { id: string };
   ['BookingDetail']: { id: string };
   ['BookingForm']: { id: string } | undefined;
   ['BookingPayment']: { bookingId: string; paymentMethod: string; amount: number };
   ['PayOSWebView']: { paymentUrl: string; bookingId?: string };
-  ['FeedbackForm']: { carId: string; bookingId?: string };
+  ['FeedbackForm']: { carId: string; bookingId?: string; bookingNumber?: string };
   ['CarMapScreen']: {
     pickupLocation: string;
     pickupDate: string;
@@ -52,7 +53,7 @@ export type NavigatorParamList = {
   };
   ['VehicleReturn']: { bookingId: string };
   ['PaymentHistory']: undefined;
-  ['Messages']: { bookingId: string };
+  ['Messages']: { bookingId: string; bookingNumber?: string };
   ['ChatHeads']: undefined;
   ['Chat']: { carId: string };
   ['auth']: undefined;

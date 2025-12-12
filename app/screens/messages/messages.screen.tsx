@@ -22,10 +22,10 @@ import { API_ENDPOINTS, API_CONFIG } from '../../../lib/api/config';
 import { styles } from './messages.styles';
 
 export default function MessagesScreen() {
-    const route = useRoute<RouteProp<{ params: { bookingId: string } }, 'params'>>();
+    const route = useRoute<RouteProp<{ params: { bookingId: string; bookingNumber?: string } }, 'params'>>();
     const navigation = useNavigation();
     const { user } = useAuth();
-    const { bookingId } = (route.params as any) || {};
+    const { bookingId, bookingNumber } = (route.params as any) || {};
 
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
@@ -68,7 +68,35 @@ export default function MessagesScreen() {
                     (a: any, b: any) =>
                         new Date(b.createDate).getTime() - new Date(a.createDate).getTime(),
                 );
-                setChatHistory(sorted);
+
+                // Merge with existing optimistic messages to avoid losing them during refresh
+                setChatHistory(prevHistory => {
+                    // Get any existing optimistic messages
+                    const optimisticMessages = prevHistory.filter(msg => msg.id.startsWith('temp-'));
+
+                    // Remove optimistic messages that have been confirmed by server
+                    const filteredOptimisticMessages = optimisticMessages.filter(optimistic => {
+                        const hasRealVersion = sorted.some(real =>
+                            real.title === optimistic.title &&
+                            real.content === optimistic.content &&
+                            real.senderId === optimistic.senderId &&
+                            Math.abs(new Date(real.createDate).getTime() - new Date(optimistic.createDate).getTime()) < 30000 // Within 30 seconds
+                        );
+                        if (hasRealVersion) {
+                            console.log('Removing optimistic message, found real version:', optimistic.title);
+                        }
+                        return !hasRealVersion;
+                    });
+
+                    // Combine real messages with remaining optimistic ones
+                    const allMessages = [...filteredOptimisticMessages, ...sorted];
+
+                    // Sort again to maintain chronological order (newest first)
+                    return allMessages.sort(
+                        (a: any, b: any) =>
+                            new Date(b.createDate).getTime() - new Date(a.createDate).getTime(),
+                    );
+                });
             }
         } catch (error) {
             console.error('Error fetching chat history:', error);
@@ -78,8 +106,8 @@ export default function MessagesScreen() {
     };
 
     const validateBookingId = () => {
-        if (!bookingId) {
-            Alert.alert('Error', 'Booking ID is required');
+        if (!bookingId && !bookingNumber) {
+            Alert.alert('Error', 'Booking information is required');
             navigation.goBack();
             return false;
         }
@@ -104,39 +132,89 @@ export default function MessagesScreen() {
 
         setFetchingOwner(true);
         try {
-            const bookingRes = await bookingsService.getBookingById(bookingId);
-            if (bookingRes.error || !bookingRes.data) {
-                Alert.alert('Error', 'Failed to load booking details');
-                navigation.goBack();
-                return;
+            let bookingData = null;
+            let carData = null;
+
+            // Try to use bookingNumber first for complete data
+            if (bookingNumber) {
+                console.log('Fetching booking details using bookingNumber:', bookingNumber);
+                const bookingRes = await bookingsService.getBookingByNumber(bookingNumber);
+
+                if (bookingRes.data && bookingRes.data.car) {
+                    bookingData = bookingRes.data;
+                    const carId = bookingRes.data.car.id;
+
+                    // Fetch complete car details including owner information
+                    console.log('Fetching complete car details for carId:', carId);
+                    const carRes = await apiClient<any>(API_ENDPOINTS.CAR_DETAILS(carId), {
+                        method: 'GET',
+                    });
+
+                    if (carRes.data) {
+                        carData = carRes.data;
+                        console.log('Successfully fetched complete car data with owner info');
+                    } else {
+                        console.log('Failed to fetch complete car details, using basic car info');
+                        carData = bookingRes.data.car;
+                    }
+                }
             }
 
-            const carId = bookingRes.data.carId;
-            if (!carId) {
+            // Fallback to original method if bookingNumber approach failed
+            if (!carData) {
+                console.log('Falling back to bookingId approach');
+                const bookingRes = await bookingsService.getBookingById(bookingId);
+                if (bookingRes.error || !bookingRes.data) {
+                    Alert.alert('Error', 'Failed to load booking details');
+                    navigation.goBack();
+                    return;
+                }
+
+                const carId = bookingRes.data.carId;
+                if (!carId) {
+                    Alert.alert('Error', 'Car information not found');
+                    navigation.goBack();
+                    return;
+                }
+
+                const carRes = await apiClient<any>(API_ENDPOINTS.CAR_DETAILS(carId), {
+                    method: 'GET',
+                });
+
+                if (carRes.error || !carRes.data) {
+                    Alert.alert('Error', 'Failed to load car details');
+                    navigation.goBack();
+                    return;
+                }
+
+                carData = carRes.data;
+            }
+
+            // Validate that we have car data
+            if (!carData) {
                 Alert.alert('Error', 'Car information not found');
                 navigation.goBack();
                 return;
             }
 
-            const carRes = await apiClient<any>(API_ENDPOINTS.CAR_DETAILS(carId), {
-                method: 'GET',
-            });
+            // Extract owner information from car data
+            try {
+                const { ownerId: fetchedOwnerId, ownerUsername: fetchedOwnerUsername, carName: fetchedCarName } = extractCarOwnerInfo(carData);
 
-            if (carRes.error || !carRes.data) {
-                Alert.alert('Error', 'Failed to load car details');
+                setOwnerId(fetchedOwnerId);
+                setOwnerUsername(fetchedOwnerUsername);
+                setCarName(fetchedCarName);
+                setTitle(`Inquiry about ${fetchedCarName}`);
+            } catch (ownerError) {
+                console.error('Error extracting owner info:', ownerError);
+                Alert.alert('Error', 'Failed to load car owner information');
                 navigation.goBack();
                 return;
             }
-
-            const { ownerId: fetchedOwnerId, ownerUsername: fetchedOwnerUsername, carName: fetchedCarName } = extractCarOwnerInfo(carRes.data);
-
-            setOwnerId(fetchedOwnerId);
-            setOwnerUsername(fetchedOwnerUsername);
-            setCarName(fetchedCarName);
-            setTitle(`Inquiry about ${fetchedCarName}`);
         } catch (error) {
             console.error('Error fetching car owner:', error);
-            Alert.alert('Error', 'Failed to load car owner information');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to load car owner information';
+            Alert.alert('Error', errorMessage);
             navigation.goBack();
         } finally {
             setFetchingOwner(false);
@@ -181,15 +259,54 @@ export default function MessagesScreen() {
 
             if (result.error) {
                 Alert.alert('Error', 'Failed to send message. Please try again.');
+                // Remove the optimistic message on error
+                setChatHistory(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
                 return;
             }
 
-            await fetchChatHistory();
+            // Add optimistic message to chat history immediately
+            const optimisticMessage = {
+                id: `temp-${Date.now()}`,
+                title: title.trim(),
+                content: content.trim(),
+                createDate: new Date().toISOString(),
+                updateDate: new Date().toISOString(),
+                status: 'Open',
+                type: 'Question',
+                senderId: user!.id,
+                receiverId: ownerId!,
+            };
+
+            // Add to chat history immediately for better UX
+            setChatHistory(prev => [optimisticMessage, ...prev]);
+
+            // Clear the message content immediately
             setContent('');
+
+            // Show success message
             Alert.alert('Success', 'Your message has been sent to the car owner!');
+
+            // Refresh chat history multiple times to ensure new message appears
+            setTimeout(async () => {
+                console.log('First refresh after sending message...');
+                await fetchChatHistory();
+            }, 1000);
+
+            setTimeout(async () => {
+                console.log('Second refresh after sending message...');
+                await fetchChatHistory();
+            }, 3000);
+
+            setTimeout(async () => {
+                console.log('Third refresh after sending message...');
+                await fetchChatHistory();
+            }, 5000);
+
         } catch (error) {
             console.error('Error sending message:', error);
             Alert.alert('Error', 'An unexpected error occurred');
+            // Remove the optimistic message on error
+            setChatHistory(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
         } finally {
             setLoading(false);
         }

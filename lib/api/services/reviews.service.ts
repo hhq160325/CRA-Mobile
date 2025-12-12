@@ -48,45 +48,129 @@ export const reviewsService = {
 
   async getAllFeedback(): Promise<{ data: Review[] | null; error: Error | null }> {
     console.log("reviewsService.getAllFeedback: fetching all reviews")
-    const result = await apiClient<Review[]>(API_ENDPOINTS.ALL_FEEDBACK, { method: "GET" })
+    const result = await apiClient<any[]>(API_ENDPOINTS.ALL_FEEDBACK, { method: "GET" })
+
+    if (result.error) {
+      console.log("reviewsService.getAllFeedback: error", result.error.message)
+      return { data: null, error: result.error }
+    }
+
+    // Helper function to enrich user data
+    const enrichUserData = async (feedback: any): Promise<Review> => {
+      let userName = feedback.userName || "Anonymous";
+      let userAvatar = feedback.userAvatar || "";
+
+      // If we don't have user name or it's "Anonymous", try to fetch user details
+      if ((!userName || userName === "Anonymous") && feedback.userId) {
+        try {
+          const { userService } = require('./user.service');
+          const userResult = await userService.getUserById(feedback.userId);
+
+          if (userResult.data) {
+            userName = userResult.data.fullname || userResult.data.username || "Anonymous";
+            userAvatar = userResult.data.imageAvatar || userResult.data.avatar || "";
+            console.log(`🔍 reviewsService: Enriched user data for ${feedback.userId}: ${userName}`);
+          }
+        } catch (err) {
+          console.log(`🔍 reviewsService: Could not fetch user details for ${feedback.userId}:`, err);
+        }
+      }
+
+      return {
+        id: feedback.id || `feedback-${Date.now()}`,
+        carId: feedback.carId || feedback.car?.id || "unknown",
+        userId: feedback.userId || "unknown",
+        userName,
+        userAvatar,
+        rating: feedback.rating || 0,
+        comment: feedback.content || feedback.comment || "",
+        title: feedback.title || "",
+        content: feedback.content || "",
+        date: feedback.createDate || feedback.date || new Date().toISOString(),
+        imageUrls: feedback.imageUrls || []
+      };
+    };
+
+    // Map and enrich all reviews with user data
+    const enrichedReviews = await Promise.all(
+      (result.data || []).map(enrichUserData)
+    );
+
     console.log("reviewsService.getAllFeedback: result", {
-      hasError: !!result.error,
-      dataLength: result.data?.length
+      hasError: false,
+      dataLength: enrichedReviews.length,
+      sampleUserNames: enrichedReviews.slice(0, 3).map(r => r.userName)
     })
-    return result.error ? { data: null, error: result.error } : { data: result.data, error: null }
+
+    return { data: enrichedReviews, error: null }
   },
 
 
   async getCarReviews(carId: string): Promise<{ data: Review[] | null; error: Error | null }> {
-    console.log("reviewsService.getCarReviews: fetching reviews for car", carId)
+    console.log("🚗 reviewsService.getCarReviews: fetching reviews for car", carId)
 
     const result = await apiClient<any[]>(API_ENDPOINTS.FEEDBACK_BY_CAR(carId), { method: "GET" })
 
+    console.log("🚗 reviewsService.getCarReviews: Raw API result:", {
+      hasError: !!result.error,
+      hasData: !!result.data,
+      dataLength: result.data?.length,
+      sampleData: result.data?.slice(0, 1)
+    })
 
     if (result.error) {
       console.log("reviewsService.getCarReviews: returning empty array due to error", result.error.message)
       return { data: [], error: null }
     }
 
+    // Helper function to enrich user data
+    const enrichUserData = async (feedback: any): Promise<Review> => {
+      let userName = feedback.userName || "Anonymous";
+      let userAvatar = feedback.userAvatar || "";
 
-    const mappedReviews: Review[] = (result.data || []).map((feedback: any, index: number) => ({
-      id: feedback.id || `feedback-${index}`,
-      carId: feedback.car?.id || carId,
-      userId: feedback.userId || "unknown",
-      userName: feedback.userName || "Anonymous",
-      userAvatar: feedback.userAvatar || "",
-      rating: feedback.rating || 0,
-      comment: feedback.content || feedback.comment || "",
-      title: feedback.title || "",
-      content: feedback.content || "",
-      date: feedback.createDate || feedback.date || new Date().toISOString(),
-      imageUrls: feedback.imageUrls || []
-    }))
+      // If we don't have user name or it's "Anonymous", try to fetch user details
+      if ((!userName || userName === "Anonymous") && feedback.userId) {
+        try {
+          const { userService } = require('./user.service');
+          const userResult = await userService.getUserById(feedback.userId);
 
-    console.log("reviewsService.getCarReviews: result", {
+          if (userResult.data) {
+            userName = userResult.data.fullname || userResult.data.username || "Anonymous";
+            userAvatar = userResult.data.imageAvatar || userResult.data.avatar || "";
+            console.log(`🔍 reviewsService: Enriched user data for ${feedback.userId}: ${userName}`);
+          }
+        } catch (err) {
+          console.log(`🔍 reviewsService: Could not fetch user details for ${feedback.userId}:`, err);
+        }
+      }
+
+      return {
+        id: feedback.id || `feedback-${Date.now()}`,
+        carId: feedback.car?.id || carId,
+        userId: feedback.userId || "unknown",
+        userName,
+        userAvatar,
+        rating: feedback.rating || 0,
+        comment: feedback.content || feedback.comment || "",
+        title: feedback.title || "",
+        content: feedback.content || "",
+        date: feedback.createDate || feedback.date || new Date().toISOString(),
+        imageUrls: feedback.imageUrls || []
+      };
+    };
+
+    // Map and enrich all reviews with user data
+    const mappedReviews = await Promise.all(
+      (result.data || []).map(enrichUserData)
+    );
+
+    console.log("🚗 reviewsService.getCarReviews: Final result", {
       hasError: !!result.error,
-      dataLength: mappedReviews.length
+      dataLength: mappedReviews.length,
+      sampleUserNames: mappedReviews.slice(0, 3).map(r => r.userName),
+      sampleUserIds: mappedReviews.slice(0, 3).map(r => r.userId)
     })
+
     return { data: mappedReviews, error: null }
   },
 

@@ -63,17 +63,11 @@ const OtpComponent = forwardRef<IOtpComponentRef, IOtpComponentProps>(({ onOTPCh
   }));
 
   const getInputStyle = (index: number) => {
-    const baseStyle = [styles.input];
-
-    if (focusedIndex === index) {
-      baseStyle.push(styles.inputFocused);
-    }
-
-    if (otp[index]) {
-      baseStyle.push(styles.inputFilled);
-    }
-
-    return baseStyle;
+    return [
+      styles.input,
+      focusedIndex === index && styles.inputFocused,
+      otp[index] && styles.inputFilled,
+    ].filter(Boolean);
   };
 
   return (

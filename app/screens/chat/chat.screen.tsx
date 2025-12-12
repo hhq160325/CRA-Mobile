@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -10,11 +10,13 @@ import {
     KeyboardAvoidingView,
     Platform,
     Image,
+    RefreshControl,
+    AppState,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import * as ImagePicker from 'expo-image-picker';
+
 import { colors } from '../../theme/colors';
 import Header from '../../components/Header/Header';
 import { useAuth } from '../../../lib/auth-context';
@@ -51,20 +53,46 @@ export default function ChatScreen() {
     const [carName, setCarName] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [refreshing, setRefreshing] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+    const [autoRefreshing, setAutoRefreshing] = useState(false);
 
     useEffect(() => {
         fetchCarOwner();
     }, [carId]);
 
+    // Listen for app state changes to refresh when app comes to foreground
     useEffect(() => {
-        if (user?.id && ownerId) {
-            fetchMessages();
-            // Auto-refresh every 10 seconds
-            const interval = setInterval(fetchMessages, 10000);
-            return () => clearInterval(interval);
-        }
+        const handleAppStateChange = (nextAppState: string) => {
+            if (nextAppState === 'active' && user?.id && ownerId) {
+                console.log('App became active, refreshing messages...');
+                fetchMessages();
+            }
+        };
+
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+        return () => subscription?.remove();
     }, [user?.id, ownerId]);
+
+    // Auto-refresh when screen is focused
+    useFocusEffect(
+        useCallback(() => {
+            if (!user?.id || !ownerId) return;
+
+            // Initial fetch
+            fetchMessages();
+
+            // Set up aggressive auto-refresh every 2 seconds when screen is active
+            const interval = setInterval(() => {
+                console.log('Auto-refreshing messages...');
+                fetchMessages(false, true);
+            }, 2000);
+
+            return () => {
+                console.log('Clearing auto-refresh interval');
+                clearInterval(interval);
+            };
+        }, [user?.id, ownerId])
+    );
 
     const fetchCarOwner = async () => {
         if (!carId) {
@@ -108,8 +136,14 @@ export default function ChatScreen() {
         }
     };
 
-    const fetchMessages = async () => {
+    const fetchMessages = async (showRefreshing = false, isAutoRefresh = false) => {
         if (!user?.id || !ownerId) return;
+
+        if (showRefreshing) {
+            setRefreshing(true);
+        } else if (isAutoRefresh) {
+            setAutoRefreshing(true);
+        }
 
         try {
             const url = `${API_CONFIG.BASE_URL}/Inquiry/chatLog?senderId=${user.id}&receiverId=${ownerId}`;
@@ -125,6 +159,7 @@ export default function ChatScreen() {
             if (response.ok) {
                 const data = await response.json();
                 console.log('Chat messages received:', data.length, 'messages');
+                console.log('Is auto refresh:', isAutoRefresh);
 
                 // Log first message to check structure
                 if (data.length > 0) {
@@ -136,7 +171,43 @@ export default function ChatScreen() {
                     (a: Message, b: Message) =>
                         new Date(a.createDate).getTime() - new Date(b.createDate).getTime(),
                 );
-                setMessages(sorted);
+
+                // Filter out temporary optimistic messages and replace with real ones
+                const realMessages = sorted.filter(msg => !msg.id.startsWith('temp-'));
+
+                // Merge with existing optimistic messages to avoid losing them during auto-refresh
+                setMessages(prevMessages => {
+                    // Get any existing optimistic messages
+                    const optimisticMessages = prevMessages.filter(msg => msg.id.startsWith('temp-'));
+                    console.log('Existing optimistic messages:', optimisticMessages.length);
+
+                    // Remove optimistic messages that have been confirmed by server
+                    // (if a real message has the same content and sender, remove the optimistic one)
+                    const filteredOptimisticMessages = optimisticMessages.filter(optimistic => {
+                        const hasRealVersion = realMessages.some(real =>
+                            real.content === optimistic.content &&
+                            real.senderId === optimistic.senderId &&
+                            Math.abs(new Date(real.createDate).getTime() - new Date(optimistic.createDate).getTime()) < 30000 // Within 30 seconds
+                        );
+                        if (hasRealVersion) {
+                            console.log('Removing optimistic message, found real version:', optimistic.content);
+                        }
+                        return !hasRealVersion;
+                    });
+
+                    console.log('Filtered optimistic messages:', filteredOptimisticMessages.length);
+                    console.log('Real messages from server:', realMessages.length);
+
+                    // Combine real messages with remaining optimistic ones
+                    const allMessages = [...realMessages, ...filteredOptimisticMessages];
+
+                    // Sort again to maintain chronological order
+                    return allMessages.sort(
+                        (a: Message, b: Message) =>
+                            new Date(a.createDate).getTime() - new Date(b.createDate).getTime(),
+                    );
+                });
+
                 // Scroll to bottom after loading messages
                 setTimeout(() => {
                     scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -146,31 +217,19 @@ export default function ChatScreen() {
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
+        } finally {
+            if (showRefreshing) {
+                setRefreshing(false);
+            } else if (isAutoRefresh) {
+                setAutoRefreshing(false);
+            }
         }
     };
 
-    const pickImage = async () => {
-        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-        if (permissionResult.granted === false) {
-            Alert.alert('Permission Required', 'Permission to access camera roll is required!');
-            return;
-        }
-
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 0.8,
-        });
-
-        if (!result.canceled && result.assets[0]) {
-            setSelectedImage(result.assets[0].uri);
-        }
-    };
 
     const handleSendMessage = async () => {
-        if (!message.trim() && !selectedImage) {
+        if (!message.trim()) {
             return;
         }
 
@@ -186,82 +245,67 @@ export default function ChatScreen() {
 
         setLoading(true);
         try {
-            // If there's an image, send with FormData
-            if (selectedImage) {
-                const formData = new FormData();
-                formData.append('Title', `Chat about ${carName}`);
-                formData.append('Content', message.trim() || 'Sent an image');
-                formData.append('SenderId', user.id);
-                formData.append('ReceiverId', ownerId);
+            // Send text-only message
+            const result = await inquiryService.createInquiry({
+                title: `Chat about ${carName}`,
+                content: message.trim(),
+                senderId: user.id,
+                receiverId: ownerId,
+            });
 
-                // Add image file
-                const filename = selectedImage.split('/').pop() || 'image.jpg';
-                const match = /\.(\w+)$/.exec(filename);
-                const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-                formData.append('Medias', {
-                    uri: selectedImage,
-                    name: filename,
-                    type,
-                } as any);
-
-                // Get auth token
-                let token: string | null = null;
-                try {
-                    if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                        token = localStorage.getItem('token');
-                    }
-                } catch (e) {
-                    console.error('Failed to get token:', e);
-                }
-
-                const headers: Record<string, string> = {
-                    accept: '*/*',
-                };
-
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                const response = await fetch(
-                    `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREATE_INQUIRY}`,
-                    {
-                        method: 'POST',
-                        headers,
-                        body: formData,
-                    },
-                );
-
-                if (!response.ok) {
-                    Alert.alert('Error', 'Failed to send message with image.');
-                    return;
-                }
-            } else {
-                // Send text-only message
-                const result = await inquiryService.createInquiry({
-                    title: `Chat about ${carName}`,
-                    content: message.trim(),
-                    senderId: user.id,
-                    receiverId: ownerId,
-                });
-
-                if (result.error) {
-                    Alert.alert('Error', 'Failed to send message. Please try again.');
-                    return;
-                }
+            if (result.error) {
+                Alert.alert('Error', 'Failed to send message. Please try again.');
+                // Remove the optimistic message on error
+                setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
+                return;
             }
 
-            // Clear input and image
-            setMessage('');
-            setSelectedImage(null);
+            // Add optimistic message to UI immediately
+            const optimisticMessage: Message = {
+                id: `temp-${Date.now()}`,
+                title: `Chat about ${carName}`,
+                content: message.trim(),
+                createDate: new Date().toISOString(),
+                updateDate: new Date().toISOString(),
+                status: 'Sent',
+                type: 'Question',
+                senderId: user.id,
+                receiverId: ownerId,
+                parentInquiryId: null,
+                imageUrls: [],
+            };
 
-            // Wait a moment for the API to process, then refresh messages
+            // Add to messages immediately for better UX
+            setMessages(prev => [...prev, optimisticMessage]);
+
+            // Clear input
+            setMessage('');
+
+            // Scroll to bottom immediately
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+
+            // Fetch messages multiple times to ensure we get the new message
             setTimeout(async () => {
+                console.log('First refresh after sending message...');
                 await fetchMessages();
-            }, 500);
+            }, 1000);
+
+            setTimeout(async () => {
+                console.log('Second refresh after sending message...');
+                await fetchMessages();
+            }, 3000);
+
+            setTimeout(async () => {
+                console.log('Third refresh after sending message...');
+                await fetchMessages();
+            }, 5000);
         } catch (error) {
             console.error('Error sending message:', error);
             Alert.alert('Error', 'An unexpected error occurred');
+            // Remove the optimistic message on error
+            setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
         } finally {
             setLoading(false);
         }
@@ -320,10 +364,22 @@ export default function ChatScreen() {
                             }}>
                             {ownerUsername}
                         </Text>
-                        <Text style={{ fontSize: 12, color: colors.placeholder }}>
-                            {carName}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 12, color: colors.placeholder }}>
+                                {carName}
+                            </Text>
+                            {autoRefreshing && (
+                                <View style={{
+                                    marginLeft: 8,
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: 3,
+                                    backgroundColor: '#4CAF50'
+                                }} />
+                            )}
+                        </View>
                     </View>
+
                 </View>
 
                 {/* Messages List */}
@@ -331,6 +387,14 @@ export default function ChatScreen() {
                     ref={scrollViewRef}
                     style={{ flex: 1, backgroundColor: '#F5F5F5' }}
                     contentContainerStyle={{ padding: 16 }}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={() => fetchMessages(true)}
+                            colors={['#9C27B0']}
+                            tintColor="#9C27B0"
+                        />
+                    }
                     onContentSizeChange={() =>
                         scrollViewRef.current?.scrollToEnd({ animated: true })
                     }>
@@ -362,7 +426,7 @@ export default function ChatScreen() {
                             </Text>
                         </View>
                     ) : (
-                        messages.map((msg, index) => {
+                        messages.map((msg) => {
                             const isSentByMe = msg.senderId === user?.id;
                             const date = new Date(msg.createDate);
                             const formattedTime = date.toLocaleTimeString('en-US', {
@@ -451,42 +515,7 @@ export default function ChatScreen() {
                         borderTopWidth: 1,
                         borderTopColor: colors.border,
                     }}>
-                    {/* Image Preview */}
-                    {selectedImage && (
-                        <View
-                            style={{
-                                padding: 12,
-                                borderBottomWidth: 1,
-                                borderBottomColor: colors.border,
-                            }}>
-                            <View style={{ position: 'relative' }}>
-                                <Image
-                                    source={{ uri: selectedImage }}
-                                    style={{
-                                        width: 100,
-                                        height: 100,
-                                        borderRadius: 8,
-                                    }}
-                                    resizeMode="cover"
-                                />
-                                <Pressable
-                                    onPress={() => setSelectedImage(null)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: -8,
-                                        right: -8,
-                                        width: 24,
-                                        height: 24,
-                                        borderRadius: 12,
-                                        backgroundColor: colors.primary,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                    }}>
-                                    <MaterialIcons name="close" size={16} color={colors.white} />
-                                </Pressable>
-                            </View>
-                        </View>
-                    )}
+
 
                     {/* Input Row */}
                     <View
@@ -496,18 +525,7 @@ export default function ChatScreen() {
                             alignItems: 'center',
                             gap: 8,
                         }}>
-                        <Pressable
-                            onPress={pickImage}
-                            style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 22,
-                                backgroundColor: '#F5F5F5',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}>
-                            <MaterialIcons name="image" size={24} color="#9C27B0" />
-                        </Pressable>
+
                         <TextInput
                             value={message}
                             onChangeText={setMessage}
@@ -528,13 +546,13 @@ export default function ChatScreen() {
                         />
                         <Pressable
                             onPress={handleSendMessage}
-                            disabled={loading || (!message.trim() && !selectedImage)}
+                            disabled={loading || !message.trim()}
                             style={{
                                 width: 44,
                                 height: 44,
                                 borderRadius: 22,
                                 backgroundColor:
-                                    loading || (!message.trim() && !selectedImage)
+                                    loading || !message.trim()
                                         ? colors.placeholder
                                         : '#9C27B0',
                                 justifyContent: 'center',

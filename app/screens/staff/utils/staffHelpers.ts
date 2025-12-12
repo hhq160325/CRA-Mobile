@@ -14,21 +14,73 @@ export const getAuthToken = (): string | null => {
     return null;
 };
 
+export const fetchBookingWithCarDetails = async (bookingNumber: string) => {
+    try {
+        console.log(`📋 fetchBookingWithCarDetails: fetching booking details for: ${bookingNumber}`);
+        const baseUrl = API_CONFIG.BASE_URL;
+        const url = `/Booking/GetBookingsByBookNum/${bookingNumber}`;
+        const fullUrl = `${baseUrl}${url}`;
+        const token = getAuthToken();
+
+        const response = await fetch(fullUrl, {
+            method: 'GET',
+            headers: {
+                Authorization: token ? `Bearer ${token}` : '',
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.ok) {
+            const bookingData = await response.json();
+            console.log(`📋 fetchBookingWithCarDetails: success for ${bookingNumber}:`, {
+                hasCarData: !!bookingData.car,
+                carModel: bookingData.car?.model,
+                carManufacturer: bookingData.car?.manufacturer
+            });
+            return bookingData;
+        } else {
+            console.error(`📋 fetchBookingWithCarDetails: API error for ${bookingNumber}:`, response.status);
+        }
+    } catch (err) {
+        console.error(`📋 fetchBookingWithCarDetails: Exception for ${bookingNumber}:`, err);
+    }
+    return null;
+};
+
 export const fetchCarDetails = async (carId: string) => {
     try {
+        console.log(`🚗 fetchCarDetails: fetching car details for ID: ${carId}`);
         const carResult = await carsService.getCarById(carId);
+
+        console.log(`🚗 fetchCarDetails: result for ${carId}:`, {
+            hasData: !!carResult.data,
+            hasError: !!carResult.error,
+            carName: carResult.data?.name,
+            carBrand: carResult.data?.brand,
+            carModel: carResult.data?.model,
+            error: carResult.error?.message
+        });
+
         if (carResult.data) {
-            return {
+            const details = {
                 carName: carResult.data.name || 'Unknown Car',
                 carBrand: carResult.data.brand || '',
                 carModel: carResult.data.model || '',
                 carLicensePlate: carResult.data.licensePlate || '',
                 carImage: carResult.data.image || '',
             };
+            console.log(`🚗 fetchCarDetails: returning details for ${carId}:`, details);
+            return details;
+        }
+
+        if (carResult.error) {
+            console.error(`🚗 fetchCarDetails: API error for ${carId}:`, carResult.error.message);
         }
     } catch (err) {
-        console.error('Error fetching car details:', err);
+        console.error(`🚗 fetchCarDetails: Exception for ${carId}:`, err);
     }
+
+    console.log(`🚗 fetchCarDetails: returning default "Unknown Car" for ${carId}`);
     return {
         carName: 'Unknown Car',
         carBrand: '',
@@ -92,20 +144,24 @@ export const fetchCheckInOutStatus = async (bookingId: string) => {
 
     try {
         const checkInResult = await scheduleService.getCheckInImages(bookingId);
-        if (checkInResult.data && checkInResult.data.images.length > 0) {
+        // Only set to true if we have actual data and images
+        if (checkInResult.data && Array.isArray(checkInResult.data.images) && checkInResult.data.images.length > 0) {
             hasCheckIn = true;
         }
     } catch (err) {
-        console.error('Error fetching check-in status:', err);
+        // Silently handle errors - 500 errors are expected when no data exists yet
+        console.log(`Check-in status for booking ${bookingId}: No data available`);
     }
 
     try {
         const checkOutResult = await scheduleService.getCheckOutImages(bookingId);
-        if (checkOutResult.data && checkOutResult.data.images.length > 0) {
+        // Only set to true if we have actual data and images
+        if (checkOutResult.data && Array.isArray(checkOutResult.data.images) && checkOutResult.data.images.length > 0) {
             hasCheckOut = true;
         }
     } catch (err) {
-        console.error('Error fetching check-out status:', err);
+        // Silently handle errors - 500 errors are expected when no data exists yet
+        console.log(`Check-out status for booking ${bookingId}: No data available`);
     }
 
     return { hasCheckIn, hasCheckOut };

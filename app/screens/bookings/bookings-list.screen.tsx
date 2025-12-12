@@ -8,6 +8,7 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { bookingsService, type Booking } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
@@ -15,6 +16,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { NavigatorParamList } from '../../navigators/navigation-route';
 import { colors } from '../../theme/colors';
+import { scale, verticalScale } from '../../theme/scale';
 import getAsset from '../../../lib/getAsset';
 import Header from '../../components/Header/Header';
 import { styles } from './bookings-list.styles';
@@ -23,6 +25,7 @@ type StatusFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
 
 export default function BookingsListScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,10 +87,26 @@ export default function BookingsListScreen() {
     setRefreshing(false);
   }, [fetchBookings]);
 
-  const filteredBookings =
-    statusFilter === 'all'
-      ? bookings
-      : bookings.filter((b: Booking) => b.status === statusFilter);
+  const filteredBookings = bookings.filter((booking: Booking) => {
+    // Filter by status
+    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
+
+    // Filter by search query
+    if (!searchQuery || searchQuery.trim() === '') {
+      return matchesStatus;
+    }
+
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      booking.carName.toLowerCase().includes(normalizedQuery) ||
+      (booking.bookingNumber && booking.bookingNumber.toLowerCase().includes(normalizedQuery)) ||
+      booking.pickupLocation.toLowerCase().includes(normalizedQuery) ||
+      booking.dropoffLocation.toLowerCase().includes(normalizedQuery) ||
+      booking.id.toLowerCase().includes(normalizedQuery) ||
+      (booking.addons && booking.addons.some(addon => addon.toLowerCase().includes(normalizedQuery)));
+
+    return matchesStatus && matchesSearch;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -215,6 +234,17 @@ export default function BookingsListScreen() {
 
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>My Bookings</Text>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            placeholder="Search by car, booking ID, location, or add-ons..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.searchInput}
+            placeholderTextColor={colors.placeholder}
+          />
+        </View>
       </View>
 
       <FlatList
@@ -255,7 +285,19 @@ export default function BookingsListScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No bookings found</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery
+                ? `No bookings found for "${searchQuery}"`
+                : statusFilter === 'all'
+                  ? "No bookings found"
+                  : `No ${statusFilter} bookings found`
+              }
+            </Text>
+            {searchQuery && (
+              <Text style={[styles.emptyText, { fontSize: scale(12), marginTop: verticalScale(8) }]}>
+                Try searching for car name, booking ID, location, or add-ons
+              </Text>
+            )}
           </View>
         }
       />

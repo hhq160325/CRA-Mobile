@@ -24,6 +24,7 @@ import {
   fetchCheckInOutStatus,
   mapBookingStatus,
   formatBookingDate,
+  fetchBookingWithCarDetails,
 } from './utils/staffHelpers';
 import { ListHeader } from './components/ListHeader';
 
@@ -62,18 +63,45 @@ export default function StaffScreen() {
   );
 
   const mapSingleBooking = async (booking: any): Promise<BookingItem> => {
+    console.log(`📋 mapSingleBooking: processing booking ${booking.id} with bookingNumber: ${booking.bookingNumber}`);
+
     const mappedStatus = mapBookingStatus(booking.status);
     const formattedDate = formatBookingDate(booking.bookingDate);
 
-    const carDetails = booking.carId
-      ? await fetchCarDetails(booking.carId)
-      : {
-        carName: 'Unknown Car',
-        carBrand: '',
-        carModel: '',
-        carLicensePlate: '',
-        carImage: '',
-      };
+    // Try to get car details from booking number endpoint if available
+    let carDetails = {
+      carName: 'Unknown Car',
+      carBrand: '',
+      carModel: '',
+      carLicensePlate: '',
+      carImage: '',
+    };
+
+    if (booking.bookingNumber) {
+      try {
+        const detailedBooking = await fetchBookingWithCarDetails(booking.bookingNumber);
+        if (detailedBooking && detailedBooking.car) {
+          carDetails = {
+            carName: `${detailedBooking.car.manufacturer} ${detailedBooking.car.model}`,
+            carBrand: detailedBooking.car.manufacturer || '',
+            carModel: detailedBooking.car.model || '',
+            carLicensePlate: detailedBooking.car.licensePlate || '',
+            carImage: detailedBooking.car.imageUrls?.[0] || '',
+          };
+        }
+      } catch (err) {
+        console.log(`📋 Failed to fetch detailed booking for ${booking.bookingNumber}, falling back to carId`);
+        // Fallback to original method
+        if (booking.carId) {
+          carDetails = await fetchCarDetails(booking.carId);
+        }
+      }
+    } else if (booking.carId) {
+      // Fallback to original method if no booking number
+      carDetails = await fetchCarDetails(booking.carId);
+    }
+
+    console.log(`📋 mapSingleBooking: car details for booking ${booking.id}:`, carDetails);
 
     const customerName = booking.userId
       ? await fetchCustomerName(booking.userId)
@@ -123,6 +151,9 @@ export default function StaffScreen() {
     }
 
     if (result.data) {
+      console.log(`📋 fetchBookings: received ${result.data.length} bookings`);
+      console.log(`📋 fetchBookings: sample booking data:`, result.data[0]);
+
       const mappedBookingsPromises = result.data.map(mapSingleBooking);
       const mappedBookings = await Promise.all(mappedBookingsPromises);
       setBookings(mappedBookings);

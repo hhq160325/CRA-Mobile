@@ -1,9 +1,7 @@
 import getAsset from '../../../../lib/getAsset';
 import type { Car } from '../../../../lib/api';
 
-/**
- * Get car image source from various possible sources
- */
+
 export const getCarImageSource = (car: Car | null) => {
     if (!car) return null;
 

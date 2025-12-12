@@ -70,7 +70,7 @@ export default function BookingFormScreen({ route }: any) {
       formState.setDropoffLocation(route.params.dropoffLocation);
   }, [route?.params]);
 
-  // Pre-fill custom pickup address with billing address when switching to custom mode
+
   useEffect(() => {
     if (
       formState.pickupMode === 'custom' &&
@@ -83,14 +83,14 @@ export default function BookingFormScreen({ route }: any) {
     }
   }, [formState.pickupMode, customAddressInitialized, formState.address]);
 
-  // Sync drop-off location with pickup location whenever pickup changes
+
   useEffect(() => {
     if (formState.pickupLocation) {
       formState.setDropoffLocation(formState.pickupLocation);
     }
   }, [formState.pickupLocation]);
 
-  // Calculate distance and shipping fee when in custom mode
+
   useEffect(() => {
     const timer = setTimeout(() => {
       calculateShippingDistance(
@@ -142,7 +142,7 @@ export default function BookingFormScreen({ route }: any) {
     fetchData();
   }, [carId, user?.id]);
 
-  // Calculate rental days and prices
+
   const rentalDays = calculateRentalDays(
     formState.pickupDate,
     formState.pickupTime,
@@ -153,7 +153,19 @@ export default function BookingFormScreen({ route }: any) {
   const subtotal = pricePerDay * rentalDays;
   const shippingFee = calculateShippingFee(formState.pickupMode, formState.distanceInKm);
   const bookingFee = calculateBookingFee(subtotal, shippingFee);
-  const total = calculateTotal(subtotal, shippingFee, formState.discount);
+  const total = calculateTotal(subtotal, shippingFee, formState.discount, bookingFee);
+
+
+  if (currentStep === 3) {
+    console.log('Step 3 - Rental Summary Debug:', {
+      pickupMode: formState.pickupMode,
+      distanceInKm: formState.distanceInKm,
+      shippingFee,
+      bookingFee,
+      total,
+      subtotal
+    });
+  }
 
   const handleCalculateDistanceWrapper = async (parkLotAddress: string) => {
     await calculateDistance(

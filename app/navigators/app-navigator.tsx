@@ -23,6 +23,7 @@ import OtpScreen from "../screens/otp/otp.screen"
 import GoogleLoginWebView from "../screens/singin/google-login-webview.screen"
 import GoogleOAuthHandler from "../screens/singin/google-oauth-handler.screen"
 import CarListScreen from "../screens/cars/car-list.screen"
+import AllCarsScreen from "../screens/cars/all-cars.screen"
 import CarDetailScreen from "../screens/cars/car-detail.screen"
 import BookingDetailScreen from "../screens/bookings/booking-detail.screen"
 import BookingFormScreen from "../screens/bookings/booking-form.screen"
@@ -68,6 +69,13 @@ const MainStack = () => {
       <Stack.Screen
         name="Cars"
         component={CarListScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="AllCars"
+        component={AllCarsScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

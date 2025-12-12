@@ -22,6 +22,7 @@ import BookingCard from './components/BookingCard';
 import LocationInfoSection from './components/LocationInfoSection';
 import NotesSection from './components/NotesSection';
 import ImageGallerySection from './components/ImageGallerySection';
+import AdditionalPaymentSection from './components/AdditionalPaymentSection';
 import { styles } from './styles/pickupConfirm.styles';
 
 type PickupReturnConfirmRouteProp = RouteProp<
@@ -44,7 +45,7 @@ export default function PickupReturnConfirmScreen() {
     initialDescription,
   } = usePickupConfirm(bookingId);
   const { selectedImages, showImagePickerOptions, removeImage } =
-    useImagePicker(5);
+    useImagePicker(10);
   const [description, setDescription] = useState(initialDescription);
   const [submitting, setSubmitting] = useState(false);
 
@@ -268,7 +269,7 @@ export default function PickupReturnConfirmScreen() {
           title={
             isAlreadyCheckedIn
               ? 'Pickup Photos (Already Submitted)'
-              : `Vehicle Photos (${selectedImages.length}/5)`
+              : `Vehicle Photos (${selectedImages.length}/10)`
           }
           images={
             isAlreadyCheckedIn && existingCheckInData
@@ -280,6 +281,18 @@ export default function PickupReturnConfirmScreen() {
           onAddPhoto={!isAlreadyCheckedIn ? showImagePickerOptions : undefined}
           onRemoveImage={!isAlreadyCheckedIn ? removeImage : undefined}
           isReadOnly={isAlreadyCheckedIn}
+        />
+
+        {/* Additional Payment Section */}
+        <AdditionalPaymentSection
+          bookingId={bookingId}
+          onPaymentAdded={() => {
+            console.log('Additional payment added for booking:', bookingId);
+          }}
+          onNavigateToReturn={() => {
+            console.log('Navigating to return screen after payment');
+            navigation.navigate('VehicleReturn' as any, { bookingId });
+          }}
         />
 
         <View style={styles.actionButtons}>

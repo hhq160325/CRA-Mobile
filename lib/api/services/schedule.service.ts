@@ -87,23 +87,23 @@ export const scheduleService = {
                 },
             })
 
-            console.log(`📸 getCheckInOutInfo: response status`, response.status)
-
             if (!response.ok) {
                 const errorText = await response.text()
-                console.log(`📸 getCheckInOutInfo: error response`, errorText)
 
-
+                // Handle expected cases where no data exists yet
                 if (response.status === 500 && errorText.includes('Object reference')) {
-                    console.log(`📸 getCheckInOutInfo: No data exists yet (normal)`)
+                    console.log(`📸 getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): No data exists yet for booking ${bookingId}`)
                     return { data: { images: [], description: '' }, error: null }
                 }
-
 
                 if (response.status === 404) {
+                    console.log(`📸 getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): No data found for booking ${bookingId}`)
                     return { data: { images: [], description: '' }, error: null }
                 }
 
+                // Only log actual errors
+                console.log(`📸 getCheckInOutInfo: response status ${response.status}`)
+                console.log(`📸 getCheckInOutInfo: error response`, errorText)
                 return { data: null, error: new Error(`Failed to fetch info: ${response.status}`) }
             }
 

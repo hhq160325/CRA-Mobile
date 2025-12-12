@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
     View,
     Text,
@@ -17,7 +17,7 @@ import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import Button from "../../components/button/component"
 import Icon from "react-native-vector-icons/MaterialIcons"
-import { reviewsService } from "../../../lib/api"
+import { reviewsService, bookingsService } from "../../../lib/api"
 import { useAuth } from "../../../lib/auth-context"
 import { styles } from "./feedback-form.styles"
 
@@ -36,14 +36,43 @@ export default function FeedbackFormScreen() {
     const { user } = useAuth()
     const carId = (route.params as any)?.carId || ""
     const bookingId = (route.params as any)?.bookingId || ""
+    const bookingNumber = (route.params as any)?.bookingNumber || ""
 
     const [rating, setRating] = useState(0)
     const [category, setCategory] = useState<string | null>(null)
     const [title, setTitle] = useState("")
     const [message, setMessage] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [bookingDetails, setBookingDetails] = useState<any>(null)
+    const [loading, setLoading] = useState(false)
 
     const isFormValid = rating > 0 && category && title.trim() && message.trim()
+
+    // Fetch booking details using bookingNumber for better car information
+    useEffect(() => {
+        const fetchBookingDetails = async () => {
+            if (!bookingNumber) return
+
+            setLoading(true)
+            try {
+                console.log('Fetching booking details for:', bookingNumber)
+                const result = await bookingsService.getBookingByNumber(bookingNumber)
+
+                if (result.data) {
+                    console.log('Booking details fetched successfully:', result.data)
+                    setBookingDetails(result.data)
+                } else {
+                    console.error('Failed to fetch booking details:', result.error)
+                }
+            } catch (error) {
+                console.error('Error fetching booking details:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchBookingDetails()
+    }, [bookingNumber])
 
     const validateForm = () => {
         if (!isFormValid) {
@@ -51,7 +80,9 @@ export default function FeedbackFormScreen() {
             return false
         }
 
-        if (!carId) {
+        // Check if we have car information from either carId or booking details
+        const hasCarInfo = carId || (bookingDetails && bookingDetails.car)
+        if (!hasCarInfo) {
             Alert.alert("Error", "Car information is missing. Please try again.")
             return false
         }
@@ -67,8 +98,15 @@ export default function FeedbackFormScreen() {
     const submitFeedback = async () => {
         const content = `${message}\n\nCategory: ${category}`
 
+        // Use carId from params or from booking details
+        const finalCarId = carId || (bookingDetails && bookingDetails.car ? bookingDetails.car.id : null)
+
+        if (!finalCarId) {
+            throw new Error("Car ID is required for feedback submission")
+        }
+
         const { error } = await reviewsService.createFeedback({
-            carId: carId,
+            carId: finalCarId,
             bookingId: bookingId || undefined,
             rating: rating,
             title: title,
@@ -137,6 +175,18 @@ export default function FeedbackFormScreen() {
         </Pressable>
     )
 
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Header />
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Icon name="hourglass-empty" size={scale(48)} color={colors.morentBlue} />
+                    <Text style={{ marginTop: 16, color: colors.placeholder }}>Loading booking details...</Text>
+                </View>
+            </View>
+        )
+    }
+
     return (
         <View style={styles.container}>
             <Header />
@@ -150,7 +200,7 @@ export default function FeedbackFormScreen() {
                     We value your feedback and would love to hear about your experience with us.
                 </Text>
 
-                {bookingId && (
+                {(bookingId || bookingNumber) && (
                     <View style={styles.bookingNotice}>
                         <Icon
                             name="info"
@@ -158,9 +208,21 @@ export default function FeedbackFormScreen() {
                             color={colors.morentBlue}
                             style={styles.iconMargin}
                         />
-                        <Text style={styles.bookingNoticeText}>
-                            Feedback for your completed booking
-                        </Text>
+                        <View>
+                            <Text style={styles.bookingNoticeText}>
+                                Feedback for your completed booking
+                            </Text>
+                            {bookingDetails && bookingDetails.car && (
+                                <Text style={[styles.bookingNoticeText, { fontSize: scale(12), marginTop: 4 }]}>
+                                    {bookingDetails.car.manufacturer} {bookingDetails.car.model}
+                                </Text>
+                            )}
+                            {bookingNumber && (
+                                <Text style={[styles.bookingNoticeText, { fontSize: scale(12), marginTop: 2 }]}>
+                                    Booking: {bookingNumber}
+                                </Text>
+                            )}
+                        </View>
                     </View>
                 )}
 

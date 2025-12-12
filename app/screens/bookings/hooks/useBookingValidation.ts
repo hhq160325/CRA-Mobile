@@ -167,10 +167,9 @@ export function useBookingValidation() {
         console.log('Could not calculate distance, but continuing');
         onDistanceCalculated(0);
       }
-    } else {
-      if (onDistanceCalculated) {
-        onDistanceCalculated(0);
-      }
+    } else if (pickupMode !== 'custom' && onDistanceCalculated) {
+
+      onDistanceCalculated(0);
     }
 
     const pickupDateTime = validateDateTime(pickupDate, pickupTime, 'Pick-up');
@@ -189,7 +188,7 @@ export function useBookingValidation() {
       return { valid: false };
     }
 
-    // Validate that pickup is within 10 days from now
+
     const maxPickupDate = new Date();
     maxPickupDate.setDate(maxPickupDate.getDate() + 10);
     maxPickupDate.setHours(23, 59, 59, 999);

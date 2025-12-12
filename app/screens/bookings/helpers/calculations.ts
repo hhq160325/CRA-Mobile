@@ -1,6 +1,4 @@
-/**
- * Calculate rental days based on pickup and drop-off dates/times
- */
+
 export const calculateRentalDays = (
     pickupDate: string,
     pickupTime: string,
@@ -8,7 +6,7 @@ export const calculateRentalDays = (
     dropoffTime: string
 ): number => {
     if (!pickupDate || !pickupTime || !dropoffDate || !dropoffTime) {
-        return 1; // Default to 1 day if dates not set
+        return 1;
     }
 
     try {
@@ -22,7 +20,7 @@ export const calculateRentalDays = (
         const durationMs = dropoffDateTime.getTime() - pickupDateTime.getTime();
         const durationDays = durationMs / (1000 * 60 * 60 * 24);
 
-        // Round up to nearest day (minimum 1 day)
+
         return Math.max(1, Math.ceil(durationDays));
     } catch (error) {
         console.error('Error calculating rental days:', error);
@@ -30,35 +28,38 @@ export const calculateRentalDays = (
     }
 };
 
-/**
- * Calculate shipping fee based on distance
- */
+
 export const calculateShippingFee = (
     pickupMode: string,
     distanceInKm: number | null
 ): number => {
-    return pickupMode === 'custom' && distanceInKm
+    const fee = pickupMode === 'custom' && distanceInKm
         ? Math.round(distanceInKm * 20000)
         : 0;
+
+    console.log('calculateShippingFee:', {
+        pickupMode,
+        distanceInKm,
+        calculatedFee: fee
+    });
+
+    return fee;
 };
 
-/**
- * Calculate booking fee (15% of subtotal + shipping)
- */
+
 export const calculateBookingFee = (
     subtotal: number,
     shippingFee: number
 ): number => {
-    return Math.round(subtotal * 0.15) + shippingFee;
+    return Math.round(subtotal * 0.15);
 };
 
-/**
- * Calculate total price
- */
+
 export const calculateTotal = (
     subtotal: number,
     shippingFee: number,
-    discount: number
+    discount: number,
+    bookingFee: number = 0
 ): number => {
-    return subtotal + shippingFee - discount;
+    return shippingFee + bookingFee - discount;
 };

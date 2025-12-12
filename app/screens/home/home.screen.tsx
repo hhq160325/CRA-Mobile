@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,11 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../navigators/navigation-route';
-import {colors} from '../../theme/colors';
-import {scale} from '../../theme/scale';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
+import { colors } from '../../theme/colors';
+import { scale } from '../../theme/scale';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Header from '../../components/Header/Header';
 
@@ -23,18 +23,17 @@ import FilterModal from './components/FilterModal';
 import CarCard from './components/CarCard';
 import PickupDropoffSection from './components/PickupDropoffSection';
 import DonutChart from './components/DonutChart';
-import RecentTransactions from './components/RecentTransactions';
 
-import {useCarFilters} from './hooks/useCarFilters';
-import {useHomeData} from './hooks/useHomeData';
-import {useLanguage} from '../../../lib/language-context';
+import { useCarFilters } from './hooks/useCarFilters';
+import { useHomeData } from './hooks/useHomeData';
+import { useLanguage } from '../../../lib/language-context';
 
 export default function HomeScreen() {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const [filterVisible, setFilterVisible] = useState(false);
-  const {t} = useLanguage();
+  const { t } = useLanguage();
 
-  const {cars, recentBookings, loading} = useHomeData();
+  const { cars, loading } = useHomeData();
 
   const {
     searchQuery,
@@ -55,9 +54,9 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={{flex: 1, backgroundColor: colors.background}}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Header />
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </View>
@@ -65,10 +64,10 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={{flex: 1, backgroundColor: colors.background}}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
 
-      <ScrollView style={{flex: 1}}>
+      <ScrollView style={{ flex: 1 }}>
         {/* Search Bar */}
         <SearchBar
           searchQuery={searchQuery}
@@ -94,7 +93,7 @@ export default function HomeScreen() {
         <PickupDropoffSection />
 
         {/* Popular Cars */}
-        <View style={{marginBottom: scale(24)}}>
+        <View style={{ marginBottom: scale(24) }}>
           <View
             style={{
               flexDirection: 'row',
@@ -103,10 +102,10 @@ export default function HomeScreen() {
               paddingHorizontal: scale(16),
               marginBottom: scale(12),
             }}>
-            <Text style={{fontSize: scale(14), color: colors.placeholder}}>
+            <Text style={{ fontSize: scale(14), color: colors.placeholder }}>
               {t('popularCar')}
             </Text>
-            <Pressable onPress={() => navigation.navigate('Cars' as any)}>
+            <Pressable onPress={() => navigation.navigate('AllCars' as any)}>
               <Text
                 style={{
                   fontSize: scale(12),
@@ -123,16 +122,16 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             data={popularCars}
             keyExtractor={item => item.id}
-            contentContainerStyle={{paddingHorizontal: scale(16)}}
-            renderItem={({item}) => (
+            contentContainerStyle={{ paddingHorizontal: scale(16) }}
+            renderItem={({ item }) => (
               <CarCard
                 car={item}
                 isHorizontal={true}
                 onPress={() =>
-                  navigation.navigate('CarDetail' as any, {id: item.id})
+                  navigation.navigate('CarDetail' as any, { id: item.id })
                 }
                 onRentPress={() =>
-                  navigation.navigate('BookingForm' as any, {id: item.id})
+                  navigation.navigate('BookingForm' as any, { id: item.id })
                 }
               />
             )}
@@ -140,7 +139,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Recommended Cars */}
-        <View style={{paddingHorizontal: scale(16), marginBottom: scale(24)}}>
+        <View style={{ paddingHorizontal: scale(16), marginBottom: scale(24) }}>
           <View
             style={{
               flexDirection: 'row',
@@ -148,10 +147,10 @@ export default function HomeScreen() {
               alignItems: 'center',
               marginBottom: scale(12),
             }}>
-            <Text style={{fontSize: scale(14), color: colors.placeholder}}>
+            <Text style={{ fontSize: scale(14), color: colors.placeholder }}>
               {t('recommendationCar')}
             </Text>
-            <Pressable onPress={() => navigation.navigate('Cars' as any)}>
+            <Pressable onPress={() => navigation.navigate('AllCars' as any)}>
               <Text
                 style={{
                   fontSize: scale(12),
@@ -169,24 +168,24 @@ export default function HomeScreen() {
               car={car}
               isHorizontal={false}
               onPress={() =>
-                navigation.navigate('CarDetail' as any, {id: car.id})
+                navigation.navigate('CarDetail' as any, { id: car.id })
               }
               onRentPress={() =>
-                navigation.navigate('BookingForm' as any, {id: car.id})
+                navigation.navigate('BookingForm' as any, { id: car.id })
               }
             />
           ))}
         </View>
 
         {/* Top 5 Car Rental Chart */}
-        <View style={{paddingHorizontal: scale(16), marginBottom: scale(24)}}>
+        <View style={{ paddingHorizontal: scale(16), marginBottom: scale(24) }}>
           <View
             style={{
               backgroundColor: colors.white,
               borderRadius: 10,
               padding: scale(16),
               shadowColor: '#000',
-              shadowOffset: {width: 0, height: 2},
+              shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.05,
               shadowRadius: 4,
               elevation: 2,
@@ -217,13 +216,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Recent Transactions */}
-        {recentBookings.length > 0 && (
-          <RecentTransactions
-            bookings={recentBookings}
-            onViewAll={() => navigation.navigate('Bookings' as any)}
-          />
-        )}
+
       </ScrollView>
 
       {/* Filter Modal */}

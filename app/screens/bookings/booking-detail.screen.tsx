@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, ScrollView } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -7,6 +7,7 @@ import type { NavigatorParamList } from '../../navigators/navigation-route';
 import { colors } from '../../theme/colors';
 import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useAuth } from '../../../lib/auth-context';
 import { useBookingDetail } from './hooks/useBookingDetail';
 import StatusBadge from './components/StatusBadge';
 import BookingInfoSection from './components/BookingInfoSection';
@@ -19,8 +20,42 @@ import FeedbackButton from './components/FeedbackButton';
 export default function BookingDetailScreen() {
   const route = useRoute<RouteProp<{ params: { id: string } }, 'params'>>();
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
+  const { user } = useAuth();
   const { id } = (route.params as any) || {};
+
+  console.log('🔍 BookingDetailScreen: Rendering with ID:', id);
+  console.log('🔍 BookingDetailScreen: Route params:', route.params);
+  console.log('🔍 BookingDetailScreen: User auth state:', { hasUser: !!user, userId: user?.id });
+
+
+  useEffect(() => {
+    if (!user) {
+      console.log('🔍 BookingDetailScreen: No authenticated user, navigating to login');
+      navigation.navigate('SignIn' as any);
+    }
+  }, [user, navigation]);
+
   const { booking, invoice, payments, bookingFee, loading } = useBookingDetail(id, navigation);
+
+  console.log('🔍 BookingDetailScreen: Hook results:', {
+    hasBooking: !!booking,
+    loading,
+    bookingId: booking?.id,
+    carName: booking?.carName
+  });
+
+
+  if (!user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.morentBlue} />
+          <Text style={{ marginTop: 16, color: colors.placeholder }}>Checking authentication...</Text>
+        </View>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -56,7 +91,10 @@ export default function BookingDetailScreen() {
           status={booking.status}
           bookingId={booking.id}
           onMessagesPress={() => {
-            navigation.navigate('Messages' as any, { bookingId: booking.id });
+            navigation.navigate('Messages' as any, {
+              bookingId: booking.id,
+              bookingNumber: booking.bookingNumber
+            });
           }}
         />
 
@@ -97,9 +135,10 @@ export default function BookingDetailScreen() {
         {booking.status?.toLowerCase() === 'completed' && (
           <FeedbackButton
             onPress={() => {
-              const params: { carId: string; bookingId?: string } = {
+              const params: { carId: string; bookingId?: string; bookingNumber?: string } = {
                 carId: booking.carId,
-                bookingId: booking.id
+                bookingId: booking.id,
+                bookingNumber: booking.bookingNumber
               };
               navigation.navigate('FeedbackForm', params);
             }}

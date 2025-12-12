@@ -12,9 +12,7 @@ interface CreateBookingParams {
     t: (key: string) => string;
 }
 
-/**
- * Create booking and handle response
- */
+
 export const createBooking = async (
     params: CreateBookingParams,
     navigation: any

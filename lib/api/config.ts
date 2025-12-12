@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
   // Bookings
   BOOKINGS: "/Booking/GetAllBookings",
   BOOKING_DETAILS: (id: string) => `/Booking/GetBookingById/${id}`,
+  BOOKING_BY_NUMBER: (bookingNumber: string) => `/Booking/GetBookingsByBookNum/${bookingNumber}`,
   BOOKINGS_BY_CUSTOMER: (customerId: string) => `/Booking/GetBookingsFromCustomer/${customerId}`,
   BOOKINGS_BY_CAR: (carId: string) => `/Booking/GetBookingsForCar/${carId}`,
   CREATE_BOOKING: "/Booking/CreateBooking",

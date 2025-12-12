@@ -1,8 +1,6 @@
 import { locationService } from '../../../../lib/api';
 
-/**
- * Calculate distance between park lot and custom address
- */
+
 export const handleCalculateDistance = async (
     parkLotAddress: string,
     pickupMode: string,
@@ -48,9 +46,7 @@ export const handleCalculateDistance = async (
     }
 };
 
-/**
- * Calculate shipping distance from ThuDucLot to custom address
- */
+
 export const calculateShippingDistance = async (
     pickupMode: string,
     pickupLocation: string,

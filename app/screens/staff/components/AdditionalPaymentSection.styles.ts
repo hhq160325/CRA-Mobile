@@ -159,4 +159,22 @@ export const styles = StyleSheet.create({
         fontSize: scale(15),
         fontWeight: '600',
     },
+
+    // WebView Modal Styles
+    webViewLoading: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.white,
+    },
+    webViewLoadingText: {
+        marginTop: verticalScale(12),
+        fontSize: scale(16),
+        color: '#6b7280',
+    },
+
 });

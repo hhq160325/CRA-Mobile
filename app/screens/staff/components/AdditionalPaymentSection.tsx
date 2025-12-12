@@ -10,6 +10,7 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../theme/colors';
 import { styles } from './AdditionalPaymentSection.styles';
@@ -46,19 +47,40 @@ const ADDITIONAL_FEES: AdditionalFee[] = [
     },
 ];
 
+interface PaymentResponse {
+    orderCode: number;
+    payOSLink: string;
+    item3: {
+        id: string;
+        orderCode: number;
+        item: string;
+        paidAmount: number;
+        createDate: string;
+        updateDate: string;
+        paymentMethod: string;
+        status: string;
+        invoiceId: string;
+        userId: string;
+    };
+}
+
 interface AdditionalPaymentSectionProps {
     bookingId: string;
     onPaymentAdded?: () => void;
+    onNavigateToReturn?: () => void;
 }
 
 export default function AdditionalPaymentSection({
     bookingId,
     onPaymentAdded,
+    onNavigateToReturn,
 }: AdditionalPaymentSectionProps) {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedFees, setSelectedFees] = useState<string[]>([]);
     const [overtimeHours, setOvertimeHours] = useState(1);
     const [submitting, setSubmitting] = useState(false);
+    const [paymentResponse, setPaymentResponse] = useState<PaymentResponse | null>(null);
+    const [showWebView, setShowWebView] = useState(false);
 
     const toggleFee = (feeId: string) => {
         setSelectedFees(prev =>
@@ -96,7 +118,7 @@ export default function AdditionalPaymentSection({
             .join(', ');
     };
 
-    const createAdditionalPayment = async (description: string, amount: number) => {
+    const createAdditionalPayment = async (description: string, amount: number): Promise<PaymentResponse> => {
         const response = await fetch(
             'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/CreateAdditionalPayment',
             {
@@ -117,13 +139,16 @@ export default function AdditionalPaymentSection({
             throw new Error('Failed to create additional payment');
         }
 
-        return response;
+        const data = await response.json();
+        return data;
     };
 
     const resetForm = () => {
         setModalVisible(false);
         setSelectedFees([]);
         setOvertimeHours(1);
+        setPaymentResponse(null);
+        setShowWebView(false);
     };
 
     const handleSubmit = async () => {
@@ -138,10 +163,15 @@ export default function AdditionalPaymentSection({
             const description = buildPaymentDescription();
             const totalAmount = calculateTotal();
 
-            await createAdditionalPayment(description, totalAmount);
+            const response = await createAdditionalPayment(description, totalAmount);
 
-            Alert.alert('Success', 'Additional payment added successfully!');
-            resetForm();
+            console.log('Payment response:', response);
+
+            // Store the payment response and directly open WebView
+            setPaymentResponse(response);
+            setModalVisible(false); // Close the fee selection modal
+            setShowWebView(true); // Directly open WebView with PayOS link
+
             onPaymentAdded?.();
         } catch (error) {
             console.error('Error creating additional payment:', error);
@@ -150,6 +180,10 @@ export default function AdditionalPaymentSection({
             setSubmitting(false);
         }
     };
+
+
+
+
 
     const renderOvertimeSelector = () => (
         <View style={styles.hoursSelector}>
@@ -241,6 +275,147 @@ export default function AdditionalPaymentSection({
         </View>
     );
 
+    const renderWebViewModal = () => (
+        <Modal
+            visible={showWebView}
+            animationType="slide"
+            transparent={false}
+            onRequestClose={() => setShowWebView(false)}>
+            {paymentResponse?.payOSLink && (
+                <WebView
+                    source={{ uri: paymentResponse.payOSLink }}
+                    style={{ flex: 1 }}
+                    startInLoadingState={true}
+                    renderLoading={() => (
+                        <View style={styles.webViewLoading}>
+                            <ActivityIndicator size="large" color={colors.primary} />
+                            <Text style={styles.webViewLoadingText}>Loading payment page...</Text>
+                        </View>
+                    )}
+                    onNavigationStateChange={(navState) => {
+                        console.log('WebView navigation:', navState.url);
+
+                        // Check for PayOS redirect URLs (external domain redirects)
+                        if (navState.url.includes('cra-morent.vercel.app') ||
+                            navState.url.includes('payment-success') ||
+                            navState.url.includes('payment-cancel') ||
+                            navState.url.includes('success=true') ||
+                            navState.url.includes('cancel=true') ||
+                            navState.url.includes('status=CANCELLED') ||
+                            navState.url.includes('status=PAID') ||
+                            navState.url.includes('/success/') ||
+                            navState.url.includes('/cancel/') ||
+                            navState.url.includes('/failure/')) {
+
+                            console.log('🎯 Payment redirect detected:', navState.url);
+
+                            // Determine if it's success or cancel/failure
+                            const isSuccess = navState.url.includes('success=true') ||
+                                navState.url.includes('status=PAID') ||
+                                navState.url.includes('/success/') ||
+                                navState.url.includes('payment-success');
+
+                            const isCancel = navState.url.includes('cancel=true') ||
+                                navState.url.includes('status=CANCELLED') ||
+                                navState.url.includes('/cancel/') ||
+                                navState.url.includes('/failure/') ||
+                                navState.url.includes('payment-cancel');
+
+                            // Immediately close WebView and navigate to return screen
+                            setShowWebView(false);
+                            resetForm();
+
+                            if (isSuccess) {
+                                console.log('✅ Payment completed successfully!');
+                                Alert.alert(
+                                    'Payment Successful',
+                                    'Additional payment has been completed successfully! Proceeding to vehicle return.',
+                                    [
+                                        {
+                                            text: 'Continue',
+                                            onPress: () => {
+                                                onNavigateToReturn?.();
+                                            }
+                                        }
+                                    ]
+                                );
+                            } else if (isCancel) {
+                                console.log('❌ Payment cancelled or failed');
+                                Alert.alert(
+                                    'Payment Cancelled',
+                                    'Payment was cancelled by the customer. No additional fees were charged. Proceeding to vehicle return.',
+                                    [
+                                        {
+                                            text: 'Continue',
+                                            onPress: () => {
+                                                onNavigateToReturn?.();
+                                            }
+                                        }
+                                    ]
+                                );
+                            } else {
+                                // Generic redirect handling
+                                console.log('🔄 Payment process completed');
+                                Alert.alert(
+                                    'Payment Process Finished',
+                                    'Payment process has finished. Proceeding to vehicle return.',
+                                    [
+                                        {
+                                            text: 'Continue',
+                                            onPress: () => {
+                                                onNavigateToReturn?.();
+                                            }
+                                        }
+                                    ]
+                                );
+                            }
+
+                            return false; // Prevent further navigation
+                        }
+                    }}
+                    onShouldStartLoadWithRequest={(request) => {
+                        console.log('WebView should start load:', request.url);
+
+                        // Allow PayOS domain and initial payment URL
+                        if (request.url.includes('pay.payos.vn') ||
+                            request.url.includes('payos.vn') ||
+                            request.url === paymentResponse?.payOSLink) {
+                            return true; // Allow navigation
+                        }
+
+                        // Check for PayOS redirect URLs - these should trigger navigation detection
+                        if (request.url.includes('cra-morent.vercel.app') ||
+                            request.url.includes('payment-success') ||
+                            request.url.includes('payment-cancel') ||
+                            request.url.includes('success=true') ||
+                            request.url.includes('cancel=true') ||
+                            request.url.includes('status=CANCELLED') ||
+                            request.url.includes('status=PAID') ||
+                            request.url.includes('/success/') ||
+                            request.url.includes('/cancel/') ||
+                            request.url.includes('/failure/')) {
+
+                            console.log('🎯 PayOS redirect detected in shouldStart:', request.url);
+                            // Allow this navigation so onNavigationStateChange can handle it
+                            return true;
+                        }
+
+                        // Block any other external domains
+                        console.log('🚫 Blocking external navigation:', request.url);
+                        return false;
+                    }}
+                    onError={(syntheticEvent) => {
+                        const { nativeEvent } = syntheticEvent;
+                        console.error('WebView error: ', nativeEvent);
+                        Alert.alert('Error', 'Failed to load payment page');
+                    }}
+                />
+            )}
+        </Modal>
+    );
+
+
+
     return (
         <View style={styles.container}>
             <Pressable style={styles.addButton} onPress={() => setModalVisible(true)}>
@@ -270,6 +445,8 @@ export default function AdditionalPaymentSection({
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
+
+            {renderWebViewModal()}
         </View>
     );
 }

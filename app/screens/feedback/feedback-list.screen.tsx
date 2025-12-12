@@ -23,28 +23,6 @@ export default function FeedbackListScreen() {
     loadFeedback();
   }, []);
 
-  const enrichUserData = async (review: Review) => {
-    if (!review.userName || review.userName === 'Anonymous') {
-      try {
-        const { userService } = require('../../../lib/api/services/user.service');
-        const userResult = await userService.getUserById(review.userId);
-
-        if (userResult.data) {
-          return {
-            ...review,
-            userName:
-              userResult.data.fullname ||
-              userResult.data.username ||
-              'Anonymous',
-          };
-        }
-      } catch (err) {
-        console.log(`Could not fetch user details for ${review.userId}`);
-      }
-    }
-    return review;
-  };
-
   const loadFeedback = async () => {
     setIsLoading(true);
     setError(null);
@@ -57,12 +35,8 @@ export default function FeedbackListScreen() {
         return;
       }
 
-      if (data && data.length > 0) {
-        const enrichedFeedback = await Promise.all(data.map(enrichUserData));
-        setFeedback(enrichedFeedback);
-      } else {
-        setFeedback(data || []);
-      }
+      // User data is now enriched in the service
+      setFeedback(data || []);
     } catch (err) {
       console.error('Error loading feedback:', err);
       setError('Failed to load feedback. Please try again.');

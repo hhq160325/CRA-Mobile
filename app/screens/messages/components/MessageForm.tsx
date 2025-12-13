@@ -31,6 +31,9 @@ export default function MessageForm({
                     placeholder="Enter message subject"
                     placeholderTextColor={colors.placeholder}
                     style={styles.input}
+                    editable={false}
+                    multiline={true}
+                    numberOfLines={3}
                 />
             </View>
 

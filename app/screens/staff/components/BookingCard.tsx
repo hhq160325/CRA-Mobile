@@ -59,7 +59,27 @@ export default function BookingCard({
                 </View>
                 <View style={styles.infoItem}>
                     <Text style={styles.infoLabel}>AMOUNT</Text>
-                    <Text style={styles.infoValue}>${amount.toFixed(2)}</Text>
+                    <Text style={styles.infoValue}>
+                        {(() => {
+                            console.log('BookingCard amount:', amount, typeof amount);
+                            // Handle different amount data types
+                            if (amount === null || amount === undefined || amount === '') {
+                                return 'N/A';
+                            }
+                            const numAmount = Number(amount);
+                            // Check if conversion resulted in a valid number
+                            if (isNaN(numAmount)) {
+                                return 'N/A';
+                            }
+                            // Display the amount (including 0) with proper VND formatting
+                            return numAmount.toLocaleString('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                        })()}
+                    </Text>
                 </View>
             </View>
         </View>

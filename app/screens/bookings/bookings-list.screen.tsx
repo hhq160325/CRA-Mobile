@@ -19,7 +19,7 @@ import { colors } from '../../theme/colors';
 import { scale, verticalScale } from '../../theme/scale';
 import getAsset from '../../../lib/getAsset';
 import Header from '../../components/Header/Header';
-import { styles } from './bookings-list.styles';
+import { styles } from './styles/bookingsList.styles';
 
 type StatusFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
 

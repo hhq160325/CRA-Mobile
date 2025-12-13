@@ -5,9 +5,9 @@ import { colors } from "../../../theme/colors"
 import { scale, verticalScale } from "../../../theme/scale"
 
 const { width: screenWidth } = Dimensions.get('window')
-// Calculate image size: 3 images per row with gaps
+
 const imageGap = scale(8)
-const containerPadding = scale(16) * 2 + scale(16) * 2 // section margin + content padding
+const containerPadding = scale(16) * 2 + scale(16) * 2
 const imagesPerRow = screenWidth > 400 ? 4 : 3
 const imageSize = (screenWidth - containerPadding - (imageGap * (imagesPerRow - 1))) / imagesPerRow
 

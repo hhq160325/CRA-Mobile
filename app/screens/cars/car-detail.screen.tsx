@@ -12,7 +12,7 @@ import { colors } from "../../theme/colors"
 import { getAsset } from "../../../lib/getAsset"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../../lib/auth-context"
-import { styles } from "./car-detail.styles"
+import { styles } from "./styles/carDetail.styles"
 
 import CarImageGallery from "./components/CarImageGallery"
 import CarSpecifications from "./components/CarSpecifications"

@@ -2,19 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Modal, TextInput, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../theme/colors';
-import { scale, verticalScale } from '../../../theme/scale';
-
-interface PasswordVerificationModalProps {
-    visible: boolean;
-    password: string;
-    isPasswordSecure: boolean;
-    isSaving: boolean;
-    pendingField: string | null;
-    onPasswordChange: (text: string) => void;
-    onToggleSecure: () => void;
-    onVerify: () => void;
-    onCancel: () => void;
-}
+import { scale } from '../../../theme/scale';
+import type { PasswordVerificationModalProps } from '../types/profileTypes';
+import { styles } from '../styles/passwordVerificationModal.styles';
 
 export default function PasswordVerificationModal({
     visible,
@@ -34,85 +24,32 @@ export default function PasswordVerificationModal({
             animationType="slide"
             onRequestClose={onCancel}
         >
-            <View
-                style={{
-                    flex: 1,
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <View
-                    style={{
-                        backgroundColor: colors.white,
-                        borderRadius: scale(16),
-                        padding: scale(24),
-                        width: "85%",
-                        maxWidth: scale(350),
-                    }}
-                >
-                    <View style={{ alignItems: "center", marginBottom: verticalScale(16) }}>
-                        <View
-                            style={{
-                                width: scale(60),
-                                height: scale(60),
-                                borderRadius: scale(30),
-                                backgroundColor: "#DBEAFE",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                marginBottom: verticalScale(12),
-                            }}
-                        >
+            <View style={styles.overlay}>
+                <View style={styles.container}>
+                    <View style={styles.header}>
+                        <View style={styles.iconContainer}>
                             <Icon name="lock" size={scale(32)} color={colors.morentBlue} />
                         </View>
-                        <Text
-                            style={{
-                                fontSize: scale(18),
-                                fontWeight: "700",
-                                color: colors.primary,
-                                marginBottom: verticalScale(8),
-                            }}
-                        >
+                        <Text style={styles.title}>
                             Verify Your Password
                         </Text>
-                        <Text
-                            style={{
-                                fontSize: scale(14),
-                                color: colors.placeholder,
-                                textAlign: "center",
-                                lineHeight: scale(20),
-                            }}
-                        >
+                        <Text style={styles.description}>
                             For security, please enter your password to edit {pendingField === "email" ? "email" : "phone number"}.
                         </Text>
                     </View>
 
-                    <View style={{ position: "relative", marginBottom: verticalScale(20) }}>
+                    <View style={styles.inputContainer}>
                         <TextInput
                             value={password}
                             onChangeText={onPasswordChange}
                             placeholder="Enter your password"
                             secureTextEntry={isPasswordSecure}
                             autoFocus
-                            style={{
-                                borderWidth: 1,
-                                borderColor: colors.border,
-                                borderRadius: scale(8),
-                                paddingHorizontal: scale(16),
-                                paddingVertical: verticalScale(12),
-                                paddingRight: scale(50),
-                                fontSize: scale(14),
-                                color: colors.primary,
-                            }}
+                            style={styles.input}
                         />
                         <TouchableOpacity
                             onPress={onToggleSecure}
-                            style={{
-                                position: "absolute",
-                                right: scale(12),
-                                top: "50%",
-                                transform: [{ translateY: -scale(12) }],
-                            }}
+                            style={styles.toggleButton}
                         >
                             <Icon
                                 name={isPasswordSecure ? "visibility-off" : "visibility"}
@@ -122,44 +59,32 @@ export default function PasswordVerificationModal({
                         </TouchableOpacity>
                     </View>
 
-                    <View style={{ flexDirection: "row", gap: scale(12) }}>
+                    <View style={styles.buttonRow}>
                         <TouchableOpacity
                             onPress={onCancel}
                             disabled={isSaving}
-                            style={{
-                                flex: 1,
-                                paddingVertical: verticalScale(12),
-                                borderRadius: scale(8),
-                                borderWidth: 1,
-                                borderColor: colors.morentBlue,
-                                alignItems: "center",
-                            }}
+                            style={styles.cancelButton}
                         >
-                            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.morentBlue }}>
+                            <Text style={styles.cancelButtonText}>
                                 Cancel
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={onVerify}
                             disabled={isSaving || !password}
-                            style={{
-                                flex: 1,
-                                paddingVertical: verticalScale(12),
-                                borderRadius: scale(8),
-                                backgroundColor: isSaving || !password ? colors.placeholder : colors.morentBlue,
-                                alignItems: "center",
-                                flexDirection: "row",
-                                justifyContent: "center",
-                            }}
+                            style={[
+                                styles.verifyButton,
+                                (isSaving || !password) && styles.verifyButtonDisabled
+                            ]}
                         >
                             {isSaving && (
                                 <ActivityIndicator
                                     size="small"
                                     color={colors.white}
-                                    style={{ marginRight: scale(8) }}
+                                    style={styles.loadingIndicator}
                                 />
                             )}
-                            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.white }}>
+                            <Text style={styles.verifyButtonText}>
                                 {isSaving ? "Verifying..." : "Verify"}
                             </Text>
                         </TouchableOpacity>

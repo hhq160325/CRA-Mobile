@@ -48,3 +48,5 @@ export { invoiceService, type Invoice as InvoiceData } from "./services/invoice.
 export { checkAndUpdatePaymentStatuses, areAllPaymentsPaid } from "./services/payment-status-checker"
 
 export { inquiryService, type CreateInquiryData } from "./services/inquiry.service"
+
+export { bookingExtensionService, type BookingDetail, type InvoiceItem as ExtensionInvoiceItem, type PayOSPaymentRequest, type PayOSPaymentResponse } from "./services/bookingExtension.service"

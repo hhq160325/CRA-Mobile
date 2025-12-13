@@ -24,7 +24,10 @@ import LocationInfoSection from './components/LocationInfoSection';
 import NotesSection from './components/NotesSection';
 import ActionButton from './components/ActionButton';
 import AdditionalPaymentSection from './components/AdditionalPaymentSection';
+import BookingExtensionSection from './components/BookingExtensionSection';
 import { vehicleReturnStyles as styles } from './styles/vehicleReturn.styles';
+import { fetchBookingExtensionInfo } from './utils/staffHelpers';
+import { bookingExtensionService } from '../../../lib/api/services/bookingExtension.service';
 
 type VehicleReturnRouteProp = RouteProp<
   { params: { bookingId: string } },
@@ -37,7 +40,14 @@ export default function VehicleReturnScreen() {
   const { user } = useAuth();
   const { bookingId } = (route.params as any) || {};
 
+  console.log('🔍 VehicleReturnScreen: bookingId from route params:', bookingId);
+
   const [submitting, setSubmitting] = useState(false);
+  const [extensionInfo, setExtensionInfo] = useState<{
+    hasExtension: boolean;
+    isPaymentCompleted: boolean;
+    extensionDescription?: string;
+  }>({ hasExtension: false, isPaymentCompleted: true });
 
   const {
     booking,
@@ -53,13 +63,89 @@ export default function VehicleReturnScreen() {
   const [description, setDescription] = useState(initialDescription);
 
   const { selectedImages, showImagePickerOptions, removeImage } =
-    useImagePicker(5);
+    useImagePicker(10);
 
   React.useEffect(() => {
     if (initialDescription) {
       setDescription(initialDescription);
     }
   }, [initialDescription]);
+
+  React.useEffect(() => {
+    checkExtensionPaymentStatus();
+  }, [bookingId]);
+
+  const checkExtensionPaymentStatus = async () => {
+    try {
+      console.log('🔍 VehicleReturn: Checking extension payment status for booking:', bookingId);
+
+      
+      const extensionResult = await fetchBookingExtensionInfo(bookingId);
+
+      if (!extensionResult.hasExtension) {
+        console.log('🔍 VehicleReturn: No extension found, allowing return');
+        setExtensionInfo({ hasExtension: false, isPaymentCompleted: true });
+        return;
+      }
+
+     
+      const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
+
+    
+      const bookingResult = await bookingExtensionService.getBookingById(bookingId);
+      const invoiceId = bookingResult.data?.invoiceId;
+
+      if (!invoiceId) {
+        console.log('🔍 VehicleReturn: No invoiceId found, assuming payment not completed');
+        setExtensionInfo({
+          hasExtension: true,
+          isPaymentCompleted: false,
+          extensionDescription: extensionResult.extensionDescription
+        });
+        return;
+      }
+
+      const paymentUrl = `${baseUrl}/Invoice/${invoiceId}`;
+      const response = await fetch(paymentUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': '*/*'
+        },
+      });
+
+      if (response.ok) {
+        const paymentData = await response.json();
+        const extensionPayment = paymentData.find((payment: any) =>
+          payment.item === 'Booking Extension'
+        );
+
+        const isPaymentCompleted = extensionPayment?.status?.toLowerCase() === 'success';
+
+        console.log('🔍 VehicleReturn: Extension payment status:', {
+          hasExtension: true,
+          isPaymentCompleted,
+          paymentStatus: extensionPayment?.status
+        });
+
+        setExtensionInfo({
+          hasExtension: true,
+          isPaymentCompleted,
+          extensionDescription: extensionResult.extensionDescription
+        });
+      } else {
+        console.log('🔍 VehicleReturn: Failed to check payment status, assuming not completed');
+        setExtensionInfo({
+          hasExtension: true,
+          isPaymentCompleted: false,
+          extensionDescription: extensionResult.extensionDescription
+        });
+      }
+    } catch (error) {
+      console.error('🔍 VehicleReturn: Error checking extension payment status:', error);
+      setExtensionInfo({ hasExtension: false, isPaymentCompleted: true });
+    }
+  };
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -86,6 +172,18 @@ export default function VehicleReturnScreen() {
       Alert.alert(
         'Images Required',
         'Please upload at least one photo of the vehicle condition.',
+      );
+      return;
+    }
+
+    // Check extension payment validation
+    if (extensionInfo.hasExtension && !extensionInfo.isPaymentCompleted) {
+      Alert.alert(
+        'Extension Payment Required',
+        'This booking has an extension that requires payment. Please complete the extension payment before confirming the return.',
+        [
+          { text: 'OK', style: 'default' }
+        ]
       );
       return;
     }
@@ -232,7 +330,7 @@ export default function VehicleReturnScreen() {
           title={
             isAlreadyCheckedOut
               ? 'Return Photos (Already Submitted)'
-              : `Return Photos (${selectedImages.length}/5)`
+              : `Return Photos (${selectedImages.length}/10)`
           }
           images={
             isAlreadyCheckedOut && existingCheckOutData
@@ -246,6 +344,18 @@ export default function VehicleReturnScreen() {
           isReadOnly={isAlreadyCheckedOut}
         />
 
+        {/* Booking Extension Section */}
+        <BookingExtensionSection
+          bookingId={bookingId}
+          allowPayment={true}
+          onPaymentStatusChange={(isCompleted) => {
+            setExtensionInfo(prev => ({
+              ...prev,
+              isPaymentCompleted: isCompleted
+            }));
+          }}
+        />
+
         {/* Additional Payment Section */}
         {!isAlreadyCheckedOut && (
           <AdditionalPaymentSection bookingId={bookingId} />
@@ -254,9 +364,16 @@ export default function VehicleReturnScreen() {
         {/* Action Button */}
         <ActionButton
           onPress={handleConfirmReturn}
-          disabled={selectedImages.length === 0}
+          disabled={
+            selectedImages.length === 0 ||
+            (extensionInfo.hasExtension && !extensionInfo.isPaymentCompleted)
+          }
           loading={submitting}
-          text="Confirm Return"
+          text={
+            extensionInfo.hasExtension && !extensionInfo.isPaymentCompleted
+              ? "Extension Payment Required"
+              : "Confirm Return"
+          }
           isCompleted={isAlreadyCheckedOut}
         />
       </ScrollView>

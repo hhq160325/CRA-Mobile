@@ -9,6 +9,7 @@ import ProfileField from './components/ProfileField';
 import DriverLicenseSection from './components/DriverLicenseSection';
 import PasswordVerificationModal from './components/PasswordVerificationModal';
 import EditFieldModal from './components/EditFieldModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
 import { useProfileData } from './hooks/useProfileData';
 import { useFieldEditor } from './hooks/useFieldEditor';
 import { useProfileActions } from './hooks/useProfileActions';
@@ -22,7 +23,7 @@ import { locationService } from '../../../lib/api';
 import { styles } from './profile.screen.styles';
 
 export default function ProfileScreen() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const {
     userData,
     setUserData,
@@ -34,6 +35,7 @@ export default function ProfileScreen() {
   } = useProfileData(user?.id);
   const [licenseImages, setLicenseImages] = useState<string[]>([]);
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const fieldEditor = useFieldEditor(
     user?.id,
@@ -262,10 +264,9 @@ export default function ProfileScreen() {
           <ProfileField
             label="Email"
             value={fieldValues.email}
-            onEdit={() => fieldEditor.handleEditField('email')}
             showStatusDot
             statusColor={colors.green}
-            isSecure
+            hideEditButton
           />
 
           <ProfileField
@@ -284,6 +285,12 @@ export default function ProfileScreen() {
             value={fieldValues.username}
             placeholder="Not set"
             onEdit={() => fieldEditor.handleEditField('username')}
+          />
+
+          <ProfileField
+            label="Password"
+            value="••••••••"
+            onEdit={() => setShowChangePasswordModal(true)}
           />
         </View>
 
@@ -324,6 +331,13 @@ export default function ProfileScreen() {
           fieldEditor.setEditingField(null);
           fieldEditor.setEditValue('');
         }}
+      />
+
+      <ChangePasswordModal
+        visible={showChangePasswordModal}
+        userEmail={user?.email || ''}
+        onClose={() => setShowChangePasswordModal(false)}
+        onLogout={logout}
       />
     </View>
   );

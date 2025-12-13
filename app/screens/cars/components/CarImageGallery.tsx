@@ -1,6 +1,5 @@
 import { View, Image, ScrollView, Pressable } from "react-native"
-import { colors } from "../../../theme/colors"
-import { scale } from "../../../theme/scale"
+import { styles } from "../styles/carImageGallery.styles"
 
 interface CarImageGalleryProps {
     carImages: string[]
@@ -18,58 +17,34 @@ export default function CarImageGallery({
     return (
         <>
             {/* Main Car Image */}
-            <View style={{
-                backgroundColor: colors.white,
-                paddingVertical: scale(20),
-                paddingHorizontal: scale(16),
-                marginBottom: scale(8)
-            }}>
+            <View style={styles.mainImageContainer}>
                 <Image
                     source={getImageSource(carImages[selectedImageIndex])}
-                    style={{
-                        width: "100%",
-                        height: scale(300),
-                        resizeMode: "contain"
-                    }}
+                    style={styles.mainImage}
                 />
             </View>
 
             {/* Thumbnail Gallery */}
-            <View style={{
-                backgroundColor: colors.white,
-                paddingVertical: scale(12),
-                paddingHorizontal: scale(8),
-                marginBottom: scale(16)
-            }}>
+            <View style={styles.thumbnailContainer}>
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: scale(8) }}
+                    contentContainerStyle={styles.thumbnailScrollContent}
                 >
                     {carImages.map((img, index) => (
                         <Pressable
                             key={index}
                             onPress={() => onImageSelect(index)}
-                            style={{
-                                width: scale(110),
-                                height: scale(90),
-                                marginRight: scale(12),
-                                borderRadius: scale(8),
-                                borderWidth: selectedImageIndex === index ? 3 : 1,
-                                borderColor: selectedImageIndex === index ? colors.morentBlue : colors.border,
-                                overflow: 'hidden',
-                                backgroundColor: colors.background,
-                                justifyContent: 'center',
-                                alignItems: 'center'
-                            }}
+                            style={[
+                                styles.thumbnailButton,
+                                selectedImageIndex === index
+                                    ? styles.thumbnailButtonSelected
+                                    : styles.thumbnailButtonDefault
+                            ]}
                         >
                             <Image
                                 source={getImageSource(img)}
-                                style={{
-                                    width: "90%",
-                                    height: "90%",
-                                    resizeMode: "contain"
-                                }}
+                                style={styles.thumbnailImage}
                             />
                         </Pressable>
                     ))}

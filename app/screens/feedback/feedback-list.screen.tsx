@@ -35,7 +35,7 @@ export default function FeedbackListScreen() {
         return;
       }
 
-      // User data is now enriched in the service
+
       setFeedback(data || []);
     } catch (err) {
       console.error('Error loading feedback:', err);

@@ -37,7 +37,7 @@ export function usePickupConfirm(bookingId: string) {
         console.log('Fetching booking details for:', bookingId);
 
         const checkInResult = await scheduleService.getCheckInImages(bookingId);
-        console.log('🔍 Check-in result:', {
+        console.log(' Check-in result:', {
           hasData: !!checkInResult.data,
           hasError: !!checkInResult.error,
           imagesCount: checkInResult.data?.images.length || 0,
@@ -45,12 +45,12 @@ export function usePickupConfirm(bookingId: string) {
         });
 
         if (checkInResult.data && checkInResult.data.images.length > 0) {
-          console.log('✅ Check-in data found - pickup already completed');
+          console.log(' Check-in data found - pickup already completed');
           setIsAlreadyCheckedIn(true);
           setExistingCheckInData(checkInResult.data);
           setInitialDescription(checkInResult.data.description);
         } else {
-          console.log('ℹ️ No check-in data found, proceeding with check-in flow');
+          console.log('ℹ No check-in data found, proceeding with check-in flow');
           setIsAlreadyCheckedIn(false);
         }
 

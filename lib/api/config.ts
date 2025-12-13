@@ -31,12 +31,17 @@ export const API_ENDPOINTS = {
   REGISTER: "/Authen/SignUp",
   LOGOUT: "/Authen/Logout",
   SEND_OTP: "/Authen/otp/send",
-  VERIFY_OTP: "/Authen/otp/verify",
+  VERIFY_OTP: "/Authen/SignUp/verify",
 
   // Alternative paths to try: /Authen/forgotPassword, /Authen/request-reset, /User/forgot-password
   FORGOT_PASSWORD: "/Authen/ForgotPassword",
   RESET_PASSWORD: "/Authen/ResetPassword",
+  RESET_PASSWORD_BY_PHONE: "/Authen/ResetPasswordByPhone",
   VERIFY_RESET_CODE: "/Authen/VerifyResetCode",
+
+  // User password change endpoints
+  CHANGE_PASSWORD: "/User/reset-password",
+  VERIFY_PASSWORD_CHANGE: (email: string, otpCode: string) => `/User/reset-password/verify?email=${encodeURIComponent(email)}&OTPCode=${otpCode}`,
   LOGIN_GOOGLE: "/Authen/login/google",
   REFRESH_TOKEN: "/Authen/refresh-token",
 

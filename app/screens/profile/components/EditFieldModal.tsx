@@ -1,17 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { colors } from '../../../theme/colors';
-import { scale, verticalScale } from '../../../theme/scale';
-
-interface EditFieldModalProps {
-    visible: boolean;
-    editingField: string | null;
-    editValue: string;
-    isSaving: boolean;
-    onValueChange: (text: string) => void;
-    onSave: () => void;
-    onCancel: () => void;
-}
+import { scale } from '../../../theme/scale';
+import type { EditFieldModalProps } from '../types/profileTypes';
+import { styles } from '../styles/editFieldModal.styles';
 
 export default function EditFieldModal({
     visible,
@@ -47,9 +39,9 @@ export default function EditFieldModal({
     };
 
     const getHelpText = () => {
-        if (editingField === "licenseNumber") return "Nhập đúng 12 chữ số (tối đa 12 số)";
+        if (editingField === "licenseNumber") return "input correct 12 number ";
         if (editingField === "licenseExpiry" || editingField === "dateOfBirth") {
-            return "Chỉ cần gõ số (ví dụ: gõ 09102025 sẽ thành 09/10/2025)";
+            return "just input number not use '-'or '/'";
         }
         return null;
     };
@@ -63,52 +55,23 @@ export default function EditFieldModal({
         >
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1 }}
+                style={styles.keyboardAvoidingView}
             >
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View
-                        style={{
-                            flex: 1,
-                            backgroundColor: "rgba(0, 0, 0, 0.5)",
-                            justifyContent: "center",
-                            alignItems: "center",
-                        }}
-                    >
+                    <View style={styles.overlay}>
                         <TouchableWithoutFeedback>
-                            <View
-                                style={{
-                                    backgroundColor: colors.white,
-                                    borderRadius: scale(16),
-                                    padding: scale(24),
-                                    width: "85%",
-                                    maxWidth: scale(350),
-                                    maxHeight: "80%",
-                                }}
-                            >
+                            <View style={styles.container}>
                                 <ScrollView
                                     showsVerticalScrollIndicator={false}
                                     keyboardShouldPersistTaps="handled"
-                                    contentContainerStyle={{ flexGrow: 1 }}
+                                    contentContainerStyle={styles.scrollView}
                                 >
-                                    <Text
-                                        style={{
-                                            fontSize: scale(18),
-                                            fontWeight: "700",
-                                            color: colors.primary,
-                                            marginBottom: verticalScale(8),
-                                        }}
-                                    >
+                                    <Text style={styles.title}>
                                         Edit {getFieldTitle()}
                                     </Text>
 
                                     {getHelpText() && (
-                                        <Text
-                                            style={{
-                                                fontSize: scale(12),
-                                                color: colors.placeholder,
-                                                marginBottom: verticalScale(16),
-                                            }}
-                                        >
+                                        <Text style={styles.helpText}>
                                             {getHelpText()}
                                         </Text>
                                     )}
@@ -127,57 +90,38 @@ export default function EditFieldModal({
                                         multiline={editingField === "address"}
                                         numberOfLines={editingField === "address" ? 3 : 1}
                                         textAlignVertical={editingField === "address" ? "top" : "center"}
-                                        style={{
-                                            borderWidth: 1,
-                                            borderColor: colors.border,
-                                            borderRadius: scale(8),
-                                            paddingHorizontal: scale(16),
-                                            paddingVertical: verticalScale(12),
-                                            fontSize: scale(14),
-                                            color: colors.primary,
-                                            marginBottom: verticalScale(20),
-                                            minHeight: editingField === "address" ? verticalScale(80) : verticalScale(44),
-                                        }}
+                                        style={[
+                                            styles.input,
+                                            editingField === "address" && styles.multilineInput
+                                        ]}
                                         autoFocus
                                     />
 
-                                    <View style={{ flexDirection: "row", gap: scale(12) }}>
+                                    <View style={styles.buttonRow}>
                                         <TouchableOpacity
                                             onPress={onCancel}
-                                            style={{
-                                                flex: 1,
-                                                paddingVertical: verticalScale(12),
-                                                borderRadius: scale(8),
-                                                borderWidth: 1,
-                                                borderColor: colors.morentBlue,
-                                                alignItems: "center",
-                                            }}
+                                            style={styles.cancelButton}
                                         >
-                                            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.morentBlue }}>
+                                            <Text style={styles.cancelButtonText}>
                                                 Cancel
                                             </Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             onPress={onSave}
                                             disabled={isSaving}
-                                            style={{
-                                                flex: 1,
-                                                paddingVertical: verticalScale(12),
-                                                borderRadius: scale(8),
-                                                backgroundColor: isSaving ? colors.placeholder : colors.morentBlue,
-                                                alignItems: "center",
-                                                flexDirection: "row",
-                                                justifyContent: "center",
-                                            }}
+                                            style={[
+                                                styles.saveButton,
+                                                isSaving && styles.saveButtonDisabled
+                                            ]}
                                         >
                                             {isSaving && (
                                                 <ActivityIndicator
                                                     size="small"
                                                     color={colors.white}
-                                                    style={{ marginRight: scale(8) }}
+                                                    style={styles.loadingIndicator}
                                                 />
                                             )}
-                                            <Text style={{ fontSize: scale(14), fontWeight: "600", color: colors.white }}>
+                                            <Text style={styles.saveButtonText}>
                                                 {isSaving ? "Saving..." : "Save"}
                                             </Text>
                                         </TouchableOpacity>

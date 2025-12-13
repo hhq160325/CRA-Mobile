@@ -1,9 +1,11 @@
 import { API_CONFIG, API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface UserData {
     id: string
     username: string
+    password?: string // Backend now returns this field
     email: string
     phoneNumber: string
     fullname: string
@@ -11,7 +13,8 @@ interface UserData {
     imageAvatar: string | null
     isGoogle: boolean
     googleId: string | null
-    isCarOwner: boolean
+    isVerified?: boolean // New field from backend
+    isCarOwner?: boolean // Made optional since it's not in the response
     rating: number
     status: string
     roleId: number
@@ -20,6 +23,19 @@ interface UserData {
     licenseNumber?: string | null
     licenseExpiry?: string | null
     licenseImage?: string | null
+    // New fields from backend response
+    cars?: any[]
+    invoicesAsCustomer?: any[]
+    invoicesAsVendor?: any[]
+    bookingHistory?: any[]
+    refreshTokens?: any[]
+}
+
+interface DriverLicenseUploadResponse {
+    userId: string
+    urls: string[]
+    createDate: string
+    status: string
 }
 
 export const userService = {
@@ -104,8 +120,7 @@ export const userService = {
     },
 
     async updateUserInfo(userId: string, updateData: Partial<UserData>): Promise<{ data: UserData | null; error: Error | null }> {
-        console.log("userService.updateUserInfo: updating user", userId)
-
+        console.log("userService.updateUserInfo: updating user", userId, "with data:", updateData)
 
         const result = await apiClient<UserData>(API_ENDPOINTS.UPDATE_USER_INFO, {
             method: "PATCH",
@@ -119,6 +134,7 @@ export const userService = {
         console.log("userService.updateUserInfo: received response", {
             hasError: !!result.error,
             hasData: !!result.data,
+            dataKeys: result.data ? Object.keys(result.data) : [],
         })
 
         if (result.error) {
@@ -135,18 +151,19 @@ export const userService = {
         try {
             let token: string | null = null
             try {
-                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                    token = localStorage.getItem("token")
-                }
+                token = await AsyncStorage.getItem("token")
             } catch (e) {
-                console.error("Failed to get token from localStorage:", e)
+                console.error("Failed to get token from AsyncStorage:", e)
             }
 
             const formData = new FormData()
 
-            const filename = imageUri.split('/').pop() || 'avatar.jpg'
-            const match = /\.(\w+)$/.exec(filename)
-            const type = match ? `image/${match[1]}` : 'image/jpeg'
+            const originalFilename = imageUri.split('/').pop() || 'avatar.jpg'
+            const match = /\.(\w+)$/.exec(originalFilename)
+            const extension = match ? match[1] : 'jpg'
+            const timestamp = Date.now()
+            const filename = `avatar_${userId}_${timestamp}.${extension}`
+            const type = `image/${extension}`
 
             formData.append('image', {
                 uri: imageUri,
@@ -154,12 +171,12 @@ export const userService = {
                 type: type,
             } as any)
 
-
             formData.append('userId', userId)
 
             const url = API_ENDPOINTS.UPLOAD_AVATAR(userId)
             const baseUrl = API_CONFIG.BASE_URL
 
+            // Use PATCH method as primary (confirmed working from backend test)
             const response = await fetch(`${baseUrl}${url}`, {
                 method: "PATCH",
                 headers: {
@@ -177,8 +194,14 @@ export const userService = {
             }
 
             const data = await response.json()
-
             console.log("userService.uploadAvatar: success, avatar URL:", data.imageAvatar)
+
+            // Validate response structure
+            if (!data.imageAvatar) {
+                console.warn("userService.uploadAvatar: response missing imageAvatar field")
+                return { data: null, error: new Error("Invalid response: missing avatar URL") }
+            }
+
             return { data, error: null }
         } catch (error) {
             console.error("userService.uploadAvatar: caught error", error)
@@ -186,24 +209,25 @@ export const userService = {
         }
     },
 
-    async uploadDriverLicense(userId: string, imageUri: string): Promise<{ data: any | null; error: Error | null }> {
+    async uploadDriverLicense(userId: string, imageUri: string): Promise<{ data: DriverLicenseUploadResponse | null; error: Error | null }> {
         console.log("userService.uploadDriverLicense: uploading driver license for user", userId)
 
         try {
             let token: string | null = null
             try {
-                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                    token = localStorage.getItem("token")
-                }
+                token = await AsyncStorage.getItem("token")
             } catch (e) {
-                console.error("Failed to get token from localStorage:", e)
+                console.error("Failed to get token from AsyncStorage:", e)
             }
 
             const formData = new FormData()
 
-            const filename = imageUri.split('/').pop() || 'license.jpg'
-            const match = /\.(\w+)$/.exec(filename)
-            const type = match ? `image/${match[1]}` : 'image/jpeg'
+            const originalFilename = imageUri.split('/').pop() || 'license.jpg'
+            const match = /\.(\w+)$/.exec(originalFilename)
+            const extension = match ? match[1] : 'jpg'
+            const timestamp = Date.now()
+            const filename = `license_${userId}_${timestamp}.${extension}`
+            const type = `image/${extension}`
 
             formData.append('images', {
                 uri: imageUri,
@@ -229,20 +253,30 @@ export const userService = {
             if (!response.ok) {
                 const errorText = await response.text()
                 console.error("userService.uploadDriverLicense: error response", errorText)
+
+                // Handle specific error cases
+                if (response.status === 500 && errorText.includes("already exists")) {
+                    return { data: null, error: new Error("Driver license already exists. Please try again or contact support.") }
+                }
+
                 return { data: null, error: new Error(`Upload failed: ${response.status} - ${errorText}`) }
             }
 
-            const responseText = await response.text()
-            let data: any
+            const data = await response.json() as DriverLicenseUploadResponse
 
-            try {
-                data = JSON.parse(responseText)
-            } catch {
-                console.log("userService.uploadDriverLicense: non-JSON response, treating as success")
-                data = { success: true }
+            console.log("userService.uploadDriverLicense: success", {
+                userId: data.userId,
+                urlCount: data.urls?.length || 0,
+                status: data.status,
+                createDate: data.createDate
+            })
+
+            // Validate response structure
+            if (!data.urls || data.urls.length === 0) {
+                console.warn("userService.uploadDriverLicense: response missing URLs")
+                return { data: null, error: new Error("Invalid response: missing license URLs") }
             }
 
-            console.log("userService.uploadDriverLicense: success")
             return { data, error: null }
         } catch (error) {
             console.error("userService.uploadDriverLicense: caught error", error)
@@ -270,6 +304,51 @@ export const userService = {
 
         return { data: result.data, error: null }
     },
+
+    async changePassword(email: string, password: string, confirmPassword: string): Promise<{ data: any | null; error: Error | null }> {
+        console.log("userService.changePassword: initiating password change for", email)
+
+        const result = await apiClient<any>(API_ENDPOINTS.CHANGE_PASSWORD, {
+            method: "POST",
+            body: JSON.stringify({
+                email,
+                password,
+                confirmPassword,
+            }),
+        })
+
+        console.log("userService.changePassword: received response", {
+            hasError: !!result.error,
+            hasData: !!result.data,
+        })
+
+        if (result.error) {
+            console.error("userService.changePassword: error details", result.error)
+            return { data: null, error: result.error }
+        }
+
+        return { data: result.data, error: null }
+    },
+
+    async verifyPasswordChange(email: string, otpCode: string): Promise<{ data: any | null; error: Error | null }> {
+        console.log("userService.verifyPasswordChange: verifying OTP for", email)
+
+        const result = await apiClient<any>(API_ENDPOINTS.VERIFY_PASSWORD_CHANGE(email, otpCode), {
+            method: "POST",
+        })
+
+        console.log("userService.verifyPasswordChange: received response", {
+            hasError: !!result.error,
+            hasData: !!result.data,
+        })
+
+        if (result.error) {
+            console.error("userService.verifyPasswordChange: error details", result.error)
+            return { data: null, error: result.error }
+        }
+
+        return { data: result.data, error: null }
+    },
 }
 
-export type { UserData }
+export type { UserData, DriverLicenseUploadResponse }

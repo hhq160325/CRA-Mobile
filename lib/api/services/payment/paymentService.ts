@@ -8,6 +8,7 @@ import type {
     PaymentHistory,
     PaymentStats,
 } from './types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const createPaymentIntent = async (
     bookingId: string,
@@ -173,9 +174,7 @@ export const getBookingPayments = async (
     try {
         let token: string | null = null;
         try {
-            if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                token = localStorage.getItem("token");
-            }
+            token = await AsyncStorage.getItem("token");
         } catch (e) {
             console.error("Failed to get token:", e);
         }

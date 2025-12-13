@@ -48,20 +48,20 @@ const SignInScreen = () => {
         });
 
         if (userRole === 'staff' || user.roleId === 1002) {
-          console.log('✅ Navigating to staffStack for staff user');
+          console.log(' Navigating to staffStack for staff user');
           navigationRef.reset({
             index: 0,
             routes: [{ name: 'staffStack' }],
           });
         } else {
-          console.log('✅ Navigating to tabStack for', user.role, 'user');
+          console.log('Navigating to tabStack for', user.role, 'user');
           navigationRef.reset({
             index: 0,
             routes: [{ name: 'tabStack' }],
           });
         }
       } else {
-        console.log('❌ navigationRef not ready, cannot navigate');
+        console.log(' navigationRef not ready, cannot navigate');
       }
       setJustLoggedIn(false);
     }
@@ -119,13 +119,13 @@ const SignInScreen = () => {
             navigationRef.isReady()
           ) {
             if (isStaff) {
-              console.log('✅ IMMEDIATE NAVIGATION to staffStack');
+              console.log(' IMMEDIATE NAVIGATION to staffStack');
               navigationRef.reset({
                 index: 0,
                 routes: [{ name: 'staffStack' }],
               });
             } else {
-              console.log('✅ IMMEDIATE NAVIGATION to tabStack');
+              console.log(' IMMEDIATE NAVIGATION to tabStack');
               navigationRef.reset({
                 index: 0,
                 routes: [{ name: 'tabStack' }],
@@ -188,8 +188,8 @@ const SignInScreen = () => {
       const success = await loginWithGoogle();
 
       if (success) {
-        console.log('✅ Google login successful');
-        // Small delay to ensure state is updated
+        console.log(' Google login successful');
+       
         await new Promise(resolve => setTimeout(resolve, 300));
 
         refreshUser();
@@ -197,12 +197,12 @@ const SignInScreen = () => {
         const currentUser = authService.getCurrentUser();
 
         if (currentUser) {
-          console.log('✅ User found:', currentUser.email);
+          console.log(' User found:', currentUser.email);
           setJustLoggedIn(true);
         }
       } else {
-        console.log('❌ Google login failed or cancelled');
-        // Don't show alert for cancelled logins
+        console.log(' Google login failed or cancelled');
+       
       }
     } catch (error: any) {
       console.error('Google login error:', error);

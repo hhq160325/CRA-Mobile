@@ -1,5 +1,6 @@
 import { API_ENDPOINTS, API_CONFIG } from '../config';
 import { apiClient } from '../client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface CreateInquiryData {
     title: string;
@@ -24,11 +25,9 @@ export const inquiryService = {
             // Get auth token
             let token: string | null = null;
             try {
-                if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                    token = localStorage.getItem('token');
-                }
+                token = await AsyncStorage.getItem('token');
             } catch (e) {
-                console.error('Failed to get token from localStorage:', e);
+                console.error('Failed to get token from AsyncStorage:', e);
             }
 
             const headers: Record<string, string> = {

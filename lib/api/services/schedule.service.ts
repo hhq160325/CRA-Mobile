@@ -1,5 +1,6 @@
 import { API_ENDPOINTS, API_CONFIG } from "../config"
 import { apiClient } from "../client"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export interface Schedule {
     id: string
@@ -19,15 +20,13 @@ export interface Schedule {
 }
 
 
-const getAuthToken = (): string | null => {
+const getAuthToken = async (): Promise<string | null> => {
     try {
-        if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-            return localStorage.getItem("token")
-        }
+        return await AsyncStorage.getItem("token")
     } catch (e) {
         console.error("Failed to get token:", e)
+        return null
     }
-    return null
 }
 
 export const scheduleService = {
@@ -77,7 +76,7 @@ export const scheduleService = {
 
             console.log(`📸 getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): fetching from`, fullUrl)
 
-            const token = getAuthToken()
+            const token = await getAuthToken()
 
             const response = await fetch(fullUrl, {
                 method: "GET",
@@ -145,7 +144,7 @@ export const scheduleService = {
         description: string = "Pickup confirmation"
     ): Promise<{ data: any | null; error: Error | null }> {
         try {
-            const token = getAuthToken()
+            const token = await getAuthToken()
 
             console.log('✅ checkIn: starting')
             console.log('✅ checkIn: bookingId', bookingId)
@@ -191,8 +190,8 @@ export const scheduleService = {
                 method: "POST",
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
-                    'Accept': '*/*',
-
+                    'Accept': 'application/json',
+                    // Don't set Content-Type for FormData - let the browser set it with boundary
                 },
                 body: formData,
             })
@@ -203,21 +202,36 @@ export const scheduleService = {
                 const errorText = await response.text()
                 console.error('✅ checkIn: error response', errorText)
 
-
                 let userMessage = "Check-in failed. Please try again."
-                try {
-                    const errorJson = JSON.parse(errorText)
-                    if (errorJson.message) {
-                        userMessage = errorJson.message
-                    } else if (errorJson.title) {
-                        userMessage = errorJson.title
-                    } else if (errorJson.errors) {
-                        userMessage = Object.values(errorJson.errors).flat().join(', ')
-                    }
-                } catch {
 
-                    if (errorText.length < 200) {
-                        userMessage = errorText
+                // Check if response is HTML (error page)
+                if (errorText.trim().startsWith('<')) {
+                    console.error('✅ checkIn: Server returned HTML error page')
+                    if (response.status === 401) {
+                        userMessage = "Authentication failed. Please login again."
+                    } else if (response.status === 403) {
+                        userMessage = "Access denied. You don't have permission to perform this action."
+                    } else if (response.status === 500) {
+                        userMessage = "Server error. Please try again later."
+                    } else {
+                        userMessage = `Server error (${response.status}). Please try again.`
+                    }
+                } else {
+                    // Try to parse JSON error response
+                    try {
+                        const errorJson = JSON.parse(errorText)
+                        if (errorJson.message) {
+                            userMessage = errorJson.message
+                        } else if (errorJson.title) {
+                            userMessage = errorJson.title
+                        } else if (errorJson.errors) {
+                            userMessage = Object.values(errorJson.errors).flat().join(', ')
+                        }
+                    } catch {
+                        // If not JSON, use the text directly if it's short
+                        if (errorText.length < 200) {
+                            userMessage = errorText
+                        }
                     }
                 }
 
@@ -229,9 +243,18 @@ export const scheduleService = {
 
             let data: any
             try {
-                data = responseText ? JSON.parse(responseText) : { success: true }
-            } catch {
-
+                // Handle empty response
+                if (!responseText || responseText.trim() === '') {
+                    data = { success: true, message: 'Check-in successful' }
+                } else if (responseText.trim().startsWith('<')) {
+                    // Handle HTML response (shouldn't happen on success, but just in case)
+                    console.warn('✅ checkIn: Received HTML response on success')
+                    data = { success: true, message: 'Check-in successful' }
+                } else {
+                    data = JSON.parse(responseText)
+                }
+            } catch (parseError) {
+                console.warn('✅ checkIn: Failed to parse response as JSON:', parseError)
                 data = { success: true, message: responseText || 'Check-in successful' }
             }
 
@@ -250,7 +273,7 @@ export const scheduleService = {
         description: string = "Return confirmation"
     ): Promise<{ data: any | null; error: Error | null }> {
         try {
-            const token = getAuthToken()
+            const token = await getAuthToken()
 
             console.log('🔄 checkOut: starting')
             console.log('🔄 checkOut: bookingId', bookingId)
@@ -296,7 +319,8 @@ export const scheduleService = {
                 method: "POST",
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
-                    'Accept': '*/*',
+                    'Accept': 'application/json',
+                    // Don't set Content-Type for FormData - let the browser set it with boundary
                 },
                 body: formData,
             })
@@ -307,21 +331,36 @@ export const scheduleService = {
                 const errorText = await response.text()
                 console.error('🔄 checkOut: error response', errorText)
 
-
                 let userMessage = "Check-out failed. Please try again."
-                try {
-                    const errorJson = JSON.parse(errorText)
-                    if (errorJson.message) {
-                        userMessage = errorJson.message
-                    } else if (errorJson.title) {
-                        userMessage = errorJson.title
-                    } else if (errorJson.errors) {
-                        userMessage = Object.values(errorJson.errors).flat().join(', ')
-                    }
-                } catch {
 
-                    if (errorText.length < 200) {
-                        userMessage = errorText
+                // Check if response is HTML (error page)
+                if (errorText.trim().startsWith('<')) {
+                    console.error('🔄 checkOut: Server returned HTML error page')
+                    if (response.status === 401) {
+                        userMessage = "Authentication failed. Please login again."
+                    } else if (response.status === 403) {
+                        userMessage = "Access denied. You don't have permission to perform this action."
+                    } else if (response.status === 500) {
+                        userMessage = "Server error. Please try again later."
+                    } else {
+                        userMessage = `Server error (${response.status}). Please try again.`
+                    }
+                } else {
+                    // Try to parse JSON error response
+                    try {
+                        const errorJson = JSON.parse(errorText)
+                        if (errorJson.message) {
+                            userMessage = errorJson.message
+                        } else if (errorJson.title) {
+                            userMessage = errorJson.title
+                        } else if (errorJson.errors) {
+                            userMessage = Object.values(errorJson.errors).flat().join(', ')
+                        }
+                    } catch {
+                        // If not JSON, use the text directly if it's short
+                        if (errorText.length < 200) {
+                            userMessage = errorText
+                        }
                     }
                 }
 
@@ -333,8 +372,18 @@ export const scheduleService = {
 
             let data: any
             try {
-                data = JSON.parse(responseText)
-            } catch {
+                // Handle empty response
+                if (!responseText || responseText.trim() === '') {
+                    data = { success: true, message: 'Check-out successful' }
+                } else if (responseText.trim().startsWith('<')) {
+                    // Handle HTML response (shouldn't happen on success, but just in case)
+                    console.warn('🔄 checkOut: Received HTML response on success')
+                    data = { success: true, message: 'Check-out successful' }
+                } else {
+                    data = JSON.parse(responseText)
+                }
+            } catch (parseError) {
+                console.warn('🔄 checkOut: Failed to parse response as JSON:', parseError)
                 data = { success: true, message: responseText || 'Check-out successful' }
             }
 

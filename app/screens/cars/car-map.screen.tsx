@@ -57,22 +57,22 @@ export default function CarMapScreen() {
 
         const mockChargingStations = [
             {
-                id: "station1",
+                id: "VinFast",
                 latitude: 10.8100,
                 longitude: 106.6500,
-                name: "EV Charging Station 1",
+                name: "Vincom Cộng Hoà",
             },
             {
-                id: "station2",
+                id: "VinFast2",
                 latitude: 10.7950,
                 longitude: 106.6700,
-                name: "EV Charging Station 2",
+                name: "Vincom Plaza - Phan Văn Trị",
             },
             {
-                id: "station3",
+                id: "VinFast3",
                 latitude: 10.7850,
                 longitude: 106.6900,
-                name: "EV Charging Station 3",
+                name: "Leman Luxury Apartments",
             },
         ]
         setChargingStations(mockChargingStations)
@@ -88,7 +88,7 @@ export default function CarMapScreen() {
         const finalLocation = location || { latitude: 10.8231, longitude: 106.6297 }
         setUserLocation(finalLocation)
 
-      
+
         try {
             const { data: addressData, error } = await locationService.reverseGeocode(
                 finalLocation.latitude,

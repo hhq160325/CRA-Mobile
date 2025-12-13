@@ -61,6 +61,11 @@ export const resetPassword = async (
 ): Promise<{ data: { message: string } | null; error: Error | null }> => {
     console.log("passwordResetService.resetPassword: resetting password for", email);
 
+    // If code is 'PHONE_VERIFIED', use phone-based reset endpoint
+    if (code === 'PHONE_VERIFIED') {
+        return resetPasswordByPhone(email, newPassword);
+    }
+
     const result = await apiClient<{ message: string }>(API_ENDPOINTS.RESET_PASSWORD, {
         method: "POST",
         body: JSON.stringify({ email, code, newPassword }),
@@ -73,6 +78,30 @@ export const resetPassword = async (
 
     if (result.error) {
         console.error("passwordResetService.resetPassword: error details", result.error);
+        return { data: null, error: result.error };
+    }
+
+    return { data: result.data, error: null };
+};
+
+export const resetPasswordByPhone = async (
+    email: string,
+    newPassword: string
+): Promise<{ data: { message: string } | null; error: Error | null }> => {
+    console.log("passwordResetService.resetPasswordByPhone: resetting password for", email);
+
+    const result = await apiClient<{ message: string }>(API_ENDPOINTS.RESET_PASSWORD_BY_PHONE, {
+        method: "POST",
+        body: JSON.stringify({ email, newPassword }),
+    });
+
+    console.log("passwordResetService.resetPasswordByPhone: received response", {
+        hasError: !!result.error,
+        hasData: !!result.data,
+    });
+
+    if (result.error) {
+        console.error("passwordResetService.resetPasswordByPhone: error details", result.error);
         return { data: null, error: result.error };
     }
 

@@ -18,7 +18,7 @@ import { colors } from '../../theme/colors';
 import { bookingsService, paymentService } from '../../../lib/api';
 import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { styles } from './booking-payment.styles';
+import { styles } from './styles/bookingPayment.styles';
 
 export default function BookingPaymentScreen() {
   const route = useRoute<

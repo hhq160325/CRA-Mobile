@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
 import { colors } from '../../../theme/colors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { styles } from './CustomDateTimePicker.styles';
+import { styles } from '../styles/customDateTimePicker.styles';
 
 interface CustomDateTimePickerProps {
     visible: boolean;

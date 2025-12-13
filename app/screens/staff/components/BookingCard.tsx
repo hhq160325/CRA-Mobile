@@ -4,8 +4,8 @@ import { colors } from "../../../theme/colors"
 import { scale, verticalScale } from "../../../theme/scale"
 
 const { width: screenWidth } = Dimensions.get('window')
-// Responsive image height based on screen width
-const cardWidth = screenWidth - scale(32) // accounting for margins
+
+const cardWidth = screenWidth - scale(32)
 const imageHeight = Math.min(cardWidth * 0.5, verticalScale(200))
 
 interface BookingCardProps {

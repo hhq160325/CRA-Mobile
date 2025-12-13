@@ -22,7 +22,6 @@ import BookingCard from './components/BookingCard';
 import LocationInfoSection from './components/LocationInfoSection';
 import NotesSection from './components/NotesSection';
 import ImageGallerySection from './components/ImageGallerySection';
-import AdditionalPaymentSection from './components/AdditionalPaymentSection';
 import { styles } from './styles/pickupConfirm.styles';
 
 type PickupReturnConfirmRouteProp = RouteProp<
@@ -55,11 +54,11 @@ export default function PickupReturnConfirmScreen() {
     }
   }, [initialDescription]);
 
-  // Auto-navigate to return screen if pickup is already done
+
   useEffect(() => {
     if (!loading && isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0) {
       console.log('✅ Pickup already completed, auto-navigating to return screen...');
-      // Small delay to allow user to see the screen briefly
+
       const timer = setTimeout(() => {
         navigation.navigate('VehicleReturn' as any, { bookingId });
       }, 1500);
@@ -135,7 +134,7 @@ export default function PickupReturnConfirmScreen() {
                 return;
               }
 
-              // Success - navigate back to StaffScreen
+
               console.log('✅ Pickup confirmed successfully, navigating to StaffScreen');
               setSubmitting(false);
 
@@ -143,7 +142,7 @@ export default function PickupReturnConfirmScreen() {
                 {
                   text: 'OK',
                   onPress: () => {
-                    // Navigate to StaffScreen to refresh the list
+
                     navigation.navigate('StaffScreen' as any);
                   },
                 },
@@ -162,7 +161,7 @@ export default function PickupReturnConfirmScreen() {
     );
   };
 
-  // Show auto-navigation message if pickup is already done
+
   if (!loading && isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0) {
     return (
       <View style={styles.container}>
@@ -283,17 +282,7 @@ export default function PickupReturnConfirmScreen() {
           isReadOnly={isAlreadyCheckedIn}
         />
 
-        {/* Additional Payment Section */}
-        <AdditionalPaymentSection
-          bookingId={bookingId}
-          onPaymentAdded={() => {
-            console.log('Additional payment added for booking:', bookingId);
-          }}
-          onNavigateToReturn={() => {
-            console.log('Navigating to return screen after payment');
-            navigation.navigate('VehicleReturn' as any, { bookingId });
-          }}
-        />
+
 
         <View style={styles.actionButtons}>
           {isAlreadyCheckedIn ? (

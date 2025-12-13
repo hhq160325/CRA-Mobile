@@ -98,7 +98,7 @@
         (function () {
             console.log('Google callback handler loaded');
 
-            // Get the backend URL from query parameter
+
             const urlParams = new URLSearchParams(window.location.search);
             const backendUrl = urlParams.get('backendUrl');
 
@@ -109,7 +109,7 @@
 
             console.log('Fetching from:', backendUrl);
 
-            // Fetch the JSON response from backend
+
             fetch(backendUrl)
                 .then(response => {
                     console.log('Response status:', response.status);
@@ -122,10 +122,10 @@
                         throw new Error('No JWT token in response');
                     }
 
-                    // Update UI
+
                     document.getElementById('username').textContent = 'Welcome, ' + (data.username || data.email || 'User');
 
-                    // Save to localStorage
+
                     localStorage.setItem('token', data.jwtToken);
                     console.log('✅ Token saved');
 
@@ -134,7 +134,7 @@
                         console.log('✅ Refresh token saved');
                     }
 
-                    // Decode JWT to get role
+
                     const tokenParts = data.jwtToken.split('.');
                     const payload = JSON.parse(atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')));
 
@@ -148,7 +148,7 @@
                         role = 'car-owner';
                     }
 
-                    // Create user object
+
                     const user = {
                         id: payload.sub || '',
                         name: data.username || payload.name || '',
@@ -162,11 +162,11 @@
                     localStorage.setItem('user', JSON.stringify(user));
                     console.log('✅ User saved:', user);
 
-                    // Redirect to app
+
                     console.log('Redirecting to app...');
                     window.location.href = 'carapp://auth/callback?success=true';
 
-                    // Try to close window
+
                     setTimeout(() => {
                         window.close();
                     }, 1000);

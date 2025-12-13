@@ -1,6 +1,7 @@
 
 import { API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // API Response from backend
 interface ApiFeedbackResponse {
@@ -211,11 +212,9 @@ export const reviewsService = {
 
       let token: string | null = null
       try {
-        if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-          token = localStorage.getItem("token")
-        }
+        token = await AsyncStorage.getItem("token")
       } catch (e) {
-        console.error("Failed to get token from localStorage:", e)
+        console.error("Failed to get token from AsyncStorage:", e)
       }
 
       const headers: Record<string, string> = {}

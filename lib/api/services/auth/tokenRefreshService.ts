@@ -11,7 +11,7 @@ export const refreshToken = async (
     // Get refresh token from parameter or storage
     let token = refreshToken;
     if (!token) {
-        token = getRefreshTokenFromStorage() || undefined;
+        token = (await getRefreshTokenFromStorage()) || undefined;
     }
 
     if (!token) {
@@ -36,7 +36,7 @@ export const refreshToken = async (
 
     try {
         // Save new tokens to storage
-        saveTokensToStorage(result.data.token, result.data.refreshToken);
+        await saveTokensToStorage(result.data.token, result.data.refreshToken);
         return { data: result.data, error: null };
     } catch (e) {
         console.error("tokenRefreshService.refreshToken: error saving tokens", e);

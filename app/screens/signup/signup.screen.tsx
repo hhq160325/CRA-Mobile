@@ -206,7 +206,7 @@ const SignUpScreen = () => {
           statusCode ? `${errorMessage} (Error ${statusCode})` : errorMessage,
         );
       } else {
-        console.log('✅ Signup API called successfully, OTP sent to email');
+        console.log(' Signup API called successfully, OTP sent to email');
         setShowOtpStep(true);
         startResendCountdown();
         Alert.alert(
@@ -242,7 +242,7 @@ const SignUpScreen = () => {
           verifyResult.error.message || 'Invalid verification code',
         );
       } else {
-        console.log('✅ OTP verified successfully, account created');
+        console.log(' OTP verified successfully, account created');
         Alert.alert(
           'Success',
           'Account created successfully! Please sign in.',
@@ -290,7 +290,7 @@ const SignUpScreen = () => {
           result.error.message || 'Failed to resend verification code',
         );
       } else {
-        console.log('✅ OTP resent successfully');
+        console.log(' OTP resent successfully');
         startResendCountdown();
 
         Alert.alert(
@@ -362,7 +362,7 @@ const SignUpScreen = () => {
       </View>
 
       {!showOtpStep ? (
-        // Signup Form
+
         <>
           <View style={styles.textContainer}>
             <Text style={[styles.textStyle, styles.textCenter]}>Sign Up</Text>
@@ -416,7 +416,7 @@ const SignUpScreen = () => {
           </View>
         </>
       ) : (
-        // OTP Verification Step
+
         <>
           <View style={styles.textContainer}>
             <Text style={[styles.textStyle, styles.textCenter]}>Verify Your Email</Text>

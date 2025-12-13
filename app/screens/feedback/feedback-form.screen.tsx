@@ -48,7 +48,7 @@ export default function FeedbackFormScreen() {
 
     const isFormValid = rating > 0 && category && title.trim() && message.trim()
 
-    // Fetch booking details using bookingNumber for better car information
+
     useEffect(() => {
         const fetchBookingDetails = async () => {
             if (!bookingNumber) return
@@ -80,7 +80,7 @@ export default function FeedbackFormScreen() {
             return false
         }
 
-        // Check if we have car information from either carId or booking details
+
         const hasCarInfo = carId || (bookingDetails && bookingDetails.car)
         if (!hasCarInfo) {
             Alert.alert("Error", "Car information is missing. Please try again.")
@@ -98,7 +98,7 @@ export default function FeedbackFormScreen() {
     const submitFeedback = async () => {
         const content = `${message}\n\nCategory: ${category}`
 
-        // Use carId from params or from booking details
+
         const finalCarId = carId || (bookingDetails && bookingDetails.car ? bookingDetails.car.id : null)
 
         if (!finalCarId) {

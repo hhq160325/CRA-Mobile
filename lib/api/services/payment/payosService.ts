@@ -1,6 +1,7 @@
 import { apiClient } from "../../client";
 import { API_ENDPOINTS, API_CONFIG } from "../../config";
 import type { PayOSPayment, CreatePayOSPaymentRequest } from './types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const getPayOSPayment = async (
     orderCode: string
@@ -39,9 +40,7 @@ export const createRentalPayment = async (
     try {
         let token: string | null = null;
         try {
-            if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                token = localStorage.getItem("token");
-            }
+            token = await AsyncStorage.getItem("token");
         } catch (e) {
             console.error("Failed to get token:", e);
         }
@@ -97,9 +96,7 @@ export const updateRentalPaymentCash = async (
     try {
         let token: string | null = null;
         try {
-            if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-                token = localStorage.getItem("token");
-            }
+            token = await AsyncStorage.getItem("token");
         } catch (e) {
             console.error("Failed to get token:", e);
         }

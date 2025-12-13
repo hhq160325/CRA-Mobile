@@ -2,16 +2,15 @@ import { carsService } from '../../../../lib/api/services/cars.service';
 import { userService } from '../../../../lib/api/services/user.service';
 import { scheduleService } from '../../../../lib/api/services/schedule.service';
 import { API_CONFIG } from '../../../../lib/api/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const getAuthToken = (): string | null => {
+export const getAuthToken = async (): Promise<string | null> => {
     try {
-        if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-            return localStorage.getItem('token');
-        }
+        return await AsyncStorage.getItem('token');
     } catch (e) {
         console.error('Error getting auth token:', e);
+        return null;
     }
-    return null;
 };
 
 export const fetchBookingWithCarDetails = async (bookingNumber: string) => {
@@ -20,7 +19,7 @@ export const fetchBookingWithCarDetails = async (bookingNumber: string) => {
         const baseUrl = API_CONFIG.BASE_URL;
         const url = `/Booking/GetBookingsByBookNum/${bookingNumber}`;
         const fullUrl = `${baseUrl}${url}`;
-        const token = getAuthToken();
+        const token = await getAuthToken();
 
         const response = await fetch(fullUrl, {
             method: 'GET',
@@ -106,7 +105,7 @@ export const fetchPaymentDetails = async (bookingId: string) => {
     try {
         const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
         const paymentsUrl = `${baseUrl}/Booking/${bookingId}/Payments`;
-        const token = getAuthToken();
+        const token = await getAuthToken();
 
         const response = await fetch(paymentsUrl, {
             method: 'GET',
@@ -144,23 +143,23 @@ export const fetchCheckInOutStatus = async (bookingId: string) => {
 
     try {
         const checkInResult = await scheduleService.getCheckInImages(bookingId);
-        // Only set to true if we have actual data and images
+
         if (checkInResult.data && Array.isArray(checkInResult.data.images) && checkInResult.data.images.length > 0) {
             hasCheckIn = true;
         }
     } catch (err) {
-        // Silently handle errors - 500 errors are expected when no data exists yet
+
         console.log(`Check-in status for booking ${bookingId}: No data available`);
     }
 
     try {
         const checkOutResult = await scheduleService.getCheckOutImages(bookingId);
-        // Only set to true if we have actual data and images
+
         if (checkOutResult.data && Array.isArray(checkOutResult.data.images) && checkOutResult.data.images.length > 0) {
             hasCheckOut = true;
         }
     } catch (err) {
-        // Silently handle errors - 500 errors are expected when no data exists yet
+
         console.log(`Check-out status for booking ${bookingId}: No data available`);
     }
 
@@ -180,4 +179,136 @@ export const mapBookingStatus = (status: string): string => {
 export const formatBookingDate = (dateString: string): string => {
     const bookingDate = new Date(dateString);
     return `${bookingDate.getDate()} ${bookingDate.toLocaleString('en', { month: 'short' })}`;
+};
+
+export const fetchBookingExtensionInfo = async (bookingId: string) => {
+    try {
+        console.log(`🔍 fetchBookingExtensionInfo: Step 1 - Getting booking details for ${bookingId}`);
+
+
+        const baseUrl = API_CONFIG.BASE_URL;
+        const bookingUrl = `${baseUrl}/Booking/GetBookingById/${bookingId}`;
+        const token = await getAuthToken();
+
+        const bookingResponse = await fetch(bookingUrl, {
+            method: 'GET',
+            headers: {
+                Authorization: token ? `Bearer ${token}` : '',
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+            },
+        });
+
+        if (!bookingResponse.ok) {
+            console.log(`🔍 fetchBookingExtensionInfo: Failed to get booking details for ${bookingId}, status: ${bookingResponse.status}`);
+            return {
+                hasExtension: false,
+                extensionDescription: undefined,
+                extensionDays: undefined,
+                extensionAmount: undefined
+            };
+        }
+
+        const bookingData = await bookingResponse.json();
+        const invoiceId = bookingData.invoiceId;
+
+        if (!invoiceId) {
+            console.log(`🔍 fetchBookingExtensionInfo: No invoiceId found for booking ${bookingId}`);
+            return {
+                hasExtension: false,
+                extensionDescription: undefined,
+                extensionDays: undefined,
+                extensionAmount: undefined
+            };
+        }
+
+        console.log(`🔍 fetchBookingExtensionInfo: Step 1 completed - Got invoiceId: ${invoiceId} for booking ${bookingId}`);
+
+
+        const invoiceBaseUrl = API_CONFIG.BASE_URL.replace('/api', '');
+        const paymentUrl = `${invoiceBaseUrl}/Invoice/${invoiceId}`;
+
+        console.log(`🔍 fetchBookingExtensionInfo: Step 2 - Getting payment details for ${invoiceId}`);
+        console.log(`🔍 fetchBookingExtensionInfo: Full payment URL: ${paymentUrl}`);
+
+        const paymentResponse = await fetch(paymentUrl, {
+            method: 'GET',
+            headers: {
+                Authorization: token ? `Bearer ${token}` : '',
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+            },
+        });
+
+        console.log(`🔍 fetchBookingExtensionInfo: Payment response status: ${paymentResponse.status}`);
+
+        if (!paymentResponse.ok) {
+            console.log(`🔍 fetchBookingExtensionInfo: Failed to get payment details for ${invoiceId}, status: ${paymentResponse.status}`);
+            return {
+                hasExtension: false,
+                extensionDescription: undefined,
+                extensionDays: undefined,
+                extensionAmount: undefined
+            };
+        }
+
+        const paymentData = await paymentResponse.json();
+        console.log(`🔍 fetchBookingExtensionInfo: Step 2 completed - Got payment data for ${invoiceId}`);
+        console.log(`🔍 fetchBookingExtensionInfo: Payment data:`, JSON.stringify(paymentData, null, 2));
+
+
+        if (!Array.isArray(paymentData)) {
+            console.log(`🔍 fetchBookingExtensionInfo: Payment data is not an array:`, typeof paymentData);
+            return {
+                hasExtension: false,
+                extensionDescription: undefined,
+                extensionDays: undefined,
+                extensionAmount: undefined
+            };
+        }
+
+
+        const extensionPayment = paymentData.find((payment: any) =>
+            payment.item === 'Booking Extension'
+        );
+
+        if (!extensionPayment) {
+            console.log(`🔍 fetchBookingExtensionInfo: No "Booking Extension" payment found in invoice ${invoiceId}`);
+            console.log(`🔍 fetchBookingExtensionInfo: Available payment items:`, paymentData.map((p: any) => p.item));
+            return {
+                hasExtension: false,
+                extensionDescription: undefined,
+                extensionDays: undefined,
+                extensionAmount: undefined
+            };
+        }
+
+        console.log(`🔍 fetchBookingExtensionInfo: Found booking extension payment for ${bookingId}:`, {
+            paymentId: extensionPayment.id,
+            item: extensionPayment.item,
+            paidAmount: extensionPayment.paidAmount,
+            status: extensionPayment.status
+        });
+
+
+        const extensionDescription = `Booking Extension (${extensionPayment.paidAmount.toLocaleString()} VND)`;
+        const extensionDays = 1;
+        const extensionAmount = extensionPayment.paidAmount || 0;
+
+        return {
+            hasExtension: true,
+            extensionDescription,
+            extensionDays,
+            extensionAmount
+        };
+
+    } catch (error) {
+        console.error(`🔍 fetchBookingExtensionInfo: error for ${bookingId}:`, error);
+        return {
+            hasExtension: false,
+            extensionDescription: undefined,
+            extensionDays: undefined,
+            extensionAmount: undefined
+        };
+    }
 };

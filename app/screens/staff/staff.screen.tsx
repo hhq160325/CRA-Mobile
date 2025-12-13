@@ -1,374 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import React from 'react';
+import { View, FlatList, RefreshControl } from 'react-native';
 import { colors } from '../../theme/colors';
 import Header from '../../components/Header/Header';
-import { bookingsService } from '../../../lib/api/services/bookings.service';
-import { paymentService } from '../../../lib/api/services/payment.service';
-import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import type { NavigatorParamList } from '../../navigators/navigation-route';
-import { styles } from './staff.screen.styles';
-import {
-  fetchCarDetails,
-  fetchCustomerName,
-  fetchPaymentDetails,
-  fetchCheckInOutStatus,
-  mapBookingStatus,
-  formatBookingDate,
-  fetchBookingWithCarDetails,
-} from './utils/staffHelpers';
+import { useStaffBookings } from './hooks/useStaffBookings';
 import { ListHeader } from './components/ListHeader';
-
-type PaymentStatus = 'all' | 'successfully' | 'pending' | 'cancelled';
-
-interface BookingItem {
-  id: string;
-  bookingNumber?: string;
-  carId: string;
-  carName: string;
-  carBrand: string;
-  carModel: string;
-  carLicensePlate: string;
-  carImage: string;
-  customerName: string;
-  userId: string;
-  invoiceId: string;
-  amount: number;
-  invoiceStatus: string;
-  status: string;
-  date: string;
-  hasCheckIn: boolean;
-  hasCheckOut: boolean;
-}
+import BookingPaymentCard from './components/BookingPaymentCard';
+import StaffLoadingState from './components/StaffLoadingState';
+import StaffErrorState from './components/StaffErrorState';
+import StaffEmptyState from './components/StaffEmptyState';
+import { styles } from './styles/staffScreen.styles';
+import type { BookingItem } from './types/staffTypes';
 
 export default function StaffScreen() {
-  const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-  const [statusFilter, setStatusFilter] = useState<PaymentStatus>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [bookings, setBookings] = useState<BookingItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [processingPayment, setProcessingPayment] = useState<string | null>(
-    null,
+  const {
+    statusFilter,
+    setStatusFilter,
+    searchQuery,
+    setSearchQuery,
+    loading,
+    refreshing,
+    error,
+    processingPayment,
+    processingExtensionPayment,
+    filteredPayments,
+    onRefresh,
+    handleRequestPayment,
+    handlePayExtension,
+    navigation,
+  } = useStaffBookings();
+
+  const handleNavigateToPickup = (bookingId: string) => {
+    navigation.navigate('PickupReturnConfirm' as any, {
+      bookingId: bookingId,
+    });
+  };
+
+  const renderPaymentCard = ({ item }: { item: BookingItem }) => (
+    <BookingPaymentCard
+      item={item}
+      processingPayment={processingPayment}
+      processingExtensionPayment={processingExtensionPayment}
+      onRequestPayment={handleRequestPayment}
+      onNavigateToPickup={handleNavigateToPickup}
+      onPayExtension={handlePayExtension}
+    />
   );
-
-  const mapSingleBooking = async (booking: any): Promise<BookingItem> => {
-    console.log(`📋 mapSingleBooking: processing booking ${booking.id} with bookingNumber: ${booking.bookingNumber}`);
-
-    const mappedStatus = mapBookingStatus(booking.status);
-    const formattedDate = formatBookingDate(booking.bookingDate);
-
-    // Try to get car details from booking number endpoint if available
-    let carDetails = {
-      carName: 'Unknown Car',
-      carBrand: '',
-      carModel: '',
-      carLicensePlate: '',
-      carImage: '',
-    };
-
-    if (booking.bookingNumber) {
-      try {
-        const detailedBooking = await fetchBookingWithCarDetails(booking.bookingNumber);
-        if (detailedBooking && detailedBooking.car) {
-          carDetails = {
-            carName: `${detailedBooking.car.manufacturer} ${detailedBooking.car.model}`,
-            carBrand: detailedBooking.car.manufacturer || '',
-            carModel: detailedBooking.car.model || '',
-            carLicensePlate: detailedBooking.car.licensePlate || '',
-            carImage: detailedBooking.car.imageUrls?.[0] || '',
-          };
-        }
-      } catch (err) {
-        console.log(`📋 Failed to fetch detailed booking for ${booking.bookingNumber}, falling back to carId`);
-        // Fallback to original method
-        if (booking.carId) {
-          carDetails = await fetchCarDetails(booking.carId);
-        }
-      }
-    } else if (booking.carId) {
-      // Fallback to original method if no booking number
-      carDetails = await fetchCarDetails(booking.carId);
-    }
-
-    console.log(`📋 mapSingleBooking: car details for booking ${booking.id}:`, carDetails);
-
-    const customerName = booking.userId
-      ? await fetchCustomerName(booking.userId)
-      : 'Customer';
-
-    const paymentDetails = await fetchPaymentDetails(booking.id);
-    let invoiceAmount = paymentDetails.amount;
-    let invoiceStatus = paymentDetails.status;
-
-    if (invoiceAmount === 0 && booking.totalPrice > 0) {
-      invoiceAmount = booking.totalPrice;
-    }
-
-    if (mappedStatus === 'successfully' && invoiceStatus === 'pending') {
-      invoiceStatus = 'paid';
-    }
-
-    const { hasCheckIn, hasCheckOut } = await fetchCheckInOutStatus(booking.id);
-
-    return {
-      id: booking.id,
-      bookingNumber: booking.bookingNumber,
-      carId: booking.carId,
-      ...carDetails,
-      customerName,
-      userId: booking.userId,
-      invoiceId: booking.invoiceId,
-      amount: invoiceAmount,
-      invoiceStatus,
-      status: mappedStatus,
-      date: formattedDate,
-      hasCheckIn,
-      hasCheckOut,
-    };
-  };
-
-  const fetchBookings = async () => {
-    setLoading(true);
-    setError(null);
-
-    const result = await bookingsService.getAllBookings();
-
-    if (result.error) {
-      setError(result.error.message);
-      setLoading(false);
-      return;
-    }
-
-    if (result.data) {
-      console.log(`📋 fetchBookings: received ${result.data.length} bookings`);
-      console.log(`📋 fetchBookings: sample booking data:`, result.data[0]);
-
-      const mappedBookingsPromises = result.data.map(mapSingleBooking);
-      const mappedBookings = await Promise.all(mappedBookingsPromises);
-      setBookings(mappedBookings);
-    }
-
-    setLoading(false);
-    setRefreshing(false);
-  };
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      console.log('🔄 StaffScreen focused - refreshing bookings...');
-      fetchBookings();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchBookings();
-  };
-
-  const handleRequestPayment = async (bookingId: string) => {
-    try {
-      setProcessingPayment(bookingId);
-
-      const result = await paymentService.createRentalPayment(bookingId);
-
-      if (result.error) {
-        alert(`Failed to create payment: ${result.error.message}`);
-        setProcessingPayment(null);
-        return;
-      }
-
-      if (result.data && result.data.checkoutUrl) {
-        navigation.navigate('PayOSWebView' as any, {
-          paymentUrl: result.data.checkoutUrl,
-          bookingId: bookingId,
-          returnScreen: 'StaffScreen',
-        });
-      } else {
-        alert('Failed to create payment: No checkout URL received');
-      }
-
-      setProcessingPayment(null);
-    } catch (error) {
-      alert(
-        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-      setProcessingPayment(null);
-    }
-  };
-
-  const filteredPayments = bookings.filter(payment => {
-    const matchesStatus =
-      statusFilter === 'all' || payment.status === statusFilter;
-
-    // If no search query, just filter by status
-    if (!searchQuery || searchQuery.trim() === '') {
-      return matchesStatus;
-    }
-
-    // Normalize search query
-    const normalizedQuery = searchQuery.toLowerCase().trim();
-
-    // Check all searchable fields
-    const matchesSearch =
-      payment.carName.toLowerCase().includes(normalizedQuery) ||
-      payment.customerName.toLowerCase().includes(normalizedQuery) ||
-      payment.id.toLowerCase().includes(normalizedQuery) ||
-      (payment.bookingNumber && payment.bookingNumber.toLowerCase().includes(normalizedQuery));
-
-    return matchesStatus && matchesSearch;
-  });
-
-  // Debug logging
-  if (searchQuery && searchQuery.trim() !== '') {
-    console.log('🔍 Search Results:', {
-      query: searchQuery,
-      totalBookings: bookings.length,
-      filteredCount: filteredPayments.length,
-      sampleBookingNumbers: bookings.slice(0, 3).map(b => b.bookingNumber),
-    });
-  }
-
-  const renderPaymentCard = ({ item }: { item: BookingItem }) => {
-    const statusBadgeStyle = [
-      styles.statusBadge,
-      item.status === 'successfully'
-        ? styles.statusBadgeSuccess
-        : item.status === 'cancelled'
-          ? styles.statusBadgeCancelled
-          : styles.statusBadgePending,
-    ];
-
-    const statusTextStyle = [
-      styles.statusText,
-      item.status === 'successfully'
-        ? styles.statusTextSuccess
-        : item.status === 'cancelled'
-          ? styles.statusTextCancelled
-          : styles.statusTextPending,
-    ];
-
-    const confirmPickupTextStyle = [
-      styles.confirmPickupText,
-      item.hasCheckIn && item.hasCheckOut
-        ? styles.confirmPickupTextComplete
-        : styles.confirmPickupTextIncomplete,
-    ];
-
-    const confirmPickupArrowStyle = [
-      styles.confirmPickupArrow,
-      item.hasCheckIn && item.hasCheckOut
-        ? styles.confirmPickupTextComplete
-        : styles.confirmPickupTextIncomplete,
-    ];
-
-    return (
-      <Pressable style={styles.paymentCard}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardHeaderContent}>
-            <Text style={styles.carName}>{item.carName}</Text>
-            {item.carLicensePlate && (
-              <Text style={styles.licensePlate}>
-                License: {item.carLicensePlate}
-              </Text>
-            )}
-            <Text style={styles.bookingId}>
-              Booking ID: {item.bookingNumber || 'N/A'}
-            </Text>
-          </View>
-          <View style={statusBadgeStyle}>
-            <Text style={statusTextStyle}>
-              {item.status === 'successfully'
-                ? 'Successful'
-                : item.status === 'cancelled'
-                  ? 'Cancelled'
-                  : 'Pending'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.cardDetails}>
-          <View style={styles.detailColumn}>
-            <Text style={styles.detailLabel}>CUSTOMER</Text>
-            <Text style={styles.detailValue}>{item.customerName}</Text>
-          </View>
-          <View style={styles.detailColumn}>
-            <Text style={styles.detailLabel}>AMOUNT</Text>
-            <Text style={[styles.detailValue, styles.detailValueBold]}>
-              {item.amount.toLocaleString()} VND
-            </Text>
-          </View>
-          <View style={styles.detailColumn}>
-            <Text style={styles.detailLabel}>DATE</Text>
-            <Text style={styles.detailValue}>{item.date}</Text>
-          </View>
-        </View>
-
-        <View style={styles.cardFooter}>
-          {item.status === 'pending' ? (
-            <Pressable
-              onPress={() => handleRequestPayment(item.id)}
-              disabled={processingPayment === item.id}
-              style={[
-                styles.requestPaymentButton,
-                processingPayment === item.id
-                  ? styles.requestPaymentButtonDisabled
-                  : styles.requestPaymentButtonActive,
-              ]}>
-              {processingPayment === item.id ? (
-                <ActivityIndicator size="small" color={colors.white} />
-              ) : (
-                <Text style={styles.requestPaymentText}>Request Payment</Text>
-              )}
-            </Pressable>
-          ) : (
-            <Pressable
-              onPress={() =>
-                navigation.navigate('PickupReturnConfirm' as any, {
-                  bookingId: item.id,
-                })
-              }
-              style={styles.confirmPickupButton}>
-              <Text style={confirmPickupTextStyle}>
-                → Tap to confirm pickup
-              </Text>
-              <Text style={confirmPickupArrowStyle}>→</Text>
-            </Pressable>
-          )}
-        </View>
-      </Pressable>
-    );
-  };
 
   return (
     <View style={styles.container}>
       <Header />
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading bookings...</Text>
-        </View>
+        <StaffLoadingState />
       ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Error loading bookings</Text>
-          <Text style={styles.errorMessage}>{error}</Text>
-        </View>
+        <StaffErrorState error={error} />
       ) : (
         <FlatList
           style={styles.listContainer}
@@ -393,11 +80,7 @@ export default function StaffScreen() {
               onStatusChange={setStatusFilter}
             />
           }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No payments found</Text>
-            </View>
-          }
+          ListEmptyComponent={<StaffEmptyState />}
         />
       )}
     </View>

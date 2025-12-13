@@ -14,7 +14,7 @@ import { login } from './auth/loginService';
 import { register } from './auth/registerService';
 import { loginWithGoogle, getGoogleLoginUrl } from './auth/googleLoginService';
 import { refreshToken as refreshTokenFn } from './auth/tokenRefreshService';
-import { forgotPassword, verifyResetCode, resetPassword } from './auth/passwordResetService';
+import { forgotPassword, verifyResetCode, resetPassword, resetPasswordByPhone } from './auth/passwordResetService';
 import { verifySignupOtp } from './auth/signupOtpService';
 import {
   getUserFromStorage,
@@ -36,9 +36,9 @@ export const authService = {
 
   // User management
   getCurrentUser: getUserFromStorage,
-  logout: (): { error: Error | null } => {
+  logout: async (): Promise<{ error: Error | null }> => {
     try {
-      clearAuthFromStorage();
+      await clearAuthFromStorage();
       return { error: null };
     } catch (e) {
       return { error: e as Error };
@@ -49,6 +49,7 @@ export const authService = {
   forgotPassword,
   verifyResetCode,
   resetPassword,
+  resetPasswordByPhone,
 
   // Signup OTP
   verifySignupOtp,

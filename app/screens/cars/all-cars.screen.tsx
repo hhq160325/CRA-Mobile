@@ -18,6 +18,7 @@ import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useFavorites } from '../../../lib/favorites-context';
+import { styles } from './styles/allCars.styles';
 
 export default function AllCarsScreen() {
     const [cars, setCars] = useState<Car[]>([]);
@@ -50,45 +51,29 @@ export default function AllCarsScreen() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <View style={styles.container}>
                 <Header />
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.morentBlue} />
-                    <Text style={{ marginTop: 16, color: colors.placeholder }}>Loading all cars...</Text>
+                    <Text style={styles.loadingText}>Loading all cars...</Text>
                 </View>
             </View>
         );
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={styles.container}>
             <Header />
 
             {/* Header Title */}
-            <View
-                style={{
-                    paddingHorizontal: scale(16),
-                    paddingTop: scale(16),
-                    paddingBottom: scale(12),
-                    backgroundColor: colors.white,
-                    borderBottomWidth: 1,
-                    borderBottomColor: colors.border,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}>
+            <View style={styles.headerContainer}>
                 <MaterialIcons
                     name="directions-car"
                     size={scale(20)}
                     color={colors.morentBlue}
                     style={{ marginRight: scale(8) }}
                 />
-                <Text
-                    style={{
-                        fontSize: scale(18),
-                        fontWeight: '700',
-                        color: colors.primary,
-                    }}>
+                <Text style={styles.headerTitle}>
                     All Cars ({cars.length})
                 </Text>
             </View>
@@ -96,27 +81,15 @@ export default function AllCarsScreen() {
             <FlatList
                 data={cars}
                 keyExtractor={item => item.id}
-                contentContainerStyle={{ padding: scale(16) }}
+                contentContainerStyle={styles.listContainer}
                 ListEmptyComponent={
-                    <View
-                        style={{
-                            flex: 1,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            paddingVertical: scale(60),
-                        }}>
+                    <View style={styles.emptyContainer}>
                         <MaterialIcons
                             name="directions-car"
                             size={scale(64)}
                             color={colors.border}
                         />
-                        <Text
-                            style={{
-                                fontSize: scale(16),
-                                color: colors.placeholder,
-                                marginTop: scale(16),
-                                textAlign: 'center',
-                            }}>
+                        <Text style={styles.emptyText}>
                             No cars available
                         </Text>
                     </View>
@@ -126,45 +99,20 @@ export default function AllCarsScreen() {
                         onPress={() =>
                             navigation.navigate('CarDetail' as any, { id: item.id })
                         }
-                        style={{
-                            backgroundColor: colors.white,
-                            marginBottom: scale(16),
-                            borderRadius: scale(12),
-                            overflow: 'hidden',
-                            borderWidth: 1,
-                            borderColor: colors.border,
-                        }}>
-                        <View style={{ padding: scale(16) }}>
-                            <View
-                                style={{
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    marginBottom: scale(12),
-                                }}>
-                                <View style={{ flex: 1 }}>
-                                    <Text
-                                        style={{
-                                            fontSize: scale(16),
-                                            fontWeight: '700',
-                                            color: colors.primary,
-                                            marginBottom: scale(4),
-                                        }}>
+                        style={styles.carCard}>
+                        <View style={styles.carCardContent}>
+                            <View style={styles.carHeader}>
+                                <View style={styles.carHeaderContent}>
+                                    <Text style={styles.carTitle}>
                                         {item.manufacturer} {item.model}
                                     </Text>
-                                    <Text
-                                        style={{
-                                            fontSize: scale(12),
-                                            color: colors.placeholder,
-                                            textTransform: 'uppercase',
-                                        }}>
+                                    <Text style={styles.carCategory}>
                                         {item.category || 'SEDAN'}
                                     </Text>
                                 </View>
                                 <Pressable
                                     onPress={(e) => handleFavoritePress(item.id, e)}
-                                    style={{
-                                        padding: scale(8),
-                                    }}>
+                                    style={styles.favoriteButton}>
                                     <Ionicons
                                         name={isFavorite(item.id) ? 'heart' : 'heart-outline'}
                                         size={scale(20)}
@@ -174,103 +122,58 @@ export default function AllCarsScreen() {
                             </View>
 
                             {/* Car Image */}
-                            <View
-                                style={{
-                                    height: scale(120),
-                                    backgroundColor: colors.background,
-                                    borderRadius: scale(8),
-                                    marginBottom: scale(12),
-                                    overflow: 'hidden',
-                                }}>
+                            <View style={styles.carImage}>
                                 <Image
                                     source={
                                         item.imageUrls && item.imageUrls.length > 0
                                             ? { uri: item.imageUrls[0] }
                                             : getAsset('luxury-sedan')
                                     }
-                                    style={{
-                                        width: '100%',
-                                        height: '100%',
-                                    }}
+                                    style={styles.carImageContent}
                                     resizeMode="cover"
                                 />
                             </View>
 
                             {/* Car Details */}
-                            <View
-                                style={{
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    marginBottom: scale(12),
-                                }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={styles.carDetails}>
+                                <View style={styles.carDetailItem}>
                                     <MaterialIcons
                                         name="local-gas-station"
                                         size={scale(16)}
                                         color={colors.placeholder}
                                     />
-                                    <Text
-                                        style={{
-                                            fontSize: scale(12),
-                                            color: colors.placeholder,
-                                            marginLeft: scale(4),
-                                        }}>
+                                    <Text style={styles.carDetailText}>
                                         {item.fuelConsumption || 'N/A'}L
                                     </Text>
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={styles.carDetailItem}>
                                     <MaterialIcons
                                         name="settings"
                                         size={scale(16)}
                                         color={colors.placeholder}
                                     />
-                                    <Text
-                                        style={{
-                                            fontSize: scale(12),
-                                            color: colors.placeholder,
-                                            marginLeft: scale(4),
-                                        }}>
+                                    <Text style={styles.carDetailText}>
                                         {item.transmission || 'Manual'}
                                     </Text>
                                 </View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={styles.carDetailItem}>
                                     <MaterialIcons
                                         name="people"
                                         size={scale(16)}
                                         color={colors.placeholder}
                                     />
-                                    <Text
-                                        style={{
-                                            fontSize: scale(12),
-                                            color: colors.placeholder,
-                                            marginLeft: scale(4),
-                                        }}>
+                                    <Text style={styles.carDetailText}>
                                         {item.seats || 4} People
                                     </Text>
                                 </View>
                             </View>
 
                             {/* Price and Rent Button */}
-                            <View
-                                style={{
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                }}>
+                            <View style={styles.priceRentContainer}>
                                 <View>
-                                    <Text
-                                        style={{
-                                            fontSize: scale(16),
-                                            fontWeight: '700',
-                                            color: colors.primary,
-                                        }}>
+                                    <Text style={styles.priceText}>
                                         {item.price > 0 ? `${item.price.toLocaleString()} VND` : 'Price on request'}
-                                        <Text
-                                            style={{
-                                                fontSize: scale(12),
-                                                fontWeight: '400',
-                                                color: colors.placeholder,
-                                            }}>
+                                        <Text style={styles.priceUnit}>
                                             /day
                                         </Text>
                                     </Text>
@@ -279,18 +182,8 @@ export default function AllCarsScreen() {
                                     onPress={() =>
                                         navigation.navigate('BookingForm' as any, { id: item.id })
                                     }
-                                    style={{
-                                        backgroundColor: colors.morentBlue,
-                                        paddingHorizontal: scale(16),
-                                        paddingVertical: scale(8),
-                                        borderRadius: scale(6),
-                                    }}>
-                                    <Text
-                                        style={{
-                                            fontSize: scale(12),
-                                            fontWeight: '600',
-                                            color: colors.white,
-                                        }}>
+                                    style={styles.rentButton}>
+                                    <Text style={styles.rentButtonText}>
                                         Rent Now
                                     </Text>
                                 </Pressable>

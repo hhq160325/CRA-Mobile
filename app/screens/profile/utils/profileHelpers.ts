@@ -15,38 +15,42 @@ export const buildSafeUpdateData = (latestData: any, overrides: any = {}) => {
         isCarOwner: latestData?.isCarOwner || false,
         rating: latestData?.rating || 0,
         roleId: latestData?.roleId || 1,
+        isVerified: latestData?.isVerified || false,
     };
 
-    if (latestData?.password) {
-        baseData.password = latestData.password;
-    }
 
     const mergedData = { ...baseData, ...overrides };
 
     const sensitiveFields = [
+        'password',
         'passwordHash',
         'passwordSalt',
         'googleId',
         'isGoogle',
         'refreshToken',
+        'refreshTokens',
         'accessToken',
         'token',
         'tokens',
+        'cars',
+        'invoicesAsCustomer',
+        'invoicesAsVendor',
+        'bookingHistory',
+        'id',
     ];
 
     sensitiveFields.forEach(field => {
         delete mergedData[field];
     });
 
+
     Object.keys(mergedData).forEach(key => {
-        if (key !== 'password' && (key.toLowerCase().includes('password') || key.toLowerCase().includes('pass'))) {
-            delete mergedData[key];
+        if (key.toLowerCase().includes('password') || key.toLowerCase().includes('pass')) {
+            if (!overrides.hasOwnProperty(key)) {
+                delete mergedData[key];
+            }
         }
     });
-
-    if (!mergedData.password || mergedData.password === "" || mergedData.password === null) {
-        delete mergedData.password;
-    }
 
     return mergedData;
 };

@@ -9,9 +9,9 @@ interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<boolean>
   loginWithGoogle: () => Promise<boolean>
-  logout: () => void
+  logout: () => Promise<void>
   isAuthenticated: boolean
-  refreshUser: () => void
+  refreshUser: () => Promise<void>
   isGoogleReady: boolean
 }
 
@@ -28,10 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useGoogleLogin()
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser()
-    if (currentUser) {
-      setUser(currentUser)
+    const loadUser = async () => {
+      const currentUser = await authService.getCurrentUser()
+      if (currentUser) {
+        setUser(currentUser)
+      }
     }
+    loadUser()
 
     const handleDeepLink = async (event: { url: string }) => {
       console.log("🔗 Deep link received:", event.url)
@@ -53,12 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (jwtToken) {
             console.log("✅ JWT token found in callback, auto-logging in...")
 
-            const currentUser = authService.getCurrentUser()
+            const currentUser = await authService.getCurrentUser()
             if (currentUser) {
               console.log("✅ Auto-login successful:", currentUser.email)
               setUser(currentUser)
             } else {
-              console.log("⚠️ Token found but no user in localStorage")
+              console.log("⚠️ Token found but no user in AsyncStorage")
             }
           } else {
             console.log("❌ No token found in callback URL")
@@ -91,7 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('auth-context: authService.login result', { data: data ? 'user data received' : null, error: error?.message })
 
       if (data && !error) {
-        console.log('auth-context: setting user in state', { userId: data.id, userRole: data.role })
+        console.log('auth-context: setting user in state', {
+          userId: data.id,
+          userRole: data.role,
+          roleId: data.roleId,
+          isStaff: data.role === 'staff' || data.roleId === 1002
+        })
         setUser(data)
         return true
       }
@@ -121,9 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
 
-        const currentUser = authService.getCurrentUser()
+        const currentUser = await authService.getCurrentUser()
         if (currentUser) {
-          console.log('auth-context: setting user from localStorage', { userId: currentUser.id, userRole: currentUser.role })
+          console.log('auth-context: setting user from AsyncStorage', { userId: currentUser.id, userRole: currentUser.role })
           setUser(currentUser)
           return true
         }
@@ -137,8 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const refreshUser = () => {
-    const currentUser = authService.getCurrentUser()
+  const refreshUser = async () => {
+    const currentUser = await authService.getCurrentUser()
     if (currentUser) {
       console.log('auth-context: refreshing user', {
         userId: currentUser.id,
@@ -153,8 +161,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
-    authService.logout()
+  const logout = async () => {
+    await authService.logout()
     setUser(null)
   }
 

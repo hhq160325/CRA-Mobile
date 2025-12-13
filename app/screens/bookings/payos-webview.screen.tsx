@@ -8,7 +8,7 @@ import type { NavigatorParamList } from '../../navigators/navigation-route';
 import { colors } from '../../theme/colors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { API_CONFIG } from '../../../lib/api/config';
-import { styles } from './payos-webview.styles';
+import { styles } from './styles/payosWebview.styles';
 
 type PayOSWebViewRouteProp = RouteProp<
   { params: { paymentUrl: string; bookingId?: string; returnScreen?: string } },
@@ -25,20 +25,38 @@ export default function PayOSWebViewScreen() {
   const webViewRef = useRef<WebView>(null);
   const paymentProcessedRef = useRef(false);
 
-  const navigateToDestination = () => {
+  const navigateToDestination = (isSuccess: boolean = true) => {
     if (returnScreen === 'StaffScreen') {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'staffStack' as any }],
-      });
-    } else {
       navigation.reset({
         index: 0,
         routes: [
           {
-            name: 'tabStack' as any,
+            name: 'auth' as any,
             state: {
-              routes: [{ name: 'Home' as any }],
+              routes: [{ name: 'staffStack' as any }],
+              index: 0,
+            },
+          },
+        ],
+      });
+    } else {
+      // Navigate to bookings list screen for success, home screen for cancellation
+      const targetScreen = isSuccess ? 'Bookings' : 'Home';
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'auth' as any,
+            state: {
+              routes: [
+                {
+                  name: 'tabStack' as any,
+                  state: {
+                    routes: [{ name: targetScreen as any }],
+                    index: 0,
+                  },
+                },
+              ],
               index: 0,
             },
           },
@@ -136,7 +154,7 @@ export default function PayOSWebViewScreen() {
       }
     }
 
-    navigateToDestination();
+    navigateToDestination(true); // Success = true, navigate to Bookings
   };
 
   const handlePaymentCancellation = async () => {
@@ -147,7 +165,7 @@ export default function PayOSWebViewScreen() {
       await updateBookingStatus('Canceled');
     }
 
-    navigateToDestination();
+    navigateToDestination(false); // Success = false, navigate to Home
 
     setTimeout(() => {
       Alert.alert(
@@ -163,6 +181,26 @@ export default function PayOSWebViewScreen() {
     const url = navState.url;
     console.log('WebView URL changed:', url);
 
+    // Check for PayOS success URL pattern
+    if (url.includes('pay.payos.vn') && url.includes('/success')) {
+      if (paymentProcessedRef.current) {
+        console.log('⚠️ Payment already processed, skipping...');
+        return;
+      }
+      paymentProcessedRef.current = true;
+      console.log('🎉 PayOS payment success detected, navigating to bookings...');
+      handlePaymentSuccess();
+      return;
+    }
+
+    // Block external website navigation after payment
+    if (url.includes('cra-morent.vercel.app') || url.includes('payment-success') || url.includes('payment-cancel')) {
+      console.log('🚫 Blocking external website navigation:', url);
+      // Don't allow navigation to external pages
+      return;
+    }
+
+    // Handle other success/completion patterns
     if (url.includes('success') || url.includes('completed')) {
       if (paymentProcessedRef.current) {
         console.log('⚠️ Payment already processed, skipping...');
@@ -215,6 +253,40 @@ export default function PayOSWebViewScreen() {
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         onNavigationStateChange={handleNavigationStateChange}
+        onShouldStartLoadWithRequest={(request) => {
+          const url = request.url;
+          console.log('WebView should start load:', url);
+
+          // Allow PayOS URLs
+          if (url.includes('pay.payos.vn')) {
+            return true;
+          }
+
+          // Block external page navigation and handle payment results
+          if (url.includes('cra-morent.vercel.app') || url.includes('payment-success') || url.includes('payment-cancel')) {
+            console.log('🚫 Blocking external navigation to:', url);
+
+            if (!paymentProcessedRef.current) {
+              paymentProcessedRef.current = true;
+
+              // Check for cancellation first
+              if (url.includes('payment-cancel') || url.includes('status=CANCELLED') || url.includes('cancel=true')) {
+                console.log('❌ Payment cancellation detected from blocked URL, navigating to home...');
+                handlePaymentCancellation();
+              }
+              // Then check for success
+              else if (url.includes('payment-success') || url.includes('status=PAID')) {
+                console.log('🎉 Payment success detected from blocked URL, navigating to bookings...');
+                handlePaymentSuccess();
+              }
+            }
+
+            return false; // Block the navigation
+          }
+
+          // Allow other URLs (like initial payment URL)
+          return true;
+        }}
         style={styles.webView}
         javaScriptEnabled={true}
         domStorageEnabled={true}

@@ -1,17 +1,17 @@
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import {
   carsService,
   bookingsService,
   type Car,
   type Booking,
 } from '../../../../lib/api';
-import {useAuth} from '../../../../lib/auth-context';
+import { useAuth } from '../../../../lib/auth-context';
 
 export function useHomeData() {
   const [cars, setCars] = useState<Car[]>([]);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadData();
@@ -25,7 +25,7 @@ export function useHomeData() {
         carsService.getCars({}),
         user?.id
           ? bookingsService.getBookings(user.id)
-          : Promise.resolve({data: null as Booking[] | null, error: null}),
+          : Promise.resolve({ data: null as Booking[] | null, error: null }),
       ]);
 
       if (carsResult.data) {
@@ -48,15 +48,14 @@ export function useHomeData() {
               rateResult.data.dailyRate > 0
             ) {
               console.log(
-                `✅ ${
-                  car.name
+                ` ${car.name
                 }: ${rateResult.data.dailyRate.toLocaleString()} VND/day`,
               );
-              return {...car, price: rateResult.data.dailyRate};
+              return { ...car, price: rateResult.data.dailyRate };
             }
 
-            console.log(`⚠️ ${car.name}: No active rental rate`);
-            return {...car, price: 0};
+            console.log(` ${car.name}: No active rental rate`);
+            return { ...car, price: 0 };
           }),
         );
 
@@ -74,5 +73,5 @@ export function useHomeData() {
     }
   };
 
-  return {cars, recentBookings, loading, refetch: loadData};
+  return { cars, recentBookings, loading, refetch: loadData };
 }

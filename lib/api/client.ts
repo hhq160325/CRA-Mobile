@@ -1,5 +1,6 @@
 
 import { API_CONFIG } from "./config"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export class APIError extends Error {
   constructor(
@@ -152,11 +153,9 @@ export async function apiClient<T>(
 
     let token: string | null = null
     try {
-      if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-        token = localStorage.getItem("token")
-      }
+      token = await AsyncStorage.getItem("token")
     } catch (e) {
-      console.error("Failed to get token from localStorage:", e)
+      console.error("Failed to get token from AsyncStorage:", e)
     }
 
     const headers: Record<string, string> = {

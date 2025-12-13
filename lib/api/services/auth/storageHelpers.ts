@@ -1,89 +1,76 @@
 import type { User } from './types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const saveAuthToStorage = (token: string, user: User, refreshToken?: string): void => {
+export const saveAuthToStorage = async (token: string, user: User, refreshToken?: string): Promise<void> => {
     try {
-        if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
-            localStorage.setItem("token", token);
-            localStorage.setItem("user", JSON.stringify(user));
+        await AsyncStorage.setItem("token", token);
+        await AsyncStorage.setItem("user", JSON.stringify(user));
 
-            if (refreshToken) {
-                localStorage.setItem("refreshToken", refreshToken);
-            }
-
-            console.log("saveAuthToStorage: saved to localStorage", {
-                userId: user.id,
-                role: user.role,
-                roleId: user.roleId,
-                hasRefreshToken: !!refreshToken,
-            });
+        if (refreshToken) {
+            await AsyncStorage.setItem("refreshToken", refreshToken);
         }
+
+        console.log("saveAuthToStorage: saved to AsyncStorage", {
+            userId: user.id,
+            role: user.role,
+            roleId: user.roleId,
+            hasRefreshToken: !!refreshToken,
+        });
     } catch (e) {
-        console.error("Failed to save to localStorage:", e);
+        console.error("Failed to save to AsyncStorage:", e);
         throw e;
     }
 };
 
-export const getUserFromStorage = (): User | null => {
+export const getUserFromStorage = async (): Promise<User | null> => {
     try {
-        if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-            const userStr = localStorage.getItem("user");
-            return userStr ? JSON.parse(userStr) : null;
-        }
+        const userStr = await AsyncStorage.getItem("user");
+        return userStr ? JSON.parse(userStr) : null;
     } catch (e) {
-        console.error("Failed to get user from localStorage:", e);
+        console.error("Failed to get user from AsyncStorage:", e);
+        return null;
     }
-    return null;
 };
 
-export const getTokenFromStorage = (): string | null => {
+export const getTokenFromStorage = async (): Promise<string | null> => {
     try {
-        if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-            return localStorage.getItem("token");
-        }
+        return await AsyncStorage.getItem("token");
     } catch (e) {
-        console.error("Failed to get token from localStorage:", e);
+        console.error("Failed to get token from AsyncStorage:", e);
+        return null;
     }
-    return null;
 };
 
-export const getRefreshTokenFromStorage = (): string | null => {
+export const getRefreshTokenFromStorage = async (): Promise<string | null> => {
     try {
-        if (typeof localStorage !== "undefined" && localStorage?.getItem) {
-            return localStorage.getItem("refreshToken");
-        }
+        return await AsyncStorage.getItem("refreshToken");
     } catch (e) {
-        console.error("Failed to get refreshToken from localStorage:", e);
+        console.error("Failed to get refreshToken from AsyncStorage:", e);
+        return null;
     }
-    return null;
 };
 
-export const clearAuthFromStorage = (): void => {
+export const clearAuthFromStorage = async (): Promise<void> => {
     try {
-        if (typeof localStorage !== 'undefined' && localStorage?.removeItem) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            localStorage.removeItem("refreshToken");
-            console.log("clearAuthFromStorage: User logged out successfully");
-        }
+        await AsyncStorage.multiRemove(["token", "user", "refreshToken"]);
+        console.log("clearAuthFromStorage: User logged out successfully");
     } catch (e) {
-        console.error("Failed to clear localStorage:", e);
+        console.error("Failed to clear AsyncStorage:", e);
         throw e;
     }
 };
 
-export const saveTokensToStorage = (token: string, refreshToken?: string): void => {
+export const saveTokensToStorage = async (token: string, refreshToken?: string): Promise<void> => {
     try {
-        if (typeof localStorage !== "undefined" && localStorage?.setItem) {
-            localStorage.setItem("token", token);
+        await AsyncStorage.setItem("token", token);
 
-            if (refreshToken) {
-                localStorage.setItem("refreshToken", refreshToken);
-            }
-
-            console.log("saveTokensToStorage: saved new tokens to localStorage");
+        if (refreshToken) {
+            await AsyncStorage.setItem("refreshToken", refreshToken);
         }
+
+        console.log("saveTokensToStorage: saved new tokens to AsyncStorage");
     } catch (e) {
-        console.error("Failed to save tokens to localStorage:", e);
+        console.error("Failed to save tokens to AsyncStorage:", e);
         throw e;
     }
 };

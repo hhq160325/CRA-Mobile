@@ -24,12 +24,13 @@ const OtpScreen = () => {
 
   const email = params?.email || '';
   const type = params?.type || 'verify';
+  const skipOtp = params?.skipOtp || false;
 
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [showPasswordFields, setShowPasswordFields] = useState(skipOtp);
 
   const maskEmail = (email: string) => {
     if (!email) return '****@****.com';
@@ -86,9 +87,12 @@ const OtpScreen = () => {
 
     setLoading(true);
     try {
+
+      const resetCode = skipOtp ? 'PHONE_VERIFIED' : otp;
+
       const { data, error } = await authService.resetPassword(
         email,
-        otp,
+        resetCode,
         newPassword,
       );
 
@@ -149,9 +153,14 @@ const OtpScreen = () => {
                 : 'Enter verification code'}
             </Text>
             {renderMarginTop(12)}
-            {!showPasswordFields && (
+            {!showPasswordFields && !skipOtp && (
               <Text style={styles.infoText}>
                 We have sent a code to: {maskEmail(email)}
+              </Text>
+            )}
+            {skipOtp && showPasswordFields && (
+              <Text style={styles.infoText}>
+                Phone number verified. Please enter your new password.
               </Text>
             )}
           </View>

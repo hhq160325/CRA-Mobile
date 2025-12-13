@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TextInput, Pressable, Text } from 'react-native';
-import { styles } from '../staff.screen.styles';
+import { styles } from '../styles/staffScreen.styles';
 
 type PaymentStatus = 'all' | 'successfully' | 'pending' | 'cancelled';
 

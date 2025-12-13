@@ -10,7 +10,7 @@ import { useFavorites } from "../../../../lib/favorites-context"
 import { useLanguage } from "../../../../lib/language-context"
 
 const { width: screenWidth } = Dimensions.get('window')
-// Responsive card width for horizontal scroll
+
 const horizontalCardWidth = Math.min(scale(240), screenWidth * 0.65)
 
 interface CarCardProps {

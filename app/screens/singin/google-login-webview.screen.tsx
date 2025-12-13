@@ -1,6 +1,6 @@
 'use client';
 
-import {useRef, useState} from 'react';
+import { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,17 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import {WebView} from 'react-native-webview';
-import {useAuth} from '../../../lib/auth-context';
-import {API_CONFIG, API_ENDPOINTS} from '../../../lib/api/config';
-import {goBack} from '../../navigators/navigation-utilities';
-import {scale} from '../../theme/scale';
-import {colors} from '../../theme/colors';
+import { WebView } from 'react-native-webview';
+import { useAuth } from '../../../lib/auth-context';
+import { API_CONFIG, API_ENDPOINTS } from '../../../lib/api/config';
+import { goBack } from '../../navigators/navigation-utilities';
+import { scale } from '../../theme/scale';
+import { colors } from '../../theme/colors';
 
 const GoogleLoginWebView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const webViewRef = useRef<WebView>(null);
-  const {refreshUser} = useAuth();
+  const { refreshUser } = useAuth();
   const [loginProcessed, setLoginProcessed] = useState(false);
 
   const googleLoginUrl = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`;
@@ -27,7 +27,7 @@ const GoogleLoginWebView = () => {
     if (loginProcessed) return;
     setLoginProcessed(true);
 
-    console.log('✅ Google login successful, closing WebView');
+    console.log(' Google login successful, closing WebView');
     refreshUser();
 
     setTimeout(() => {
@@ -36,7 +36,7 @@ const GoogleLoginWebView = () => {
   };
 
   const handleCancel = () => {
-    console.log('⚠️ Google login cancelled');
+    console.log(' Google login cancelled');
     goBack();
   };
 
@@ -49,7 +49,7 @@ const GoogleLoginWebView = () => {
       url.includes('jwtToken') ||
       url.includes('token=')
     ) {
-      console.log('✅ Callback detected in WebView');
+      console.log(' Callback detected in WebView');
 
       try {
         const parsedUrl = new URL(
@@ -71,7 +71,7 @@ const GoogleLoginWebView = () => {
         }
 
         if (jwtToken) {
-          console.log('✅ Token found in URL, saving...');
+          console.log(' Token found in URL, saving...');
 
           if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
             localStorage.setItem('token', jwtToken);
@@ -98,7 +98,7 @@ const GoogleLoginWebView = () => {
 
                 const roleFromToken =
                   decodedToken[
-                    'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+                  'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
                   ];
                 const isCarOwner =
                   decodedToken.IsCarOwner === 'True' ||
@@ -122,7 +122,7 @@ const GoogleLoginWebView = () => {
                 };
 
                 localStorage.setItem('user', JSON.stringify(user));
-                console.log('✅ Saved user to localStorage:', user.email);
+                console.log(' Saved user to localStorage:', user.email);
               }
             } catch (e) {
               console.error('Failed to decode JWT:', e);
@@ -143,7 +143,7 @@ const GoogleLoginWebView = () => {
       console.log('WebView message:', data);
 
       if (data.type === 'LOGIN_SUCCESS' && data.token) {
-        console.log('✅ Login success message received from injected JS');
+        console.log(' Login success message received from injected JS');
 
         if (typeof localStorage !== 'undefined' && localStorage?.setItem) {
           localStorage.setItem('token', data.token);
@@ -163,7 +163,7 @@ const GoogleLoginWebView = () => {
           };
 
           localStorage.setItem('user', JSON.stringify(user));
-          console.log('✅ Saved user from message');
+          console.log(' Saved user from message');
         }
 
         handleSuccess();
@@ -249,7 +249,7 @@ const GoogleLoginWebView = () => {
 
       <WebView
         ref={webViewRef}
-        source={{uri: googleLoginUrl}}
+        source={{ uri: googleLoginUrl }}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={handleMessage}
         injectedJavaScript={injectedJavaScript}

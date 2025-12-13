@@ -25,11 +25,29 @@ export default function StaffScreen() {
     processingPayment,
     processingExtensionPayment,
     filteredPayments,
+    loadingProgress,
     onRefresh,
     handleRequestPayment,
     handlePayExtension,
     navigation,
   } = useStaffBookings();
+
+  const [showLoadingAnimation, setShowLoadingAnimation] = React.useState(true);
+  const [loadingComplete, setLoadingComplete] = React.useState(false);
+
+  // Handle loading state changes
+  React.useEffect(() => {
+    if (!loading && showLoadingAnimation) {
+      // Loading just finished, trigger completion animation
+      setLoadingComplete(true);
+    }
+  }, [loading, showLoadingAnimation]);
+
+  const handleAnimationComplete = () => {
+    // Hide loading animation completely after exit animation
+    setShowLoadingAnimation(false);
+    setLoadingComplete(false);
+  };
 
   const handleNavigateToPickup = (bookingId: string) => {
     navigation.navigate('PickupReturnConfirm' as any, {
@@ -52,8 +70,12 @@ export default function StaffScreen() {
     <View style={styles.container}>
       <Header />
 
-      {loading ? (
-        <StaffLoadingState />
+      {showLoadingAnimation ? (
+        <StaffLoadingState
+          progress={loadingProgress}
+          isComplete={loadingComplete}
+          onAnimationComplete={handleAnimationComplete}
+        />
       ) : error ? (
         <StaffErrorState error={error} />
       ) : (

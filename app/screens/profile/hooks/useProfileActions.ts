@@ -188,8 +188,6 @@ export const useProfileActions = (
       } else {
         console.warn('Avatar upload succeeded but response missing imageAvatar');
       }
-
-      Alert.alert('Success', 'Profile picture updated successfully!');
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Failed to upload avatar');
     } finally {

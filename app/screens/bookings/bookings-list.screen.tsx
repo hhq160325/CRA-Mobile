@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { colors } from '../../theme/colors';
 import { scale, verticalScale } from '../../theme/scale';
 import getAsset from '../../../lib/getAsset';
 import Header from '../../components/Header/Header';
+import StaffLoadingState from '../staff/components/StaffLoadingState';
 import { styles } from './styles/bookingsList.styles';
 
 type StatusFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
@@ -31,6 +32,10 @@ export default function BookingsListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const { user } = useAuth();
+
+  // Loading animation states
+  const [showLoadingAnimation, setShowLoadingAnimation] = useState(true);
+  const [loadingComplete, setLoadingComplete] = useState(false);
 
   const fetchBookings = useCallback(async () => {
     if (!user?.id) {
@@ -79,6 +84,20 @@ export default function BookingsListScreen() {
       fetchBookings();
     }, [fetchBookings]),
   );
+
+  // Handle loading animation states
+  useEffect(() => {
+    if (!loading && showLoadingAnimation) {
+      // Loading just finished, trigger completion animation
+      setLoadingComplete(true);
+    }
+  }, [loading, showLoadingAnimation]);
+
+  const handleAnimationComplete = () => {
+    // Hide loading animation completely after exit animation
+    setShowLoadingAnimation(false);
+    setLoadingComplete(false);
+  };
 
   const onRefresh = useCallback(async () => {
     console.log('BookingsListScreen: Pull-to-refresh triggered');
@@ -217,13 +236,15 @@ export default function BookingsListScreen() {
     </Pressable>
   );
 
-  if (loading) {
+  if (showLoadingAnimation) {
     return (
       <View style={styles.container}>
         <Header />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <StaffLoadingState
+          progress="Loading bookings..."
+          isComplete={loadingComplete}
+          onAnimationComplete={handleAnimationComplete}
+        />
       </View>
     );
   }

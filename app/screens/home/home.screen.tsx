@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import FilterModal from './components/FilterModal';
 import CarCard from './components/CarCard';
 import PickupDropoffSection from './components/PickupDropoffSection';
 import DonutChart from './components/DonutChart';
+import StaffLoadingState from '../staff/components/StaffLoadingState';
 
 import { useCarFilters } from './hooks/useCarFilters';
 import { useHomeData } from './hooks/useHomeData';
@@ -31,6 +32,8 @@ import { useLanguage } from '../../../lib/language-context';
 export default function HomeScreen() {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const [filterVisible, setFilterVisible] = useState(false);
+  const [showLoadingAnimation, setShowLoadingAnimation] = useState(true);
+  const [loadingComplete, setLoadingComplete] = useState(false);
   const { t } = useLanguage();
 
   const { cars, loading } = useHomeData();
@@ -52,13 +55,29 @@ export default function HomeScreen() {
   const popularCars = filteredCars.slice(0, 3);
   const recommendedCars = filteredCars.slice(3, 8);
 
-  if (loading) {
+  // Handle loading state changes for car animation
+  useEffect(() => {
+    if (!loading && showLoadingAnimation) {
+      // Loading just finished, trigger completion animation
+      setLoadingComplete(true);
+    }
+  }, [loading, showLoadingAnimation]);
+
+  const handleAnimationComplete = () => {
+    // Hide loading animation completely after exit animation
+    setShowLoadingAnimation(false);
+    setLoadingComplete(false);
+  };
+
+  if (showLoadingAnimation) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Header />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <StaffLoadingState
+          progress="Loading cars..."
+          isComplete={loadingComplete}
+          onAnimationComplete={handleAnimationComplete}
+        />
       </View>
     );
   }

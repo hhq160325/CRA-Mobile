@@ -50,7 +50,7 @@ export function usePickupConfirm(bookingId: string) {
           setExistingCheckInData(checkInResult.data);
           setInitialDescription(checkInResult.data.description);
         } else {
-          console.log('ℹ No check-in data found, proceeding with check-in flow');
+          console.log(' No check-in data found, proceeding with check-in flow');
           setIsAlreadyCheckedIn(false);
         }
 
@@ -99,7 +99,7 @@ export function usePickupConfirm(bookingId: string) {
             rawBooking.bookingFee ||
             rawBooking.carRentPrice ||
             0;
-          console.log('🔍 usePickupConfirm: fallback amount sources:', {
+          console.log(' usePickupConfirm: fallback amount sources:', {
             invoiceAmount: rawBooking.invoice?.amount,
             bookingFee: rawBooking.bookingFee,
             carRentPrice: rawBooking.carRentPrice,
@@ -127,11 +127,11 @@ export function usePickupConfirm(bookingId: string) {
 
               if (rentalFeePayment && rentalFeePayment.paidAmount) {
                 amount = rentalFeePayment.paidAmount;
-                console.log('🔍 usePickupConfirm: found Rental Fee amount:', amount);
+                console.log(' usePickupConfirm: found Rental Fee amount:', amount);
               }
             }
           } catch (error) {
-            console.warn('🔍 usePickupConfirm: failed to fetch payment data:', error);
+            console.warn(' usePickupConfirm: failed to fetch payment data:', error);
           }
         }
 

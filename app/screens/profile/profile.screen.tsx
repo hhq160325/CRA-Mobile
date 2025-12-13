@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Alert, ActivityIndicator, Text } from 'react-native';
 import { colors } from '../../theme/colors';
 import { useAuth } from '../../../lib/auth-context';
@@ -10,6 +10,7 @@ import DriverLicenseSection from './components/DriverLicenseSection';
 import PasswordVerificationModal from './components/PasswordVerificationModal';
 import EditFieldModal from './components/EditFieldModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
+import StaffLoadingState from '../staff/components/StaffLoadingState';
 import { useProfileData } from './hooks/useProfileData';
 import { useFieldEditor } from './hooks/useFieldEditor';
 import { useProfileActions } from './hooks/useProfileActions';
@@ -36,6 +37,10 @@ export default function ProfileScreen() {
   const [licenseImages, setLicenseImages] = useState<string[]>([]);
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  // Avatar upload loading animation states
+  const [showAvatarLoading, setShowAvatarLoading] = useState(false);
+  const [avatarLoadingComplete, setAvatarLoadingComplete] = useState(false);
 
   const fieldEditor = useFieldEditor(
     user?.id,
@@ -85,6 +90,24 @@ export default function ProfileScreen() {
   React.useEffect(() => {
     fetchDriverLicense();
   }, [user?.id, user?.email]);
+
+  // Handle avatar upload loading animation
+  useEffect(() => {
+    if (profileActions.isSaving && !showAvatarLoading) {
+      // Avatar upload started, show loading animation
+      setShowAvatarLoading(true);
+      setAvatarLoadingComplete(false);
+    } else if (!profileActions.isSaving && showAvatarLoading && !avatarLoadingComplete) {
+      // Avatar upload finished, trigger completion animation
+      setAvatarLoadingComplete(true);
+    }
+  }, [profileActions.isSaving, showAvatarLoading, avatarLoadingComplete]);
+
+  const handleAvatarAnimationComplete = () => {
+    // Hide loading animation completely after exit animation
+    setShowAvatarLoading(false);
+    setAvatarLoadingComplete(false);
+  };
 
   const handleUploadAvatar = () => {
     Alert.alert('Change Profile Picture', 'Choose an option', [
@@ -239,6 +262,18 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <Header />
+
+      {/* Avatar Upload Loading Overlay */}
+      {showAvatarLoading && (
+        <View style={styles.loadingOverlay}>
+          <StaffLoadingState
+            progress="Uploading avatar..."
+            isComplete={avatarLoadingComplete}
+            onAnimationComplete={handleAvatarAnimationComplete}
+          />
+        </View>
+      )}
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <ProfileHeader
           avatarSource={avatarSource}

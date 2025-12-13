@@ -5,14 +5,13 @@ import { bookingsService } from '../../../../lib/api/services/bookings.service';
 import { paymentService } from '../../../../lib/api/services/payment.service';
 import type { NavigatorParamList } from '../../../navigators/navigation-route';
 import {
-    fetchCarDetails,
-    fetchCustomerName,
-    fetchPaymentDetails,
-    fetchCheckInOutStatus,
     mapBookingStatus,
     formatBookingDate,
-    fetchBookingWithCarDetails,
-    fetchBookingExtensionInfo,
+    batchFetchCarDetails,
+    batchFetchUserDetails,
+    batchFetchPaymentDetails,
+    batchFetchCheckInOutStatus,
+    batchFetchExtensionInfo,
 } from '../utils/staffHelpers';
 import { bookingExtensionService } from '../../../../lib/api/services/bookingExtension.service';
 import type { BookingItem, PaymentStatus } from '../types/staffTypes';
@@ -27,15 +26,23 @@ export function useStaffBookings() {
     const [error, setError] = useState<string | null>(null);
     const [processingPayment, setProcessingPayment] = useState<string | null>(null);
     const [processingExtensionPayment, setProcessingExtensionPayment] = useState<string | null>(null);
+    const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+    const [loadingProgress, setLoadingProgress] = useState<string>('');
 
-    const mapSingleBooking = async (booking: any): Promise<BookingItem> => {
-        console.log(`📋 mapSingleBooking: processing booking ${booking.id} with bookingNumber: ${booking.bookingNumber}`);
+    const mapSingleBooking = async (booking: any, batchData: {
+        carDetailsMap: Map<string, any>,
+        userDetailsMap: Map<string, any>,
+        paymentDetailsMap: Map<string, any>,
+        checkInOutMap: Map<string, any>,
+        extensionInfoMap: Map<string, any>
+    }): Promise<BookingItem> => {
+        console.log(` mapSingleBooking: processing booking ${booking.id} with cached data`);
 
         const mappedStatus = mapBookingStatus(booking.status);
         const formattedDate = formatBookingDate(booking.bookingDate);
 
-
-        let carDetails = {
+        // Get car details from cache
+        let carDetails = batchData.carDetailsMap.get(booking.carId) || {
             carName: 'Unknown Car',
             carBrand: '',
             carModel: '',
@@ -43,36 +50,11 @@ export function useStaffBookings() {
             carImage: '',
         };
 
-        if (booking.bookingNumber) {
-            try {
-                const detailedBooking = await fetchBookingWithCarDetails(booking.bookingNumber);
-                if (detailedBooking && detailedBooking.car) {
-                    carDetails = {
-                        carName: `${detailedBooking.car.manufacturer} ${detailedBooking.car.model}`,
-                        carBrand: detailedBooking.car.manufacturer || '',
-                        carModel: detailedBooking.car.model || '',
-                        carLicensePlate: detailedBooking.car.licensePlate || '',
-                        carImage: detailedBooking.car.imageUrls?.[0] || '',
-                    };
-                }
-            } catch (err) {
-                console.log(`📋 Failed to fetch detailed booking for ${booking.bookingNumber}, falling back to carId`);
+        // Get customer name from cache
+        const customerName = batchData.userDetailsMap.get(booking.userId) || 'Customer';
 
-                if (booking.carId) {
-                    carDetails = await fetchCarDetails(booking.carId);
-                }
-            }
-        } else if (booking.carId) {
-            carDetails = await fetchCarDetails(booking.carId);
-        }
-
-        console.log(`📋 mapSingleBooking: car details for booking ${booking.id}:`, carDetails);
-
-        const customerName = booking.userId
-            ? await fetchCustomerName(booking.userId)
-            : 'Customer';
-
-        const paymentDetails = await fetchPaymentDetails(booking.id);
+        // Get payment details from cache
+        const paymentDetails = batchData.paymentDetailsMap.get(booking.id) || { amount: 0, status: 'pending' };
         let invoiceAmount = paymentDetails.amount;
         let invoiceStatus = paymentDetails.status;
 
@@ -84,11 +66,16 @@ export function useStaffBookings() {
             invoiceStatus = 'paid';
         }
 
-        const { hasCheckIn, hasCheckOut } = await fetchCheckInOutStatus(booking.id);
+        // Get check-in/out status from cache
+        const checkInOutStatus = batchData.checkInOutMap.get(booking.id) || { hasCheckIn: false, hasCheckOut: false };
 
-
-        const extensionInfo = await fetchBookingExtensionInfo(booking.id);
-        console.log(` mapSingleBooking: extension info for booking ${booking.id}:`, extensionInfo);
+        // Get extension info from cache
+        const extensionInfo = batchData.extensionInfoMap.get(booking.id) || {
+            hasExtension: false,
+            extensionDescription: undefined,
+            extensionDays: undefined,
+            extensionAmount: undefined
+        };
 
         return {
             id: booking.id,
@@ -102,9 +89,8 @@ export function useStaffBookings() {
             invoiceStatus,
             status: mappedStatus,
             date: formattedDate,
-            hasCheckIn,
-            hasCheckOut,
-
+            hasCheckIn: checkInOutStatus.hasCheckIn,
+            hasCheckOut: checkInOutStatus.hasCheckOut,
             hasExtension: extensionInfo.hasExtension,
             extensionDescription: extensionInfo.extensionDescription,
             extensionDays: extensionInfo.extensionDays,
@@ -112,29 +98,88 @@ export function useStaffBookings() {
         };
     };
 
-    const fetchBookings = async () => {
-        setLoading(true);
-        setError(null);
+    const fetchBookings = async (forceRefresh = false) => {
+        // Implement simple cache - avoid refetching within 30 seconds unless forced
+        const now = Date.now();
+        const cacheTimeout = 30000; // 30 seconds
 
-        const result = await bookingsService.getAllBookings();
-
-        if (result.error) {
-            setError(result.error.message);
+        if (!forceRefresh && bookings.length > 0 && (now - lastFetchTime) < cacheTimeout) {
+            console.log(` fetchBookings: using cached data (${Math.round((now - lastFetchTime) / 1000)}s old)`);
             setLoading(false);
+            setRefreshing(false);
             return;
         }
+        setLoading(true);
+        setError(null);
+        setLoadingProgress('Loading bookings...');
 
-        if (result.data) {
-            console.log(` fetchBookings: received ${result.data.length} bookings`);
-            console.log(` fetchBookings: sample booking data:`, result.data[0]);
+        try {
+            const startTime = Date.now();
+            const result = await bookingsService.getAllBookings();
 
-            const mappedBookingsPromises = result.data.map(mapSingleBooking);
-            const mappedBookings = await Promise.all(mappedBookingsPromises);
-            setBookings(mappedBookings);
+            if (result.error) {
+                setError(result.error.message);
+                setLoading(false);
+                return;
+            }
+
+            if (result.data) {
+                console.log(` fetchBookings: received ${result.data.length} bookings - starting batch processing`);
+
+                // Extract unique IDs for batch fetching
+                const uniqueCarIds = [...new Set(result.data.map(b => b.carId).filter(Boolean))];
+                const uniqueUserIds = [...new Set(result.data.map(b => b.userId).filter(Boolean))];
+                const bookingIds = result.data.map(b => b.id);
+
+                console.log(` fetchBookings: batch sizes - cars: ${uniqueCarIds.length}, users: ${uniqueUserIds.length}, bookings: ${bookingIds.length}`);
+
+
+
+                // Batch fetch all data in parallel
+                const [
+                    carDetailsMap,
+                    userDetailsMap,
+                    paymentDetailsMap,
+                    checkInOutMap,
+                    extensionInfoMap
+                ] = await Promise.all([
+                    batchFetchCarDetails(uniqueCarIds),
+                    batchFetchUserDetails(uniqueUserIds),
+                    batchFetchPaymentDetails(bookingIds),
+                    batchFetchCheckInOutStatus(bookingIds),
+                    batchFetchExtensionInfo(bookingIds)
+                ]);
+
+                console.log(` fetchBookings: batch fetching completed - processing bookings`);
+                setLoadingProgress('Processing booking data...');
+
+                // Create batch data object
+                const batchData = {
+                    carDetailsMap,
+                    userDetailsMap,
+                    paymentDetailsMap,
+                    checkInOutMap,
+                    extensionInfoMap
+                };
+
+                // Map bookings using cached data
+                const mappedBookingsPromises = result.data.map(booking => mapSingleBooking(booking, batchData));
+                const mappedBookings = await Promise.all(mappedBookingsPromises);
+
+                const endTime = Date.now();
+                console.log(` fetchBookings: completed processing ${mappedBookings.length} bookings in ${endTime - startTime}ms`);
+
+                setBookings(mappedBookings);
+                setLastFetchTime(now);
+            }
+        } catch (error) {
+            console.error(' fetchBookings: error:', error);
+            setError(error instanceof Error ? error.message : 'Failed to load bookings');
         }
 
         setLoading(false);
         setRefreshing(false);
+        setLoadingProgress('');
     };
 
     useEffect(() => {
@@ -143,8 +188,8 @@ export function useStaffBookings() {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            console.log('StaffScreen focused - refreshing bookings...');
-            fetchBookings();
+            console.log('StaffScreen focused - checking if refresh needed...');
+            fetchBookings(); // Will use cache if recent
         });
 
         return unsubscribe;
@@ -152,7 +197,7 @@ export function useStaffBookings() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchBookings();
+        fetchBookings(true); // Force refresh on manual pull-to-refresh
     };
 
     const handleRequestPayment = async (bookingId: string) => {
@@ -239,7 +284,7 @@ export function useStaffBookings() {
 
 
     if (searchQuery && searchQuery.trim() !== '') {
-        console.log('🔍 Search Results:', {
+        console.log(' Search Results:', {
             query: searchQuery,
             totalBookings: bookings.length,
             filteredCount: filteredPayments.length,
@@ -260,6 +305,7 @@ export function useStaffBookings() {
         processingPayment,
         processingExtensionPayment,
         filteredPayments,
+        loadingProgress,
 
 
         onRefresh,

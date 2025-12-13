@@ -11,11 +11,165 @@ export const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#f9fafb',
+        paddingHorizontal: scale(32),
+    },
+    carAnimationContainer: {
+        width: '100%',
+        height: verticalScale(120), // Back to original height since dots are outside
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: verticalScale(20), // Proper spacing before dots
+    },
+    road: {
+        position: 'absolute',
+        bottom: verticalScale(20),
+        width: '100%', // Full width for car to drive across
+        height: scale(6), // Slightly thicker road
+        backgroundColor: '#2d3748', // Darker asphalt color
+        borderRadius: scale(1),
+        // Add road texture with shadows
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    roadLine: {
+        position: 'absolute',
+        top: '50%',
+        left: 0,
+        right: 0,
+        width: '100%', // Full width dashed line
+        height: scale(1.5), // Slightly thicker line
+        backgroundColor: '#fbbf24',
+        transform: [{ translateY: -scale(0.75) }],
+    },
+    // Add road edges for more realism
+    roadEdgeTop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: scale(0.5),
+        backgroundColor: '#1a202c', // Darker edge
+    },
+    roadEdgeBottom: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: scale(0.5),
+        backgroundColor: '#1a202c', // Darker edge
+    },
+    // Add dashed line effect
+    roadDashes: {
+        position: 'absolute',
+        top: '50%',
+        left: 0,
+        right: 0,
+        height: scale(1.5),
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignItems: 'center',
+        transform: [{ translateY: -scale(0.75) }],
+    },
+    roadDash: {
+        width: scale(20),
+        height: scale(1.5),
+        backgroundColor: '#fbbf24',
+        borderRadius: scale(0.5),
+    },
+    carContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: verticalScale(8),
+    },
+    carBody: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: verticalScale(-8),
+        borderRadius: scale(8),
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    carImage: {
+        width: scale(80),
+        height: verticalScale(50),
+        borderRadius: scale(8),
+        borderWidth: 2,
+        borderColor: colors.primary,
+    },
+    carReflection: {
+        position: 'absolute',
+        top: verticalScale(52),
+        left: 0,
+        right: 0,
+        height: verticalScale(25),
+        overflow: 'hidden',
+        opacity: 0.3,
+    },
+    reflectionImage: {
+        transform: [{ scaleY: -1 }],
+        borderWidth: 0,
+        opacity: 0.6,
+    },
+    wheelsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: scale(45),
+        paddingHorizontal: scale(8),
+    },
+    wheel: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    smokeContainer: {
+        position: 'absolute',
+        right: scale(-15),
+        bottom: scale(10),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadingDots: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: verticalScale(20), // Spacing below dots, before progress text
+        gap: scale(12), // Increased gap between dots
+    },
+    dot: {
+        width: scale(14), // Much bigger dots
+        height: scale(14),
+        borderRadius: scale(7),
+        backgroundColor: colors.primary,
+    },
+
+    progressContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: verticalScale(24),
+        gap: scale(8),
     },
     loadingText: {
-        marginTop: verticalScale(16),
-        fontSize: scale(14),
-        color: '#6b7280',
+        fontSize: scale(16),
+        color: '#374151',
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    brandText: {
+        fontSize: scale(24),
+        fontWeight: 'bold',
+        color: colors.primary,
+        letterSpacing: scale(2),
+        opacity: 0.3,
+        position: 'relative',
+        zIndex: 1,
     },
     errorContainer: {
         flex: 1,

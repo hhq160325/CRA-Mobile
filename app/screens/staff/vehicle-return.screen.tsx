@@ -40,7 +40,7 @@ export default function VehicleReturnScreen() {
   const { user } = useAuth();
   const { bookingId } = (route.params as any) || {};
 
-  console.log('🔍 VehicleReturnScreen: bookingId from route params:', bookingId);
+  console.log(' VehicleReturnScreen: bookingId from route params:', bookingId);
 
   const [submitting, setSubmitting] = useState(false);
   const [extensionInfo, setExtensionInfo] = useState<{
@@ -77,26 +77,26 @@ export default function VehicleReturnScreen() {
 
   const checkExtensionPaymentStatus = async () => {
     try {
-      console.log('🔍 VehicleReturn: Checking extension payment status for booking:', bookingId);
+      console.log(' VehicleReturn: Checking extension payment status for booking:', bookingId);
 
-      
+
       const extensionResult = await fetchBookingExtensionInfo(bookingId);
 
       if (!extensionResult.hasExtension) {
-        console.log('🔍 VehicleReturn: No extension found, allowing return');
+        console.log(' VehicleReturn: No extension found, allowing return');
         setExtensionInfo({ hasExtension: false, isPaymentCompleted: true });
         return;
       }
 
-     
+
       const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
 
-    
+
       const bookingResult = await bookingExtensionService.getBookingById(bookingId);
       const invoiceId = bookingResult.data?.invoiceId;
 
       if (!invoiceId) {
-        console.log('🔍 VehicleReturn: No invoiceId found, assuming payment not completed');
+        console.log(' VehicleReturn: No invoiceId found, assuming payment not completed');
         setExtensionInfo({
           hasExtension: true,
           isPaymentCompleted: false,
@@ -122,7 +122,7 @@ export default function VehicleReturnScreen() {
 
         const isPaymentCompleted = extensionPayment?.status?.toLowerCase() === 'success';
 
-        console.log('🔍 VehicleReturn: Extension payment status:', {
+        console.log(' VehicleReturn: Extension payment status:', {
           hasExtension: true,
           isPaymentCompleted,
           paymentStatus: extensionPayment?.status
@@ -134,7 +134,7 @@ export default function VehicleReturnScreen() {
           extensionDescription: extensionResult.extensionDescription
         });
       } else {
-        console.log('🔍 VehicleReturn: Failed to check payment status, assuming not completed');
+        console.log(' VehicleReturn: Failed to check payment status, assuming not completed');
         setExtensionInfo({
           hasExtension: true,
           isPaymentCompleted: false,
@@ -142,7 +142,7 @@ export default function VehicleReturnScreen() {
         });
       }
     } catch (error) {
-      console.error('🔍 VehicleReturn: Error checking extension payment status:', error);
+      console.error(' VehicleReturn: Error checking extension payment status:', error);
       setExtensionInfo({ hasExtension: false, isPaymentCompleted: true });
     }
   };

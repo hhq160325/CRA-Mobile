@@ -15,7 +15,7 @@ interface BookingCardProps {
     bookingId: string
     bookingNumber?: string
     customerName: string
-    amount: number
+    amount: number | string | null | undefined
     statusText: string
     statusColor: string
 }

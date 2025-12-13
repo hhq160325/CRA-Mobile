@@ -154,10 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         imageAvatar: (currentUser as any).imageAvatar
       })
 
-      setUser(null)
-      setTimeout(() => {
-        setUser({ ...currentUser })
-      }, 0)
+      // Update user directly without setting to null to prevent navigation flicker
+      setUser({ ...currentUser })
     }
   }
 

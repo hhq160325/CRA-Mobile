@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, FlatList, RefreshControl } from 'react-native';
 import { colors } from '../../theme/colors';
 import Header from '../../components/Header/Header';
@@ -10,6 +10,7 @@ import BookingPaymentCard from './components/BookingPaymentCard';
 import PaymentLoadingState from './components/PaymentLoadingState';
 import PaymentErrorState from './components/PaymentErrorState';
 import PaymentEmptyState from './components/PaymentEmptyState';
+import StaffLoadingState from '../staff/components/StaffLoadingState';
 import { styles } from './styles/paymentHistoryScreen.styles';
 import type { BookingPayments } from './types/paymentTypes';
 
@@ -26,6 +27,24 @@ export default function PaymentHistoryScreen() {
     toggleExpanded,
   } = usePaymentHistory();
 
+  // Loading animation states
+  const [showLoadingAnimation, setShowLoadingAnimation] = useState(true);
+  const [loadingComplete, setLoadingComplete] = useState(false);
+
+  // Handle loading animation states
+  useEffect(() => {
+    if (!loading && showLoadingAnimation) {
+      // Loading just finished, trigger completion animation
+      setLoadingComplete(true);
+    }
+  }, [loading, showLoadingAnimation]);
+
+  const handleAnimationComplete = () => {
+    // Hide loading animation completely after exit animation
+    setShowLoadingAnimation(false);
+    setLoadingComplete(false);
+  };
+
   const renderBookingPayments = ({ item }: { item: BookingPayments }) => {
     const isExpanded = expandedBookings.has(item.bookingId);
 
@@ -41,31 +60,40 @@ export default function PaymentHistoryScreen() {
   return (
     <View style={styles.container}>
       <Header />
-      <PaymentHistoryHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
 
-      {loading ? (
-        <PaymentLoadingState />
-      ) : error ? (
-        <PaymentErrorState error={error} />
-      ) : (
-        <FlatList
-          data={filteredBookingPayments}
-          renderItem={renderBookingPayments}
-          keyExtractor={item => item.bookingId}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-            />
-          }
-          ListEmptyComponent={<PaymentEmptyState searchQuery={searchQuery} />}
+      {showLoadingAnimation ? (
+        <StaffLoadingState
+          progress="Loading payment history..."
+          isComplete={loadingComplete}
+          onAnimationComplete={handleAnimationComplete}
         />
+      ) : (
+        <>
+          <PaymentHistoryHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+
+          {error ? (
+            <PaymentErrorState error={error} />
+          ) : (
+            <FlatList
+              data={filteredBookingPayments}
+              renderItem={renderBookingPayments}
+              keyExtractor={item => item.bookingId}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[colors.primary]}
+                  tintColor={colors.primary}
+                />
+              }
+              ListEmptyComponent={<PaymentEmptyState searchQuery={searchQuery} />}
+            />
+          )}
+        </>
       )}
     </View>
   );

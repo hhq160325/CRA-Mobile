@@ -89,8 +89,8 @@ export function useVehicleReturn(bookingId: string) {
           }
         }
 
-        console.log('🔍 useVehicleReturn: bookingData.totalPrice:', bookingData.totalPrice, typeof bookingData.totalPrice);
-        console.log('🔍 useVehicleReturn: raw bookingResult.data:', JSON.stringify(bookingResult.data, null, 2));
+        console.log(' useVehicleReturn: bookingData.totalPrice:', bookingData.totalPrice, typeof bookingData.totalPrice);
+        console.log(' useVehicleReturn: raw bookingResult.data:', JSON.stringify(bookingResult.data, null, 2));
 
         // Try to get amount from multiple sources
         let amount = bookingData.totalPrice || 0;
@@ -102,7 +102,7 @@ export function useVehicleReturn(bookingId: string) {
             rawBooking.bookingFee ||
             rawBooking.carRentPrice ||
             0;
-          console.log('🔍 useVehicleReturn: fallback amount sources:', {
+          console.log(' useVehicleReturn: fallback amount sources:', {
             invoiceAmount: rawBooking.invoice?.amount,
             bookingFee: rawBooking.bookingFee,
             carRentPrice: rawBooking.carRentPrice,
@@ -130,11 +130,11 @@ export function useVehicleReturn(bookingId: string) {
 
               if (rentalFeePayment && rentalFeePayment.paidAmount) {
                 amount = rentalFeePayment.paidAmount;
-                console.log('🔍 useVehicleReturn: found Rental Fee amount:', amount);
+                console.log(' useVehicleReturn: found Rental Fee amount:', amount);
               }
             }
           } catch (error) {
-            console.warn('🔍 useVehicleReturn: failed to fetch payment data:', error);
+            console.warn(' useVehicleReturn: failed to fetch payment data:', error);
           }
         }
 

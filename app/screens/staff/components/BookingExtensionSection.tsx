@@ -36,7 +36,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
     useFocusEffect(
         React.useCallback(() => {
             if (extensionInfo.hasExtension) {
-                console.log('🔄 BookingExtensionSection: Screen focused, refreshing payment status');
+                console.log(' BookingExtensionSection: Screen focused, refreshing payment status');
                 checkForBookingExtension();
             }
         }, [extensionInfo.hasExtension])
@@ -47,7 +47,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
 
             const bookingResult = await bookingExtensionService.getBookingById(bookingId);
             if (!bookingResult.data?.invoiceId) {
-                console.log('🔍 BookingExtensionSection: No invoiceId found');
+                console.log(' BookingExtensionSection: No invoiceId found');
                 const info = {
                     hasExtension: true,
                     amount,
@@ -128,12 +128,12 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
     const checkForBookingExtension = async () => {
         try {
             setCheckingExtension(true);
-            console.log('🔍 BookingExtensionSection: Checking for booking extension:', bookingId);
+            console.log(' BookingExtensionSection: Checking for booking extension:', bookingId);
 
 
             const extensionInfo = await fetchBookingExtensionInfo(bookingId);
 
-            console.log('🔍 BookingExtensionSection: Extension info result:', extensionInfo);
+            console.log(' BookingExtensionSection: Extension info result:', extensionInfo);
 
             if (extensionInfo.hasExtension && extensionInfo.extensionDescription) {
 

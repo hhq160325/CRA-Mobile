@@ -284,5 +284,20 @@ export const styles = StyleSheet.create({
     extensionPaymentStatusPending: {
         color: '#d97706',
     },
+    paymentCompletedContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: verticalScale(10),
+        paddingHorizontal: scale(16),
+        backgroundColor: '#d1fae5',
+        borderRadius: scale(8),
+        gap: scale(8),
+    },
+    paymentCompletedText: {
+        color: '#065f46',
+        fontSize: scale(14),
+        fontWeight: '600',
+    },
 
 });

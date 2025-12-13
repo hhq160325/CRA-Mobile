@@ -7,13 +7,12 @@ import { useMessages } from './hooks/useMessages';
 import MessageLoadingState from './components/MessageLoadingState';
 import MessageHeader from './components/MessageHeader';
 import MessageForm from './components/MessageForm';
-import ChatHistory from './components/ChatHistory';
 import { styles } from './messages.styles';
 
 export default function MessagesScreen() {
-    const route = useRoute<RouteProp<{ params: { bookingId: string; bookingNumber?: string } }, 'params'>>();
+    const route = useRoute<RouteProp<{ params: { bookingId: string; bookingNumber?: string; licensePlate?: string } }, 'params'>>();
     const navigation = useNavigation();
-    const { bookingId, bookingNumber } = (route.params as any) || {};
+    const { bookingId, bookingNumber, licensePlate } = (route.params as any) || {};
 
     const {
         title,
@@ -27,7 +26,7 @@ export default function MessagesScreen() {
         chatHistory,
         user,
         handleSendMessage,
-    } = useMessages({ bookingId, bookingNumber, navigation });
+    } = useMessages({ bookingId, bookingNumber, licensePlate, navigation });
 
     if (fetchingOwner) {
         return <MessageLoadingState />;
@@ -43,11 +42,6 @@ export default function MessagesScreen() {
                     style={{ flex: 1 }}
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled">
-                    <ChatHistory
-                        chatHistory={chatHistory}
-                        ownerUsername={ownerUsername}
-                        userId={user?.id}
-                    />
                     <MessageHeader
                         ownerUsername={ownerUsername}
                         carName={carName}

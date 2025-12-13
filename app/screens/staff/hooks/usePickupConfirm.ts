@@ -89,6 +89,52 @@ export function usePickupConfirm(bookingId: string) {
           }
         }
 
+        // Try to get amount from multiple sources
+        let amount = bookingData.totalPrice || 0;
+
+        // If totalPrice is 0, try to get from raw booking data
+        if (amount === 0) {
+          const rawBooking = bookingResult.data as any; // Use any to access raw API fields
+          amount = rawBooking.invoice?.amount ||
+            rawBooking.bookingFee ||
+            rawBooking.carRentPrice ||
+            0;
+          console.log('🔍 usePickupConfirm: fallback amount sources:', {
+            invoiceAmount: rawBooking.invoice?.amount,
+            bookingFee: rawBooking.bookingFee,
+            carRentPrice: rawBooking.carRentPrice,
+            finalAmount: amount
+          });
+        }
+
+        // If still 0, try to get from payment data (Rental Fee)
+        if (amount === 0 && bookingData.invoiceId) {
+          try {
+            const paymentUrl = `https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/Invoice/${bookingData.invoiceId}`;
+            const paymentResponse = await fetch(paymentUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+              },
+            });
+
+            if (paymentResponse.ok) {
+              const paymentData = await paymentResponse.json();
+              const rentalFeePayment = paymentData.find((payment: any) =>
+                payment.item === 'Rental Fee'
+              );
+
+              if (rentalFeePayment && rentalFeePayment.paidAmount) {
+                amount = rentalFeePayment.paidAmount;
+                console.log('🔍 usePickupConfirm: found Rental Fee amount:', amount);
+              }
+            }
+          } catch (error) {
+            console.warn('🔍 usePickupConfirm: failed to fetch payment data:', error);
+          }
+        }
+
         setBooking({
           id: bookingData.id,
           carName,
@@ -100,7 +146,7 @@ export function usePickupConfirm(bookingId: string) {
           pickupTime: bookingData.startDate,
           dropoffPlace: bookingData.dropoffLocation,
           dropoffTime: bookingData.endDate,
-          amount: bookingData.totalPrice,
+          amount: amount,
           status: bookingData.status,
         });
 

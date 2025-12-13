@@ -93,7 +93,8 @@ export default function BookingDetailScreen() {
           onMessagesPress={() => {
             navigation.navigate('Messages' as any, {
               bookingId: booking.id,
-              bookingNumber: booking.bookingNumber
+              bookingNumber: booking.bookingNumber,
+              licensePlate: booking.carDetails?.licensePlate || 'N/A'
             });
           }}
         />

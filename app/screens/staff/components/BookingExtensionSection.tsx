@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../theme/colors';
@@ -32,9 +32,19 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
         checkForBookingExtension();
     }, [bookingId]);
 
+    // Refresh payment status when screen comes into focus (after returning from payment)
+    useFocusEffect(
+        React.useCallback(() => {
+            if (extensionInfo.hasExtension) {
+                console.log('🔄 BookingExtensionSection: Screen focused, refreshing payment status');
+                checkForBookingExtension();
+            }
+        }, [extensionInfo.hasExtension])
+    );
+
     const checkExtensionPaymentStatus = async (bookingId: string, amount: number, description: string, days: number) => {
         try {
-        
+
             const bookingResult = await bookingExtensionService.getBookingById(bookingId);
             if (!bookingResult.data?.invoiceId) {
                 console.log('🔍 BookingExtensionSection: No invoiceId found');
@@ -51,7 +61,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
                 return;
             }
 
-       
+
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
             const paymentUrl = `${baseUrl}/Invoice/${bookingResult.data.invoiceId}`;
 
@@ -120,17 +130,17 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
             setCheckingExtension(true);
             console.log('🔍 BookingExtensionSection: Checking for booking extension:', bookingId);
 
-            
+
             const extensionInfo = await fetchBookingExtensionInfo(bookingId);
 
             console.log('🔍 BookingExtensionSection: Extension info result:', extensionInfo);
 
             if (extensionInfo.hasExtension && extensionInfo.extensionDescription) {
-               
+
                 const daysMatch = extensionInfo.extensionDescription.match(/(\d+)\s+days?/i);
                 const days = daysMatch ? parseInt(daysMatch[1]) : extensionInfo.extensionDays || 1;
 
-                
+
                 await checkExtensionPaymentStatus(bookingId, extensionInfo.extensionAmount || 0, extensionInfo.extensionDescription, days);
             } else {
                 console.log(' BookingExtensionSection: No booking extension found');
@@ -163,7 +173,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
 
             console.log(' Payment URL created:', result.data.checkoutUrl);
 
-           
+
             navigation.navigate('PayOSWebView', {
                 paymentUrl: result.data.checkoutUrl,
                 bookingId: bookingId
@@ -195,7 +205,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
         );
     }
 
-    
+
     console.log(' BookingExtensionSection: Render decision:', {
         bookingId,
         checkingExtension,
@@ -246,7 +256,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
                     )}
                 </View>
 
-                {allowPayment && (
+                {allowPayment && !extensionInfo.isPaymentCompleted && (
                     <Pressable
                         style={[
                             styles.paymentButton,
@@ -264,6 +274,13 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
                             </>
                         )}
                     </Pressable>
+                )}
+
+                {extensionInfo.isPaymentCompleted && (
+                    <View style={styles.paymentCompletedContainer}>
+                        <MaterialIcons name="check-circle" size={20} color="#10b981" />
+                        <Text style={styles.paymentCompletedText}>Payment Completed</Text>
+                    </View>
                 )}
             </View>
 

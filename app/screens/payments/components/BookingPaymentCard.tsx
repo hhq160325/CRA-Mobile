@@ -42,7 +42,7 @@ export default function BookingPaymentCard({
             <View style={styles.totalSection}>
                 <Text style={styles.totalLabel}>Total Amount</Text>
                 <Text style={styles.totalAmount}>
-                    {totalAmount.toLocaleString()} VND
+                    {totalAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
                 </Text>
             </View>
 

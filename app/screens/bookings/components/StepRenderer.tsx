@@ -28,6 +28,7 @@ export default function StepRenderer({ currentStep, formState }: StepRendererPro
                     address={formState.address}
                     phone={formState.phone}
                     city={formState.city}
+                    phoneError={formState.phoneError}
                     onNameChange={formState.setName}
                     onAddressChange={formState.setAddress}
                     onPhoneChange={formState.setPhone}

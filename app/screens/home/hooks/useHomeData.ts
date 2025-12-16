@@ -49,7 +49,7 @@ export function useHomeData() {
             ) {
               console.log(
                 ` ${car.name
-                }: ${rateResult.data.dailyRate.toLocaleString()} VND/day`,
+                }: ${rateResult.data.dailyRate.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND/day`,
               );
               return { ...car, price: rateResult.data.dailyRate };
             }

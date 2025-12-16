@@ -35,6 +35,8 @@ export default function ProfileScreen() {
     setFieldValues,
   } = useProfileData(user?.id);
   const [licenseImages, setLicenseImages] = useState<string[]>([]);
+  const [licenseStatus, setLicenseStatus] = useState<string | null>(null);
+  const [licenseCreateDate, setLicenseCreateDate] = useState<string | null>(null);
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
@@ -66,7 +68,7 @@ export default function ProfileScreen() {
 
   const imagePicker = useImagePicker();
 
-  const fetchDriverLicense = async () => {
+  const fetchDriverLicense = async (forceRefresh = false) => {
     if (!user?.id || !user?.email) return;
 
     try {
@@ -78,17 +80,49 @@ export default function ProfileScreen() {
         console.error('Failed to fetch driver license:', error);
         return;
       }
+
+      console.log('fetchDriverLicense: received data', {
+        hasData: !!data,
+        urlCount: data?.urls?.length || 0,
+        urls: data?.urls,
+        forceRefresh
+      });
+
       if (data && data.urls && data.urls.length > 0) {
+        console.log('fetchDriverLicense: updating state with', data.urls.length, 'images');
         setLicenseImages(data.urls);
         setLicenseImage(data.urls[0]);
+      } else {
+        console.log('fetchDriverLicense: no URLs found, clearing state');
+        setLicenseImages([]);
+        setLicenseImage(null);
       }
     } catch (err) {
       console.error('Exception fetching driver license:', err);
     }
   };
 
+  const fetchDriverLicenseStatus = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await userService.getDriverLicenseStatus(user.id);
+      if (error) {
+        console.error('Failed to fetch driver license status:', error);
+        return;
+      }
+      if (data) {
+        setLicenseStatus(data.status);
+        setLicenseCreateDate(data.createDate);
+      }
+    } catch (err) {
+      console.error('Exception fetching driver license status:', err);
+    }
+  };
+
   React.useEffect(() => {
     fetchDriverLicense();
+    fetchDriverLicenseStatus();
   }, [user?.id, user?.email]);
 
   // Handle avatar upload loading animation
@@ -114,12 +148,12 @@ export default function ProfileScreen() {
       {
         text: 'Take Photo',
         onPress: () =>
-          imagePicker.openCamera(profileActions.uploadAvatar, [1, 1]),
+          imagePicker.openCamera(profileActions.uploadAvatar),
       },
       {
         text: 'Choose from Gallery',
         onPress: () =>
-          imagePicker.openGallery(profileActions.uploadAvatar, [1, 1]),
+          imagePicker.openGallery(profileActions.uploadAvatar),
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
@@ -135,19 +169,220 @@ export default function ProfileScreen() {
   };
 
   const handleUploadLicense = () => {
-    Alert.alert("Upload Driver's License", 'Choose an option', [
+    Alert.alert("Upload Driver's License", 'Choose upload method', [
+      {
+        text: 'Upload Both Sides',
+        onPress: () => handleUploadBothSides(),
+      },
+      {
+        text: 'Upload Single Side',
+        onPress: () => handleUploadSingleSide(),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleUploadLicenseSide = (side: 'front' | 'back') => {
+    Alert.alert(`Upload ${side === 'front' ? 'Front' : 'Back'} Side`, 'Choose an option', [
       {
         text: 'Take Photo',
         onPress: () =>
-          imagePicker.openCamera(profileActions.uploadDriverLicense, [16, 9]),
+          imagePicker.openCamera(async (uri: string) => {
+            await uploadLicenseImage(uri, side);
+          }),
       },
       {
         text: 'Choose from Gallery',
         onPress: () =>
-          imagePicker.openGallery(profileActions.uploadDriverLicense, [16, 9]),
+          imagePicker.openGallery(async (uri: string) => {
+            await uploadLicenseImage(uri, side);
+          }),
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+  const handleUploadBothSides = () => {
+    Alert.alert('Upload Both Sides', 'This will upload front and back images together', [
+      {
+        text: 'Take Photos',
+        onPress: () => collectBothImages('camera'),
+      },
+      {
+        text: 'Choose from Gallery',
+        onPress: () => collectBothImages('gallery'),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleUploadSingleSide = () => {
+    Alert.alert("Upload Single Side", 'Choose which side to upload', [
+      {
+        text: 'Front Side',
+        onPress: () => handleUploadLicenseSide('front'),
+      },
+      {
+        text: 'Back Side',
+        onPress: () => handleUploadLicenseSide('back'),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const collectBothImages = async (method: 'camera' | 'gallery') => {
+    try {
+      const images: string[] = [];
+
+      // Collect front image
+      const frontUri = await new Promise<string>((resolve, reject) => {
+        Alert.alert('Front Side', 'Take/select the front side of your license', [
+          {
+            text: method === 'camera' ? 'Take Photo' : 'Select Image',
+            onPress: () => {
+              const picker = method === 'camera' ? imagePicker.openCamera : imagePicker.openGallery;
+              picker((uri: string) => resolve(uri));
+            },
+          },
+          { text: 'Cancel', onPress: () => reject(new Error('Cancelled')), style: 'cancel' },
+        ]);
+      });
+
+      images.push(frontUri);
+
+      // Collect back image
+      const backUri = await new Promise<string>((resolve, reject) => {
+        Alert.alert('Back Side', 'Take/select the back side of your license', [
+          {
+            text: method === 'camera' ? 'Take Photo' : 'Select Image',
+            onPress: () => {
+              const picker = method === 'camera' ? imagePicker.openCamera : imagePicker.openGallery;
+              picker((uri: string) => resolve(uri));
+            },
+          },
+          { text: 'Cancel', onPress: () => reject(new Error('Cancelled')), style: 'cancel' },
+        ]);
+      });
+
+      images.push(backUri);
+
+      // Upload both images
+      await uploadMultipleLicenseImages(images);
+
+    } catch (error) {
+      if (error instanceof Error && error.message !== 'Cancelled') {
+        console.error('Error collecting images:', error);
+        Alert.alert('Error', 'Failed to collect images. Please try again.');
+      }
+    }
+  };
+
+  const uploadMultipleLicenseImages = async (imageUris: string[]) => {
+    try {
+      console.log('uploadMultipleLicenseImages: starting upload with', imageUris.length, 'images');
+
+      // Store original images for potential rollback
+      const originalImages = [...licenseImages];
+      const originalImage = licenseImage;
+
+      // Update local state immediately for better UX
+      setLicenseImages(imageUris);
+      if (imageUris.length > 0) {
+        setLicenseImage(imageUris[0]);
+      }
+
+      // Upload multiple images to server
+      const { data, error } = await userService.uploadDriverLicenseMultiple(user?.id || '', imageUris);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('uploadMultipleLicenseImages: upload successful, response:', data);
+
+      // Update license status immediately since we know it changed
+      await fetchDriverLicenseStatus();
+
+      Alert.alert('Success', `${imageUris.length} images uploaded successfully`);
+
+      // Don't immediately fetch from server to avoid overriding our new images
+      // Instead, do a background check after a longer delay
+      setTimeout(async () => {
+        console.log('uploadMultipleLicenseImages: background refresh check');
+        try {
+          const { data: licenseData } = await userService.getDriverLicense(user?.id || '', user?.email || '');
+
+          // Only update if server returned more recent data
+          if (licenseData?.urls && licenseData.urls.length >= imageUris.length) {
+            console.log('uploadMultipleLicenseImages: server has updated data, refreshing UI');
+            setLicenseImages(licenseData.urls);
+            setLicenseImage(licenseData.urls[0]);
+          } else {
+            console.log('uploadMultipleLicenseImages: keeping local images, server not ready yet');
+          }
+        } catch (err) {
+          console.log('uploadMultipleLicenseImages: background refresh failed, keeping local images');
+        }
+      }, 5000); // Wait 5 seconds before background check
+
+    } catch (error) {
+      console.error('Error uploading multiple license images:', error);
+      Alert.alert('Error', 'Failed to upload images. Please try again.');
+      // Revert local state on error
+      await fetchDriverLicense();
+    }
+  };
+
+  const uploadLicenseImage = async (uri: string, side: 'front' | 'back') => {
+    try {
+      // Create a copy of current images
+      const currentImages = [...licenseImages];
+
+      // Update the appropriate side (front = index 0, back = index 1)
+      if (side === 'front') {
+        currentImages[0] = uri;
+      } else {
+        currentImages[1] = uri;
+      }
+
+      // Ensure we have at least 2 slots
+      while (currentImages.length < 2) {
+        currentImages.push('');
+      }
+
+      // Update local state immediately for better UX
+      setLicenseImages(currentImages);
+      if (side === 'front') {
+        setLicenseImage(uri);
+      }
+
+      // Upload to server
+      await profileActions.uploadDriverLicense(uri);
+
+      // Update license status immediately
+      await fetchDriverLicenseStatus();
+
+      Alert.alert('Success', `${side === 'front' ? 'Front' : 'Back'} side uploaded successfully`);
+
+      // Background refresh after delay, but don't override local images
+      setTimeout(async () => {
+        try {
+          const { data: licenseData } = await userService.getDriverLicense(user?.id || '', user?.email || '');
+          if (licenseData?.urls && licenseData.urls.length > 0) {
+            setLicenseImages(licenseData.urls);
+            setLicenseImage(licenseData.urls[0]);
+          }
+        } catch (err) {
+          console.log('Background refresh failed, keeping local images');
+        }
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error uploading license image:', error);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+      // Revert local state on error
+      await fetchDriverLicense();
+    }
   };
 
   const handleAutoFillAddress = async () => {
@@ -331,6 +566,9 @@ export default function ProfileScreen() {
 
         <DriverLicenseSection
           licenseImage={licenseImage}
+          licenseImages={licenseImages}
+          licenseStatus={licenseStatus}
+          licenseCreateDate={licenseCreateDate}
           onUploadLicense={handleUploadLicense}
         />
 

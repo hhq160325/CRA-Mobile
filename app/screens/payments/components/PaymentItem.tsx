@@ -43,7 +43,7 @@ export default function PaymentItem({ payment, index, totalItems }: PaymentItemP
                     <Text style={styles.paymentDate}>{formatDate(payment.createDate)}</Text>
                 </View>
                 <Text style={styles.paymentAmount}>
-                    {payment.paidAmount.toLocaleString()} VND
+                    {payment.paidAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
                 </Text>
             </View>
         </View>

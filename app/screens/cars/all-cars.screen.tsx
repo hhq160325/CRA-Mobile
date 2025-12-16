@@ -172,7 +172,7 @@ export default function AllCarsScreen() {
                             <View style={styles.priceRentContainer}>
                                 <View>
                                     <Text style={styles.priceText}>
-                                        {item.price > 0 ? `${item.price.toLocaleString()} VND` : 'Price on request'}
+                                        {item.price > 0 ? `${item.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND` : 'Price on request'}
                                         <Text style={styles.priceUnit}>
                                             /day
                                         </Text>

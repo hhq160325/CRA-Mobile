@@ -166,7 +166,7 @@ export default function CarDetailScreen() {
         <View style={styles.depositItem}>
           <Text style={styles.depositBullet}>•</Text>
           <Text style={styles.depositText}>
-            Mandatory deposit: <Text style={styles.depositAmount}>10,000,000 VND</Text>
+            Mandatory deposit: <Text style={styles.depositAmount}>10.000.000 VND</Text>
           </Text>
         </View>
         <View style={styles.depositItem}>
@@ -189,7 +189,7 @@ export default function CarDetailScreen() {
         <View style={styles.priceContainer}>
           <Text style={styles.priceLabel}>Price per day</Text>
           <Text style={styles.priceValue} numberOfLines={2} adjustsFontSizeToFit>
-            {car.price.toLocaleString()} VND
+            {car.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
           </Text>
         </View>
       )}

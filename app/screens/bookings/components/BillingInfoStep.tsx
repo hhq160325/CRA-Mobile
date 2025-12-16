@@ -6,6 +6,7 @@ interface BillingInfoStepProps {
     address: string
     phone: string
     city: string
+    phoneError?: string
     onNameChange: (text: string) => void
     onAddressChange: (text: string) => void
     onPhoneChange: (text: string) => void
@@ -17,6 +18,7 @@ export default function BillingInfoStep({
     address,
     phone,
     city,
+    phoneError,
     onNameChange,
     onAddressChange,
     onPhoneChange,
@@ -48,12 +50,31 @@ export default function BillingInfoStep({
 
                 <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Phone Number</Text>
                 <TextInput
-                    placeholder="Phone number"
+                    placeholder="Phone number (must start with 0, max 10 digits)"
                     value={phone}
                     onChangeText={onPhoneChange}
-                    keyboardType="phone-pad"
-                    style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16, fontSize: 12 }}
+                    keyboardType="numeric"
+                    maxLength={10}
+                    style={{
+                        borderWidth: 1,
+                        borderColor: phoneError ? '#FF6B6B' : colors.border,
+                        borderRadius: 6,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        marginBottom: phoneError ? 4 : 16,
+                        fontSize: 12
+                    }}
                 />
+                {phoneError ? (
+                    <Text style={{
+                        fontSize: 11,
+                        color: '#FF6B6B',
+                        marginBottom: 16,
+                        marginLeft: 4
+                    }}>
+                        {phoneError}
+                    </Text>
+                ) : null}
 
                 <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Town/City</Text>
                 <TextInput

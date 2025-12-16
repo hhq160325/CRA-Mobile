@@ -2,7 +2,7 @@ import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 export const useImagePicker = () => {
-    const openCamera = async (onImageSelected: (uri: string) => void, aspect?: [number, number]) => {
+    const openCamera = async (onImageSelected: (uri: string) => void) => {
         try {
             console.log("openCamera: checking camera permissions");
             const { status } = await ImagePicker.getCameraPermissionsAsync();
@@ -29,8 +29,7 @@ export const useImagePicker = () => {
             console.log("openCamera: launching camera");
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: aspect || [4, 3],
+                allowsEditing: false,
                 quality: 0.8,
             });
 
@@ -50,7 +49,7 @@ export const useImagePicker = () => {
         }
     };
 
-    const openGallery = async (onImageSelected: (uri: string) => void, aspect?: [number, number]) => {
+    const openGallery = async (onImageSelected: (uri: string) => void) => {
         try {
             console.log("openGallery: checking media library permissions");
             const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
@@ -77,8 +76,7 @@ export const useImagePicker = () => {
             console.log("openGallery: launching image library");
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: aspect || [4, 3],
+                allowsEditing: false,
                 quality: 0.8,
             });
 

@@ -133,7 +133,7 @@ export default function CarRentalPolicies({
                                     Overtime fee
                                 </Text>
                                 <Text style={{ fontSize: scale(13), fontWeight: '700', color: '#F44336' }}>
-                                    VND 70,000/hour
+                                    70.000 VND/hour
                                 </Text>
                             </View>
                             <Text style={{ fontSize: scale(11), color: colors.placeholder, lineHeight: scale(16) }}>
@@ -160,7 +160,7 @@ export default function CarRentalPolicies({
                                     Cleaning fee
                                 </Text>
                                 <Text style={{ fontSize: scale(13), fontWeight: '700', color: '#F44336' }}>
-                                    VND 70,000
+                                    70.000 VND
                                 </Text>
                             </View>
                             <Text style={{ fontSize: scale(11), color: colors.placeholder, lineHeight: scale(16) }}>
@@ -185,7 +185,7 @@ export default function CarRentalPolicies({
                                     Deodorization fee
                                 </Text>
                                 <Text style={{ fontSize: scale(13), fontWeight: '700', color: '#F44336' }}>
-                                    VND 500,000
+                                    500.000 VND
                                 </Text>
                             </View>
                             <Text style={{ fontSize: scale(11), color: colors.placeholder, lineHeight: scale(16) }}>

@@ -162,7 +162,7 @@ export default function CarMapScreen() {
             latitude: car.latitude,
             longitude: car.longitude,
             title: car.carName,
-            description: `${car.price} VND/day`,
+            description: `${car.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND/day`,
             type: "car" as const,
             price: car.price,
         })),
@@ -256,7 +256,7 @@ export default function CarMapScreen() {
                                     <MaterialIcons name="location-on" size={scale(14)} color={colors.placeholder} />
                                     <Text style={styles.carDistance}>{car.distance?.toFixed(1)} km away</Text>
                                 </View>
-                                <Text style={styles.carPrice}>{car.price} VND/day</Text>
+                                <Text style={styles.carPrice}>{car.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND/day</Text>
                             </View>
                             {car.available ? (
                                 <View style={styles.availableBadge}>
@@ -282,7 +282,7 @@ export default function CarMapScreen() {
                                 <MaterialIcons name="location-on" size={scale(16)} color={colors.placeholder} />
                                 <Text style={styles.selectedCarDistance}>{selectedCar.distance?.toFixed(1)} km away</Text>
                             </View>
-                            <Text style={styles.selectedCarPrice}>{selectedCar.price} VND/day</Text>
+                            <Text style={styles.selectedCarPrice}>{selectedCar.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND/day</Text>
                         </View>
                         <Pressable style={styles.viewDetailsButton} onPress={handleViewCarDetails}>
                             <Text style={styles.viewDetailsText}>View Details</Text>

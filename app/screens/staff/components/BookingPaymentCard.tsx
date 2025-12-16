@@ -86,7 +86,7 @@ export default function BookingPaymentCard({
                 <View style={styles.detailColumn}>
                     <Text style={styles.detailLabel}>AMOUNT</Text>
                     <Text style={[styles.detailValue, styles.detailValueBold]}>
-                        {item.amount.toLocaleString()} VND
+                        {item.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
                     </Text>
                 </View>
                 <View style={styles.detailColumn}>

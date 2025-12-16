@@ -106,7 +106,7 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                 <View>
                     {car.price > 0 ? (
                         <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary }}>
-                            {car.price.toLocaleString()} VND
+                            {car.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
                             <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>{t("perDay")}</Text>
                         </Text>
                     ) : (

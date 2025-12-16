@@ -30,9 +30,45 @@ export default function CarListScreen() {
     let mounted = true;
     async function load() {
       setLoading(true);
-      const res = await carsService.getCars({});
-      if (mounted && res.data) setCars(res.data);
-      setLoading(false);
+      try {
+        const res = await carsService.getCars({});
+        if (mounted && res.data) {
+          // Filter cars to only include rentable ones
+          const rentableStatuses = ['Active', 'Reserved', 'Available'];
+          const rentableCars = res.data.filter(car =>
+            rentableStatuses.includes(car.status || ''),
+          );
+
+          // Fetch rental rates for each car to get accurate pricing
+          const carsWithRates = await Promise.all(
+            rentableCars.map(async car => {
+              const rateResult = await carsService.getCarRentalRate(car.id);
+
+              if (
+                rateResult.data &&
+                rateResult.data.status === 'Active' &&
+                rateResult.data.dailyRate > 0
+              ) {
+                return { ...car, price: rateResult.data.dailyRate };
+              }
+
+              // Keep car but with 0 price if no active rental rate
+              return { ...car, price: 0 };
+            }),
+          );
+
+          // Debug image data
+          carsWithRates.forEach(car => {
+            console.log(`Car ${car.name}: image="${car.image}", imageUrls=${JSON.stringify(car.imageUrls)}, images=${JSON.stringify(car.images)}`);
+          });
+
+          setCars(carsWithRates);
+        }
+      } catch (error) {
+        console.error('Error loading cars for favorites:', error);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
     return () => {
@@ -51,7 +87,9 @@ export default function CarListScreen() {
     );
   }
 
-  const displayedCars = cars.filter(car => favorites.includes(car.id));
+  const displayedCars = cars.filter(car =>
+    favorites.includes(car.id) && car.price > 0
+  );
 
   const handleFavoritePress = (carId: string, e: any) => {
     e.stopPropagation();
@@ -122,10 +160,16 @@ export default function CarListScreen() {
               </View>
 
               <Image
-                source={
-                  getAsset(item.image) ||
-                  require('../../../assets/tesla-model-s-luxury.png')
-                }
+                source={(() => {
+                  // Try to get image from multiple sources
+                  const imageUrl = item.image || item.imageUrls?.[0] || item.images?.[0];
+
+                  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+                    return { uri: imageUrl };
+                  }
+
+                  return getAsset(imageUrl) || require('../../../assets/tesla-model-s-luxury.png');
+                })()}
                 style={styles.carImage}
               />
 
@@ -154,7 +198,7 @@ export default function CarListScreen() {
                 </View>
                 <View style={styles.priceContainer}>
                   <Text style={styles.priceText}>
-                    {item.price || 0} VND
+                    {(item.price || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
                   </Text>
                   <Text style={styles.priceUnit}>
                     /day

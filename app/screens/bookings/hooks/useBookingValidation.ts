@@ -73,9 +73,22 @@ export function useBookingValidation() {
       Alert.alert('Error', 'Please enter your phone number');
       return false;
     }
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-    if (!phoneRegex.test(phone)) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+
+    // Remove any non-digit characters for validation
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    if (cleanPhone.length !== 10) {
+      Alert.alert('Error', 'Phone number must be exactly 10 digits');
+      return false;
+    }
+
+    if (!cleanPhone.startsWith('0')) {
+      Alert.alert('Error', 'Phone number must start with 0');
+      return false;
+    }
+
+    if (!/^\d+$/.test(cleanPhone)) {
+      Alert.alert('Error', 'Phone number must contain only digits');
       return false;
     }
     if (!city.trim()) {

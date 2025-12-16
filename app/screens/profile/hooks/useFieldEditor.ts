@@ -34,6 +34,7 @@ export const useFieldEditor = (
     };
 
     const handlePasswordVerification = async () => {
+        console.log('handlePasswordVerification called');
         if (!password) {
             Alert.alert("Password Required", "Please enter your password to continue.");
             return;
@@ -47,17 +48,19 @@ export const useFieldEditor = (
         setIsSaving(true);
 
         try {
-            const { authService } = require("../../../../lib/api");
-            const { data, error } = await authService.login({
-                email: userEmail,
-                password: password,
-            });
 
-            if (error || !data) {
+
+            // Use a dedicated password verification method that doesn't affect current session
+            const { userService } = require("../../../../lib/api");
+            const isPasswordValid = await userService.verifyCurrentPassword(userEmail, password);
+
+            if (!isPasswordValid) {
+
                 Alert.alert("Incorrect Password", "The password you entered is incorrect.");
                 setPassword("");
                 return;
             }
+
 
             setShowPasswordModal(false);
             setPassword("");
@@ -68,6 +71,7 @@ export const useFieldEditor = (
                 setPendingField(null);
             }
         } catch (err: any) {
+
             Alert.alert("Verification Failed", err?.message || "Failed to verify password.");
             setPassword("");
         } finally {
@@ -79,6 +83,31 @@ export const useFieldEditor = (
         if (!editingField) return;
 
         const value = editValue;
+
+        // Validate phone number if editing phone field
+        if (editingField === "phone") {
+            if (!value.trim()) {
+                Alert.alert("Error", "Please enter your phone number");
+                return;
+            }
+
+            const cleanPhone = value.replace(/\D/g, '');
+
+            if (cleanPhone.length !== 10) {
+                Alert.alert("Error", "Phone number must be exactly 10 digits");
+                return;
+            }
+
+            if (!cleanPhone.startsWith('0')) {
+                Alert.alert("Error", "Phone number must start with 0");
+                return;
+            }
+
+            if (!/^\d+$/.test(cleanPhone)) {
+                Alert.alert("Error", "Phone number must contain only digits");
+                return;
+            }
+        }
 
         if (!userId) {
             Alert.alert("Error", "User not found. Please login again.");

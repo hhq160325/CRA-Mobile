@@ -35,9 +35,6 @@ export default function ProfileHeader({
         >
             <View
                 style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
                     marginBottom: verticalScale(16),
                 }}
             >
@@ -50,9 +47,6 @@ export default function ProfileHeader({
                 >
                     Account Information
                 </Text>
-                <TouchableOpacity>
-                    <Icon name="edit" size={scale(20)} color={colors.morentBlue} />
-                </TouchableOpacity>
             </View>
 
             {/* Avatar */}

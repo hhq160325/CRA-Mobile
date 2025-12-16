@@ -1,5 +1,5 @@
-import {useState} from 'react';
-import {Alert} from 'react-native';
+import { useState } from 'react';
+import { Alert } from 'react-native';
 
 export function useBookingForm() {
   const getDefaultDates = () => {
@@ -31,6 +31,7 @@ export function useBookingForm() {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [city, setCity] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupDate, setPickupDate] = useState(defaults.pickupDate);
@@ -75,6 +76,29 @@ export function useBookingForm() {
     return '';
   };
 
+  const validatePhoneNumber = (phoneNumber: string): string => {
+    if (!phoneNumber.trim()) {
+      return 'Phone number is required';
+    }
+
+    // Remove any non-digit characters for validation
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+
+    if (cleanPhone.length !== 10) {
+      return 'Phone number must be exactly 10 digits';
+    }
+
+    if (!cleanPhone.startsWith('0')) {
+      return 'Phone number must start with 0';
+    }
+
+    if (!/^\d+$/.test(cleanPhone)) {
+      return 'Phone number must contain only digits';
+    }
+
+    return '';
+  };
+
   const handlePickupDateChange = (text: string) => {
     setPickupDate(text);
     setPickupDateError(validateDateFormat(text));
@@ -95,6 +119,15 @@ export function useBookingForm() {
     setDropoffTimeError(validateTimeFormat(text));
   };
 
+  const handlePhoneChange = (text: string) => {
+    // Remove any non-digit characters and limit to 10 digits
+    const cleanText = text.replace(/\D/g, '');
+    if (cleanText.length <= 10) {
+      setPhone(cleanText);
+      setPhoneError(validatePhoneNumber(cleanText));
+    }
+  };
+
   const handleApplyPromo = (subtotal: number) => {
     if (promoCode.toLowerCase() === 'save10') {
       setDiscount(subtotal * 0.1);
@@ -110,7 +143,8 @@ export function useBookingForm() {
     address,
     setAddress,
     phone,
-    setPhone,
+    setPhone: handlePhoneChange,
+    phoneError,
     city,
     setCity,
     pickupLocation,

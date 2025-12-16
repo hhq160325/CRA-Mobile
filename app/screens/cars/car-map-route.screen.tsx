@@ -20,12 +20,18 @@ export default function CarMapRouteScreen() {
     const [loading, setLoading] = useState(true)
     const [chargingStations, setChargingStations] = useState<Array<{ id: string; latitude: number; longitude: number; name: string }>>([])
     const [routeDistance, setRouteDistance] = useState<number>(0)
+    const [pickupCoords, setPickupCoords] = useState<{ latitude: number; longitude: number } | null>(null)
+    const [dropoffCoords, setDropoffCoords] = useState<{ latitude: number; longitude: number } | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
-    const params = route.params
-
-
-    const pickupCoords = { latitude: 10.8231, longitude: 106.6297 }
-    const dropoffCoords = { latitude: 10.7769, longitude: 106.7009 }
+    const params = route.params || {
+        pickupLocation: 'Pickup Location',
+        dropoffLocation: 'Dropoff Location',
+        pickupDate: new Date().toISOString().split('T')[0],
+        pickupTime: '10:00',
+        dropoffDate: new Date().toISOString().split('T')[0],
+        dropoffTime: '10:00',
+    }
 
     useEffect(() => {
         loadRouteData()
@@ -33,69 +39,118 @@ export default function CarMapRouteScreen() {
 
     const loadRouteData = async () => {
         setLoading(true)
+        setError(null)
 
+        try {
+            // Get coordinates for pickup location
+            console.log('Getting coordinates for pickup location:', params.pickupLocation)
+            const pickupResult = await locationService.getCoordinatesFromAddress(params.pickupLocation)
 
-        const distance = locationService.calculateDistance(
-            pickupCoords.latitude,
-            pickupCoords.longitude,
-            dropoffCoords.latitude,
-            dropoffCoords.longitude
-        )
-        setRouteDistance(distance)
+            if (pickupResult.error || !pickupResult.data) {
+                console.error('Failed to get pickup coordinates:', pickupResult.error)
+                setError(`Could not find pickup location: ${params.pickupLocation}`)
+                setLoading(false)
+                return
+            }
 
+            // Get coordinates for dropoff location
+            console.log('Getting coordinates for dropoff location:', params.dropoffLocation)
+            const dropoffResult = await locationService.getCoordinatesFromAddress(params.dropoffLocation)
 
-        const mockStations = [
-            {
-                id: "station1",
-                latitude: 10.8100,
-                longitude: 106.6500,
-                name: "VinFast Charging Station",
-            },
-            {
-                id: "station2",
-                latitude: 10.7950,
-                longitude: 106.6700,
-                name: "EV Point District 2",
-            },
-            {
-                id: "station3",
-                latitude: 10.7850,
-                longitude: 106.6900,
-                name: "Green Energy Station",
-            },
-        ]
-        setChargingStations(mockStations)
+            if (dropoffResult.error || !dropoffResult.data) {
+                console.error('Failed to get dropoff coordinates:', dropoffResult.error)
+                setError(`Could not find dropoff location: ${params.dropoffLocation}`)
+                setLoading(false)
+                return
+            }
 
-        setLoading(false)
+            const pickupCoordinates = {
+                latitude: parseFloat(pickupResult.data.latitude.toString()),
+                longitude: parseFloat(pickupResult.data.longitude.toString())
+            }
+
+            const dropoffCoordinates = {
+                latitude: parseFloat(dropoffResult.data.latitude.toString()),
+                longitude: parseFloat(dropoffResult.data.longitude.toString())
+            }
+
+            setPickupCoords(pickupCoordinates)
+            setDropoffCoords(dropoffCoordinates)
+
+            // Calculate distance between actual coordinates
+            const distance = locationService.calculateDistance(
+                pickupCoordinates.latitude,
+                pickupCoordinates.longitude,
+                dropoffCoordinates.latitude,
+                dropoffCoordinates.longitude
+            )
+            setRouteDistance(distance)
+
+            console.log('Route loaded successfully:', {
+                pickup: pickupCoordinates,
+                dropoff: dropoffCoordinates,
+                distance: distance
+            })
+
+            // Generate charging stations along the route (mock data for now)
+            const mockStations = [
+                {
+                    id: "station1",
+                    latitude: (pickupCoordinates.latitude + dropoffCoordinates.latitude) / 2 + 0.01,
+                    longitude: (pickupCoordinates.longitude + dropoffCoordinates.longitude) / 2 + 0.01,
+                    name: "VinFast Charging Station",
+                },
+                {
+                    id: "station2",
+                    latitude: (pickupCoordinates.latitude + dropoffCoordinates.latitude) / 2,
+                    longitude: (pickupCoordinates.longitude + dropoffCoordinates.longitude) / 2,
+                    name: "EV Point Midway",
+                },
+                {
+                    id: "station3",
+                    latitude: (pickupCoordinates.latitude + dropoffCoordinates.latitude) / 2 - 0.01,
+                    longitude: (pickupCoordinates.longitude + dropoffCoordinates.longitude) / 2 - 0.01,
+                    name: "Green Energy Station",
+                },
+            ]
+            setChargingStations(mockStations)
+
+        } catch (err) {
+            console.error('Error loading route data:', err)
+            setError('Failed to load route information')
+        } finally {
+            setLoading(false)
+        }
     }
 
 
-    const routeCoordinates = [
+    // Route coordinates - only if both pickup and dropoff coords are available
+    const routeCoordinates = pickupCoords && dropoffCoords ? [
         pickupCoords,
         ...chargingStations.map(station => ({ latitude: station.latitude, longitude: station.longitude })),
         dropoffCoords,
-    ]
+    ] : []
 
     const markers: MapMarker[] = [
-
-        {
+        // Pickup marker - only if coordinates are available
+        ...(pickupCoords ? [{
             id: "pickup",
             latitude: pickupCoords.latitude,
             longitude: pickupCoords.longitude,
             title: `📍 ${params.pickupLocation}`,
             description: `Pickup: ${params.pickupDate} ${params.pickupTime}`,
             type: "user" as const,
-        },
-
-        {
+        }] : []),
+        // Dropoff marker - only if coordinates are available
+        ...(dropoffCoords ? [{
             id: "dropoff",
             latitude: dropoffCoords.latitude,
             longitude: dropoffCoords.longitude,
             title: `🏁 ${params.dropoffLocation}`,
             description: `Dropoff: ${params.dropoffDate} ${params.dropoffTime}`,
             type: "car" as const,
-        },
-
+        }] : []),
+        // Charging stations
         ...chargingStations.map((station) => ({
             id: station.id,
             latitude: station.latitude,
@@ -113,6 +168,25 @@ export default function CarMapRouteScreen() {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles.loadingText}>Loading route...</Text>
+                </View>
+            </View>
+        )
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <Header />
+                <View style={styles.loadingContainer}>
+                    <MaterialIcons name="error-outline" size={scale(48)} color={colors.placeholder} />
+                    <Text style={styles.loadingText}>{error}</Text>
+                    <Pressable
+                        style={[styles.actionButton, styles.primaryButton, { marginTop: scale(16) }]}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <MaterialIcons name="arrow-back" size={scale(20)} color="white" />
+                        <Text style={styles.primaryButtonText}>Go Back</Text>
+                    </Pressable>
                 </View>
             </View>
         )
@@ -142,18 +216,23 @@ export default function CarMapRouteScreen() {
 
             {/* Map */}
             <MapViewComponent
-                initialRegion={{
+                initialRegion={pickupCoords && dropoffCoords ? {
                     latitude: (pickupCoords.latitude + dropoffCoords.latitude) / 2,
                     longitude: (pickupCoords.longitude + dropoffCoords.longitude) / 2,
                     latitudeDelta: 0.15,
                     longitudeDelta: 0.15,
+                } : {
+                    latitude: 10.8231,
+                    longitude: 106.6297,
+                    latitudeDelta: 0.15,
+                    longitudeDelta: 0.15,
                 }}
                 markers={markers}
-                route={{
+                route={routeCoordinates.length > 0 ? {
                     coordinates: routeCoordinates,
                     color: "#3B82F6",
                     width: 4,
-                }}
+                } : undefined}
                 showUserLocation={false}
                 height={400}
             />

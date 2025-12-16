@@ -82,7 +82,7 @@ export default function RentalSummaryCard({
                 <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
                         <Text style={{ fontSize: 12, color: colors.placeholder }}>Price per day</Text>
-                        <Text style={{ fontSize: 12, fontWeight: "600" }}>{pricePerDay.toFixed(0)} VND</Text>
+                        <Text style={{ fontSize: 12, fontWeight: "600" }}>{Math.round(pricePerDay).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND</Text>
                     </View>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
                         <Text style={{ fontSize: 12, color: colors.placeholder }}>Rental days</Text>
@@ -90,7 +90,7 @@ export default function RentalSummaryCard({
                     </View>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
                         <Text style={{ fontSize: 12, color: colors.placeholder }}>Subtotal</Text>
-                        <Text style={{ fontSize: 12, fontWeight: "600" }}>{subtotal.toFixed(0)} VND</Text>
+                        <Text style={{ fontSize: 12, fontWeight: "600" }}>{Math.round(subtotal).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND</Text>
                     </View>
                     {shippingFee > 0 && (
                         <View style={{ marginBottom: 12 }}>
@@ -99,11 +99,11 @@ export default function RentalSummaryCard({
                                     <MaterialIcons name="local-shipping" size={14} color={colors.morentBlue} style={{ marginRight: 4 }} />
                                     <Text style={{ fontSize: 12, color: colors.morentBlue, fontWeight: "600" }}>Shipping Fee</Text>
                                 </View>
-                                <Text style={{ fontSize: 12, fontWeight: "600", color: colors.morentBlue }}>{shippingFee.toFixed(0)} VND</Text>
+                                <Text style={{ fontSize: 12, fontWeight: "600", color: colors.morentBlue }}>{Math.round(shippingFee).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND</Text>
                             </View>
                             {distanceInKm && (
                                 <Text style={{ fontSize: 10, color: colors.placeholder, marginLeft: 18 }}>
-                                    Distance: {distanceInKm.toFixed(1)} km × 20,000 VND/km
+                                    Distance: {distanceInKm.toFixed(1)} km × 20.000 VND/km
                                 </Text>
                             )}
                         </View>
@@ -118,20 +118,20 @@ export default function RentalSummaryCard({
                             <MaterialIcons name="receipt" size={14} color="#FF6B00" style={{ marginRight: 4 }} />
                             <Text style={{ fontSize: 12, color: "#FF6B00", fontWeight: "600" }}>Booking Fee</Text>
                         </View>
-                        <Text style={{ fontSize: 12, fontWeight: "600", color: "#FF6B00" }}>{bookingFee.toFixed(0)} VND</Text>
+                        <Text style={{ fontSize: 12, fontWeight: "600", color: "#FF6B00" }}>{Math.round(bookingFee).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND</Text>
                     </View>
 
                     {discount > 0 && (
                         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
                             <Text style={{ fontSize: 12, color: "#10B981", fontWeight: "600" }}>Discount</Text>
-                            <Text style={{ fontSize: 12, fontWeight: "600", color: "#10B981" }}>-{discount.toFixed(0)} VND</Text>
+                            <Text style={{ fontSize: 12, fontWeight: "600", color: "#10B981" }}>-{Math.round(discount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND</Text>
                         </View>
                     )}
 
                     {/* Total */}
                     <View style={{ flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }}>
                         <Text style={{ fontSize: 14, fontWeight: "700" }}>Total Rental Price</Text>
-                        <Text style={{ fontSize: 14, fontWeight: "700", color: colors.morentBlue }}>{total.toFixed(0)} VND</Text>
+                        <Text style={{ fontSize: 14, fontWeight: "700", color: colors.morentBlue }}>{Math.round(total).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND</Text>
                     </View>
                 </View>
             </View>

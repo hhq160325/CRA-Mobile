@@ -9,9 +9,9 @@ WebBrowser.maybeCompleteAuthSession()
 
 export const GOOGLE_CONFIG = {
 
-    webClientId: "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+    webClientId: "719448402378-b4i5ft9gde5dfg76p8ag9kku3nqva0gl.apps.googleusercontent.com",
 
-    androidClientId: "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com",
+    androidClientId: "719448402378-0esjktkgmtsopssgqkjpmssh64vnah8g.apps.googleusercontent.com",
 
     iosClientId: "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
 }

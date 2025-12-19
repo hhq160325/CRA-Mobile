@@ -4,6 +4,10 @@ export interface AdditionalFee {
     amount: number;
     description: string;
     icon: string;
+    isEditable?: boolean;
+    unit?: string;
+    minQuantity?: number;
+    maxQuantity?: number;
 }
 
 export interface PaymentResponse {

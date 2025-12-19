@@ -1,6 +1,7 @@
 
 import { API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
+import { apiCache, cacheKeys } from "../cache"
 
 // API Response from backend
 interface ApiCarResponse {
@@ -133,6 +134,15 @@ export const carsService = {
   }): Promise<{ data: Car[] | null; error: Error | null }> {
     console.log("carsService.getCars: fetching cars with filters", filters)
 
+    // Check cache first (only for unfiltered requests)
+    const cacheKey = cacheKeys.cars();
+    if (!filters || Object.keys(filters).length === 0) {
+      const cachedData = apiCache.get<Car[]>(cacheKey);
+      if (cachedData) {
+        return { data: cachedData, error: null };
+      }
+    }
+
     const params = new URLSearchParams()
     if (filters?.category && filters.category !== "all") params.append("category", filters.category)
     if (filters?.minPrice !== undefined) params.append("minPrice", filters.minPrice.toString())
@@ -153,6 +163,11 @@ export const carsService = {
 
     // Map API response to app model
     let mappedData = result.data?.map(mapApiCarToCar) || []
+
+    // Cache unfiltered results
+    if (!filters || Object.keys(filters).length === 0) {
+      apiCache.set(cacheKey, mappedData, 3 * 60 * 1000); // 3 minutes
+    }
 
     // Apply client-side filters if needed
     if (filters?.category && filters.category !== "all") {
@@ -226,6 +241,13 @@ export const carsService = {
   },
 
   async getCarRentalRate(carId: string): Promise<{ data: RentalRate | null; error: Error | null }> {
+    // Check cache first
+    const cacheKey = cacheKeys.carRate(carId);
+    const cachedData = apiCache.get<RentalRate>(cacheKey);
+    if (cachedData) {
+      return { data: cachedData, error: null };
+    }
+
     const result = await apiClient<RentalRate>(API_ENDPOINTS.CAR_RENTAL_RATE(carId), { method: "GET" })
 
     if (result.error) {
@@ -234,6 +256,11 @@ export const carsService = {
         console.error("carsService.getCarRentalRate: unexpected error for car", carId, result.error)
       }
       return { data: null, error: result.error }
+    }
+
+    // Cache successful results
+    if (result.data) {
+      apiCache.set(cacheKey, result.data, 5 * 60 * 1000); // 5 minutes
     }
 
     console.log("carsService.getCarRentalRate: found rate for car", carId, {

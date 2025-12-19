@@ -21,6 +21,8 @@ import {
   getStatusColor,
 } from './utils/profileHelpers';
 import { locationService } from '../../../lib/api';
+import { ocrService, DriverLicenseOCRResult } from '../../../lib/api/services/ocr.service';
+import OCRResultModal from './components/OCRResultModal';
 import { styles } from './profile.screen.styles';
 
 export default function ProfileScreen() {
@@ -34,11 +36,16 @@ export default function ProfileScreen() {
     fieldValues,
     setFieldValues,
   } = useProfileData(user?.id);
-  const [licenseImages, setLicenseImages] = useState<string[]>([]);
   const [licenseStatus, setLicenseStatus] = useState<string | null>(null);
   const [licenseCreateDate, setLicenseCreateDate] = useState<string | null>(null);
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  // OCR states
+  const [showOCRModal, setShowOCRModal] = useState(false);
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [ocrResult, setOcrResult] = useState<DriverLicenseOCRResult | null>(null);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
   // Avatar upload loading animation states
   const [showAvatarLoading, setShowAvatarLoading] = useState(false);
@@ -61,7 +68,6 @@ export default function ProfileScreen() {
     setUserData,
     setFieldValues,
     setLicenseImage,
-    setLicenseImages,
     refreshUser,
     buildSafeUpdateData,
   );
@@ -81,20 +87,10 @@ export default function ProfileScreen() {
         return;
       }
 
-      console.log('fetchDriverLicense: received data', {
-        hasData: !!data,
-        urlCount: data?.urls?.length || 0,
-        urls: data?.urls,
-        forceRefresh
-      });
-
       if (data && data.urls && data.urls.length > 0) {
-        console.log('fetchDriverLicense: updating state with', data.urls.length, 'images');
-        setLicenseImages(data.urls);
+        // Use the first (most recent) image for simplified single photo upload
         setLicenseImage(data.urls[0]);
       } else {
-        console.log('fetchDriverLicense: no URLs found, clearing state');
-        setLicenseImages([]);
         setLicenseImage(null);
       }
     } catch (err) {
@@ -171,211 +167,133 @@ export default function ProfileScreen() {
   const handleUploadLicense = () => {
     Alert.alert("Upload Driver's License", 'Choose upload method', [
       {
-        text: 'Upload Both Sides',
-        onPress: () => handleUploadBothSides(),
-      },
-      {
-        text: 'Upload Single Side',
-        onPress: () => handleUploadSingleSide(),
+        text: 'Smart Upload (OCR)',
+        onPress: () => handleSmartUpload(),
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
-  const handleUploadLicenseSide = (side: 'front' | 'back') => {
-    Alert.alert(`Upload ${side === 'front' ? 'Front' : 'Back'} Side`, 'Choose an option', [
+  const handleSmartUpload = () => {
+    Alert.alert('Smart Upload with OCR', 'This will extract information from your license automatically', [
       {
         text: 'Take Photo',
-        onPress: () =>
-          imagePicker.openCamera(async (uri: string) => {
-            await uploadLicenseImage(uri, side);
-          }),
+        onPress: () => imagePicker.openCamera(handleOCRUpload),
       },
       {
         text: 'Choose from Gallery',
-        onPress: () =>
-          imagePicker.openGallery(async (uri: string) => {
-            await uploadLicenseImage(uri, side);
-          }),
+        onPress: () => imagePicker.openGallery(handleOCRUpload),
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
-  const handleUploadBothSides = () => {
-    Alert.alert('Upload Both Sides', 'This will upload front and back images together', [
-      {
-        text: 'Take Photos',
-        onPress: () => collectBothImages('camera'),
-      },
-      {
-        text: 'Choose from Gallery',
-        onPress: () => collectBothImages('gallery'),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
 
-  const handleUploadSingleSide = () => {
-    Alert.alert("Upload Single Side", 'Choose which side to upload', [
-      {
-        text: 'Front Side',
-        onPress: () => handleUploadLicenseSide('front'),
-      },
-      {
-        text: 'Back Side',
-        onPress: () => handleUploadLicenseSide('back'),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
 
-  const collectBothImages = async (method: 'camera' | 'gallery') => {
+  const handleOCRUpload = async (uri: string) => {
     try {
-      const images: string[] = [];
+      setPendingImageUri(uri);
+      setShowOCRModal(true);
+      setIsProcessingOCR(true);
+      setOcrResult(null);
 
-      // Collect front image
-      const frontUri = await new Promise<string>((resolve, reject) => {
-        Alert.alert('Front Side', 'Take/select the front side of your license', [
-          {
-            text: method === 'camera' ? 'Take Photo' : 'Select Image',
-            onPress: () => {
-              const picker = method === 'camera' ? imagePicker.openCamera : imagePicker.openGallery;
-              picker((uri: string) => resolve(uri));
-            },
-          },
-          { text: 'Cancel', onPress: () => reject(new Error('Cancelled')), style: 'cancel' },
-        ]);
-      });
+      console.log('🔍 Starting OCR processing for:', uri);
 
-      images.push(frontUri);
-
-      // Collect back image
-      const backUri = await new Promise<string>((resolve, reject) => {
-        Alert.alert('Back Side', 'Take/select the back side of your license', [
-          {
-            text: method === 'camera' ? 'Take Photo' : 'Select Image',
-            onPress: () => {
-              const picker = method === 'camera' ? imagePicker.openCamera : imagePicker.openGallery;
-              picker((uri: string) => resolve(uri));
-            },
-          },
-          { text: 'Cancel', onPress: () => reject(new Error('Cancelled')), style: 'cancel' },
-        ]);
-      });
-
-      images.push(backUri);
-
-      // Upload both images
-      await uploadMultipleLicenseImages(images);
-
-    } catch (error) {
-      if (error instanceof Error && error.message !== 'Cancelled') {
-        console.error('Error collecting images:', error);
-        Alert.alert('Error', 'Failed to collect images. Please try again.');
-      }
-    }
-  };
-
-  const uploadMultipleLicenseImages = async (imageUris: string[]) => {
-    try {
-      console.log('uploadMultipleLicenseImages: starting upload with', imageUris.length, 'images');
-
-      // Store original images for potential rollback
-      const originalImages = [...licenseImages];
-      const originalImage = licenseImage;
-
-      // Update local state immediately for better UX
-      setLicenseImages(imageUris);
-      if (imageUris.length > 0) {
-        setLicenseImage(imageUris[0]);
-      }
-
-      // Upload multiple images to server
-      const { data, error } = await userService.uploadDriverLicenseMultiple(user?.id || '', imageUris);
+      const { data, error } = await ocrService.extractDriverLicenseInfo(uri);
 
       if (error) {
-        throw error;
+        console.error('❌ OCR failed:', error);
+        setShowOCRModal(false);
+        Alert.alert(
+          'OCR Failed',
+          `Failed to extract license information: ${error.message}. Please try again with a clearer photo.`,
+          [
+            { text: 'OK', style: 'cancel' },
+          ]
+        );
+        return;
       }
 
-      console.log('uploadMultipleLicenseImages: upload successful, response:', data);
+      if (data) {
+        console.log('✅ OCR successful:', data);
+        setOcrResult(data);
 
-      // Update license status immediately since we know it changed
-      await fetchDriverLicenseStatus();
+        // Validate OCR quality
+        const validation = ocrService.validateOCRQuality(data);
+        console.log('📊 OCR validation:', validation);
+      }
 
-      Alert.alert('Success', `${imageUris.length} images uploaded successfully`);
-
-      // Don't immediately fetch from server to avoid overriding our new images
-      // Instead, do a background check after a longer delay
-      setTimeout(async () => {
-        console.log('uploadMultipleLicenseImages: background refresh check');
-        try {
-          const { data: licenseData } = await userService.getDriverLicense(user?.id || '', user?.email || '');
-
-          // Only update if server returned more recent data
-          if (licenseData?.urls && licenseData.urls.length >= imageUris.length) {
-            console.log('uploadMultipleLicenseImages: server has updated data, refreshing UI');
-            setLicenseImages(licenseData.urls);
-            setLicenseImage(licenseData.urls[0]);
-          } else {
-            console.log('uploadMultipleLicenseImages: keeping local images, server not ready yet');
-          }
-        } catch (err) {
-          console.log('uploadMultipleLicenseImages: background refresh failed, keeping local images');
-        }
-      }, 5000); // Wait 5 seconds before background check
-
-    } catch (error) {
-      console.error('Error uploading multiple license images:', error);
-      Alert.alert('Error', 'Failed to upload images. Please try again.');
-      // Revert local state on error
-      await fetchDriverLicense();
+    } catch (error: any) {
+      console.error('💥 OCR exception:', error);
+      setShowOCRModal(false);
+      Alert.alert('Error', 'Failed to process image. Please try again.');
+    } finally {
+      setIsProcessingOCR(false);
     }
   };
 
-  const uploadLicenseImage = async (uri: string, side: 'front' | 'back') => {
+  const handleAcceptOCR = async () => {
+    if (!pendingImageUri || !ocrResult) return;
+
     try {
-      // Create a copy of current images
-      const currentImages = [...licenseImages];
+      setShowOCRModal(false);
 
-      // Update the appropriate side (front = index 0, back = index 1)
-      if (side === 'front') {
-        currentImages[0] = uri;
-      } else {
-        currentImages[1] = uri;
-      }
+      // Upload the image first
+      await uploadSingleLicenseImage(pendingImageUri);
 
-      // Ensure we have at least 2 slots
-      while (currentImages.length < 2) {
-        currentImages.push('');
-      }
+      // Show extracted information to user
+      const formatted = ocrService.formatOCRResult(ocrResult);
+      Alert.alert(
+        'License Information Extracted',
+        `License ID: ${formatted.licenseId}\nName: ${formatted.fullName}\nClass: ${formatted.licenseClass}\nDOB: ${formatted.dateOfBirth}`,
+        [{ text: 'OK' }]
+      );
 
+      // Clear OCR state
+      setPendingImageUri(null);
+      setOcrResult(null);
+
+    } catch (error) {
+      console.error('Error accepting OCR result:', error);
+      Alert.alert('Error', 'Failed to process the license. Please try again.');
+    }
+  };
+
+  const handleRetryOCR = () => {
+    setShowOCRModal(false);
+    setPendingImageUri(null);
+    setOcrResult(null);
+
+    // Restart the smart upload process
+    setTimeout(() => {
+      handleSmartUpload();
+    }, 100);
+  };
+
+  const handleCloseOCR = () => {
+    setShowOCRModal(false);
+    setPendingImageUri(null);
+    setOcrResult(null);
+    setIsProcessingOCR(false);
+  };
+
+  const uploadSingleLicenseImage = async (uri: string) => {
+    try {
       // Update local state immediately for better UX
-      setLicenseImages(currentImages);
-      if (side === 'front') {
-        setLicenseImage(uri);
-      }
+      setLicenseImage(uri);
 
       // Upload to server
       await profileActions.uploadDriverLicense(uri);
 
-      // Update license status immediately
+      // Update license status
       await fetchDriverLicenseStatus();
 
-      Alert.alert('Success', `${side === 'front' ? 'Front' : 'Back'} side uploaded successfully`);
+      Alert.alert('Success', 'License photo uploaded successfully');
 
-      // Background refresh after delay, but don't override local images
-      setTimeout(async () => {
-        try {
-          const { data: licenseData } = await userService.getDriverLicense(user?.id || '', user?.email || '');
-          if (licenseData?.urls && licenseData.urls.length > 0) {
-            setLicenseImages(licenseData.urls);
-            setLicenseImage(licenseData.urls[0]);
-          }
-        } catch (err) {
-          console.log('Background refresh failed, keeping local images');
-        }
-      }, 3000);
+      // Refresh license data after upload
+      setTimeout(() => {
+        fetchDriverLicense();
+      }, 2000);
 
     } catch (error) {
       console.error('Error uploading license image:', error);
@@ -566,7 +484,6 @@ export default function ProfileScreen() {
 
         <DriverLicenseSection
           licenseImage={licenseImage}
-          licenseImages={licenseImages}
           licenseStatus={licenseStatus}
           licenseCreateDate={licenseCreateDate}
           onUploadLicense={handleUploadLicense}
@@ -611,6 +528,15 @@ export default function ProfileScreen() {
         userEmail={user?.email || ''}
         onClose={() => setShowChangePasswordModal(false)}
         onLogout={logout}
+      />
+
+      <OCRResultModal
+        visible={showOCRModal}
+        isProcessing={isProcessingOCR}
+        ocrResult={ocrResult}
+        onClose={handleCloseOCR}
+        onAccept={handleAcceptOCR}
+        onRetry={handleRetryOCR}
       />
     </View>
   );

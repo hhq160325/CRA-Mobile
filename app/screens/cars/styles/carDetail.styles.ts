@@ -44,48 +44,8 @@ export const styles = StyleSheet.create({
         color: colors.placeholder,
         lineHeight: scale(22),
     },
-    depositContainer: {
-        marginTop: scale(20),
-        padding: scale(16),
-        backgroundColor: colors.background,
-        borderRadius: scale(8),
-        borderLeftWidth: 4,
-        borderLeftColor: colors.morentBlue,
-    },
-    depositHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: scale(8),
-    },
-    depositTitle: {
-        fontSize: scale(16),
-        fontWeight: '600',
-        color: colors.primary,
-    },
-    depositList: {
-        marginLeft: scale(4),
-    },
-    depositItem: {
-        flexDirection: 'row',
-        marginBottom: scale(6),
-    },
-    depositBullet: {
-        fontSize: scale(14),
-        color: colors.primary,
-        marginRight: scale(4),
-    },
-    depositText: {
-        fontSize: scale(14),
-        color: colors.primary,
-        flex: 1,
-        lineHeight: scale(20),
-    },
-    depositAmount: {
-        fontWeight: '600',
-        color: colors.morentBlue,
-    },
-    contactButton: {
-        flexDirection: 'row',
+
+    contactInfo: {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#E3F2FD',
@@ -95,11 +55,7 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.morentBlue,
     },
-    contactEmoji: {
-        fontSize: scale(20),
-        marginRight: scale(8),
-    },
-    contactText: {
+    contactLabel: {
         color: colors.morentBlue,
         fontSize: scale(14),
         fontWeight: '600',

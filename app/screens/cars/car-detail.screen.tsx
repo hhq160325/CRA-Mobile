@@ -157,31 +157,7 @@ export default function CarDetailScreen() {
     navigation.navigate("BookingForm" as any, { id: car?.id })
   }
 
-  const renderDepositInformation = () => (
-    <View style={styles.depositContainer}>
-      <View style={styles.depositHeader}>
-        <Text style={styles.depositTitle}>💰 Deposit Information</Text>
-      </View>
-      <View style={styles.depositList}>
-        <View style={styles.depositItem}>
-          <Text style={styles.depositBullet}>•</Text>
-          <Text style={styles.depositText}>
-            Mandatory deposit: <Text style={styles.depositAmount}>10.000.000 VND</Text>
-          </Text>
-        </View>
-        <View style={styles.depositItem}>
-          <Text style={styles.depositBullet}>•</Text>
-          <Text style={styles.depositText}>Motorbike deposit not accepted.</Text>
-        </View>
-        <View style={styles.depositItem}>
-          <Text style={styles.depositBullet}>•</Text>
-          <Text style={styles.depositText}>
-            Deposit will be returned after returning the vehicle 15 days.
-          </Text>
-        </View>
-      </View>
-    </View>
-  )
+
 
   const renderPriceAndBooking = () => (
     <View style={styles.priceBookContainer}>
@@ -230,15 +206,9 @@ export default function CarDetailScreen() {
           <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.description}>{car.description}</Text>
 
-          {renderDepositInformation()}
-
-          <Pressable
-            onPress={() => navigation.navigate("Chat" as any, { carId: car.id })}
-            style={styles.contactButton}
-          >
-            <Text style={styles.contactEmoji}>💬</Text>
-            <Text style={styles.contactText}>Contact Car Owner</Text>
-          </Pressable>
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactLabel}>Contact: morent.com</Text>
+          </View>
 
           {renderPriceAndBooking()}
         </View>

@@ -11,6 +11,9 @@
         "buildType": "apk"
       }
     },
+    "expo-go": {
+      "distribution": "internal"
+    },
     "preview": {
       "distribution": "internal",
       "android": {

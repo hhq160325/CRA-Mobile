@@ -114,6 +114,10 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    hoursButtonDisabled: {
+        backgroundColor: '#f3f4f6',
+        opacity: 0.5,
+    },
     hoursValue: {
         fontSize: scale(16),
         fontWeight: '600',

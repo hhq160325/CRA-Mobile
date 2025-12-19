@@ -7,16 +7,24 @@ const getBaseUrl = () => {
     return process.env.NEXT_PUBLIC_API_URL
   }
 
-  // Fallback for production - should be set via build configuration
-  // Never hardcode production URLs here
+  // For Expo development - always use Azure directly to avoid tunnel issues
+  if (__DEV__) {
+    console.log("🔧 Development mode: Using Azure URL directly for stable connection")
+    console.log("💡 This avoids ER_NGROK_3200 and tunnel expiration issues")
+  }
+
+  // Production Azure URL - stable and fast for both dev and prod
   return "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api"
 }
 
 export const API_CONFIG = {
   BASE_URL: getBaseUrl(),
-  TIMEOUT: 60000,
-  RETRY_ATTEMPTS: 2,
+  TIMEOUT: __DEV__ ? 20000 : 15000, // Slightly longer timeout for Expo development
+  RETRY_ATTEMPTS: __DEV__ ? 1 : 2, // Fewer retries in dev for faster feedback
   RETRY_DELAY: 1000,
+  // Development flags
+  ENABLE_LOGGING: __DEV__,
+  ENABLE_DEBUG: __DEV__,
 }
 
 // Helper to get base URL without /api suffix for direct API calls

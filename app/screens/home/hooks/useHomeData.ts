@@ -14,19 +14,23 @@ export function useHomeData() {
   const { user } = useAuth();
 
   useEffect(() => {
-    loadData();
+    // Debounce loading to prevent multiple rapid calls
+    const timeoutId = setTimeout(() => {
+      loadData();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [user]);
 
   const loadData = async () => {
     setLoading(true);
+    const startTime = Date.now();
 
     try {
-      const [carsResult, bookingsResult] = await Promise.all([
-        carsService.getCars({}),
-        user?.id
-          ? bookingsService.getBookings(user.id)
-          : Promise.resolve({ data: null as Booking[] | null, error: null }),
-      ]);
+      console.log('🚀 Loading home data...');
+
+      // Load cars first for immediate display
+      const carsResult = await carsService.getCars({});
 
       if (carsResult.data) {
         const rentableStatuses = ['Active', 'Reserved', 'Available'];
@@ -34,44 +38,79 @@ export function useHomeData() {
           rentableStatuses.includes(car.status || ''),
         );
 
-        console.log(
-          `Total cars: ${carsResult.data.length}, Rentable: ${rentableCars.length}`,
+        console.log(`📊 Total cars: ${carsResult.data.length}, Rentable: ${rentableCars.length}`);
+
+        // Show cars immediately with placeholder prices
+        const carsWithPlaceholderPrices = rentableCars.map(car => ({
+          ...car,
+          price: 0, // Will be updated when rates load
+        }));
+
+        setCars(carsWithPlaceholderPrices);
+        console.log(`⚡ Cars displayed in ${Date.now() - startTime}ms`);
+
+        // Load rental rates in parallel (much faster)
+        const ratePromises = rentableCars.map(car =>
+          carsService.getCarRentalRate(car.id).catch(error => {
+            console.warn(`Failed to load rate for ${car.name}:`, error);
+            return { data: null, error };
+          })
         );
 
-        const carsWithRates = await Promise.all(
-          rentableCars.map(async car => {
-            const rateResult = await carsService.getCarRentalRate(car.id);
+        const rateResults = await Promise.all(ratePromises);
 
-            if (
-              rateResult.data &&
-              rateResult.data.status === 'Active' &&
-              rateResult.data.dailyRate > 0
-            ) {
-              console.log(
-                ` ${car.name
-                }: ${rateResult.data.dailyRate.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND/day`,
-              );
-              return { ...car, price: rateResult.data.dailyRate };
-            }
+        // Update cars with actual prices
+        const carsWithRates = rentableCars.map((car, index) => {
+          const rateResult = rateResults[index];
 
-            console.log(` ${car.name}: No active rental rate`);
-            return { ...car, price: 0 };
-          }),
-        );
+          if (
+            rateResult.data &&
+            rateResult.data.status === 'Active' &&
+            rateResult.data.dailyRate > 0
+          ) {
+            return { ...car, price: rateResult.data.dailyRate };
+          }
 
-        console.log(`Displaying ${carsWithRates.length} cars`);
+          return { ...car, price: 0 };
+        });
+
         setCars(carsWithRates);
+        console.log(`💰 Prices loaded in ${Date.now() - startTime}ms total`);
       }
 
-      if (bookingsResult.data) {
-        setRecentBookings(bookingsResult.data.slice(0, 4));
+      // Load bookings in parallel (non-blocking)
+      if (user?.id) {
+        bookingsService.getBookings(user.id).then(bookingsResult => {
+          if (bookingsResult.data) {
+            setRecentBookings(bookingsResult.data.slice(0, 4));
+            console.log(`📋 Bookings loaded`);
+          }
+        }).catch(error => {
+          console.warn('Failed to load bookings:', error);
+        });
       }
+
     } catch (error) {
-      console.error('Error loading home data:', error);
+      console.error('❌ Error loading home data:', error);
     } finally {
       setLoading(false);
+      console.log(`✅ Home data loading completed in ${Date.now() - startTime}ms`);
     }
   };
 
-  return { cars, recentBookings, loading, refetch: loadData };
+  const forceRefresh = async () => {
+    // Clear cache and reload
+    const { apiCache, cacheKeys } = await import('../../../../lib/api/cache');
+    apiCache.invalidatePattern('cars');
+    apiCache.invalidatePattern('booking');
+    await loadData();
+  };
+
+  return {
+    cars,
+    recentBookings,
+    loading,
+    refetch: loadData,
+    forceRefresh,
+  };
 }

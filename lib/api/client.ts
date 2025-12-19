@@ -1,6 +1,7 @@
 
 import { API_CONFIG } from "./config"
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getOptimalExpoConfig } from './expo-dev-helper'
 
 export class APIError extends Error {
   constructor(
@@ -14,29 +15,39 @@ export class APIError extends Error {
 }
 
 
-export async function testConnection(): Promise<{ success: boolean; message: string; latency?: number }> {
+export async function testConnection(): Promise<{ success: boolean; message: string; latency?: number; connectionQuality?: string }> {
   const startTime = Date.now()
   try {
     console.log("Testing connection to:", API_CONFIG.BASE_URL)
 
-
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000)
+    const timeoutId = setTimeout(() => controller.abort(), 8000) // Reduced timeout for mobile
 
     const response = await fetch(API_CONFIG.BASE_URL, {
       method: "HEAD",
       signal: controller.signal,
+      headers: {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
     })
 
     clearTimeout(timeoutId)
     const latency = Date.now() - startTime
 
-    console.log("Connection test result:", response.status, "latency:", latency, "ms")
+    // Determine connection quality based on latency
+    let connectionQuality = "excellent"
+    if (latency > 2000) connectionQuality = "poor"
+    else if (latency > 1000) connectionQuality = "fair"
+    else if (latency > 500) connectionQuality = "good"
+
+    console.log("Connection test result:", response.status, "latency:", latency, "ms", "quality:", connectionQuality)
 
     return {
       success: response.status < 500,
-      message: `Server reachable (${latency}ms)`,
+      message: `Server reachable (${latency}ms) - ${connectionQuality} connection`,
       latency,
+      connectionQuality,
     }
   } catch (error) {
     const latency = Date.now() - startTime
@@ -45,8 +56,9 @@ export async function testConnection(): Promise<{ success: boolean; message: str
     if (error instanceof Error && error.name === 'AbortError') {
       return {
         success: false,
-        message: `Connection timeout after ${latency}ms - Server may be unreachable`,
+        message: `Connection timeout after ${latency}ms - Check your internet connection`,
         latency,
+        connectionQuality: "timeout",
       }
     }
 
@@ -54,6 +66,7 @@ export async function testConnection(): Promise<{ success: boolean; message: str
       success: false,
       message: error instanceof Error ? error.message : "Connection failed",
       latency,
+      connectionQuality: "failed",
     }
   }
 }
@@ -158,8 +171,17 @@ export async function apiClient<T>(
       console.error("Failed to get token from AsyncStorage:", e)
     }
 
+    // Get Expo-optimized configuration in development
+    const expoConfig = __DEV__ ? getOptimalExpoConfig() : null;
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      // Mobile-specific optimizations
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "Accept-Encoding": "gzip, deflate",
+      // Add Expo-specific headers in development
+      ...(expoConfig?.headers || {}),
       ...(options?.headers as Record<string, string>),
     }
 
@@ -221,6 +243,20 @@ export async function apiClient<T>(
       }
     }
 
+
+    // Handle specific tunnel/ngrok errors
+    if (error instanceof Error && (
+      error.message.includes("ER_NGROK_3200") ||
+      error.message.includes("tunnel not found") ||
+      error.message.includes("ngrok") ||
+      error.message.includes("Tunnel") ||
+      error.message.includes("3200")
+    )) {
+      return {
+        data: null,
+        error: new APIError("Development tunnel error - Please restart your development server or check your API configuration"),
+      }
+    }
 
     if (error instanceof Error && error.message.includes("Network request failed")) {
       return {

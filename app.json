@@ -23,7 +23,16 @@
         "NSPhotoLibraryUsageDescription": "We need access to your photo library to select photos for pickup and return confirmation.",
         "NSPhotoLibraryAddUsageDescription": "We need access to save photos to your photo library.",
         "NSLocationWhenInUseUsageDescription": "We need your location to show nearby cars and calculate routes.",
-        "NSLocationAlwaysUsageDescription": "We need your location to show nearby cars and calculate routes."
+        "NSLocationAlwaysUsageDescription": "We need your location to show nearby cars and calculate routes.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "google",
+            "CFBundleURLSchemes": [
+              "YOUR_IOS_CLIENT_ID"
+            ]
+          }
+        ]
       },
       "config": {
         "googleMapsApiKey": "YOUR_IOS_GOOGLE_MAPS_API_KEY"
@@ -53,9 +62,16 @@
       "favicon": "./favicon.ico"
     },
     "plugins": [
-      "expo-router",
-      "expo-web-browser"
+      "expo-router"
     ],
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/e1813f83-f017-48bc-82b5-0ae72ae6f73c"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "extra": {
       "router": {},
       "eas": {

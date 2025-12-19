@@ -4,9 +4,13 @@ export const ADDITIONAL_FEES: AdditionalFee[] = [
     {
         id: 'overtime',
         name: 'Overtime Fee',
-        amount: 70000,
-        description: 'VND 70,000/hour - Late return surcharge. Over 5 hours = extra day.',
+        amount: 500000,
+        description: 'VND 500,000/hour - Late return surcharge. Editable hours.',
         icon: 'schedule',
+        isEditable: true,
+        unit: 'hour',
+        minQuantity: 1,
+        maxQuantity: 24,
     },
     {
         id: 'cleaning',

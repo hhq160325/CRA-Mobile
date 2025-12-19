@@ -16,6 +16,7 @@ import CarInfoCard from './components/CarInfoCard';
 import LocationInfoCard from './components/LocationInfoCard';
 import PaymentInfoSection from './components/PaymentInfoSection';
 import FeedbackButton from './components/FeedbackButton';
+import ReportCarButton from './components/ReportCarButton';
 
 export default function BookingDetailScreen() {
   const route = useRoute<RouteProp<{ params: { id: string } }, 'params'>>();
@@ -131,6 +132,31 @@ export default function BookingDetailScreen() {
           bookingDate={booking.bookingDate}
           payments={payments}
           bookingFee={bookingFee}
+        />
+
+        {/* Report Car Button - Available for all booking statuses */}
+        <ReportCarButton
+          onPress={() => {
+            console.log('🔍 BookingDetail: Navigating to ReportCar with params:', {
+              carId: booking.carId,
+              carName: booking.carName,
+              bookingId: booking.id,
+              bookingNumber: booking.bookingNumber,
+              licensePlate: booking.carDetails?.licensePlate,
+            });
+            try {
+              navigation.navigate('ReportCar', {
+                carId: booking.carId,
+                carName: booking.carName,
+                bookingId: booking.id,
+                bookingNumber: booking.bookingNumber,
+                licensePlate: booking.carDetails?.licensePlate || 'N/A',
+              });
+              console.log('🔍 BookingDetail: Navigation call completed');
+            } catch (error) {
+              console.error('🔍 BookingDetail: Navigation error:', error);
+            }
+          }}
         />
 
         {booking.status?.toLowerCase() === 'completed' && (

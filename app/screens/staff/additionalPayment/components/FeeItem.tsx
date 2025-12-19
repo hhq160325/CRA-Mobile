@@ -21,22 +21,38 @@ export default function FeeItem({
     onToggle,
     onAdjustHours
 }: FeeItemProps) {
-    const renderOvertimeSelector = () => (
-        <View style={styles.hoursSelector}>
-            <Text style={styles.hoursLabel}>Hours:</Text>
-            <Pressable
-                style={styles.hoursButton}
-                onPress={() => onAdjustHours(false)}>
-                <MaterialIcons name="remove" size={18} color={colors.morentBlue} />
-            </Pressable>
-            <Text style={styles.hoursValue}>{overtimeHours}</Text>
-            <Pressable
-                style={styles.hoursButton}
-                onPress={() => onAdjustHours(true)}>
-                <MaterialIcons name="add" size={18} color={colors.morentBlue} />
-            </Pressable>
-        </View>
-    );
+    const renderOvertimeSelector = () => {
+        const canDecrease = overtimeHours > (fee.minQuantity || 1);
+        const canIncrease = overtimeHours < (fee.maxQuantity || 24);
+        const unitLabel = fee.unit ? `${fee.unit}${overtimeHours > 1 ? 's' : ''}` : 'Hours';
+
+        return (
+            <View style={styles.hoursSelector}>
+                <Text style={styles.hoursLabel}>{unitLabel}:</Text>
+                <Pressable
+                    style={[styles.hoursButton, !canDecrease && styles.hoursButtonDisabled]}
+                    onPress={() => canDecrease && onAdjustHours(false)}
+                    disabled={!canDecrease}>
+                    <MaterialIcons
+                        name="remove"
+                        size={18}
+                        color={canDecrease ? colors.morentBlue : '#d1d5db'}
+                    />
+                </Pressable>
+                <Text style={styles.hoursValue}>{overtimeHours}</Text>
+                <Pressable
+                    style={[styles.hoursButton, !canIncrease && styles.hoursButtonDisabled]}
+                    onPress={() => canIncrease && onAdjustHours(true)}
+                    disabled={!canIncrease}>
+                    <MaterialIcons
+                        name="add"
+                        size={18}
+                        color={canIncrease ? colors.morentBlue : '#d1d5db'}
+                    />
+                </Pressable>
+            </View>
+        );
+    };
 
     return (
         <Pressable
@@ -54,7 +70,7 @@ export default function FeeItem({
                     <Text style={styles.feeName}>{fee.name}</Text>
                     <Text style={styles.feeAmount}>
                         {formatCurrency(fee.amount)}
-                        {fee.id === 'overtime' && '/hour'}
+                        {fee.unit && `/${fee.unit}`}
                     </Text>
                 </View>
                 <MaterialIcons
@@ -65,7 +81,7 @@ export default function FeeItem({
             </View>
             <Text style={styles.feeDescription}>{fee.description}</Text>
 
-            {fee.id === 'overtime' && isSelected && renderOvertimeSelector()}
+            {fee.isEditable && isSelected && renderOvertimeSelector()}
         </Pressable>
     );
 }

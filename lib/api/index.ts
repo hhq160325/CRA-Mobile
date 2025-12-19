@@ -50,3 +50,7 @@ export { checkAndUpdatePaymentStatuses, areAllPaymentsPaid } from "./services/pa
 export { inquiryService, type CreateInquiryData } from "./services/inquiry.service"
 
 export { bookingExtensionService, type BookingDetail, type InvoiceItem as ExtensionInvoiceItem, type PayOSPaymentRequest, type PayOSPaymentResponse } from "./services/bookingExtension.service"
+
+export { ocrService, type DriverLicenseOCRResult, type OCRResponse } from "./services/ocr.service"
+
+export { reportService, type CreateReportData, type ReportResponse } from "./services/report.service"

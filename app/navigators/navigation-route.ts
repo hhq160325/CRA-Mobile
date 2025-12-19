@@ -19,6 +19,7 @@ export type NavigatorParamList = {
   ['BookingPayment']: { bookingId: string; paymentMethod: string; amount: number };
   ['PayOSWebView']: { paymentUrl: string; bookingId?: string };
   ['FeedbackForm']: { carId: string; bookingId?: string; bookingNumber?: string };
+  ['ReportCar']: { carId: string; carName?: string; bookingId?: string; bookingNumber?: string; licensePlate?: string };
   ['CarMapScreen']: {
     pickupLocation: string;
     pickupDate: string;

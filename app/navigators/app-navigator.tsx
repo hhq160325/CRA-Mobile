@@ -39,6 +39,7 @@ import PaymentHistoryScreen from "../screens/payments/payment-history.screen"
 import MessagesScreen from "../screens/messages/messages.screen"
 import ChatHeadsScreen from "../screens/chat/chat-heads.screen"
 import ChatScreen from "../screens/chat/chat.screen"
+import ReportCarScreen from "../screens/bookings/report-car.screen"
 
 type NavigationProps = Partial<React.ComponentProps<typeof NavigationContainer>>
 
@@ -366,6 +367,13 @@ const AppStack = () => {
       <Stack.Screen
         name="Chat"
         component={ChatScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="ReportCar"
+        component={ReportCarScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

@@ -10,7 +10,6 @@ export const useProfileActions = (
   setUserData: (data: any) => void,
   setFieldValues: (fn: (prev: any) => any) => void,
   setLicenseImage: (uri: string) => void,
-  setLicenseImages: (urls: string[]) => void,
   refreshUser: () => void,
   buildSafeUpdateData: (latestData: any, overrides?: any) => any,
 ) => {
@@ -86,7 +85,6 @@ export const useProfileActions = (
         });
 
 
-        setLicenseImages(data.urls);
         setLicenseImage(data.urls[0]);
 
 
@@ -108,7 +106,6 @@ export const useProfileActions = (
             licenseData.urls &&
             licenseData.urls.length > 0
           ) {
-            setLicenseImages(licenseData.urls);
             setLicenseImage(licenseData.urls[0]);
           } else {
             setLicenseImage(uri);

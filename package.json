@@ -19,7 +19,8 @@
     "cleanup-old-google-auth": "node scripts/cleanup-old-google-auth.js",
     "verify-pure-native": "node scripts/verify-pure-native.js",
     "production-verify": "node scripts/production-verify.js",
-    "test-ocr": "node scripts/test-ocr-integration.js"
+    "test-ocr": "node scripts/test-ocr-integration.js",
+    "test-linking": "node scripts/test-linking-compatibility.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",

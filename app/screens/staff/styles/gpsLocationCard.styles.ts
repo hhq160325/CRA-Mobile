@@ -127,7 +127,7 @@ export const gpsLocationCardStyles = StyleSheet.create({
     },
     footer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: scale(20),
         paddingVertical: verticalScale(16),
@@ -156,15 +156,20 @@ export const gpsLocationCardStyles = StyleSheet.create({
         color: colors.primary,
         fontWeight: '600',
     },
-    closeFooterButton: {
-        paddingHorizontal: scale(20),
+    mapButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: scale(6),
+        paddingHorizontal: scale(16),
         paddingVertical: verticalScale(10),
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#f0f9ff',
         borderRadius: scale(8),
+        borderWidth: 1,
+        borderColor: colors.primary,
     },
-    closeFooterText: {
+    mapText: {
         fontSize: scale(14),
-        color: '#374151',
+        color: colors.primary,
         fontWeight: '600',
     },
 });

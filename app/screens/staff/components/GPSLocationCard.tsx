@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Modal, Linking, Alert } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../theme/colors';
 import { useUserLocation } from '../../../../lib/hooks/useUserLocation';
@@ -102,6 +102,58 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
             console.error('🔄 GPSLocationCard: Retry error:', error);
         } finally {
             setRefreshing(false);
+        }
+    };
+
+    const handleOpenMap = async () => {
+        if (!location) {
+            console.log('📍 GPSLocationCard: No location data for map');
+            Alert.alert('Error', 'No location data available to show on map');
+            return;
+        }
+
+        console.log('🗺️ GPSLocationCard: Opening map for location:', location.latitude, location.longitude);
+
+        // Create map URL with the customer's location
+        const mapUrl = `https://www.google.com/maps?q=${location.latitude},${location.longitude}&z=15`;
+        console.log('🗺️ Map URL:', mapUrl);
+
+        try {
+            console.log('🗺️ Attempting to open URL with Linking...');
+
+            // Check if we can open URLs
+            const canOpen = await Linking.canOpenURL(mapUrl);
+            console.log('🗺️ Can open URL:', canOpen);
+
+            if (canOpen) {
+                console.log('🗺️ Opening URL now...');
+                await Linking.openURL(mapUrl);
+                console.log('🗺️ URL opened successfully');
+            } else {
+                console.log('🗺️ Cannot open URL, trying alternative...');
+                // Try a simpler Google Maps URL
+                const simpleUrl = `https://maps.google.com/?q=${location.latitude},${location.longitude}`;
+                console.log('🗺️ Trying simple URL:', simpleUrl);
+                await Linking.openURL(simpleUrl);
+                console.log('🗺️ Simple URL opened successfully');
+            }
+        } catch (error) {
+            console.error('🗺️ Error opening map:', error);
+            console.error('🗺️ Error details:', JSON.stringify(error, null, 2));
+
+            Alert.alert(
+                'Map Error',
+                `Unable to open map application.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nURL: ${mapUrl}`,
+                [
+                    {
+                        text: 'Copy URL', onPress: () => {
+                            // In a real app, you might want to copy to clipboard
+                            console.log('🗺️ URL to copy:', mapUrl);
+                        }
+                    },
+                    { text: 'OK' }
+                ]
+            );
         }
     };
 
@@ -233,9 +285,17 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
                                 {refreshing ? 'Loading...' : 'Refresh'}
                             </Text>
                         </Pressable>
-                        <Pressable onPress={onClose} style={gpsLocationCardStyles.closeFooterButton}>
-                            <Text style={gpsLocationCardStyles.closeFooterText}>Close</Text>
-                        </Pressable>
+
+                        {/* Open Map Button */}
+                        {location && (
+                            <Pressable
+                                onPress={handleOpenMap}
+                                style={gpsLocationCardStyles.mapButton}
+                            >
+                                <MaterialIcons name="map" size={16} color={colors.primary} />
+                                <Text style={gpsLocationCardStyles.mapText}>Open Map</Text>
+                            </Pressable>
+                        )}
                     </View>
                 </View>
             </View>

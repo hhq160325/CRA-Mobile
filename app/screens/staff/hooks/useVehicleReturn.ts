@@ -7,6 +7,7 @@ import { scheduleService } from '../../../../lib/api/services/schedule.service';
 
 interface BookingDetails {
   id: string;
+  userId: string; // Add userId field for customer ID
   carName: string;
   carModel: string;
   carLicensePlate: string;
@@ -62,6 +63,11 @@ export function useVehicleReturn(bookingId: string) {
         }
 
         const bookingData = bookingResult.data;
+
+        // Debug logging for userId
+        console.log('🔍 useVehicleReturn: Raw booking data:', bookingData);
+        console.log('🔍 useVehicleReturn: Customer userId:', bookingData.userId);
+        console.log('🔍 useVehicleReturn: Expected GPS userId: 019a9f03-d063-79a6-937c-0611d4f49f12');
 
         let carName = 'Unknown Car';
         let carModel = '';
@@ -140,6 +146,7 @@ export function useVehicleReturn(bookingId: string) {
 
         setBooking({
           id: bookingData.id,
+          userId: bookingData.userId, // Include customer userId for GPS tracking
           carName,
           carModel,
           carLicensePlate,

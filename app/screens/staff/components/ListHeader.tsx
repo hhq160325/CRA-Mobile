@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TextInput, Pressable, Text } from 'react-native';
+import { colors } from '../../../theme/colors';
 import { styles } from '../styles/staffScreen.styles';
 
 type PaymentStatus = 'all' | 'successfully' | 'pending' | 'cancelled';
@@ -17,6 +18,7 @@ export const ListHeader: React.FC<ListHeaderProps> = ({
     statusFilter,
     onStatusChange,
 }) => {
+
     const statusOptions: PaymentStatus[] = [
         'all',
         'successfully',

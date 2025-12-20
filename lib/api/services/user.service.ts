@@ -33,9 +33,20 @@ interface UserData {
 
 interface DriverLicenseUploadResponse {
     userId: string
+    side: number
+    licenseNumber: string
+    licenseName: string
+    licenseDoB: string
+    licenseClass: string
+    licenseIssue: string
+    licenseExpiry: string
     urls: string[]
     createDate: string
     status: string
+}
+
+interface DriverLicenseViewResponse {
+    view: DriverLicenseUploadResponse[]
 }
 
 export const userService = {
@@ -210,7 +221,91 @@ export const userService = {
     },
 
     async uploadDriverLicense(userId: string, imageUri: string): Promise<{ data: DriverLicenseUploadResponse | null; error: Error | null }> {
-        return this.uploadDriverLicenseMultiple(userId, [imageUri]);
+        return this.uploadDriverLicenseWithAutoScan(userId, imageUri);
+    },
+
+    async uploadDriverLicenseWithAutoScan(userId: string, imageUri: string): Promise<{ data: DriverLicenseUploadResponse | null; error: Error | null }> {
+        console.log("userService.uploadDriverLicenseWithAutoScan: uploading driver license with auto-scan for user", userId)
+
+        try {
+            let token: string | null = null
+            try {
+                token = await AsyncStorage.getItem("token")
+            } catch (e) {
+                console.error("Failed to get token from AsyncStorage:", e)
+            }
+
+            const formData = new FormData()
+
+            // Prepare the image file
+            const originalFilename = imageUri.split('/').pop() || 'license.jpg'
+            const match = /\.(\w+)$/.exec(originalFilename)
+            const extension = match ? match[1] : 'jpg'
+            const timestamp = Date.now()
+            const filename = `license_${userId}_${timestamp}.${extension}`
+            const type = `image/${extension}`
+
+            // Add the front driver license image
+            formData.append('frontDriverLicenseimg', {
+                uri: imageUri,
+                name: filename,
+                type: type,
+            } as any)
+
+            // Add userId
+            formData.append('userId', userId)
+
+            const url = API_ENDPOINTS.UPLOAD_DRIVER_LICENSE_AUTO_SCAN
+            const baseUrl = API_CONFIG.BASE_URL
+
+            console.log("userService.uploadDriverLicenseWithAutoScan: uploading to", `${baseUrl}${url}`)
+
+            const response = await fetch(`${baseUrl}${url}`, {
+                method: "POST",
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'accept': '*/*',
+                },
+                body: formData,
+            })
+
+            console.log("userService.uploadDriverLicenseWithAutoScan: response status", response.status)
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("userService.uploadDriverLicenseWithAutoScan: error response", errorText)
+
+                // Handle specific error cases
+                if (response.status === 500 && errorText.includes("already exists")) {
+                    return { data: null, error: new Error("Driver license already exists. Please try again or contact support.") }
+                }
+
+                return { data: null, error: new Error(`Upload failed: ${response.status} - ${errorText}`) }
+            }
+
+            const data = await response.json() as DriverLicenseUploadResponse
+
+            console.log("userService.uploadDriverLicenseWithAutoScan: success", {
+                userId: data.userId,
+                licenseNumber: data.licenseNumber,
+                licenseName: data.licenseName,
+                licenseClass: data.licenseClass,
+                status: data.status,
+                urlCount: data.urls?.length || 0,
+                createDate: data.createDate
+            })
+
+            // Validate response structure
+            if (!data.urls || data.urls.length === 0) {
+                console.warn("userService.uploadDriverLicenseWithAutoScan: response missing URLs")
+                return { data: null, error: new Error("Invalid response: missing license URLs") }
+            }
+
+            return { data, error: null }
+        } catch (error) {
+            console.error("userService.uploadDriverLicenseWithAutoScan: caught error", error)
+            return { data: null, error: error as Error }
+        }
     },
 
     async uploadDriverLicenseMultiple(userId: string, imageUris: string[]): Promise<{ data: DriverLicenseUploadResponse | null; error: Error | null }> {
@@ -291,17 +386,17 @@ export const userService = {
         }
     },
 
-    async getDriverLicense(userId: string, email: string): Promise<{ data: { urls: string[] } | null; error: Error | null }> {
+    async getDriverLicense(userId: string, email: string): Promise<{ data: { urls: string[]; licenseInfo?: DriverLicenseUploadResponse } | null; error: Error | null }> {
         console.log("userService.getDriverLicense: fetching driver license for user", userId)
 
-        const result = await apiClient<{ urls: string[]; view: any[] }>(API_ENDPOINTS.GET_DRIVER_LICENSE(userId, email), {
+        const result = await apiClient<DriverLicenseViewResponse>(API_ENDPOINTS.GET_DRIVER_LICENSE(userId, email), {
             method: "GET",
         })
 
         console.log("userService.getDriverLicense: received response", {
             hasError: !!result.error,
             hasData: !!result.data,
-            urlCount: result.data?.urls?.length || 0,
+            viewCount: result.data?.view?.length || 0,
             rawData: result.data
         })
 
@@ -310,14 +405,34 @@ export const userService = {
             return { data: null, error: result.error }
         }
 
-        // Log the actual URLs for debugging
-        if (result.data?.urls) {
-            console.log("userService.getDriverLicense: URLs found:", result.data.urls)
-        } else {
-            console.log("userService.getDriverLicense: No URLs in response, full response:", JSON.stringify(result.data, null, 2))
+        if (!result.data || !result.data.view || result.data.view.length === 0) {
+            console.log("userService.getDriverLicense: No license data found")
+            return { data: { urls: [] }, error: null }
         }
 
-        return { data: result.data, error: null }
+        // Get the most recent license (first in array)
+        const latestLicense = result.data.view[0]
+
+        console.log("userService.getDriverLicense: License info found", {
+            licenseNumber: latestLicense.licenseNumber,
+            licenseName: latestLicense.licenseName,
+            licenseClass: latestLicense.licenseClass,
+            status: latestLicense.status,
+            urlCount: latestLicense.urls?.length || 0
+        })
+
+        // Log the actual URLs for debugging
+        if (latestLicense.urls) {
+            console.log("userService.getDriverLicense: URLs found:", latestLicense.urls)
+        }
+
+        return {
+            data: {
+                urls: latestLicense.urls || [],
+                licenseInfo: latestLicense
+            },
+            error: null
+        }
     },
 
     async changePassword(email: string, password: string, confirmPassword: string): Promise<{ data: any | null; error: Error | null }> {
@@ -443,4 +558,4 @@ export const userService = {
     },
 }
 
-export type { UserData, DriverLicenseUploadResponse }
+export type { UserData, DriverLicenseUploadResponse, DriverLicenseViewResponse }

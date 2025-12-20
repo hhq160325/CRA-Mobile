@@ -133,7 +133,7 @@ export default function CarRentalPolicies({
                                     Overtime fee
                                 </Text>
                                 <Text style={{ fontSize: scale(13), fontWeight: '700', color: '#F44336' }}>
-                                    70.000 VND/hour
+                                    500.000 VND/hour
                                 </Text>
                             </View>
                             <Text style={{ fontSize: scale(11), color: colors.placeholder, lineHeight: scale(16) }}>

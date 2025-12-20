@@ -6,12 +6,11 @@ import type { NavigatorParamList } from "../../navigators/navigation-route"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import { useAuth } from "../../../lib/auth-context"
-import { useLanguage } from "../../../lib/language-context"
 import { useFavorites } from "../../../lib/favorites-context"
 
 import Noti from "../Noti/Noti"
 import MenuModal from "./components/MenuModal"
-import LanguageModal from "./components/LanguageModal"
+
 
 import { useHeaderAvatar } from "./hooks/useHeaderAvatar"
 import { useHeaderNotifications } from "./hooks/useHeaderNotifications"
@@ -19,13 +18,11 @@ import { useHeaderNavigation } from "./hooks/useHeaderNavigation"
 
 export default function Header() {
     const { user } = useAuth()
-    const { language, setLanguage, version } = useLanguage()
     const { favorites } = useFavorites()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
 
 
     const [menuVisible, setMenuVisible] = useState(false)
-    const [languageModalVisible, setLanguageModalVisible] = useState(false)
     const [notificationModalVisible, setNotificationModalVisible] = useState(false)
 
 
@@ -35,9 +32,7 @@ export default function Header() {
     const { handleLogout, handleMenuNavigation } = useHeaderNavigation()
 
 
-    useEffect(() => {
-        console.log("Header: Language changed to:", language, "version:", version)
-    }, [language, version])
+
 
 
     useFocusEffect(
@@ -60,10 +55,7 @@ export default function Header() {
         handleLogout()
     }
 
-    const handleOpenLanguageModal = () => {
-        setMenuVisible(false)
-        setLanguageModalVisible(true)
-    }
+
 
     const handleNotificationClickWrapper = (notification: any) => {
         setNotificationModalVisible(false)
@@ -107,22 +99,14 @@ export default function Header() {
                 onClose={() => setMenuVisible(false)}
                 onNavigate={handleMenuNavigationWrapper}
                 onLogout={handleLogoutWrapper}
-                onOpenLanguageModal={handleOpenLanguageModal}
                 onOpenNotifications={handleOpenNotifications}
                 onOpenFavorites={handleOpenFavorites}
                 isStaff={isStaff}
-                language={language}
                 notificationCount={notifications.filter((n) => !n.isRead).length}
                 favoritesCount={favorites.length}
             />
 
-            {/* Language Selection Modal */}
-            <LanguageModal
-                visible={languageModalVisible}
-                onClose={() => setLanguageModalVisible(false)}
-                currentLanguage={language}
-                onSelectLanguage={setLanguage}
-            />
+
 
             {/* Notifications Modal */}
             <Noti

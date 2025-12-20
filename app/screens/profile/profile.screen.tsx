@@ -38,6 +38,7 @@ export default function ProfileScreen() {
   } = useProfileData(user?.id);
   const [licenseStatus, setLicenseStatus] = useState<string | null>(null);
   const [licenseCreateDate, setLicenseCreateDate] = useState<string | null>(null);
+  const [licenseInfo, setLicenseInfo] = useState<any>(null);
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
@@ -90,8 +91,23 @@ export default function ProfileScreen() {
       if (data && data.urls && data.urls.length > 0) {
         // Use the first (most recent) image for simplified single photo upload
         setLicenseImage(data.urls[0]);
+
+        // Store the extracted license information
+        if (data.licenseInfo) {
+          setLicenseInfo(data.licenseInfo);
+          setLicenseStatus(data.licenseInfo.status);
+          setLicenseCreateDate(data.licenseInfo.createDate);
+
+          console.log('License info extracted:', {
+            number: data.licenseInfo.licenseNumber,
+            name: data.licenseInfo.licenseName,
+            class: data.licenseInfo.licenseClass,
+            status: data.licenseInfo.status
+          });
+        }
       } else {
         setLicenseImage(null);
+        setLicenseInfo(null);
       }
     } catch (err) {
       console.error('Exception fetching driver license:', err);
@@ -239,15 +255,7 @@ export default function ProfileScreen() {
       setShowOCRModal(false);
 
       // Upload the image first
-      await uploadSingleLicenseImage(pendingImageUri);
-
-      // Show extracted information to user
-      const formatted = ocrService.formatOCRResult(ocrResult);
-      Alert.alert(
-        'License Information Extracted',
-        `License ID: ${formatted.licenseId}\nName: ${formatted.fullName}\nClass: ${formatted.licenseClass}\nDOB: ${formatted.dateOfBirth}`,
-        [{ text: 'OK' }]
-      );
+      const uploadResult = await uploadSingleLicenseImage(pendingImageUri);
 
       // Clear OCR state
       setPendingImageUri(null);
@@ -282,24 +290,24 @@ export default function ProfileScreen() {
       // Update local state immediately for better UX
       setLicenseImage(uri);
 
-      // Upload to server
-      await profileActions.uploadDriverLicense(uri);
+      // Upload to server with auto-scan
+      const result = await profileActions.uploadDriverLicense(uri);
 
-      // Update license status
-      await fetchDriverLicenseStatus();
+      Alert.alert('Success', 'License photo uploaded and processed successfully');
 
-      Alert.alert('Success', 'License photo uploaded successfully');
-
-      // Refresh license data after upload
+      // Refresh license data after upload to get the extracted information
       setTimeout(() => {
         fetchDriverLicense();
-      }, 2000);
+      }, 1000);
+
+      return result;
 
     } catch (error) {
       console.error('Error uploading license image:', error);
       Alert.alert('Error', 'Failed to upload image. Please try again.');
       // Revert local state on error
       await fetchDriverLicense();
+      throw error;
     }
   };
 
@@ -486,6 +494,7 @@ export default function ProfileScreen() {
           licenseImage={licenseImage}
           licenseStatus={licenseStatus}
           licenseCreateDate={licenseCreateDate}
+          licenseInfo={licenseInfo}
           onUploadLicense={handleUploadLicense}
         />
 

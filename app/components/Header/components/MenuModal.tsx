@@ -3,18 +3,15 @@ import { View, Text, Pressable, Modal, StyleSheet } from "react-native"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import { colors } from "../../../theme/colors"
 import { scale } from "../../../theme/scale"
-import { useLanguage } from "../../../../lib/language-context"
 
 interface MenuModalProps {
     visible: boolean
     onClose: () => void
     onNavigate: (screen: string) => void
     onLogout: () => void
-    onOpenLanguageModal: () => void
     onOpenNotifications: () => void
     onOpenFavorites: () => void
     isStaff: boolean
-    language: string
     notificationCount: number
     favoritesCount: number
 }
@@ -24,15 +21,12 @@ export default function MenuModal({
     onClose,
     onNavigate,
     onLogout,
-    onOpenLanguageModal,
     onOpenNotifications,
     onOpenFavorites,
     isStaff,
-    language,
     notificationCount,
     favoritesCount,
 }: MenuModalProps) {
-    const { t } = useLanguage()
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -40,7 +34,7 @@ export default function MenuModal({
                 <View style={styles.menuContainer}>
                     <Pressable onPress={() => onNavigate("Home")} style={styles.menuItem}>
                         <MaterialIcons name="home" size={scale(20)} color={colors.primary} />
-                        <Text style={styles.menuText}>{t("home")}</Text>
+                        <Text style={styles.menuText}>Home</Text>
                     </Pressable>
 
                     <Pressable onPress={onOpenNotifications} style={styles.menuItem}>
@@ -52,7 +46,7 @@ export default function MenuModal({
                                 </View>
                             )}
                         </View>
-                        <Text style={styles.menuText}>{t("notifications")}</Text>
+                        <Text style={styles.menuText}>Notifications</Text>
                     </Pressable>
 
                     {!isStaff && (
@@ -65,46 +59,34 @@ export default function MenuModal({
                                     </View>
                                 )}
                             </View>
-                            <Text style={styles.menuText}>{t("favorites") || "Favorites"}</Text>
+                            <Text style={styles.menuText}>Favorites</Text>
                         </Pressable>
                     )}
 
                     <Pressable onPress={() => onNavigate("Profile")} style={styles.menuItem}>
                         <MaterialIcons name="person" size={scale(20)} color={colors.primary} />
-                        <Text style={styles.menuText}>{t("profile")}</Text>
+                        <Text style={styles.menuText}>Profile</Text>
                     </Pressable>
 
                     {!isStaff && (
                         <>
                             <Pressable onPress={() => onNavigate("Bookings")} style={styles.menuItem}>
                                 <MaterialIcons name="event-note" size={scale(20)} color={colors.primary} />
-                                <Text style={styles.menuText}>{t("bookings")}</Text>
+                                <Text style={styles.menuText}>Bookings</Text>
                             </Pressable>
 
                             <Pressable onPress={() => onNavigate("PaymentHistory")} style={styles.menuItem}>
                                 <MaterialIcons name="payment" size={scale(20)} color={colors.primary} />
-                                <Text style={styles.menuText}>
-                                    {language === 'vi' ? 'Lịch sử thanh toán' : 'Payment History'}
-                                </Text>
+                                <Text style={styles.menuText}>Payment History</Text>
                             </Pressable>
                         </>
                     )}
 
                     <View style={styles.divider} />
 
-                    <Pressable onPress={onOpenLanguageModal} style={styles.menuItem}>
-                        <MaterialIcons name="language" size={scale(20)} color={colors.primary} />
-                        <Text style={styles.menuText}>{t("language")}</Text>
-                        <Text style={styles.languageCode}>
-                            ({language === "en" ? "EN" : "VI"})
-                        </Text>
-                    </Pressable>
-
-                    <View style={styles.divider} />
-
                     <Pressable onPress={onLogout} style={styles.menuItem}>
                         <MaterialIcons name="logout" size={scale(20)} color="#EF4444" />
-                        <Text style={styles.logoutText}>{t("logout")}</Text>
+                        <Text style={styles.logoutText}>Logout</Text>
                     </Pressable>
                 </View>
             </Pressable>
@@ -174,11 +156,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.border,
         marginVertical: scale(4),
     },
-    languageCode: {
-        marginLeft: scale(8),
-        fontSize: scale(12),
-        color: colors.placeholder,
-    },
+
     logoutText: {
         marginLeft: scale(12),
         fontSize: scale(14),

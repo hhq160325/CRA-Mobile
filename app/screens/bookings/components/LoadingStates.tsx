@@ -27,7 +27,7 @@ export default function LoadingStates({ carLoading, car, t }: LoadingStatesProps
             <View style={styles.container}>
                 <Header />
                 <View style={styles.loadingContainer}>
-                    <Text>{t('carNotFound')}</Text>
+                    <Text>Car not found</Text>
                 </View>
             </View>
         );

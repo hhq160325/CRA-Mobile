@@ -35,15 +35,15 @@ export default function PickupSection({
 }: PickupSectionProps) {
     return (
         <View>
-            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 {t("pickUp")}</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 Pick Up</Text>
 
-            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{t("locations")}</Text>
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Location</Text>
 
             <LocationModeSelector
                 mode={pickupMode}
                 onModeChange={onPickupModeChange}
-                parkLotLabel={t("parkLot")}
-                customLabel={t("customAddress")}
+                parkLotLabel="Park Lot"
+                customLabel="Custom Address"
             />
 
             {pickupMode === "parklot" ? (
@@ -60,7 +60,7 @@ export default function PickupSection({
                     }}
                 >
                     <Text style={{ fontSize: 12, color: pickupLocation ? colors.primary : colors.placeholder }}>
-                        {pickupLocation || t("selectParkLot")}
+                        {pickupLocation || "Select Park Lot"}
                     </Text>
                 </Pressable>
             ) : (
@@ -83,7 +83,7 @@ export default function PickupSection({
             )}
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>
-                {t("dateAndTime") || "Date & Time"}
+                Date & Time
             </Text>
             <Pressable
                 onPress={onShowDateTimePicker}

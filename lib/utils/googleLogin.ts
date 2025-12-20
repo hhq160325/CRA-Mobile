@@ -1,45 +1,13 @@
-import * as Google from 'expo-auth-session/providers/google'
-import * as WebBrowser from 'expo-web-browser'
-import { makeRedirectUri } from 'expo-auth-session'
 import { API_CONFIG, API_ENDPOINTS } from "../api/config"
 
-
-WebBrowser.maybeCompleteAuthSession()
-
-
-export const GOOGLE_CONFIG = {
-
-    webClientId: "719448402378-b4i5ft9gde5dfg76p8ag9kku3nqva0gl.apps.googleusercontent.com",
-
-    androidClientId: "719448402378-0esjktkgmtsopssgqkjpmssh64vnah8g.apps.googleusercontent.com",
-
-    iosClientId: "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
-}
-
-
-export const getRedirectUri = () => {
-    return makeRedirectUri({
-        scheme: 'carapp',
-        path: 'auth/callback',
-    })
-}
-
-
-console.log("Google OAuth Redirect URI:", getRedirectUri())
-
-
+// Placeholder for native Google login - expo-auth-session removed
 export function useGoogleAuth() {
-    const redirectUri = getRedirectUri()
-
-    const [request, response, promptAsync] = Google.useAuthRequest({
-        webClientId: GOOGLE_CONFIG.webClientId,
-        androidClientId: GOOGLE_CONFIG.androidClientId,
-        iosClientId: GOOGLE_CONFIG.iosClientId,
-        scopes: ['profile', 'email'],
-        redirectUri,
-    })
-
-    return { request, response, promptAsync, redirectUri }
+    return {
+        request: null,
+        response: null,
+        promptAsync: async () => ({ type: 'cancel' }),
+        redirectUri: ''
+    }
 }
 
 

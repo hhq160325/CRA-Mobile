@@ -23,8 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const {
     loginWithGoogle: googleLogin,
-    isReady: isGoogleReady,
-    error: googleError
+    isReady: isGoogleReady
   } = useGoogleLogin()
 
   useEffect(() => {

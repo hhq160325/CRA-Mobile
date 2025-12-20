@@ -3,7 +3,6 @@ import { View, Text, Pressable, Modal, ScrollView, ActivityIndicator } from "rea
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
-import { useLanguage } from "../../../lib/language-context"
 import type { Notification } from "../../../lib/api/services/notification.service"
 
 interface NotiProps {
@@ -21,7 +20,6 @@ export default function Noti({
     loading,
     onNotificationClick,
 }: NotiProps) {
-    const { t } = useLanguage()
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -61,7 +59,7 @@ export default function Noti({
                         }}
                     >
                         <Text style={{ fontSize: scale(18), fontWeight: "700", color: colors.primary }}>
-                            {t("notifications")}
+                            Notifications
                         </Text>
                         <Pressable onPress={onClose}>
                             <MaterialIcons name="close" size={scale(24)} color={colors.placeholder} />
@@ -84,7 +82,7 @@ export default function Noti({
                                     textAlign: "center",
                                 }}
                             >
-                                {t("noNotifications")}
+                                No notifications
                             </Text>
                         </View>
                     ) : (

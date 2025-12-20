@@ -23,7 +23,6 @@ import LoadingStates from './components/LoadingStates';
 import { useBookingForm } from './hooks/useBookingForm';
 import { useBookingValidation } from './hooks/useBookingValidation';
 import { useBookingFormEffects } from './hooks/useBookingFormEffects';
-import { useLanguage } from '../../../lib/language-context';
 import { styles } from './styles/bookingForm.styles';
 import { useBookingCalculations } from './helpers/bookingCalculations';
 import { getCarImageSource } from './helpers/carImageHelper';
@@ -31,7 +30,6 @@ import { useStepNavigation } from './helpers/stepNavigation';
 
 export default function BookingFormScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-  const { t } = useLanguage();
   const carId = route?.params?.id;
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -117,7 +115,7 @@ export default function BookingFormScreen({ route }: any) {
 
           <View style={styles.stepIndicator}>
             <Text style={styles.stepText}>
-              {t('step')} {currentStep} {t('of')} 4
+              Step {currentStep} of 4
             </Text>
           </View>
 
@@ -132,7 +130,7 @@ export default function BookingFormScreen({ route }: any) {
                 onPress={() => setCurrentStep(currentStep - 1)}
                 style={styles.backButton}>
                 <Text style={styles.backButtonText}>
-                  {t('back')}
+                  Back
                 </Text>
               </Pressable>
             )}
@@ -144,7 +142,7 @@ export default function BookingFormScreen({ route }: any) {
                 <ActivityIndicator color={colors.white} />
               ) : (
                 <Text style={styles.nextButtonText}>
-                  {currentStep === 4 ? t('rentalNow') : t('next')}
+                  {currentStep === 4 ? 'Rent Now' : 'Next'}
                 </Text>
               )}
             </Pressable>

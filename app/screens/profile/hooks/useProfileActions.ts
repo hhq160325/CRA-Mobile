@@ -80,19 +80,32 @@ export const useProfileActions = (
       if (data && data.urls && data.urls.length > 0) {
         console.log('Driver license uploaded successfully:', {
           urlCount: data.urls.length,
+          licenseNumber: data.licenseNumber,
+          licenseName: data.licenseName,
+          licenseClass: data.licenseClass,
           status: data.status,
           createDate: data.createDate
         });
 
-
         setLicenseImage(data.urls[0]);
 
+        // Show extracted license information to user
+        const extractedInfo = [
+          data.licenseNumber && `License Number: ${data.licenseNumber}`,
+          data.licenseName && `Name: ${data.licenseName}`,
+          data.licenseClass && `Class: ${data.licenseClass}`,
+          data.status && `Status: ${data.status}`
+        ].filter(Boolean).join('\n');
 
-        const statusMessage = data.status === 'Pending'
-          ? "Driver's license uploaded successfully! It's currently pending review."
-          : "Driver's license uploaded successfully!";
+        const statusMessage = data.status === 'AutoApproved'
+          ? `Driver's license uploaded and auto-approved successfully!\n\nExtracted Information:\n${extractedInfo}`
+          : data.status === 'Pending'
+            ? `Driver's license uploaded successfully! It's currently pending review.\n\nExtracted Information:\n${extractedInfo}`
+            : `Driver's license uploaded successfully!\n\nExtracted Information:\n${extractedInfo}`;
 
         Alert.alert('Success', statusMessage);
+
+        return data;
       } else {
         console.warn('Driver license upload succeeded but response missing URLs');
 

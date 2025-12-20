@@ -9,6 +9,7 @@ export default function DriverLicenseSection({
     licenseImage,
     licenseStatus,
     licenseCreateDate,
+    licenseInfo,
     onUploadLicense,
 }: DriverLicenseSectionProps) {
     const [showImageModal, setShowImageModal] = useState(false);
@@ -56,7 +57,7 @@ export default function DriverLicenseSection({
                         color: colors.primary,
                         flex: 1,
                     }}>
-                        Not provided
+                        {licenseInfo?.licenseNumber || 'Not provided'}
                     </Text>
                 </View>
             </View>
@@ -145,7 +146,7 @@ export default function DriverLicenseSection({
                         width: scale(8),
                         height: scale(8),
                         borderRadius: scale(4),
-                        backgroundColor: licenseStatus === 'Approved' ? colors.green :
+                        backgroundColor: licenseStatus === 'AutoApproved' || licenseStatus === 'Approved' ? colors.green :
                             licenseStatus === 'Active' ? colors.morentBlue :
                                 licenseStatus === 'Rejected' ? colors.red :
                                     '#F59E0B', // Orange for pending/unknown
@@ -158,6 +159,130 @@ export default function DriverLicenseSection({
                     {licenseStatus || 'Not submitted'}
                 </Text>
             </View>
+
+            {/* License Holder Name Field */}
+            {licenseInfo?.licenseName && (
+                <View style={{ marginBottom: verticalScale(16) }}>
+                    <View style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: verticalScale(4),
+                    }}>
+                        <Text style={{
+                            fontSize: scale(12),
+                            color: colors.placeholder,
+                        }}>
+                            License Holder Name
+                        </Text>
+                        <View style={{
+                            width: scale(8),
+                            height: scale(8),
+                            borderRadius: scale(4),
+                            backgroundColor: colors.green,
+                        }} />
+                    </View>
+                    <Text style={{
+                        fontSize: scale(14),
+                        color: colors.primary,
+                    }}>
+                        {licenseInfo.licenseName}
+                    </Text>
+                </View>
+            )}
+
+            {/* License Class Field */}
+            {licenseInfo?.licenseClass && (
+                <View style={{ marginBottom: verticalScale(16) }}>
+                    <View style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: verticalScale(4),
+                    }}>
+                        <Text style={{
+                            fontSize: scale(12),
+                            color: colors.placeholder,
+                        }}>
+                            License Class
+                        </Text>
+                        <View style={{
+                            width: scale(8),
+                            height: scale(8),
+                            borderRadius: scale(4),
+                            backgroundColor: colors.green,
+                        }} />
+                    </View>
+                    <Text style={{
+                        fontSize: scale(14),
+                        color: colors.primary,
+                    }}>
+                        {licenseInfo.licenseClass}
+                    </Text>
+                </View>
+            )}
+
+            {/* Date of Birth Field */}
+            {licenseInfo?.licenseDoB && (
+                <View style={{ marginBottom: verticalScale(16) }}>
+                    <View style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: verticalScale(4),
+                    }}>
+                        <Text style={{
+                            fontSize: scale(12),
+                            color: colors.placeholder,
+                        }}>
+                            Date of Birth
+                        </Text>
+                        <View style={{
+                            width: scale(8),
+                            height: scale(8),
+                            borderRadius: scale(4),
+                            backgroundColor: colors.green,
+                        }} />
+                    </View>
+                    <Text style={{
+                        fontSize: scale(14),
+                        color: colors.primary,
+                    }}>
+                        {new Date(licenseInfo.licenseDoB).toLocaleDateString()}
+                    </Text>
+                </View>
+            )}
+
+            {/* Issue Date Field */}
+            {licenseInfo?.licenseIssue && (
+                <View style={{ marginBottom: verticalScale(16) }}>
+                    <View style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: verticalScale(4),
+                    }}>
+                        <Text style={{
+                            fontSize: scale(12),
+                            color: colors.placeholder,
+                        }}>
+                            Issue Date
+                        </Text>
+                        <View style={{
+                            width: scale(8),
+                            height: scale(8),
+                            borderRadius: scale(4),
+                            backgroundColor: colors.green,
+                        }} />
+                    </View>
+                    <Text style={{
+                        fontSize: scale(14),
+                        color: colors.primary,
+                    }}>
+                        {new Date(licenseInfo.licenseIssue).toLocaleDateString()}
+                    </Text>
+                </View>
+            )}
 
             {/* License Expiry Field */}
             <View>
@@ -184,7 +309,7 @@ export default function DriverLicenseSection({
                     fontSize: scale(14),
                     color: colors.primary,
                 }}>
-                    Not provided
+                    {licenseInfo?.licenseExpiry ? new Date(licenseInfo.licenseExpiry).toLocaleDateString() : 'Not provided'}
                 </Text>
             </View>
 

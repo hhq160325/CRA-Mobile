@@ -160,9 +160,15 @@ export const PureNativeGoogleSignInScreen: React.FC = () => {
                         </Text>
                     </View>
                     <View style={styles.statusRow}>
+                        <Text style={styles.statusLabel}>Backend Auth:</Text>
+                        <Text style={[styles.statusValue, { color: debugInfo?.backendAuthenticated ? '#4CAF50' : '#FF9800' }]}>
+                            {debugInfo?.backendAuthenticated ? '✅ Authenticated' : '⚠️ Not Authenticated'}
+                        </Text>
+                    </View>
+                    <View style={styles.statusRow}>
                         <Text style={styles.statusLabel}>Method:</Text>
                         <Text style={[styles.statusValue, { color: '#2196F3' }]}>
-                            Pure Native Only
+                            Pure Native + Mobile API
                         </Text>
                     </View>
                     <View style={styles.statusRow}>

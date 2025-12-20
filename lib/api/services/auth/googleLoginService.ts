@@ -56,6 +56,59 @@ export const loginWithGoogle = async (
     }
 };
 
+export const loginWithGoogleMobile = async (
+    idToken: string
+): Promise<{ data: User | null; error: Error | null }> => {
+    console.log("googleLoginService.loginWithGoogleMobile: sending request with idToken");
+
+    const result = await apiClient<{
+        username: string;
+        email: string;
+        isGoogle: string;
+        roleName: string | null;
+        jwtToken: string;
+        refreshToken: string | null;
+    }>(API_ENDPOINTS.LOGIN_GOOGLE_MOBILE(idToken), {
+        method: "POST",
+        headers: {
+            'accept': '*/*',
+        },
+        body: '',
+    });
+
+    console.log("googleLoginService.loginWithGoogleMobile: received response", {
+        hasError: !!result.error,
+        hasData: !!result.data,
+        error: result.error?.message,
+    });
+
+    if (result.error) {
+        console.error("googleLoginService.loginWithGoogleMobile: error details", result.error);
+        return { data: null, error: result.error };
+    }
+
+    console.log("googleLoginService.loginWithGoogleMobile: raw API response", result.data);
+
+    try {
+        const token = result.data.jwtToken;
+        const decodedToken = decodeJWT(token);
+
+        const user = createUserFromToken(decodedToken, result.data.email);
+
+        if (!user) {
+            return { data: null, error: new Error("Failed to create user from token") };
+        }
+
+        // Save to storage with refresh token
+        saveAuthToStorage(token, user, result.data.refreshToken || undefined);
+
+        return { data: user, error: null };
+    } catch (e) {
+        console.error("googleLoginService.loginWithGoogleMobile: error processing token", e);
+        return { data: null, error: e as Error };
+    }
+};
+
 export const getGoogleLoginUrl = (): string => {
     return `${API_CONFIG.BASE_URL}${API_ENDPOINTS.LOGIN_GOOGLE}`;
 };

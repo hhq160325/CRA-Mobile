@@ -1,5 +1,6 @@
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authService } from '../../lib/api/services/auth.service';
 
 export interface PureNativeGoogleUser {
     id: string;
@@ -106,9 +107,13 @@ class PureNativeGoogleSignIn {
             const signInResult = await GoogleSignin.signIn();
             console.log('✅ Pure Native sign-in successful');
 
-            // Extract user data from sign-in result
+            // Extract user data and tokens from sign-in result
             const userData = (signInResult as any).data?.user || (signInResult as any).user;
             const serverAuthCode = (signInResult as any).data?.serverAuthCode || (signInResult as any).serverAuthCode;
+            const idToken = (signInResult as any).data?.idToken || (signInResult as any).idToken;
+
+            console.log('🔑 ID Token available:', !!idToken);
+            console.log('🔑 Server Auth Code available:', !!serverAuthCode);
 
             const user: PureNativeGoogleUser = {
                 id: userData.id,
@@ -120,18 +125,75 @@ class PureNativeGoogleSignIn {
                 serverAuthCode: serverAuthCode || undefined,
             };
 
-            // Lưu vào AsyncStorage
-            await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
-            await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
-            await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
+            // Authenticate with backend using mobile API
+            if (idToken) {
+                console.log('🚀 Authenticating with backend mobile API...');
+                try {
+                    const backendResult = await authService.loginWithGoogleMobile(idToken);
 
-            console.log('👤 User:', user.name);
-            console.log('📧 Email:', user.email);
+                    if (backendResult.data) {
+                        console.log('✅ Backend authentication successful');
+                        console.log('👤 Backend user:', backendResult.data.name);
 
-            return {
-                success: true,
-                user: user,
-            };
+                        // Backend authentication successful, user is now logged into the app
+                        await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
+                        await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
+                        await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
+                        await AsyncStorage.setItem('backendAuthenticated', 'true');
+
+                        console.log('👤 User:', user.name);
+                        console.log('📧 Email:', user.email);
+                        console.log('🔐 Backend Auth: Success');
+
+                        return {
+                            success: true,
+                            user: user,
+                        };
+                    } else {
+                        console.log('❌ Backend authentication failed:', backendResult.error?.message);
+
+                        // Still save Google user data but mark backend auth as failed
+                        await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
+                        await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
+                        await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
+                        await AsyncStorage.setItem('backendAuthenticated', 'false');
+
+                        return {
+                            success: false,
+                            error: `Google sign-in successful but backend authentication failed: ${backendResult.error?.message}`,
+                            errorCode: 'BACKEND_AUTH_FAILED'
+                        };
+                    }
+                } catch (backendError: any) {
+                    console.error('❌ Backend authentication error:', backendError);
+
+                    // Still save Google user data but mark backend auth as failed
+                    await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
+                    await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
+                    await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
+                    await AsyncStorage.setItem('backendAuthenticated', 'false');
+
+                    return {
+                        success: false,
+                        error: `Google sign-in successful but backend error: ${backendError.message}`,
+                        errorCode: 'BACKEND_ERROR'
+                    };
+                }
+            } else {
+                console.log('⚠️ No ID token available, skipping backend authentication');
+
+                // Save Google user data without backend auth
+                await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
+                await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
+                await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
+                await AsyncStorage.setItem('backendAuthenticated', 'false');
+
+                return {
+                    success: false,
+                    error: 'Google sign-in successful but no ID token for backend authentication',
+                    errorCode: 'NO_ID_TOKEN'
+                };
+            }
 
         } catch (error: any) {
             console.error('❌ Pure Native Sign-In error:', error);
@@ -177,11 +239,21 @@ class PureNativeGoogleSignIn {
             console.log('🚪 Pure Native Sign-Out...');
             await GoogleSignin.signOut();
 
+            // Clear both Google and backend auth data
             await AsyncStorage.multiRemove([
                 'pureNativeGoogleUser',
                 'isPureNativeSignedIn',
-                'pureNativeSignInTime'
+                'pureNativeSignInTime',
+                'backendAuthenticated'
             ]);
+
+            // Also clear main app auth data
+            try {
+                await authService.logout();
+                console.log('✅ Backend logout successful');
+            } catch (error) {
+                console.log('⚠️ Backend logout error (continuing):', error);
+            }
 
             console.log('✅ Pure Native Sign-Out successful');
             return true;
@@ -199,11 +271,21 @@ class PureNativeGoogleSignIn {
             console.log('🔐 Revoking Pure Native access...');
             await GoogleSignin.revokeAccess();
 
+            // Clear both Google and backend auth data
             await AsyncStorage.multiRemove([
                 'pureNativeGoogleUser',
                 'isPureNativeSignedIn',
-                'pureNativeSignInTime'
+                'pureNativeSignInTime',
+                'backendAuthenticated'
             ]);
+
+            // Also clear main app auth data
+            try {
+                await authService.logout();
+                console.log('✅ Backend logout successful');
+            } catch (error) {
+                console.log('⚠️ Backend logout error (continuing):', error);
+            }
 
             console.log('✅ Pure Native access revoked');
             return true;
@@ -285,7 +367,8 @@ class PureNativeGoogleSignIn {
             await AsyncStorage.multiRemove([
                 'pureNativeGoogleUser',
                 'isPureNativeSignedIn',
-                'pureNativeSignInTime'
+                'pureNativeSignInTime',
+                'backendAuthenticated'
             ]);
             console.log('🧹 All Pure Native data cleared');
         } catch (error) {
@@ -301,6 +384,7 @@ class PureNativeGoogleSignIn {
             const isSignedIn = await this.isSignedIn();
             const currentUser = await this.getCurrentUser();
             const signInTime = await AsyncStorage.getItem('pureNativeSignInTime');
+            const backendAuthenticated = await AsyncStorage.getItem('backendAuthenticated');
 
             return {
                 type: 'PURE Native Google Sign-In',
@@ -309,6 +393,7 @@ class PureNativeGoogleSignIn {
                 iosClientId: '🚫 NOT USED',
                 isConfigured: this.isConfigured,
                 isSignedIn,
+                backendAuthenticated: backendAuthenticated === 'true',
                 currentUser: currentUser ? {
                     name: currentUser.name,
                     email: currentUser.email,
@@ -319,6 +404,7 @@ class PureNativeGoogleSignIn {
                 sha1: 'A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF',
                 buildType: 'EAS Build APK',
                 authMethod: 'Pure Native - No Web Dependencies',
+                backendAPI: 'Mobile Google Login API',
                 timestamp: new Date().toISOString(),
             };
         } catch (error: any) {

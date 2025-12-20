@@ -12,7 +12,7 @@ export type {
 // Import service functions
 import { login } from './auth/loginService';
 import { register } from './auth/registerService';
-import { loginWithGoogle, getGoogleLoginUrl } from './auth/googleLoginService';
+import { loginWithGoogle, loginWithGoogleMobile, getGoogleLoginUrl } from './auth/googleLoginService';
 import { refreshToken as refreshTokenFn } from './auth/tokenRefreshService';
 import { forgotPassword, verifyResetCode, resetPassword, resetPasswordByPhone } from './auth/passwordResetService';
 import { verifySignupOtp } from './auth/signupOtpService';
@@ -28,6 +28,7 @@ export const authService = {
   login,
   register,
   loginWithGoogle,
+  loginWithGoogleMobile,
   getGoogleLoginUrl,
 
   // Token management

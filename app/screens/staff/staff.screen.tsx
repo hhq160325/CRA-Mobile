@@ -50,9 +50,20 @@ export default function StaffScreen() {
   };
 
   const handleNavigateToPickup = (bookingId: string) => {
-    navigation.navigate('PickupReturnConfirm' as any, {
-      bookingId: bookingId,
-    });
+    // Find the booking item to check its status
+    const bookingItem = filteredPayments.find(item => item.id === bookingId);
+
+    if (bookingItem?.hasCheckIn && !bookingItem?.hasCheckOut) {
+      // Pickup is done, go directly to return screen
+      navigation.navigate('VehicleReturn' as any, {
+        bookingId: bookingId,
+      });
+    } else {
+      // Pickup not done yet, go to pickup screen
+      navigation.navigate('PickupReturnConfirm' as any, {
+        bookingId: bookingId,
+      });
+    }
   };
 
   const renderPaymentCard = ({ item }: { item: BookingItem }) => (

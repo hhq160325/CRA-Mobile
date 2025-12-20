@@ -418,4 +418,43 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         gap: scale(8),
     },
+    // Extension Status and Details
+    extensionStatus: {
+        fontSize: scale(11),
+        fontWeight: '600',
+        color: '#92400e',
+        marginBottom: verticalScale(4),
+    },
+    extensionDetails: {
+        marginBottom: verticalScale(8),
+    },
+    extensionDays: {
+        fontSize: scale(11),
+        color: '#a16207',
+        fontWeight: '500',
+        marginTop: verticalScale(2),
+    },
+    // Extension Payment Button Styles
+    extensionPaymentButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: scale(16),
+        paddingVertical: verticalScale(8),
+        borderRadius: scale(8),
+        marginTop: verticalScale(8),
+        gap: scale(6),
+    },
+    extensionPaymentButtonActive: {
+        backgroundColor: '#f59e0b',
+    },
+    extensionPaymentButtonDisabled: {
+        backgroundColor: '#9ca3af',
+        opacity: 0.6,
+    },
+    extensionPaymentText: {
+        fontSize: scale(12),
+        fontWeight: '600',
+        color: 'white',
+    },
 });

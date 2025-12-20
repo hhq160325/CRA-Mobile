@@ -99,8 +99,41 @@ export default function BookingPaymentCard({
             {item.hasExtension && (
                 <View style={styles.extensionInfo}>
                     <View style={styles.extensionHeader}>
-                        <Text style={styles.extensionLabel}>BOOKING EXTENSION</Text>
+                        <Text style={styles.extensionLabel}>🔔 BOOKING EXTENSION</Text>
+                        <Text style={styles.extensionStatus}>Payment Required</Text>
                     </View>
+                    <View style={styles.extensionDetails}>
+                        <Text style={styles.extensionDescription}>
+                            {item.extensionDescription || 'Extension requested'}
+                        </Text>
+                        {item.extensionAmount && (
+                            <Text style={styles.extensionAmount}>
+                                Amount: {item.extensionAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
+                            </Text>
+                        )}
+                        {item.extensionDays && (
+                            <Text style={styles.extensionDays}>
+                                Extended for {item.extensionDays} day{item.extensionDays > 1 ? 's' : ''}
+                            </Text>
+                        )}
+                    </View>
+                    {onPayExtension && (
+                        <Pressable
+                            onPress={() => onPayExtension(item.id)}
+                            disabled={processingExtensionPayment === item.id}
+                            style={[
+                                styles.extensionPaymentButton,
+                                processingExtensionPayment === item.id
+                                    ? styles.extensionPaymentButtonDisabled
+                                    : styles.extensionPaymentButtonActive,
+                            ]}>
+                            {processingExtensionPayment === item.id ? (
+                                <ActivityIndicator size="small" color={colors.white} />
+                            ) : (
+                                <Text style={styles.extensionPaymentText}>Request Extension Payment</Text>
+                            )}
+                        </Pressable>
+                    )}
                 </View>
             )}
 
@@ -126,7 +159,11 @@ export default function BookingPaymentCard({
                         onPress={() => onNavigateToPickup(item.id)}
                         style={styles.confirmPickupButton}>
                         <Text style={confirmPickupTextStyle}>
-                            → Tap to confirm pickup
+                            {!item.hasCheckIn
+                                ? '→ Tap to confirm pickup'
+                                : item.hasCheckIn && !item.hasCheckOut
+                                    ? '→ Tap to confirm return'
+                                    : '→ View booking details'}
                         </Text>
                         <Text style={confirmPickupArrowStyle}>→</Text>
                     </Pressable>

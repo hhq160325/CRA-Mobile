@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
   CHANGE_PASSWORD: "/User/reset-password",
   VERIFY_PASSWORD_CHANGE: (email: string, otpCode: string) => `/User/reset-password/verify?email=${encodeURIComponent(email)}&OTPCode=${otpCode}`,
   LOGIN_GOOGLE: "/Authen/login/google",
+  LOGIN_GOOGLE_MOBILE: (token: string) => `/Authen/google-mobile/${token}`,
   REFRESH_TOKEN: "/Authen/refresh-token",
 
   // Cars

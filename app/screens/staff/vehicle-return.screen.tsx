@@ -25,6 +25,7 @@ import NotesSection from './components/NotesSection';
 import ActionButton from './components/ActionButton';
 import AdditionalPaymentSection from './components/AdditionalPaymentSection';
 import BookingExtensionSection from './components/BookingExtensionSection';
+import GPSLocationCard from './components/GPSLocationCard';
 import { vehicleReturnStyles as styles } from './styles/vehicleReturn.styles';
 import { fetchBookingExtensionInfo } from './utils/staffHelpers';
 import { bookingExtensionService } from '../../../lib/api/services/bookingExtension.service';
@@ -43,6 +44,7 @@ export default function VehicleReturnScreen() {
   console.log(' VehicleReturnScreen: bookingId from route params:', bookingId);
 
   const [submitting, setSubmitting] = useState(false);
+  const [showGPSCard, setShowGPSCard] = useState(false);
   const [extensionInfo, setExtensionInfo] = useState<{
     hasExtension: boolean;
     isPaymentCompleted: boolean;
@@ -293,6 +295,26 @@ export default function VehicleReturnScreen() {
           statusColor="#fef3c7"
         />
 
+        {/* GPS Button */}
+        <View style={styles.gpsButtonContainer}>
+          <Pressable
+            style={styles.gpsButton}
+            onPress={() => {
+              console.log('🔍 VehicleReturn: Opening GPS card for CUSTOMER');
+              console.log('🔍 VehicleReturn: Full booking object:', booking);
+              console.log('🔍 VehicleReturn: booking.userId:', booking?.userId);
+              console.log('🔍 VehicleReturn: booking.customerId:', booking?.customerId);
+              console.log('🔍 VehicleReturn: booking.customerName:', booking?.customerName);
+              console.log('🔍 VehicleReturn: All booking keys:', booking ? Object.keys(booking) : 'booking is null');
+              setShowGPSCard(true);
+            }}
+          >
+            <MaterialIcons name="location-on" size={20} color="white" />
+            <Text style={styles.gpsButtonText}>View Customer GPS</Text>
+            <MaterialIcons name="chevron-right" size={20} color="white" />
+          </Pressable>
+        </View>
+
         {/* Pickup Photos Section */}
         {pickupImages.length > 0 && (
           <ImageGallerySection
@@ -377,6 +399,18 @@ export default function VehicleReturnScreen() {
           isCompleted={isAlreadyCheckedOut}
         />
       </ScrollView>
+
+      {/* GPS Location Card Modal */}
+      <GPSLocationCard
+        userId={booking.userId}
+        visible={showGPSCard}
+        onClose={() => {
+          console.log('🔍 VehicleReturn: Closing GPS card');
+          console.log('🔍 VehicleReturn: Customer userId (correct):', booking.userId);
+          console.log('🔍 VehicleReturn: Staff userId (wrong for GPS):', user?.id);
+          setShowGPSCard(false);
+        }}
+      />
     </View>
   );
 }

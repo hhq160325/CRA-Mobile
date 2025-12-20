@@ -4,6 +4,7 @@ import * as Updates from 'expo-updates';
 import { AppNavigator } from './app/navigators/app-navigator';
 import { AuthProvider } from './lib/auth-context';
 import { FavoritesProvider } from './lib/favorites-context';
+import { GPSTrackingProvider } from './lib/providers/GPSTrackingProvider';
 
 
 LogBox.ignoreAllLogs(true);
@@ -46,7 +47,9 @@ const App = () => {
   return (
     <AuthProvider>
       <FavoritesProvider>
-        <AppNavigator />
+        <GPSTrackingProvider>
+          <AppNavigator />
+        </GPSTrackingProvider>
       </FavoritesProvider>
     </AuthProvider>
   );

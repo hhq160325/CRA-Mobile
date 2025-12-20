@@ -88,6 +88,7 @@ export const API_ENDPOINTS = {
   UPDATE_USER_INFO: "/User/UpdateUserInfo",
   UPLOAD_AVATAR: (userId: string) => `/User/upload-avatar/${userId}`,
   UPLOAD_DRIVER_LICENSE: (userId: string) => `/User/driverLicense/${userId}`,
+  UPLOAD_DRIVER_LICENSE_AUTO_SCAN: "/User/driverLicense/upload",
   GET_DRIVER_LICENSE: (userId: string, email: string) => `/User/driverLicense?UserId=${userId}&Email=${encodeURIComponent(email)}`,
   GET_ALL_DRIVER_LICENSES: "/User/driverLicense/all",
 

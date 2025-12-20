@@ -1,7 +1,6 @@
 import { View, Text } from "react-native"
 import { useState, useEffect } from "react"
 import { parkLotService, type ParkLot } from "../../../../../lib/api"
-import { useLanguage } from "../../../../../lib/language-context"
 import CustomDateTimePicker from "../CustomDateTimePicker"
 import ParkLotModal from "./ParkLotModal"
 import PickupSection from "./PickupSection"
@@ -40,7 +39,6 @@ export default function RentalInfoStep({
     const [showCustomPickupPicker, setShowCustomPickupPicker] = useState(false)
     const [showCustomDropoffPicker, setShowCustomDropoffPicker] = useState(false)
     const [selectedParkLot, setSelectedParkLot] = useState<ParkLot | null>(null)
-    const { t } = useLanguage()
 
     useEffect(() => {
         fetchParkLots()
@@ -91,9 +89,9 @@ export default function RentalInfoStep({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>{t("rentalInfo")}</Text>
+            <Text style={styles.title}>Rental Information</Text>
             <Text style={styles.description}>
-                {t("rentalInfoDesc")}
+                Please specify your pick-up and drop-off location and date & time.
             </Text>
 
             <View style={styles.contentCard}>
@@ -129,8 +127,8 @@ export default function RentalInfoStep({
                 visible={showPickupModal}
                 loading={loading}
                 parkLots={parkLots}
-                title={t("selectPickupLocation")}
-                emptyText={t("noParkLots")}
+                title="Select Pickup Location"
+                emptyText="No park lots available"
                 onClose={() => setShowPickupModal(false)}
                 onSelect={handleSelectPickupParkLot}
             />
@@ -150,7 +148,7 @@ export default function RentalInfoStep({
                 initialDate={pickupDate ? new Date(pickupDate) : new Date()}
                 initialTime={pickupTime || '06:00'}
                 minimumDate={new Date()}
-                title={t("selectPickupDateTime") || "Select Pickup Date & Time"}
+                title="Select Pickup Date & Time"
                 isPickup={true}
             />
 
@@ -169,7 +167,7 @@ export default function RentalInfoStep({
                 initialDate={dropoffDate ? new Date(dropoffDate) : pickupDate ? new Date(pickupDate) : new Date()}
                 initialTime={dropoffTime || '23:00'}
                 minimumDate={pickupDate ? new Date(pickupDate) : new Date()}
-                title={t("selectDropoffDateTime") || "Select Dropoff Date & Time"}
+                title="Select Dropoff Date & Time"
                 isPickup={false}
             />
 

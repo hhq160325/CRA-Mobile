@@ -25,9 +25,9 @@ export default function DropoffSection({
 }: DropoffSectionProps) {
     return (
         <View>
-            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 {t("dropOff")}</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 Drop Off</Text>
 
-            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{t("locations")}</Text>
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Location</Text>
             <TextInput
                 value={dropoffLocation}
                 onChangeText={onDropoffLocationChange}
@@ -47,7 +47,7 @@ export default function DropoffSection({
             />
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>
-                {t("dateAndTime") || "Date & Time"}
+                Date & Time
             </Text>
             <Pressable
                 onPress={onShowDateTimePicker}

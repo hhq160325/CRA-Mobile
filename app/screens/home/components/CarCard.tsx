@@ -7,7 +7,6 @@ import { scale } from "../../../theme/scale"
 import { getAsset } from "../../../../lib/getAsset"
 import type { Car } from "../../../../lib/api"
 import { useFavorites } from "../../../../lib/favorites-context"
-import { useLanguage } from "../../../../lib/language-context"
 
 const { width: screenWidth } = Dimensions.get('window')
 
@@ -23,7 +22,6 @@ interface CarCardProps {
 export default function CarCard({ car, isHorizontal = false, onPress, onRentPress }: CarCardProps) {
     const { isFavorite, toggleFavorite } = useFavorites()
     const isLiked = isFavorite(car.id)
-    const { t } = useLanguage()
 
     // Animation values for sink-and-float effect
     const scaleAnim = useRef(new Animated.Value(1)).current
@@ -166,7 +164,7 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                         {car.price > 0 ? (
                             <Text style={{ fontSize: scale(16), fontWeight: "700", color: colors.primary }}>
                                 {car.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
-                                <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>{t("perDay")}</Text>
+                                <Text style={{ fontSize: scale(12), fontWeight: "400", color: colors.placeholder }}>/day</Text>
                             </Text>
                         ) : (
                             <Text style={{ fontSize: scale(12), color: colors.placeholder }}>
@@ -186,7 +184,7 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                             borderRadius: 4,
                         }}
                     >
-                        <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600" }}>{t("rentNow")}</Text>
+                        <Text style={{ color: colors.white, fontSize: scale(12), fontWeight: "600" }}>Rent Now</Text>
                     </Pressable>
                 </View>
             </Pressable>

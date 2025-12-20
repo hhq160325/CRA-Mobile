@@ -27,14 +27,11 @@ import StaffLoadingState from '../staff/components/StaffLoadingState';
 
 import { useCarFilters } from './hooks/useCarFilters';
 import { useHomeData } from './hooks/useHomeData';
-import { useLanguage } from '../../../lib/language-context';
-
 export default function HomeScreen() {
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const [filterVisible, setFilterVisible] = useState(false);
   const [showLoadingAnimation, setShowLoadingAnimation] = useState(true);
   const [loadingComplete, setLoadingComplete] = useState(false);
-  const { t } = useLanguage();
 
   const { cars, loading } = useHomeData();
 
@@ -122,7 +119,7 @@ export default function HomeScreen() {
               marginBottom: scale(12),
             }}>
             <Text style={{ fontSize: scale(14), color: colors.placeholder }}>
-              {t('popularCar')}
+              Popular Cars
             </Text>
             <Pressable onPress={() => navigation.navigate('AllCars' as any)}>
               <Text
@@ -131,7 +128,7 @@ export default function HomeScreen() {
                   color: colors.morentBlue,
                   fontWeight: '600',
                 }}>
-                {t('viewAll')}
+                View All
               </Text>
             </Pressable>
           </View>
@@ -167,7 +164,7 @@ export default function HomeScreen() {
               marginBottom: scale(12),
             }}>
             <Text style={{ fontSize: scale(14), color: colors.placeholder }}>
-              {t('recommendationCar')}
+              Recommended Cars
             </Text>
             <Pressable onPress={() => navigation.navigate('AllCars' as any)}>
               <Text
@@ -176,7 +173,7 @@ export default function HomeScreen() {
                   color: colors.morentBlue,
                   fontWeight: '600',
                 }}>
-                {t('viewAll')}
+                View All
               </Text>
             </Pressable>
           </View>
@@ -222,7 +219,7 @@ export default function HomeScreen() {
                   fontWeight: '600',
                   color: colors.primary,
                 }}>
-                {t('topCarRental')}
+                Top Car Rental
               </Text>
               <MaterialIcons
                 name="more-vert"

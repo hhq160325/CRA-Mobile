@@ -2,6 +2,7 @@ export interface DriverLicenseSectionProps {
     licenseImage?: string | null;
     licenseStatus?: string | null;
     licenseCreateDate?: string | null;
+    licenseInfo?: any | null;
     onUploadLicense: () => void;
 }
 

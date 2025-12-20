@@ -82,7 +82,7 @@ export const createBooking = async (
         console.error('Booking creation failed:', res.error);
         const errorMessage = res.error?.message || 'Failed to create booking';
         Alert.alert(
-            t('error') || 'Error',
+            'Error',
             errorMessage +
             '\n\nPlease check your booking details and try again.\n\nIf the problem persists, please contact support with this information:\n- Car ID: ' +
             carId +

@@ -3,7 +3,6 @@ import { LogBox, Alert } from 'react-native';
 import * as Updates from 'expo-updates';
 import { AppNavigator } from './app/navigators/app-navigator';
 import { AuthProvider } from './lib/auth-context';
-import { LanguageProvider } from './lib/language-context';
 import { FavoritesProvider } from './lib/favorites-context';
 
 
@@ -45,13 +44,11 @@ const App = () => {
   }, []);
 
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <FavoritesProvider>
-          <AppNavigator />
-        </FavoritesProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <AuthProvider>
+      <FavoritesProvider>
+        <AppNavigator />
+      </FavoritesProvider>
+    </AuthProvider>
   );
 };
 

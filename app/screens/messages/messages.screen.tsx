@@ -23,7 +23,6 @@ export default function MessagesScreen() {
         fetchingOwner,
         ownerUsername,
         carName,
-        chatHistory,
         user,
         handleSendMessage,
     } = useMessages({ bookingId, bookingNumber, licensePlate, navigation });

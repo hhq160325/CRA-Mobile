@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, TextStyle, ViewStyle } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { DriverLicenseOCRResult } from '../../../../lib/api/services/ocr.service';
 
@@ -130,36 +130,36 @@ const styles = {
         padding: 16,
         marginTop: 12,
         borderWidth: 1,
-        borderColor: colors.borderColor,
+        borderColor: colors.border,
     },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: 'row' as const,
+        justifyContent: 'space-between' as const,
+        alignItems: 'center' as const,
         marginBottom: 16,
     },
     title: {
         fontSize: 16,
-        fontWeight: '600',
-        color: colors.textPrimary,
+        fontWeight: '600' as TextStyle['fontWeight'],
+        color: colors.primary,
     },
     confidenceContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
     },
     confidenceLabel: {
         fontSize: 12,
-        color: colors.textSecondary,
+        color: colors.placeholder,
     },
     confidenceValue: {
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '600' as TextStyle['fontWeight'],
     },
     infoGrid: {
         marginBottom: 12,
     },
     infoRow: {
-        flexDirection: 'row',
+        flexDirection: 'row' as const,
         marginBottom: 12,
         gap: 12,
     },
@@ -176,18 +176,18 @@ const styles = {
     },
     infoLabel: {
         fontSize: 12,
-        color: colors.textSecondary,
+        color: colors.placeholder,
         marginBottom: 4,
     },
     infoValue: {
         fontSize: 14,
-        fontWeight: '500',
-        color: colors.textPrimary,
+        fontWeight: '500' as TextStyle['fontWeight'],
+        color: colors.primary,
         marginBottom: 4,
     },
     confidence: {
         fontSize: 10,
-        fontWeight: '600',
+        fontWeight: '600' as TextStyle['fontWeight'],
     },
     warningContainer: {
         backgroundColor: '#FFF3E0',
@@ -203,7 +203,7 @@ const styles = {
         lineHeight: 16,
     },
     actionButtons: {
-        flexDirection: 'row',
+        flexDirection: 'row' as const,
         gap: 8,
     },
     editButton: {
@@ -211,25 +211,25 @@ const styles = {
         backgroundColor: colors.morentBlue,
         borderRadius: 8,
         paddingVertical: 10,
-        alignItems: 'center',
+        alignItems: 'center' as const,
     },
     editButtonText: {
         fontSize: 14,
-        fontWeight: '500',
+        fontWeight: '500' as TextStyle['fontWeight'],
         color: '#fff',
     },
     clearButton: {
         flex: 1,
-        backgroundColor: colors.backgroundSecondary,
+        backgroundColor: colors.background,
         borderRadius: 8,
         paddingVertical: 10,
-        alignItems: 'center',
+        alignItems: 'center' as const,
         borderWidth: 1,
-        borderColor: colors.borderColor,
+        borderColor: colors.border,
     },
     clearButtonText: {
         fontSize: 14,
-        fontWeight: '500',
-        color: colors.textSecondary,
+        fontWeight: '500' as TextStyle['fontWeight'],
+        color: colors.placeholder,
     },
 };

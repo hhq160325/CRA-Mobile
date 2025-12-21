@@ -36,17 +36,17 @@ export function GPSTrackingProvider({ children }: GPSTrackingProviderProps) {
     } = useGPSTracking();
 
     const [appState, setAppState] = useState(AppState.currentState);
-    const trackingStartedRef = useRef(false); // Prevent duplicate starts
+    const trackingStartedRef = useRef(false);
 
     // Handle app state changes for background tracking
     useEffect(() => {
         const handleAppStateChange = (nextAppState: AppStateStatus) => {
-            console.log('🎯 App state changed:', appState, '->', nextAppState);
+            console.log(' App state changed:', appState, '->', nextAppState);
             setAppState(nextAppState);
 
             // Only restart tracking if it was previously active and app becomes active
             if (nextAppState === 'active' && user?.id && !isTracking && trackingStartedRef.current) {
-                console.log('🎯 App became active, resuming GPS tracking');
+                console.log(' App became active, resuming GPS tracking');
                 startTracking();
             }
         };
@@ -58,11 +58,11 @@ export function GPSTrackingProvider({ children }: GPSTrackingProviderProps) {
     // Auto-start tracking when user logs in (only once)
     useEffect(() => {
         if (user?.id && !isTracking && !trackingStartedRef.current && appState === 'active') {
-            console.log('🎯 User logged in, starting GPS tracking (first time)');
+            console.log(' User logged in, starting GPS tracking (first time)');
             trackingStartedRef.current = true;
             startTracking();
         } else if (!user?.id && isTracking) {
-            console.log('🎯 User logged out, stopping GPS tracking');
+            console.log(' User logged out, stopping GPS tracking');
             trackingStartedRef.current = false;
             stopTracking();
         }

@@ -48,16 +48,13 @@ export const reportService = {
         });
 
         try {
-            // Use the correct endpoint and field names based on the provided curl example
-            // curl -X 'POST' 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Report/reportedCar'
-            // -H 'Content-Type: multipart/form-data'
-            // -F 'Title=car' -F 'Content=smell' -F 'ReporterId=...' -F 'ReportedCarId=...'
+
 
             const formData = new FormData();
             formData.append('Title', data.title);
             formData.append('Content', data.content);
-            formData.append('ReporterId', data.userId);      // Changed from UserId to ReporterId
-            formData.append('ReportedCarId', data.carId);    // Changed from CarId to ReportedCarId
+            formData.append('ReporterId', data.userId);
+            formData.append('ReportedCarId', data.carId);
 
             console.log("reportService.createReport: using correct endpoint /Report/reportedCar");
             console.log("reportService.createReport: FormData fields", {
@@ -71,7 +68,7 @@ export const reportService = {
                 method: 'POST',
                 headers: {
                     'accept': '*/*',
-                    // Don't set Content-Type for FormData - let the browser set it with boundary
+
                 },
                 body: formData,
             });
@@ -113,10 +110,7 @@ export const reportService = {
         });
 
         try {
-            // Use the provided curl example for user reports
-            // curl -X 'POST' 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Report/reportedUser'
-            // -H 'Content-Type: multipart/form-data'
-            // -F 'Title=running a red light' -F 'Content=violence laws' -F 'deductedPoints=10' -F 'ReporterId=...' -F 'ReportedUserId=...'
+
 
             const formData = new FormData();
             formData.append('Title', data.title);
@@ -138,7 +132,7 @@ export const reportService = {
                 method: 'POST',
                 headers: {
                     'accept': '*/*',
-                    // Don't set Content-Type for FormData - let the browser set it with boundary
+
                 },
                 body: formData,
             });

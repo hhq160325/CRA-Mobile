@@ -30,14 +30,14 @@ export const handleCalculateDistance = async (
 
             if (result.data && result.data.distanceInMeters) {
                 const distanceInKm = result.data.distanceInMeters / 1000;
-                console.log('✅ Distance calculated:', distanceInKm, 'km');
+                console.log(' Distance calculated:', distanceInKm, 'km');
                 setDistanceInKm(distanceInKm);
             } else {
-                console.log('❌ Could not calculate distance - no data');
+                console.log(' Could not calculate distance - no data');
                 setDistanceInKm(null);
             }
         } catch (error) {
-            console.error('❌ Error calculating distance:', error);
+            console.error(' Error calculating distance:', error);
             setDistanceInKm(null);
         }
     } else {
@@ -69,14 +69,14 @@ export const calculateShippingDistance = async (
 
             if (result.data && result.data.distanceInMeters) {
                 const distanceInKm = result.data.distanceInMeters / 1000;
-                console.log('✅ Shipping distance calculated:', distanceInKm, 'km');
+                console.log(' Shipping distance calculated:', distanceInKm, 'km');
                 setDistanceInKm(distanceInKm);
             } else {
-                console.log('❌ Could not calculate shipping distance');
+                console.log(' Could not calculate shipping distance');
                 setDistanceInKm(null);
             }
         } catch (error) {
-            console.error('❌ Error calculating shipping distance:', error);
+            console.error(' Error calculating shipping distance:', error);
             setDistanceInKm(null);
         }
     } else if (pickupMode === 'parklot') {

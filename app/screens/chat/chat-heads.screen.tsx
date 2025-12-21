@@ -12,8 +12,7 @@ export default function ChatHeadsScreen() {
     const { chatHeads, loading, refreshing, onRefresh } = useChatHeads();
 
     const handleChatPress = (chat: ChatHead) => {
-        // Navigate to chat screen - we need carId
-        // For now, we'll need to pass userId and fetch car info
+
         console.log('Open chat with:', chat.userId);
     };
 

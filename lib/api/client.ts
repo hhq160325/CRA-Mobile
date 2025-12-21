@@ -21,7 +21,7 @@ export async function testConnection(): Promise<{ success: boolean; message: str
     console.log("Testing connection to:", API_CONFIG.BASE_URL)
 
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 8000) // Reduced timeout for mobile
+    const timeoutId = setTimeout(() => controller.abort(), 8000)
 
     const response = await fetch(API_CONFIG.BASE_URL, {
       method: "HEAD",

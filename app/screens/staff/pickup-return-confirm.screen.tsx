@@ -57,7 +57,7 @@ export default function PickupReturnConfirmScreen() {
 
   useEffect(() => {
     if (!loading && isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0) {
-      console.log(' Pickup already completed, auto-navigating to return screen...');
+      // console.log(' Pickup already completed, auto-navigating to return screen...');
 
       const timer = setTimeout(() => {
         navigation.navigate('VehicleReturn' as any, { bookingId });
@@ -113,10 +113,10 @@ export default function PickupReturnConfirmScreen() {
             try {
               setSubmitting(true);
 
-              console.log(' Starting pickup confirmation...');
-              console.log(' Booking ID:', bookingId);
-              console.log(' Staff ID:', user.id);
-              console.log(' Images count:', selectedImages.length);
+              // console.log(' Starting pickup confirmation...');
+              // console.log(' Booking ID:', bookingId);
+              // console.log(' Staff ID:', user.id);
+              // console.log(' Images count:', selectedImages.length);
 
               const result = await scheduleService.checkIn(
                 bookingId,
@@ -125,17 +125,17 @@ export default function PickupReturnConfirmScreen() {
                 description || 'Pickup confirmed',
               );
 
-              console.log(' Check-in result:', result);
+              // console.log(' Check-in result:', result);
 
               if (result.error) {
-                console.error(' Check-in error:', result.error);
+                // console.error(' Check-in error:', result.error);
                 Alert.alert('Error', result.error.message);
                 setSubmitting(false);
                 return;
               }
 
 
-              console.log(' Pickup confirmed successfully, navigating to StaffScreen');
+              // console.log(' Pickup confirmed successfully, navigating to StaffScreen');
               setSubmitting(false);
 
               Alert.alert('Success', 'Pickup confirmed successfully!', [
@@ -148,7 +148,7 @@ export default function PickupReturnConfirmScreen() {
                 },
               ]);
             } catch (error) {
-              console.error(' Exception during pickup confirmation:', error);
+              // console.error(' Exception during pickup confirmation:', error);
               Alert.alert(
                 'Error',
                 `Failed to confirm pickup: ${error instanceof Error ? error.message : 'Unknown error'}`,

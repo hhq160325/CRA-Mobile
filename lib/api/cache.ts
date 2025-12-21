@@ -1,7 +1,4 @@
-/**
- * Simple in-memory cache for API responses
- * Helps reduce unnecessary API calls and improve performance
- */
+
 
 interface CacheEntry<T> {
     data: T;
@@ -11,11 +8,9 @@ interface CacheEntry<T> {
 
 class APICache {
     private cache: Map<string, CacheEntry<any>> = new Map();
-    private defaultTTL = 5 * 60 * 1000; // 5 minutes default
+    private defaultTTL = 5 * 60 * 1000;
 
-    /**
-     * Get cached data if available and not expired
-     */
+
     get<T>(key: string): T | null {
         const entry = this.cache.get(key);
 
@@ -29,13 +24,11 @@ class APICache {
             return null;
         }
 
-        console.log(`📦 Cache HIT: ${key} (age: ${Math.round((Date.now() - entry.timestamp) / 1000)}s)`);
+        console.log(` Cache HIT: ${key} (age: ${Math.round((Date.now() - entry.timestamp) / 1000)}s)`);
         return entry.data;
     }
 
-    /**
-     * Set data in cache with optional TTL
-     */
+
     set<T>(key: string, data: T, ttl?: number): void {
         const now = Date.now();
         const expiresAt = now + (ttl || this.defaultTTL);
@@ -46,22 +39,18 @@ class APICache {
             expiresAt,
         });
 
-        console.log(`💾 Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s)`);
+        console.log(` Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s)`);
     }
 
-    /**
-     * Invalidate specific cache entry
-     */
+
     invalidate(key: string): void {
         if (this.cache.has(key)) {
             this.cache.delete(key);
-            console.log(`🗑️ Cache INVALIDATED: ${key}`);
+            console.log(` Cache INVALIDATED: ${key}`);
         }
     }
 
-    /**
-     * Invalidate all cache entries matching a pattern
-     */
+
     invalidatePattern(pattern: string): void {
         let count = 0;
         for (const key of this.cache.keys()) {
@@ -71,22 +60,18 @@ class APICache {
             }
         }
         if (count > 0) {
-            console.log(`🗑️ Cache INVALIDATED: ${count} entries matching "${pattern}"`);
+            console.log(` Cache INVALIDATED: ${count} entries matching "${pattern}"`);
         }
     }
 
-    /**
-     * Clear all cache
-     */
+
     clear(): void {
         const size = this.cache.size;
         this.cache.clear();
-        console.log(`🗑️ Cache CLEARED: ${size} entries removed`);
+        console.log(` Cache CLEARED: ${size} entries removed`);
     }
 
-    /**
-     * Get cache statistics
-     */
+
     getStats() {
         const now = Date.now();
         const entries = Array.from(this.cache.entries());
@@ -101,9 +86,7 @@ class APICache {
         };
     }
 
-    /**
-     * Clean up expired entries
-     */
+
     cleanup(): void {
         const now = Date.now();
         let removed = 0;

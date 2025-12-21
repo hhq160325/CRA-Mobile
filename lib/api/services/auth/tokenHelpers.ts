@@ -50,13 +50,13 @@ export const extractRoleFromToken = (decodedToken: any): "customer" | "staff" | 
     console.log("Checking if parseInt(roleFromToken) === 1002:", parseInt(roleFromToken) === 1002);
 
     if (roleFromToken === "1002" || roleFromToken === 1002 || parseInt(roleFromToken) === 1002) {
-        console.log("✅ Detected STAFF role");
+        console.log(" Detected STAFF role");
         return "staff";
     } else if (isCarOwner) {
-        console.log("✅ Detected CAR-OWNER role");
+        console.log(" Detected CAR-OWNER role");
         return "car-owner";
     } else {
-        console.log("✅ Detected CUSTOMER role (default)");
+        console.log(" Detected CUSTOMER role (default)");
         return "customer";
     }
 };

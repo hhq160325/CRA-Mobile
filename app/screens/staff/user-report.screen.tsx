@@ -73,13 +73,13 @@ export default function UserReportScreen() {
         setSubmitting(true);
 
         try {
-            console.log('🚨 Creating user report:', {
-                title: title.trim(),
-                reporterId: user.id,
-                reportedUserId: params.userId,
-                deductedPoints: points,
-                bookingId: params.bookingId
-            });
+            // console.log('🚨 Creating user report:', {
+            //     title: title.trim(),
+            //     reporterId: user.id,
+            //     reportedUserId: params.userId,
+            //     deductedPoints: points,
+            //     bookingId: params.bookingId
+            // });
 
             const result = await reportService.createUserReport({
                 title: title.trim(),
@@ -90,16 +90,16 @@ export default function UserReportScreen() {
             });
 
             if (result.error) {
-                console.error('❌ User report creation failed:', result.error);
-                Alert.alert(
-                    'Report Failed',
-                    `Failed to submit user report: ${result.error.message}`,
-                    [{ text: 'OK' }]
-                );
+                // console.error('❌ User report creation failed:', result.error);
+                // Alert.alert(
+                //     'Report Failed',
+                //     `Failed to submit user report: ${result.error.message}`,
+                //     [{ text: 'OK' }]
+                // );
                 return;
             }
 
-            console.log('✅ User report created successfully:', result.data);
+            // console.log(' User report created successfully:', result.data);
 
             Alert.alert(
                 'Report Submitted',
@@ -116,7 +116,7 @@ export default function UserReportScreen() {
             );
 
         } catch (error) {
-            console.error('❌ Unexpected error creating user report:', error);
+            // console.error('Unexpected error creating user report:', error);
             Alert.alert(
                 'Unexpected Error',
                 'An unexpected error occurred while submitting the report. Please try again.',

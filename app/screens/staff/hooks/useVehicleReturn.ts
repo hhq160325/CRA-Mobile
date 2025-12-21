@@ -38,7 +38,7 @@ export function useVehicleReturn(bookingId: string) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching data for return:', bookingId);
+        // console.log('Fetching data for return:', bookingId);
 
         const checkOutResult = await scheduleService.getCheckOutImages(
           bookingId,
@@ -66,21 +66,21 @@ export function useVehicleReturn(bookingId: string) {
         const bookingData = bookingResult.data;
 
         // Debug logging for bookingNumber
-        console.log('🔍 useVehicleReturn: Raw booking data:', JSON.stringify(bookingData, null, 2));
-        console.log('🔍 useVehicleReturn: bookingNumber field:', bookingData.bookingNumber);
-        console.log('🔍 useVehicleReturn: All booking keys:', Object.keys(bookingData));
+        // console.log(' useVehicleReturn: Raw booking data:', JSON.stringify(bookingData, null, 2));
+        // console.log(' useVehicleReturn: bookingNumber field:', bookingData.bookingNumber);
+        // console.log(' useVehicleReturn: All booking keys:', Object.keys(bookingData));
 
         // Check for alternative field names that might contain booking number
         const possibleBookingNumberFields = [
           'bookingNumber', 'bookingNo', 'bookingId', 'bookNum', 'number', 'code'
         ];
         possibleBookingNumberFields.forEach(field => {
-          if (bookingData[field]) {
-            console.log(`🔍 useVehicleReturn: Found ${field}:`, bookingData[field]);
+          if ((bookingData as any)[field]) {
+            // console.log(` useVehicleReturn: Found ${field}:`, (bookingData as any)[field]);
           }
         });
 
-        console.log('🔍 useVehicleReturn: Customer userId:', bookingData.userId);
+        // console.log(' useVehicleReturn: Customer userId:', bookingData.userId);
 
         let carName = 'Unknown Car';
         let carModel = '';
@@ -108,8 +108,8 @@ export function useVehicleReturn(bookingId: string) {
           }
         }
 
-        console.log(' useVehicleReturn: bookingData.totalPrice:', bookingData.totalPrice, typeof bookingData.totalPrice);
-        console.log(' useVehicleReturn: raw bookingResult.data:', JSON.stringify(bookingResult.data, null, 2));
+        // console.log(' useVehicleReturn: bookingData.totalPrice:', bookingData.totalPrice, typeof bookingData.totalPrice);
+        // console.log(' useVehicleReturn: raw bookingResult.data:', JSON.stringify(bookingResult.data, null, 2));
 
         // Try to get amount from multiple sources
         let amount = bookingData.totalPrice || 0;
@@ -121,12 +121,12 @@ export function useVehicleReturn(bookingId: string) {
             rawBooking.bookingFee ||
             rawBooking.carRentPrice ||
             0;
-          console.log(' useVehicleReturn: fallback amount sources:', {
-            invoiceAmount: rawBooking.invoice?.amount,
-            bookingFee: rawBooking.bookingFee,
-            carRentPrice: rawBooking.carRentPrice,
-            finalAmount: amount
-          });
+          // console.log(' useVehicleReturn: fallback amount sources:', {
+          //   invoiceAmount: rawBooking.invoice?.amount,
+          //   bookingFee: rawBooking.bookingFee,
+          //   carRentPrice: rawBooking.carRentPrice,
+          //   finalAmount: amount
+          // });
         }
 
         // If still 0, try to get from payment data (Rental Fee)
@@ -149,11 +149,11 @@ export function useVehicleReturn(bookingId: string) {
 
               if (rentalFeePayment && rentalFeePayment.paidAmount) {
                 amount = rentalFeePayment.paidAmount;
-                console.log(' useVehicleReturn: found Rental Fee amount:', amount);
+                // console.log(' useVehicleReturn: found Rental Fee amount:', amount);
               }
             }
           } catch (error) {
-            console.warn(' useVehicleReturn: failed to fetch payment data:', error);
+            // console.warn(' useVehicleReturn: failed to fetch payment data:', error);
           }
         }
 
@@ -176,7 +176,7 @@ export function useVehicleReturn(bookingId: string) {
 
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching data:', err);
+        // console.error('Error fetching data:', err);
         setError('An error occurred');
         setLoading(false);
       }

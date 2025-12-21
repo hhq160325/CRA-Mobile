@@ -61,7 +61,7 @@ export default function BookingCard({
                     <Text style={styles.infoLabel}>AMOUNT</Text>
                     <Text style={styles.infoValue}>
                         {(() => {
-                            console.log('BookingCard amount:', amount, typeof amount);
+                            // console.log('BookingCard amount:', amount, typeof amount);
                             // Handle different amount data types
                             if (amount === null || amount === undefined || amount === '') {
                                 return 'N/A';

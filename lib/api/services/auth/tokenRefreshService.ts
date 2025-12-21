@@ -40,6 +40,6 @@ export const refreshToken = async (
         return { data: result.data, error: null };
     } catch (e) {
         console.error("tokenRefreshService.refreshToken: error saving tokens", e);
-        return { data: result.data, error: null }; // Still return tokens even if storage fails
+        return { data: result.data, error: null };
     }
 };

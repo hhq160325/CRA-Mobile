@@ -36,7 +36,7 @@ export function useStaffBookings() {
         checkInOutMap: Map<string, any>,
         extensionInfoMap: Map<string, any>
     }): Promise<BookingItem> => {
-        console.log(` mapSingleBooking: processing booking ${booking.id} with cached data`);
+        // console.log(` mapSingleBooking: processing booking ${booking.id} with cached data`);
 
         const mappedStatus = mapBookingStatus(booking.status);
         const formattedDate = formatBookingDate(booking.bookingDate);
@@ -104,7 +104,7 @@ export function useStaffBookings() {
         const cacheTimeout = 30000; // 30 seconds
 
         if (!forceRefresh && bookings.length > 0 && (now - lastFetchTime) < cacheTimeout) {
-            console.log(` fetchBookings: using cached data (${Math.round((now - lastFetchTime) / 1000)}s old)`);
+            // console.log(` fetchBookings: using cached data (${Math.round((now - lastFetchTime) / 1000)}s old)`);
             setLoading(false);
             setRefreshing(false);
             return;
@@ -124,14 +124,14 @@ export function useStaffBookings() {
             }
 
             if (result.data) {
-                console.log(` fetchBookings: received ${result.data.length} bookings - starting batch processing`);
+                // console.log(` fetchBookings: received ${result.data.length} bookings - starting batch processing`);
 
                 // Extract unique IDs for batch fetching
                 const uniqueCarIds = [...new Set(result.data.map(b => b.carId).filter(Boolean))];
                 const uniqueUserIds = [...new Set(result.data.map(b => b.userId).filter(Boolean))];
                 const bookingIds = result.data.map(b => b.id);
 
-                console.log(` fetchBookings: batch sizes - cars: ${uniqueCarIds.length}, users: ${uniqueUserIds.length}, bookings: ${bookingIds.length}`);
+                // console.log(` fetchBookings: batch sizes - cars: ${uniqueCarIds.length}, users: ${uniqueUserIds.length}, bookings: ${bookingIds.length}`);
 
 
 
@@ -150,7 +150,7 @@ export function useStaffBookings() {
                     batchFetchExtensionInfo(bookingIds)
                 ]);
 
-                console.log(` fetchBookings: batch fetching completed - processing bookings`);
+                // console.log(` fetchBookings: batch fetching completed - processing bookings`);
                 setLoadingProgress('Processing booking data...');
 
                 // Create batch data object
@@ -167,13 +167,13 @@ export function useStaffBookings() {
                 const mappedBookings = await Promise.all(mappedBookingsPromises);
 
                 const endTime = Date.now();
-                console.log(` fetchBookings: completed processing ${mappedBookings.length} bookings in ${endTime - startTime}ms`);
+                // console.log(` fetchBookings: completed processing ${mappedBookings.length} bookings in ${endTime - startTime}ms`);
 
                 setBookings(mappedBookings);
                 setLastFetchTime(now);
             }
         } catch (error) {
-            console.error(' fetchBookings: error:', error);
+            // console.error(' fetchBookings: error:', error);
             setError(error instanceof Error ? error.message : 'Failed to load bookings');
         }
 
@@ -188,7 +188,7 @@ export function useStaffBookings() {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            console.log('StaffScreen focused - checking if refresh needed...');
+            // console.log('StaffScreen focused - checking if refresh needed...');
             fetchBookings(); // Will use cache if recent
         });
 
@@ -234,7 +234,7 @@ export function useStaffBookings() {
     const handlePayExtension = async (bookingId: string) => {
         try {
             setProcessingExtensionPayment(bookingId);
-            console.log(' Starting extension payment for booking:', bookingId);
+            // console.log(' Starting extension payment for booking:', bookingId);
 
             const result = await bookingExtensionService.getBookingExtensionPaymentUrl(bookingId);
 
@@ -244,7 +244,7 @@ export function useStaffBookings() {
                 return;
             }
 
-            console.log(' Extension payment URL created:', result.data.checkoutUrl);
+            // console.log(' Extension payment URL created:', result.data.checkoutUrl);
 
 
             navigation.navigate('PayOSWebView' as any, {
@@ -255,7 +255,7 @@ export function useStaffBookings() {
 
             setProcessingExtensionPayment(null);
         } catch (error) {
-            console.error('💳 Error creating extension payment:', error);
+            // console.error(' Error creating extension payment:', error);
             alert(
                 `Extension Payment Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
             );
@@ -284,12 +284,12 @@ export function useStaffBookings() {
 
 
     if (searchQuery && searchQuery.trim() !== '') {
-        console.log(' Search Results:', {
-            query: searchQuery,
-            totalBookings: bookings.length,
-            filteredCount: filteredPayments.length,
-            sampleBookingNumbers: bookings.slice(0, 3).map(b => b.bookingNumber),
-        });
+        // console.log(' Search Results:', {
+        //     query: searchQuery,
+        //     totalBookings: bookings.length,
+        //     filteredCount: filteredPayments.length,
+        //     sampleBookingNumbers: bookings.slice(0, 3).map(b => b.bookingNumber),
+        // });
     }
 
     return {

@@ -8,14 +8,14 @@ export const getAuthToken = async (): Promise<string | null> => {
     try {
         return await AsyncStorage.getItem('token');
     } catch (e) {
-        console.error('Error getting auth token:', e);
+        // console.error('Error getting auth token:', e);
         return null;
     }
 };
 
 export const fetchBookingWithCarDetails = async (bookingNumber: string) => {
     try {
-        console.log(` fetchBookingWithCarDetails: fetching booking details for: ${bookingNumber}`);
+        // console.log(` fetchBookingWithCarDetails: fetching booking details for: ${bookingNumber}`);
         const baseUrl = API_CONFIG.BASE_URL;
         const url = `/Booking/GetBookingsByBookNum/${bookingNumber}`;
         const fullUrl = `${baseUrl}${url}`;
@@ -31,34 +31,34 @@ export const fetchBookingWithCarDetails = async (bookingNumber: string) => {
 
         if (response.ok) {
             const bookingData = await response.json();
-            console.log(` fetchBookingWithCarDetails: success for ${bookingNumber}:`, {
-                hasCarData: !!bookingData.car,
-                carModel: bookingData.car?.model,
-                carManufacturer: bookingData.car?.manufacturer
-            });
+            // console.log(` fetchBookingWithCarDetails: success for ${bookingNumber}:`, {
+            //     hasCarData: !!bookingData.car,
+            //     carModel: bookingData.car?.model,
+            //     carManufacturer: bookingData.car?.manufacturer
+            // });
             return bookingData;
         } else {
-            console.error(` fetchBookingWithCarDetails: API error for ${bookingNumber}:`, response.status);
+            // console.error(` fetchBookingWithCarDetails: API error for ${bookingNumber}:`, response.status);
         }
     } catch (err) {
-        console.error(` fetchBookingWithCarDetails: Exception for ${bookingNumber}:`, err);
+        // console.error(` fetchBookingWithCarDetails: Exception for ${bookingNumber}:`, err);
     }
     return null;
 };
 
 export const fetchCarDetails = async (carId: string) => {
     try {
-        console.log(` fetchCarDetails: fetching car details for ID: ${carId}`);
+        // console.log(` fetchCarDetails: fetching car details for ID: ${carId}`);
         const carResult = await carsService.getCarById(carId);
 
-        console.log(` fetchCarDetails: result for ${carId}:`, {
-            hasData: !!carResult.data,
-            hasError: !!carResult.error,
-            carName: carResult.data?.name,
-            carBrand: carResult.data?.brand,
-            carModel: carResult.data?.model,
-            error: carResult.error?.message
-        });
+        // console.log(` fetchCarDetails: result for ${carId}:`, {
+        //     hasData: !!carResult.data,
+        //     hasError: !!carResult.error,
+        //     carName: carResult.data?.name,
+        //     carBrand: carResult.data?.brand,
+        //     carModel: carResult.data?.model,
+        //     error: carResult.error?.message
+        // });
 
         if (carResult.data) {
             const details = {
@@ -68,18 +68,18 @@ export const fetchCarDetails = async (carId: string) => {
                 carLicensePlate: carResult.data.licensePlate || '',
                 carImage: carResult.data.image || '',
             };
-            console.log(` fetchCarDetails: returning details for ${carId}:`, details);
+            // console.log(` fetchCarDetails: returning details for ${carId}:`, details);
             return details;
         }
 
         if (carResult.error) {
-            console.error(` fetchCarDetails: API error for ${carId}:`, carResult.error.message);
+            // console.error(` fetchCarDetails: API error for ${carId}:`, carResult.error.message);
         }
     } catch (err) {
-        console.error(` fetchCarDetails: Exception for ${carId}:`, err);
+        // console.error(` fetchCarDetails: Exception for ${carId}:`, err);
     }
 
-    console.log(` fetchCarDetails: returning default "Unknown Car" for ${carId}`);
+    // console.log(` fetchCarDetails: returning default "Unknown Car" for ${carId}`);
     return {
         carName: 'Unknown Car',
         carBrand: '',
@@ -96,7 +96,7 @@ export const fetchCustomerName = async (userId: string) => {
             return userResult.data.fullname || userResult.data.username || 'Customer';
         }
     } catch (err) {
-        console.error('Error fetching customer name:', err);
+        // console.error('Error fetching customer name:', err);
     }
     return 'Customer';
 };
@@ -132,7 +132,7 @@ export const fetchPaymentDetails = async (bookingId: string) => {
             }
         }
     } catch (err) {
-        console.error('Error fetching payment details:', err);
+        // console.error('Error fetching payment details:', err);
     }
     return { amount: 0, status: 'pending' };
 };
@@ -149,7 +149,7 @@ export const fetchCheckInOutStatus = async (bookingId: string) => {
         }
     } catch (err) {
 
-        console.log(`Check-in status for booking ${bookingId}: No data available`);
+        // console.log(`Check-in status for booking ${bookingId}: No data available`);
     }
 
     try {
@@ -160,7 +160,7 @@ export const fetchCheckInOutStatus = async (bookingId: string) => {
         }
     } catch (err) {
 
-        console.log(`Check-out status for booking ${bookingId}: No data available`);
+        // console.log(`Check-out status for booking ${bookingId}: No data available`);
     }
 
     return { hasCheckIn, hasCheckOut };
@@ -187,7 +187,7 @@ export const batchFetchCarDetails = async (carIds: string[]): Promise<Map<string
 
     if (carIds.length === 0) return carDetailsMap;
 
-    console.log(` batchFetchCarDetails: fetching ${carIds.length} cars`);
+    // console.log(` batchFetchCarDetails: fetching ${carIds.length} cars`);
 
     // Fetch all cars in parallel with limited concurrency
     const batchSize = 5; // Limit concurrent requests
@@ -198,7 +198,7 @@ export const batchFetchCarDetails = async (carIds: string[]): Promise<Map<string
                 const details = await fetchCarDetails(carId);
                 return { carId, details };
             } catch (error) {
-                console.error(` batchFetchCarDetails: error for ${carId}:`, error);
+                // console.error(` batchFetchCarDetails: error for ${carId}:`, error);
                 return {
                     carId,
                     details: {
@@ -218,7 +218,7 @@ export const batchFetchCarDetails = async (carIds: string[]): Promise<Map<string
         });
     }
 
-    console.log(` batchFetchCarDetails: completed ${carDetailsMap.size} cars`);
+    // console.log(` batchFetchCarDetails: completed ${carDetailsMap.size} cars`);
     return carDetailsMap;
 };
 
@@ -227,7 +227,7 @@ export const batchFetchUserDetails = async (userIds: string[]): Promise<Map<stri
 
     if (userIds.length === 0) return userDetailsMap;
 
-    console.log(` batchFetchUserDetails: fetching ${userIds.length} users`);
+    // console.log(` batchFetchUserDetails: fetching ${userIds.length} users`);
 
     const batchSize = 5;
     for (let i = 0; i < userIds.length; i += batchSize) {
@@ -237,7 +237,7 @@ export const batchFetchUserDetails = async (userIds: string[]): Promise<Map<stri
                 const name = await fetchCustomerName(userId);
                 return { userId, name };
             } catch (error) {
-                console.error(` batchFetchUserDetails: error for ${userId}:`, error);
+                // console.error(` batchFetchUserDetails: error for ${userId}:`, error);
                 return { userId, name: 'Customer' };
             }
         });
@@ -248,7 +248,7 @@ export const batchFetchUserDetails = async (userIds: string[]): Promise<Map<stri
         });
     }
 
-    console.log(` batchFetchUserDetails: completed ${userDetailsMap.size} users`);
+    // console.log(` batchFetchUserDetails: completed ${userDetailsMap.size} users`);
     return userDetailsMap;
 };
 
@@ -257,7 +257,7 @@ export const batchFetchPaymentDetails = async (bookingIds: string[]): Promise<Ma
 
     if (bookingIds.length === 0) return paymentDetailsMap;
 
-    console.log(` batchFetchPaymentDetails: fetching ${bookingIds.length} payments`);
+    // console.log(` batchFetchPaymentDetails: fetching ${bookingIds.length} payments`);
 
     const batchSize = 5;
     for (let i = 0; i < bookingIds.length; i += batchSize) {
@@ -267,7 +267,7 @@ export const batchFetchPaymentDetails = async (bookingIds: string[]): Promise<Ma
                 const details = await fetchPaymentDetails(bookingId);
                 return { bookingId, details };
             } catch (error) {
-                console.error(` batchFetchPaymentDetails: error for ${bookingId}:`, error);
+                // console.error(` batchFetchPaymentDetails: error for ${bookingId}:`, error);
                 return { bookingId, details: { amount: 0, status: 'pending' } };
             }
         });
@@ -278,7 +278,7 @@ export const batchFetchPaymentDetails = async (bookingIds: string[]): Promise<Ma
         });
     }
 
-    console.log(` batchFetchPaymentDetails: completed ${paymentDetailsMap.size} payments`);
+    // console.log(` batchFetchPaymentDetails: completed ${paymentDetailsMap.size} payments`);
     return paymentDetailsMap;
 };
 
@@ -287,7 +287,7 @@ export const batchFetchCheckInOutStatus = async (bookingIds: string[]): Promise<
 
     if (bookingIds.length === 0) return checkInOutMap;
 
-    console.log(` batchFetchCheckInOutStatus: fetching ${bookingIds.length} check-in/out statuses`);
+    // console.log(` batchFetchCheckInOutStatus: fetching ${bookingIds.length} check-in/out statuses`);
 
     const batchSize = 5;
     for (let i = 0; i < bookingIds.length; i += batchSize) {
@@ -297,7 +297,7 @@ export const batchFetchCheckInOutStatus = async (bookingIds: string[]): Promise<
                 const status = await fetchCheckInOutStatus(bookingId);
                 return { bookingId, status };
             } catch (error) {
-                console.error(` batchFetchCheckInOutStatus: error for ${bookingId}:`, error);
+                // console.error(` batchFetchCheckInOutStatus: error for ${bookingId}:`, error);
                 return { bookingId, status: { hasCheckIn: false, hasCheckOut: false } };
             }
         });
@@ -308,7 +308,7 @@ export const batchFetchCheckInOutStatus = async (bookingIds: string[]): Promise<
         });
     }
 
-    console.log(` batchFetchCheckInOutStatus: completed ${checkInOutMap.size} statuses`);
+    // console.log(` batchFetchCheckInOutStatus: completed ${checkInOutMap.size} statuses`);
     return checkInOutMap;
 };
 
@@ -317,7 +317,7 @@ export const batchFetchExtensionInfo = async (bookingIds: string[]): Promise<Map
 
     if (bookingIds.length === 0) return extensionInfoMap;
 
-    console.log(` batchFetchExtensionInfo: fetching ${bookingIds.length} extension infos`);
+    // console.log(` batchFetchExtensionInfo: fetching ${bookingIds.length} extension infos`);
 
     const batchSize = 3; // Lower batch size for extension info as it makes 2 API calls per booking
     for (let i = 0; i < bookingIds.length; i += batchSize) {
@@ -327,7 +327,7 @@ export const batchFetchExtensionInfo = async (bookingIds: string[]): Promise<Map
                 const info = await fetchBookingExtensionInfo(bookingId);
                 return { bookingId, info };
             } catch (error) {
-                console.error(`🔍 batchFetchExtensionInfo: error for ${bookingId}:`, error);
+                // console.error(` batchFetchExtensionInfo: error for ${bookingId}:`, error);
                 return {
                     bookingId,
                     info: {
@@ -346,13 +346,13 @@ export const batchFetchExtensionInfo = async (bookingIds: string[]): Promise<Map
         });
     }
 
-    console.log(` batchFetchExtensionInfo: completed ${extensionInfoMap.size} extension infos`);
+    // console.log(` batchFetchExtensionInfo: completed ${extensionInfoMap.size} extension infos`);
     return extensionInfoMap;
 };
 
 export const fetchBookingExtensionInfo = async (bookingId: string) => {
     try {
-        console.log(`🔍 fetchBookingExtensionInfo: Step 1 - Getting booking details for ${bookingId}`);
+        // console.log(` fetchBookingExtensionInfo: Step 1 - Getting booking details for ${bookingId}`);
 
         // Step 1: Get booking details
         const baseUrl = API_CONFIG.BASE_URL;
@@ -369,7 +369,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         });
 
         if (!bookingResponse.ok) {
-            console.log(`🔍 fetchBookingExtensionInfo: Failed to get booking details for ${bookingId}, status: ${bookingResponse.status}`);
+            // console.log(` fetchBookingExtensionInfo: Failed to get booking details for ${bookingId}, status: ${bookingResponse.status}`);
             return {
                 hasExtension: false,
                 extensionDescription: undefined,
@@ -382,7 +382,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         const invoiceId = bookingData.invoiceId;
 
         if (!invoiceId) {
-            console.log(`🔍 fetchBookingExtensionInfo: No invoiceId found for booking ${bookingId}`);
+            // console.log(` fetchBookingExtensionInfo: No invoiceId found for booking ${bookingId}`);
             return {
                 hasExtension: false,
                 extensionDescription: undefined,
@@ -391,10 +391,10 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             };
         }
 
-        console.log(`🔍 fetchBookingExtensionInfo: Step 1 completed - Got invoiceId: ${invoiceId} for booking ${bookingId}`);
+        // console.log(` fetchBookingExtensionInfo: Step 1 completed - Got invoiceId: ${invoiceId} for booking ${bookingId}`);
 
         // Step 2: Check invoice items first (using the /api/ endpoint)
-        console.log(`🔍 fetchBookingExtensionInfo: Step 2a - Checking invoice items for ${invoiceId}`);
+        // console.log(` fetchBookingExtensionInfo: Step 2a - Checking invoice items for ${invoiceId}`);
 
         const invoiceResponse = await fetch(`${baseUrl}/Invoice/${invoiceId}`, {
             method: 'GET',
@@ -407,7 +407,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
 
         if (invoiceResponse.ok) {
             const invoiceData = await invoiceResponse.json();
-            console.log(`🔍 fetchBookingExtensionInfo: Invoice data structure:`, JSON.stringify(invoiceData, null, 2));
+            // console.log(` fetchBookingExtensionInfo: Invoice data structure:`, JSON.stringify(invoiceData, null, 2));
 
             // Check if invoice has invoiceItems array with Booking Extension
             if (invoiceData.invoiceItems && Array.isArray(invoiceData.invoiceItems)) {
@@ -416,7 +416,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
                 );
 
                 if (extensionItem) {
-                    console.log(`🔍 fetchBookingExtensionInfo: Found extension in invoice items:`, extensionItem);
+                    // console.log(` fetchBookingExtensionInfo: Found extension in invoice items:`, extensionItem);
                     return {
                         hasExtension: true,
                         extensionDescription: `Booking Extension - ${extensionItem.description || 'Extended rental period'}`,
@@ -431,8 +431,8 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         const invoiceBaseUrl = API_CONFIG.BASE_URL.replace('/api', '');
         const paymentUrl = `${invoiceBaseUrl}/Invoice/${invoiceId}`;
 
-        console.log(`🔍 fetchBookingExtensionInfo: Step 2b - Getting payment details for ${invoiceId}`);
-        console.log(`🔍 fetchBookingExtensionInfo: Full payment URL: ${paymentUrl}`);
+        // console.log(` fetchBookingExtensionInfo: Step 2b - Getting payment details for ${invoiceId}`);
+        // console.log(` fetchBookingExtensionInfo: Full payment URL: ${paymentUrl}`);
 
         const paymentResponse = await fetch(paymentUrl, {
             method: 'GET',
@@ -443,10 +443,10 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             },
         });
 
-        console.log(`🔍 fetchBookingExtensionInfo: Payment response status: ${paymentResponse.status}`);
+        // console.log(` fetchBookingExtensionInfo: Payment response status: ${paymentResponse.status}`);
 
         if (!paymentResponse.ok) {
-            console.log(`🔍 fetchBookingExtensionInfo: Failed to get payment details for ${invoiceId}, status: ${paymentResponse.status}`);
+            // console.log(` fetchBookingExtensionInfo: Failed to get payment details for ${invoiceId}, status: ${paymentResponse.status}`);
             return {
                 hasExtension: false,
                 extensionDescription: undefined,
@@ -456,12 +456,12 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         }
 
         const paymentData = await paymentResponse.json();
-        console.log(`🔍 fetchBookingExtensionInfo: Step 2b completed - Got payment data for ${invoiceId}`);
-        console.log(`🔍 fetchBookingExtensionInfo: Payment data:`, JSON.stringify(paymentData, null, 2));
+        // console.log(` fetchBookingExtensionInfo: Step 2b completed - Got payment data for ${invoiceId}`);
+        // console.log(` fetchBookingExtensionInfo: Payment data:`, JSON.stringify(paymentData, null, 2));
 
         // Handle different response formats
         if (!Array.isArray(paymentData)) {
-            console.log(`🔍 fetchBookingExtensionInfo: Payment data is not an array:`, typeof paymentData);
+            // console.log(` fetchBookingExtensionInfo: Payment data is not an array:`, typeof paymentData);
             return {
                 hasExtension: false,
                 extensionDescription: undefined,
@@ -488,12 +488,12 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         });
 
         if (!extensionPayment) {
-            console.log(`🔍 fetchBookingExtensionInfo: No extension payment found in invoice ${invoiceId}`);
-            console.log(`🔍 fetchBookingExtensionInfo: Available payment items:`, paymentData.map((p: any) => p.item));
+            // console.log(` fetchBookingExtensionInfo: No extension payment found in invoice ${invoiceId}`);
+            // console.log(` fetchBookingExtensionInfo: Available payment items:`, paymentData.map((p: any) => p.item));
 
             // Check if there are any payments that might be extensions but with different names
             const allItems = paymentData.map((p: any) => p.item).join(', ');
-            console.log(`🔍 fetchBookingExtensionInfo: All payment items: ${allItems}`);
+            console.log(` fetchBookingExtensionInfo: All payment items: ${allItems}`);
 
             return {
                 hasExtension: false,
@@ -503,12 +503,12 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             };
         }
 
-        console.log(`🔍 fetchBookingExtensionInfo: Found booking extension payment for ${bookingId}:`, {
-            paymentId: extensionPayment.id,
-            item: extensionPayment.item,
-            paidAmount: extensionPayment.paidAmount,
-            status: extensionPayment.status
-        });
+        // console.log(` fetchBookingExtensionInfo: Found booking extension payment for ${bookingId}:`, {
+        //     paymentId: extensionPayment.id,
+        //     item: extensionPayment.item,
+        //     paidAmount: extensionPayment.paidAmount,
+        //     status: extensionPayment.status
+        // });
 
         // Create extension description and extract details
         const extensionDescription = `${extensionPayment.item} (${extensionPayment.paidAmount?.toLocaleString()} VND)`;
@@ -523,7 +523,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         };
 
     } catch (error) {
-        console.error(`🔍 fetchBookingExtensionInfo: error for ${bookingId}:`, error);
+        // console.error(` fetchBookingExtensionInfo: error for ${bookingId}:`, error);
         return {
             hasExtension: false,
             extensionDescription: undefined,

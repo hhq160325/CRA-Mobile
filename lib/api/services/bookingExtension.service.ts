@@ -75,48 +75,48 @@ export interface PayOSPaymentResponse {
 export const bookingExtensionService = {
     // Get booking details by ID
     getBookingById: async (bookingId: string): Promise<{ data: BookingDetail | null; error: Error | null }> => {
-        console.log('📋 getBookingById: fetching booking', bookingId);
+        console.log(' getBookingById: fetching booking', bookingId);
 
         const result = await apiClient<BookingDetail>(`/Booking/GetBookingById/${bookingId}`, {
             method: 'GET',
         });
 
         if (result.error) {
-            console.error('📋 getBookingById: error', result.error);
+            console.error(' getBookingById: error', result.error);
             return { data: null, error: result.error };
         }
 
-        console.log('📋 getBookingById: success', result.data?.bookingNumber);
+        console.log(' getBookingById: success', result.data?.bookingNumber);
         return { data: result.data, error: null };
     },
 
     // Get invoice by ID (first API call)
     getInvoiceById: async (invoiceId: string): Promise<{ data: Invoice | null; error: Error | null }> => {
-        console.log('💰 getInvoiceById: fetching invoice', invoiceId);
+        console.log(' getInvoiceById: fetching invoice', invoiceId);
 
         const result = await apiClient<Invoice>(`/Invoice/${invoiceId}`, {
             method: 'GET',
         });
 
         if (result.error) {
-            console.error('💰 getInvoiceById: error', result.error);
+            console.error(' getInvoiceById: error', result.error);
             return { data: null, error: result.error };
         }
 
-        console.log('💰 getInvoiceById: success', result.data?.invoiceNo);
+        console.log(' getInvoiceById: success', result.data?.invoiceNo);
         return { data: result.data, error: null };
     },
 
     // Get payment details by invoice ID (second API call)
     getPaymentDetailsByInvoiceId: async (invoiceId: string): Promise<{ data: PaymentDetail | null; error: Error | null }> => {
-        console.log('💳 getPaymentDetailsByInvoiceId: fetching payment details', invoiceId);
+        console.log(' getPaymentDetailsByInvoiceId: fetching payment details', invoiceId);
 
         try {
             // Use direct fetch since this endpoint doesn't use /api/ prefix
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
             const url = `${baseUrl}/Invoice/${invoiceId}`;
 
-            console.log('💳 getPaymentDetailsByInvoiceId: calling URL:', url);
+            console.log(' getPaymentDetailsByInvoiceId: calling URL:', url);
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -127,12 +127,12 @@ export const bookingExtensionService = {
             });
 
             if (!response.ok) {
-                console.error('💳 getPaymentDetailsByInvoiceId: HTTP error', response.status);
+                console.error(' getPaymentDetailsByInvoiceId: HTTP error', response.status);
                 return { data: null, error: new Error(`HTTP ${response.status}: ${response.statusText}`) };
             }
 
             const result = await response.json();
-            console.log('💳 getPaymentDetailsByInvoiceId: got response:', result);
+            console.log(' getPaymentDetailsByInvoiceId: got response:', result);
 
             // Find the "Booking Extension" payment in the array
             const extensionPayment = result?.find((payment: any) =>
@@ -141,7 +141,7 @@ export const bookingExtensionService = {
             );
 
             if (!extensionPayment) {
-                console.log('💳 getPaymentDetailsByInvoiceId: no booking extension found');
+                console.log(' getPaymentDetailsByInvoiceId: no booking extension found');
                 return { data: null, error: new Error('No booking extension payment found') };
             }
 
@@ -153,11 +153,11 @@ export const bookingExtensionService = {
                 invoiceId: invoiceId
             };
 
-            console.log('💳 getPaymentDetailsByInvoiceId: found extension payment', paymentDetail);
+            console.log(' getPaymentDetailsByInvoiceId: found extension payment', paymentDetail);
             return { data: paymentDetail, error: null };
 
         } catch (error) {
-            console.error('💳 getPaymentDetailsByInvoiceId: fetch error', error);
+            console.error(' getPaymentDetailsByInvoiceId: fetch error', error);
             return { data: null, error: error as Error };
         }
     },
@@ -171,22 +171,22 @@ export const bookingExtensionService = {
         error: Error | null
     }> => {
         try {
-            console.log('🔍 checkBookingExtensions: checking for extensions in booking', bookingId);
+            console.log(' checkBookingExtensions: checking for extensions in booking', bookingId);
 
             // Step 1: Get booking details
             const bookingResult = await bookingExtensionService.getBookingById(bookingId);
             if (bookingResult.error || !bookingResult.data) {
-                console.log('🔍 checkBookingExtensions: no booking found');
+                console.log(' checkBookingExtensions: no booking found');
                 return { data: { hasExtension: false }, error: null };
             }
 
             const invoiceId = bookingResult.data.invoiceId;
-            console.log('🔍 checkBookingExtensions: got invoiceId', invoiceId);
+            console.log(' checkBookingExtensions: got invoiceId', invoiceId);
 
             // Step 2: Get invoice details to check for booking extension
             const invoiceResult = await bookingExtensionService.getInvoiceById(invoiceId);
             if (invoiceResult.error || !invoiceResult.data) {
-                console.log('🔍 checkBookingExtensions: no invoice found');
+                console.log(' checkBookingExtensions: no invoice found');
                 return { data: { hasExtension: false }, error: null };
             }
 
@@ -196,7 +196,7 @@ export const bookingExtensionService = {
             );
 
             if (extensionItem) {
-                console.log('🔍 checkBookingExtensions: found booking extension', extensionItem);
+                console.log(' checkBookingExtensions: found booking extension', extensionItem);
                 return {
                     data: {
                         hasExtension: true,
@@ -205,27 +205,27 @@ export const bookingExtensionService = {
                     error: null
                 };
             } else {
-                console.log('🔍 checkBookingExtensions: no booking extension found');
+                console.log(' checkBookingExtensions: no booking extension found');
                 return { data: { hasExtension: false }, error: null };
             }
 
         } catch (error) {
-            console.error('🔍 checkBookingExtensions: error', error);
+            console.error(' checkBookingExtensions: error', error);
             return { data: null, error: error as Error };
         }
     },
 
     // Create PayOS payment request
     createPayOSPaymentRequest: async (paymentRequest: PayOSPaymentRequest): Promise<{ data: PayOSPaymentResponse | null; error: Error | null }> => {
-        console.log('🔗 createPayOSPaymentRequest: creating payment', paymentRequest);
+        console.log(' createPayOSPaymentRequest: creating payment', paymentRequest);
 
         try {
-            // Use direct fetch since this endpoint doesn't use /api/ prefix
+           
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
             const url = `${baseUrl}/CreatePayOSPaymentRequest`;
 
-            console.log('🔗 createPayOSPaymentRequest: calling URL:', url);
-            console.log('🔗 createPayOSPaymentRequest: payload:', JSON.stringify(paymentRequest, null, 2));
+            console.log(' createPayOSPaymentRequest: calling URL:', url);
+            console.log(' createPayOSPaymentRequest: payload:', JSON.stringify(paymentRequest, null, 2));
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -237,14 +237,14 @@ export const bookingExtensionService = {
             });
 
             if (!response.ok) {
-                console.error('🔗 createPayOSPaymentRequest: HTTP error', response.status);
+                console.error(' createPayOSPaymentRequest: HTTP error', response.status);
                 const errorText = await response.text();
-                console.error('🔗 createPayOSPaymentRequest: error response:', errorText);
+                console.error(' createPayOSPaymentRequest: error response:', errorText);
                 return { data: null, error: new Error(`HTTP ${response.status}: ${response.statusText}`) };
             }
 
             const result = await response.json();
-            console.log('🔗 createPayOSPaymentRequest: success', result);
+            console.log(' createPayOSPaymentRequest: success', result);
 
             return { data: result, error: null };
 
@@ -257,7 +257,7 @@ export const bookingExtensionService = {
     // Complete flow: Get booking extension payment URL
     getBookingExtensionPaymentUrl: async (bookingId: string): Promise<{ data: PayOSPaymentResponse | null; error: Error | null }> => {
         try {
-            console.log('🔄 getBookingExtensionPaymentUrl: starting flow for booking', bookingId);
+            console.log(' getBookingExtensionPaymentUrl: starting flow for booking', bookingId);
 
             // Step 1: Get booking details
             const bookingResult = await bookingExtensionService.getBookingById(bookingId);
@@ -266,7 +266,7 @@ export const bookingExtensionService = {
             }
 
             const invoiceId = bookingResult.data.invoiceId;
-            console.log('🔄 getBookingExtensionPaymentUrl: got invoiceId', invoiceId);
+            console.log(' getBookingExtensionPaymentUrl: got invoiceId', invoiceId);
 
             // Step 2: Get payment details to find the actual paymentId
             const paymentResult = await bookingExtensionService.getPaymentDetailsByInvoiceId(invoiceId);
@@ -274,7 +274,7 @@ export const bookingExtensionService = {
                 return { data: null, error: paymentResult.error || new Error('Payment details not found') };
             }
 
-            console.log('🔄 getBookingExtensionPaymentUrl: got payment details', paymentResult.data);
+            console.log(' getBookingExtensionPaymentUrl: got payment details', paymentResult.data);
 
             // Step 3: Create PayOS payment request using actual paymentId
             const paymentRequest: PayOSPaymentRequest = {
@@ -284,18 +284,18 @@ export const bookingExtensionService = {
                 timeToPay: 10 // 10 minutes to pay
             };
 
-            console.log('🔄 getBookingExtensionPaymentUrl: creating PayOS payment request', paymentRequest);
+            console.log(' getBookingExtensionPaymentUrl: creating PayOS payment request', paymentRequest);
 
             const payosResult = await bookingExtensionService.createPayOSPaymentRequest(paymentRequest);
             if (payosResult.error || !payosResult.data) {
                 return { data: null, error: payosResult.error || new Error('Failed to create payment URL') };
             }
 
-            console.log('🔄 getBookingExtensionPaymentUrl: payment URL created successfully');
+            console.log(' getBookingExtensionPaymentUrl: payment URL created successfully');
             return { data: payosResult.data, error: null };
 
         } catch (error) {
-            console.error('🔄 getBookingExtensionPaymentUrl: unexpected error', error);
+            console.error(' getBookingExtensionPaymentUrl: unexpected error', error);
             return { data: null, error: error as Error };
         }
     }

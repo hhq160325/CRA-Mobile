@@ -89,9 +89,9 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
 
   // Debug logging
   if (apiCar.rentalRate) {
-    console.log(`🚗 ${apiCar.manufacturer} ${apiCar.model}: rentalRate found, dailyRate = ${apiCar.rentalRate.dailyRate}, status = ${apiCar.status}`)
+    console.log(` ${apiCar.manufacturer} ${apiCar.model}: rentalRate found, dailyRate = ${apiCar.rentalRate.dailyRate}, status = ${apiCar.status}`)
   } else {
-    console.log(`🚗 ${apiCar.manufacturer} ${apiCar.model}: NO rentalRate, status = ${apiCar.status}`)
+    console.log(` ${apiCar.manufacturer} ${apiCar.model}: NO rentalRate, status = ${apiCar.status}`)
   }
 
   return {
@@ -109,13 +109,13 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
     images: apiCar.imageUrls || [],
     imageUrls: apiCar.imageUrls || [],
     rating: apiCar.rating || 0,
-    reviews: 0, // API doesn't provide this
+    reviews: 0,
     seats: apiCar.seats,
     transmission: apiCar.transmission,
     fuelType: apiCar.fuelType,
     fuelConsumption: apiCar.fuelConsumption,
     mileage: `${apiCar.fuelConsumption} L/100km`,
-    features: [], // API doesn't provide this
+    features: [],
     description: apiCar.description || "",
     available: apiCar.status?.toLowerCase() === "available" || apiCar.status?.toLowerCase() === "active",
     status: apiCar.status,

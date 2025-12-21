@@ -40,7 +40,7 @@ export function useImagePicker(maxImages: number = 5) {
                 setSelectedImages(prev => [...prev, result.assets[0].uri])
             }
         } catch (error) {
-            console.error("Error taking photo:", error)
+            // console.error("Error taking photo:", error)
             Alert.alert('Error', 'Failed to take photo')
         }
     }
@@ -72,7 +72,7 @@ export function useImagePicker(maxImages: number = 5) {
                 setSelectedImages(prev => [...prev, ...imageUris].slice(0, maxImages))
             }
         } catch (error) {
-            console.error("Error picking images:", error)
+            // console.error("Error picking images:", error)
             Alert.alert('Error', 'Failed to pick images')
         }
     }

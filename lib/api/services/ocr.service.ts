@@ -24,9 +24,7 @@ export interface OCRResponse {
 class OCRService {
     private readonly baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/FPTAI';
 
-    /**
-     * Extract driver license information from image using OCR
-     */
+
     async extractDriverLicenseInfo(imageUri: string): Promise<OCRResponse> {
         try {
             console.log('🔍 OCR: Starting driver license extraction...');
@@ -41,7 +39,7 @@ class OCRService {
                 name: 'license.jpg',
             } as any);
 
-            console.log('📤 OCR: Sending request to API...');
+            console.log(' OCR: Sending request to API...');
 
             const response = await fetch(`${this.baseUrl}/ExtractDriverLicenseInfo`, {
                 method: 'POST',
@@ -52,11 +50,11 @@ class OCRService {
                 body: formData,
             });
 
-            console.log('📥 OCR: Response status:', response.status);
+            console.log(' OCR: Response status:', response.status);
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ OCR: API error:', errorText);
+                console.error(' OCR: API error:', errorText);
 
                 return {
                     error: {
@@ -67,7 +65,7 @@ class OCRService {
             }
 
             const result = await response.json();
-            console.log('✅ OCR: Extraction successful:', result);
+            console.log(' OCR: Extraction successful:', result);
 
             // Validate response structure
             if (!result || typeof result !== 'object') {
@@ -84,7 +82,7 @@ class OCRService {
             };
 
         } catch (error: any) {
-            console.error('💥 OCR: Exception during extraction:', error);
+            console.error(' OCR: Exception during extraction:', error);
 
             return {
                 error: {
@@ -95,18 +93,16 @@ class OCRService {
         }
     }
 
-    /**
-     * Validate OCR result quality based on probability scores
-     */
+
     validateOCRQuality(result: DriverLicenseOCRResult): {
         isValid: boolean;
         warnings: string[];
         confidence: 'high' | 'medium' | 'low';
     } {
         const warnings: string[] = [];
-        const minProbability = 80; // Minimum acceptable probability
+        const minProbability = 80;
 
-        // Check individual field probabilities
+
         if (result.idProbability < minProbability) {
             warnings.push(`License ID confidence low (${result.idProbability}%)`);
         }
@@ -151,9 +147,7 @@ class OCRService {
         };
     }
 
-    /**
-     * Format OCR result for display
-     */
+
     formatOCRResult(result: DriverLicenseOCRResult): {
         licenseId: string;
         fullName: string;

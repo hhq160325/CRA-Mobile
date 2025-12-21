@@ -37,7 +37,7 @@ class MobilePerformanceService {
             };
 
             this.calculatePerformanceMetrics();
-            console.log('📱 Mobile Performance Service initialized:', this.performanceMetrics);
+            console.log('Mobile Performance Service initialized:', this.performanceMetrics);
         } catch (error) {
             console.error('Failed to initialize mobile performance service:', error);
         }
@@ -66,16 +66,16 @@ class MobilePerformanceService {
                 const effectiveType = this.networkInfo.effectiveType;
                 if (effectiveType === '4g' || effectiveType === '5g') {
                     connectionStrength = 'good';
-                    recommendedTimeout = 15000; // 15s for good cellular
+                    recommendedTimeout = 15000;
                     recommendedRetries = 2;
                 } else if (effectiveType === '3g') {
                     connectionStrength = 'fair';
-                    recommendedTimeout = 25000; // 25s for 3G
+                    recommendedTimeout = 25000;
                     recommendedRetries = 3;
                     shouldUseCache = true;
                 } else {
                     connectionStrength = 'poor';
-                    recommendedTimeout = 35000; // 35s for 2G/slow
+                    recommendedTimeout = 35000;
                     recommendedRetries = 3;
                     shouldUseCache = true;
                 }
@@ -97,7 +97,7 @@ class MobilePerformanceService {
         // Adjust if not connected or no internet
         if (!isConnected || isInternetReachable === false) {
             connectionStrength = 'poor';
-            recommendedTimeout = 5000; // Quick timeout for offline
+            recommendedTimeout = 5000;
             recommendedRetries = 0;
             shouldUseCache = true;
         }
@@ -114,4 +114,51 @@ class MobilePerformanceService {
     getOptimizedRequestConfig(): {
         timeout: number;
         retries: number;
-        headers: Reco
+        headers: Record<string, string>;
+        shouldUseCache: boolean;
+    } {
+        if (!this.performanceMetrics) {
+            // Return default config if not initialized
+            return {
+                timeout: API_CONFIG.TIMEOUT,
+                retries: API_CONFIG.RETRY_ATTEMPTS,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                shouldUseCache: false,
+            };
+        }
+
+        const { recommendedTimeout, recommendedRetries, shouldUseCache } = this.performanceMetrics;
+
+        return {
+            timeout: recommendedTimeout,
+            retries: recommendedRetries,
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': shouldUseCache ? 'max-age=300' : 'no-cache',
+            },
+            shouldUseCache,
+        };
+    }
+
+    getPerformanceMetrics(): PerformanceMetrics | null {
+        return this.performanceMetrics;
+    }
+
+    getNetworkInfo(): NetworkInfo | null {
+        return this.networkInfo;
+    }
+
+    isOnline(): boolean {
+        return this.networkInfo?.isConnected ?? false;
+    }
+
+    hasGoodConnection(): boolean {
+        const strength = this.performanceMetrics?.connectionStrength;
+        return strength === 'excellent' || strength === 'good';
+    }
+}
+
+export const mobilePerformanceService = new MobilePerformanceService();
+export default mobilePerformanceService;

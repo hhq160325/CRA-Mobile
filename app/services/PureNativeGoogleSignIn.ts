@@ -22,38 +22,29 @@ export interface PureNativeGoogleAuthResult {
 class PureNativeGoogleSignIn {
     private isConfigured = false;
 
-    /**
-     * Configure PURE Native Google Sign-In
-     * 🚫 HOÀN TOÀN KHÔNG cần Web Client ID
-     * ✅ Chỉ dùng Android Client ID + SHA-1
-     * ✅ Google tự động detect từ APK signature
-     */
     configure(): boolean {
         try {
             GoogleSignin.configure({
-                // 🚫 KHÔNG có webClientId - Pure Native
-                // 🚫 KHÔNG có iosClientId - Android only
 
-                // ✅ Pure Native Android configuration
                 scopes: ['openid', 'profile', 'email'],
-                offlineAccess: false, // Native không cần offline
-                hostedDomain: '', // Tất cả domains
-                forceCodeForRefreshToken: false, // Không cần
-                accountName: '', // Android specific
+                offlineAccess: false,
+                hostedDomain: '',
+                forceCodeForRefreshToken: false,
+                accountName: '',
                 profileImageSize: 120,
             });
 
             this.isConfigured = true;
-            console.log('🎯 PURE NATIVE Google Sign-In configured');
-            console.log('🚫 NO Web Client ID');
-            console.log('🚫 NO iOS Client ID');
-            console.log('✅ Android Client ID + SHA-1 ONLY');
-            console.log('📱 EAS Build APK');
-            console.log('📋 Package: com.carapp.app');
-            console.log('🔑 SHA-1: A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF');
+            console.log(' PURE NATIVE Google Sign-In configured');
+            console.log(' NO Web Client ID');
+            console.log(' NO iOS Client ID');
+            console.log(' Android Client ID + SHA-1 ONLY');
+            console.log(' EAS Build APK');
+            console.log(' Package: com.carapp.app');
+            console.log(' SHA-1: A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF');
             return true;
         } catch (error) {
-            console.error('❌ Pure Native configuration failed:', error);
+            console.error(' Pure Native configuration failed:', error);
             this.isConfigured = false;
             return false;
         }
@@ -67,18 +58,15 @@ class PureNativeGoogleSignIn {
             await GoogleSignin.hasPlayServices({
                 showPlayServicesUpdateDialog: true
             });
-            console.log('✅ Google Play Services available');
+            console.log(' Google Play Services available');
             return true;
         } catch (error: any) {
-            console.error('❌ Google Play Services error:', error);
+            console.error(' Google Play Services error:', error);
             return false;
         }
     }
 
-    /**
-     * PURE Native Google Sign-In
-     * Không cần Web Client ID, chỉ Android Client ID + SHA-1
-     */
+
     async signIn(): Promise<PureNativeGoogleAuthResult> {
         try {
             if (!this.isConfigured) {
@@ -89,7 +77,7 @@ class PureNativeGoogleSignIn {
                 };
             }
 
-            console.log('🔍 Checking Google Play Services...');
+            console.log(' Checking Google Play Services...');
             const hasPlayServices = await this.checkPlayServices();
             if (!hasPlayServices) {
                 return {
@@ -99,9 +87,9 @@ class PureNativeGoogleSignIn {
                 };
             }
 
-            console.log('🚀 Starting PURE Native Google Sign-In...');
-            console.log('📱 Method: Android Client ID + SHA-1');
-            console.log('🚫 NO Web Client ID needed');
+            console.log(' Starting PURE Native Google Sign-In...');
+            console.log(' Method: Android Client ID + SHA-1');
+            console.log(' NO Web Client ID needed');
 
             // Pure Native Sign-In
             const signInResult = await GoogleSignin.signIn();
@@ -112,8 +100,8 @@ class PureNativeGoogleSignIn {
             const serverAuthCode = (signInResult as any).data?.serverAuthCode || (signInResult as any).serverAuthCode;
             const idToken = (signInResult as any).data?.idToken || (signInResult as any).idToken;
 
-            console.log('🔑 ID Token available:', !!idToken);
-            console.log('🔑 Server Auth Code available:', !!serverAuthCode);
+            console.log(' ID Token available:', !!idToken);
+            console.log(' Server Auth Code available:', !!serverAuthCode);
 
             const user: PureNativeGoogleUser = {
                 id: userData.id,
@@ -127,30 +115,30 @@ class PureNativeGoogleSignIn {
 
             // Authenticate with backend using mobile API
             if (idToken) {
-                console.log('🚀 Authenticating with backend mobile API...');
+                console.log(' Authenticating with backend mobile API...');
                 try {
                     const backendResult = await authService.loginWithGoogleMobile(idToken);
 
                     if (backendResult.data) {
-                        console.log('✅ Backend authentication successful');
-                        console.log('👤 Backend user:', backendResult.data.name);
+                        console.log(' Backend authentication successful');
+                        console.log(' Backend user:', backendResult.data.name);
 
-                        // Backend authentication successful, user is now logged into the app
+
                         await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
                         await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
                         await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
                         await AsyncStorage.setItem('backendAuthenticated', 'true');
 
-                        console.log('👤 User:', user.name);
-                        console.log('📧 Email:', user.email);
-                        console.log('🔐 Backend Auth: Success');
+                        console.log(' User:', user.name);
+                        console.log('Email:', user.email);
+                        console.log(' Backend Auth: Success');
 
                         return {
                             success: true,
                             user: user,
                         };
                     } else {
-                        console.log('❌ Backend authentication failed:', backendResult.error?.message);
+                        console.log(' Backend authentication failed:', backendResult.error?.message);
 
                         // Still save Google user data but mark backend auth as failed
                         await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
@@ -165,7 +153,7 @@ class PureNativeGoogleSignIn {
                         };
                     }
                 } catch (backendError: any) {
-                    console.error('❌ Backend authentication error:', backendError);
+                    console.error(' Backend authentication error:', backendError);
 
                     // Still save Google user data but mark backend auth as failed
                     await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
@@ -180,7 +168,7 @@ class PureNativeGoogleSignIn {
                     };
                 }
             } else {
-                console.log('⚠️ No ID token available, skipping backend authentication');
+                console.log(' No ID token available, skipping backend authentication');
 
                 // Save Google user data without backend auth
                 await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
@@ -196,30 +184,30 @@ class PureNativeGoogleSignIn {
             }
 
         } catch (error: any) {
-            console.error('❌ Pure Native Sign-In error:', error);
+            console.error(' Pure Native Sign-In error:', error);
 
-            let errorMessage = 'Đăng nhập thất bại';
+            let errorMessage = 'Login Fail';
             let errorCode = 'UNKNOWN_ERROR';
 
             switch (error.code) {
                 case statusCodes.SIGN_IN_CANCELLED:
-                    errorMessage = 'Người dùng hủy đăng nhập';
+                    errorMessage = 'cancle login';
                     errorCode = 'SIGN_IN_CANCELLED';
                     break;
                 case statusCodes.IN_PROGRESS:
-                    errorMessage = 'Đang trong quá trình đăng nhập';
+                    errorMessage = 'loading login';
                     errorCode = 'IN_PROGRESS';
                     break;
                 case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                    errorMessage = 'Google Play Services không khả dụng';
+                    errorMessage = 'Google Play Services not respond';
                     errorCode = 'PLAY_SERVICES_NOT_AVAILABLE';
                     break;
                 case statusCodes.SIGN_IN_REQUIRED:
-                    errorMessage = 'Cần đăng nhập lại';
+                    errorMessage = 'retry';
                     errorCode = 'SIGN_IN_REQUIRED';
                     break;
                 default:
-                    errorMessage = error.message || 'Lỗi không xác định';
+                    errorMessage = error.message || 'unknow error';
                     errorCode = error.code || 'UNKNOWN_ERROR';
             }
 
@@ -231,12 +219,10 @@ class PureNativeGoogleSignIn {
         }
     }
 
-    /**
-     * Đăng xuất Pure Native
-     */
+
     async signOut(): Promise<boolean> {
         try {
-            console.log('🚪 Pure Native Sign-Out...');
+            console.log('= Pure Native Sign-Out...');
             await GoogleSignin.signOut();
 
             // Clear both Google and backend auth data
@@ -250,25 +236,23 @@ class PureNativeGoogleSignIn {
             // Also clear main app auth data
             try {
                 await authService.logout();
-                console.log('✅ Backend logout successful');
+                console.log(' Backend logout successful');
             } catch (error) {
-                console.log('⚠️ Backend logout error (continuing):', error);
+                console.log(' Backend logout error (continuing):', error);
             }
 
-            console.log('✅ Pure Native Sign-Out successful');
+            console.log(' Pure Native Sign-Out successful');
             return true;
         } catch (error) {
-            console.error('❌ Pure Native Sign-Out error:', error);
+            console.error(' Pure Native Sign-Out error:', error);
             return false;
         }
     }
 
-    /**
-     * Thu hồi quyền truy cập Pure Native
-     */
+
     async revokeAccess(): Promise<boolean> {
         try {
-            console.log('🔐 Revoking Pure Native access...');
+            console.log(' Revoking Pure Native access...');
             await GoogleSignin.revokeAccess();
 
             // Clear both Google and backend auth data
@@ -282,51 +266,45 @@ class PureNativeGoogleSignIn {
             // Also clear main app auth data
             try {
                 await authService.logout();
-                console.log('✅ Backend logout successful');
+                console.log(' Backend logout successful');
             } catch (error) {
-                console.log('⚠️ Backend logout error (continuing):', error);
+                console.log(' Backend logout error (continuing):', error);
             }
 
-            console.log('✅ Pure Native access revoked');
+            console.log(' Pure Native access revoked');
             return true;
         } catch (error) {
-            console.error('❌ Pure Native revoke error:', error);
+            console.error(' Pure Native revoke error:', error);
             return false;
         }
     }
 
-    /**
-     * Kiểm tra trạng thái đăng nhập Pure Native
-     */
+
     async isSignedIn(): Promise<boolean> {
         try {
-            const isSignedIn = await GoogleSignin.isSignedIn();
             const localSignedIn = await AsyncStorage.getItem('isPureNativeSignedIn');
+            const googleUser = await GoogleSignin.getCurrentUser();
 
-            const googleSignedIn = await GoogleSignin.getCurrentUser();
-            const result = !!googleSignedIn && localSignedIn === 'true';
-            console.log('🔍 Pure Native sign-in status:', result);
+            const result = !!googleUser && localSignedIn === 'true';
+            console.log(' Pure Native sign-in status:', result);
             return result;
         } catch (error) {
-            console.error('❌ Check Pure Native status error:', error);
+            console.error(' Check Pure Native status error:', error);
             return false;
         }
     }
 
-    /**
-     * Lấy thông tin user Pure Native hiện tại
-     */
+
     async getCurrentUser(): Promise<PureNativeGoogleUser | null> {
         try {
-            // Thử AsyncStorage trước
+
             const storedUser = await AsyncStorage.getItem('pureNativeGoogleUser');
             if (storedUser) {
                 const user = JSON.parse(storedUser);
-                console.log('📱 Pure Native user from storage:', user.name);
+                console.log(' Pure Native user from storage:', user.name);
                 return user;
             }
 
-            // Thử Google SDK
             const currentUser = await GoogleSignin.getCurrentUser();
             if (currentUser) {
                 // Extract user data from current user result
@@ -343,11 +321,10 @@ class PureNativeGoogleSignIn {
                     serverAuthCode: serverAuthCode || undefined,
                 };
 
-                // Lưu lại
                 await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
                 await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
 
-                console.log('🔄 Pure Native user refreshed:', user.name);
+                console.log(' Pure Native user refreshed:', user.name);
                 return user;
             }
 
@@ -359,9 +336,7 @@ class PureNativeGoogleSignIn {
         }
     }
 
-    /**
-     * Clear tất cả dữ liệu Pure Native
-     */
+
     async clearAllData(): Promise<void> {
         try {
             await AsyncStorage.multiRemove([
@@ -370,15 +345,13 @@ class PureNativeGoogleSignIn {
                 'pureNativeSignInTime',
                 'backendAuthenticated'
             ]);
-            console.log('🧹 All Pure Native data cleared');
+            console.log(' All Pure Native data cleared');
         } catch (error) {
-            console.error('❌ Clear Pure Native data error:', error);
+            console.error(' Clear Pure Native data error:', error);
         }
     }
 
-    /**
-     * Debug info cho Pure Native
-     */
+
     async getDebugInfo(): Promise<any> {
         try {
             const isSignedIn = await this.isSignedIn();
@@ -389,8 +362,8 @@ class PureNativeGoogleSignIn {
             return {
                 type: 'PURE Native Google Sign-In',
                 method: 'Android Client ID + SHA-1 ONLY',
-                webClientId: '🚫 NOT USED',
-                iosClientId: '🚫 NOT USED',
+                webClientId: ' NOT USED',
+                iosClientId: ' NOT USED',
                 isConfigured: this.isConfigured,
                 isSignedIn,
                 backendAuthenticated: backendAuthenticated === 'true',
@@ -416,26 +389,24 @@ class PureNativeGoogleSignIn {
         }
     }
 
-    /**
-     * Configuration status
-     */
+
     getConfigurationStatus(): any {
         return {
             type: 'PURE Native Google Sign-In',
             isConfigured: this.isConfigured,
             authMethod: 'Android Client ID + SHA-1 ONLY',
-            webClientId: '🚫 NOT NEEDED',
-            iosClientId: '🚫 NOT NEEDED',
+            webClientId: ' NOT NEEDED',
+            iosClientId: ' NOT NEEDED',
             requirements: [
-                '✅ Android Client ID trong Google Cloud Console',
-                '✅ SHA-1: A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF',
-                '✅ Package: com.carapp.app',
-                '✅ EAS Build APK',
-                '✅ Real Android device',
-                '🚫 NO Web Client ID',
-                '🚫 NO iOS Client ID',
-                '🚫 NO expo-auth-session',
-                '🚫 NO expo-web-browser'
+                ' Android Client ID trong Google Cloud Console',
+                ' SHA-1: A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF',
+                ' Package: com.carapp.app',
+                ' EAS Build APK',
+                ' Real Android device',
+                ' NO Web Client ID',
+                ' NO iOS Client ID',
+                ' NO expo-auth-session',
+                ' NO expo-web-browser'
             ]
         };
     }

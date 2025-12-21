@@ -18,8 +18,8 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
     error: Error | null
 }> {
     try {
-        console.log("\n🔍 === Payment Status Checker ===")
-        console.log(`📦 Booking: ${bookingId}`)
+        console.log("\n === Payment Status Checker ===")
+        console.log(` Booking: ${bookingId}`)
 
 
         const bookingUrl = `${API_CONFIG.BASE_URL}/Booking/GetBookingById/${bookingId}`
@@ -36,7 +36,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             throw new Error("Booking has no invoiceId")
         }
 
-        console.log(`📋 Booking ${bookingId} - Invoice: ${invoiceId}`)
+        console.log(` Booking ${bookingId} - Invoice: ${invoiceId}`)
 
 
         const paymentsUrl = `${API_CONFIG.BASE_URL}/Booking/${bookingId}/Payments`
@@ -48,10 +48,10 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
         const payments = await paymentsResponse.json()
 
-        console.log(`💳 Found ${payments.length} payment(s) for booking ${bookingId}`)
+        console.log(` Found ${payments.length} payment(s) for booking ${bookingId}`)
 
         if (!Array.isArray(payments) || payments.length === 0) {
-            console.log("⚠️ No payments found - booking may not have payment records yet")
+            console.log(" No payments found - booking may not have payment records yet")
             return {
                 results: [],
                 allPaid: false,
@@ -65,7 +65,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
         for (const payment of payments) {
             const { orderCode, item, status: originalStatus } = payment
 
-            console.log(`💰 ${item}: ${originalStatus} (order: ${orderCode})`)
+            console.log(` ${item}: ${originalStatus} (order: ${orderCode})`)
 
 
             const { data: payosData, error: payosError } = await paymentService.getPayOSPayment(orderCode.toString())
@@ -100,7 +100,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
 
             if (newStatus) {
-                console.log(`  ⟳ Updating ${item}: ${originalStatus} → ${newStatus}`)
+                console.log(`   Updating ${item}: ${originalStatus} → ${newStatus}`)
 
                 try {
 
@@ -121,14 +121,14 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                     })
 
                     if (updateResponse.ok) {
-                        console.log(`  ✓ Updated ${item} to ${newStatus}`)
+                        console.log(`   Updated ${item} to ${newStatus}`)
                         updated = true
                     } else {
                         const errorText = await updateResponse.text()
-                        console.log(`  ✗ Update failed (${updateResponse.status}):`, errorText)
+                        console.log(`   Update failed (${updateResponse.status}):`, errorText)
                     }
                 } catch (updateError) {
-                    console.error(`  ✗ Update error:`, updateError)
+                    console.error(`   Update error:`, updateError)
                 }
             }
 
@@ -154,11 +154,11 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             r.payosStatus === "EXPIRED"
         )
 
-        console.log(`\n✅ Payment Check Complete - All Paid: ${allPaid}, Any Cancelled: ${anyCancelled}`)
+        console.log(`\n Payment Check Complete - All Paid: ${allPaid}, Any Cancelled: ${anyCancelled}`)
 
 
         if (allPaid) {
-            console.log("📝 Updating booking status to Confirmed...")
+            console.log("Updating booking status to Confirmed...")
             try {
                 const updateUrl = `${API_CONFIG.BASE_URL}/Booking/UpdateBooking`
 
@@ -174,16 +174,16 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                 })
 
                 if (updateResponse.ok) {
-                    console.log("✓ Booking status → Confirmed")
+                    console.log(" Booking status → Confirmed")
                 } else {
                     const responseText = await updateResponse.text()
-                    console.log(`✗ Booking update failed (${updateResponse.status}):`, responseText)
+                    console.log(` Booking update failed (${updateResponse.status}):`, responseText)
                 }
             } catch (err) {
-                console.error("✗ Booking update error:", err)
+                console.error(" Booking update error:", err)
             }
         } else if (anyCancelled && !allPaid) {
-            console.log("📝 Updating booking status to Canceled...")
+            console.log(" Updating booking status to Canceled...")
             try {
                 const updateUrl = `${API_CONFIG.BASE_URL}/Booking/UpdateBooking`
 
@@ -199,13 +199,13 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                 })
 
                 if (updateResponse.ok) {
-                    console.log("✓ Booking status → Canceled")
+                    console.log(" Booking status → Canceled")
                 } else {
                     const responseText = await updateResponse.text()
-                    console.log(`✗ Booking update failed (${updateResponse.status}):`, responseText)
+                    console.log(` Booking update failed (${updateResponse.status}):`, responseText)
                 }
             } catch (err) {
-                console.error("✗ Booking update error:", err)
+                console.error(" Booking update error:", err)
             }
         }
 

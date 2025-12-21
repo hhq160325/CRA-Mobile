@@ -8,16 +8,33 @@ export function formatDate(dateString: string): string {
 }
 
 export function getStatusColor(status: string): string {
-    return status.toLowerCase() === 'success' ? '#00B050' : '#d97706';
+    const normalizedStatus = status.toLowerCase();
+    if (normalizedStatus === 'success' || normalizedStatus === 'paid' || normalizedStatus === 'completed') {
+        return '#00B050';
+    }
+    if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled' || normalizedStatus === 'failed') {
+        return '#dc2626';
+    }
+    return '#d97706'; // pending, processing, etc.
 }
 
 export function getStatusBgColor(status: string): string {
-    return status.toLowerCase() === 'success' ? '#d1fae5' : '#fef3c7';
+    const normalizedStatus = status.toLowerCase();
+    if (normalizedStatus === 'success' || normalizedStatus === 'paid' || normalizedStatus === 'completed') {
+        return '#d1fae5';
+    }
+    if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled' || normalizedStatus === 'failed') {
+        return '#fee2e2';
+    }
+    return '#fef3c7'; // pending, processing, etc.
 }
 
 export function calculateTotal(payments: PaymentItem[]): number {
     return payments
-        .filter(payment => payment.status.toLowerCase() === 'success')
+        .filter(payment => {
+            const status = payment.status.toLowerCase();
+            return status === 'success' || status === 'paid' || status === 'completed';
+        })
         .reduce((sum, payment) => sum + payment.paidAmount, 0);
 }
 

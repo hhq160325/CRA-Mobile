@@ -33,15 +33,16 @@ export function useHomeData() {
       const carsResult = await carsService.getCars({});
 
       if (carsResult.data) {
-        const rentableStatuses = ['Active', 'Reserved', 'Available'];
-        const rentableCars = carsResult.data.filter(car =>
-          rentableStatuses.includes(car.status || ''),
+        // Filter out Reserved cars from home screen - only show Available and Active cars
+        const availableStatuses = ['Active', 'Available'];
+        const availableCars = carsResult.data.filter(car =>
+          availableStatuses.includes(car.status || ''),
         );
 
-        console.log(`📊 Total cars: ${carsResult.data.length}, Rentable: ${rentableCars.length}`);
+        console.log(`📊 Total cars: ${carsResult.data.length}, Available: ${availableCars.length}`);
 
         // Show cars immediately with placeholder prices
-        const carsWithPlaceholderPrices = rentableCars.map(car => ({
+        const carsWithPlaceholderPrices = availableCars.map(car => ({
           ...car,
           price: 0, // Will be updated when rates load
         }));
@@ -50,7 +51,7 @@ export function useHomeData() {
         console.log(`⚡ Cars displayed in ${Date.now() - startTime}ms`);
 
         // Load rental rates in parallel (much faster)
-        const ratePromises = rentableCars.map(car =>
+        const ratePromises = availableCars.map(car =>
           carsService.getCarRentalRate(car.id).catch(error => {
             console.warn(`Failed to load rate for ${car.name}:`, error);
             return { data: null, error };
@@ -60,7 +61,7 @@ export function useHomeData() {
         const rateResults = await Promise.all(ratePromises);
 
         // Update cars with actual prices
-        const carsWithRates = rentableCars.map((car, index) => {
+        const carsWithRates = availableCars.map((car, index) => {
           const rateResult = rateResults[index];
 
           if (

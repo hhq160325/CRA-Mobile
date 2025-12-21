@@ -17,7 +17,7 @@ import Header from '../../components/Header/Header';
 import { gpsTrackingService, type UserLocationHistory } from '../../../lib/api/services/gpsTracking.service';
 import { reverseGeocodingService } from '../../../lib/api/services/reverseGeocoding.service';
 import type { NavigatorParamList } from '../../navigators/navigation-route';
-const { gpsMonitoringStyles } = require('../styles/gpsMonitoring.styles');
+import { gpsMonitoringStyles } from './styles/gpsMonitoring.styles';
 
 interface UserLocationData extends UserLocationHistory {
     timeAgo: string;
@@ -218,7 +218,7 @@ export default function GPSMonitoringScreen() {
                     <MaterialIcons name="place" size={16} color={colors.primary} />
                     <View style={gpsMonitoringStyles.addressContainer}>
                         {item.address ? (
-                            <Text style={gpsMonitoringStyles.addressText} numberOfLines={2}>
+                            <Text style={gpsMonitoringStyles.addressText} numberOfLines={4}>
                                 {item.address}
                             </Text>
                         ) : (

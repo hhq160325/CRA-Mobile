@@ -16,6 +16,7 @@ interface UserData {
     isVerified?: boolean // New field from backend
     isCarOwner?: boolean // Made optional since it's not in the response
     rating: number
+    behaviourScore?: number // New field for behavior score
     status: string
     roleId: number
     gender: number

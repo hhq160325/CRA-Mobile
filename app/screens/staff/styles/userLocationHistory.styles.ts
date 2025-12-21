@@ -159,7 +159,7 @@ export const userLocationHistoryStyles = StyleSheet.create({
     },
     detailRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
     coordinatesText: {
         fontSize: scale(14),
@@ -222,6 +222,7 @@ export const userLocationHistoryStyles = StyleSheet.create({
         marginLeft: scale(6),
         fontWeight: '500',
         flex: 1,
-        lineHeight: scale(18),
+        lineHeight: scale(20),
+        flexWrap: 'wrap',
     },
 });

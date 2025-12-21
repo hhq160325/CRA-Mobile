@@ -24,6 +24,7 @@ export default function PaymentHistoryScreen() {
     error,
     expandedBookings,
     onRefresh,
+    refreshPaymentStatuses,
     toggleExpanded,
   } = usePaymentHistory();
 
@@ -72,6 +73,8 @@ export default function PaymentHistoryScreen() {
           <PaymentHistoryHeader
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            onRefreshStatuses={refreshPaymentStatuses}
+            refreshing={refreshing}
           />
 
           {error ? (

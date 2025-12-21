@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { useAuth } from '../../../../lib/auth-context';
 import { bookingsService } from '../../../../lib/api/services/bookings.service';
 import { API_CONFIG } from '../../../../lib/api/config';
+import { checkAndUpdatePaymentStatuses } from '../../../../lib/api/services/payment-status-checker';
 import { getAuthToken } from '../utils/paymentUtils';
 import type { PaymentItem, BookingPayments } from '../types/paymentTypes';
 
@@ -80,6 +82,21 @@ export function usePaymentHistory() {
                 setLoading(false);
                 return;
             }
+
+            // Update payment statuses for all bookings before fetching payment data
+            console.log('🔄 Updating payment statuses for all bookings...');
+            const statusUpdatePromises = bookingsResult.data.map(async (booking) => {
+                try {
+                    await checkAndUpdatePaymentStatuses(booking.id);
+                    console.log(`✅ Updated payment statuses for booking ${booking.bookingNumber}`);
+                } catch (error) {
+                    console.warn(`⚠️ Failed to update payment statuses for booking ${booking.bookingNumber}:`, error);
+                }
+            });
+
+            // Wait for all status updates to complete
+            await Promise.allSettled(statusUpdatePromises);
+            console.log('✅ Payment status updates completed');
 
             const paymentsPromises = bookingsResult.data.map(fetchBookingPayments);
             const results = await Promise.all(paymentsPromises);
@@ -177,6 +194,66 @@ export function usePaymentHistory() {
         fetchPaymentHistory();
     };
 
+    const refreshPaymentStatuses = async () => {
+        if (!user?.id) return;
+
+        try {
+            setRefreshing(true);
+            console.log('🔄 Manual payment status refresh triggered...');
+
+            const bookingsResult = await bookingsService.getBookings(user.id);
+            if (bookingsResult.data) {
+                // Update payment statuses for all user bookings
+                let totalUpdated = 0;
+                const statusUpdatePromises = bookingsResult.data.map(async (booking) => {
+                    try {
+                        const result = await checkAndUpdatePaymentStatuses(booking.id);
+                        const updatedCount = result.results.filter(r => r.updated).length;
+                        totalUpdated += updatedCount;
+                        console.log(`✅ Refreshed payment statuses for booking ${booking.bookingNumber}:`, {
+                            allPaid: result.allPaid,
+                            updatedCount
+                        });
+                        return result;
+                    } catch (error) {
+                        console.warn(`⚠️ Failed to refresh payment statuses for booking ${booking.bookingNumber}:`, error);
+                        return null;
+                    }
+                });
+
+                await Promise.allSettled(statusUpdatePromises);
+
+                // Reload payment data after status updates
+                await fetchPaymentHistory();
+
+                // Show feedback to user
+                if (totalUpdated > 0) {
+                    Alert.alert(
+                        'Payment Statuses Updated',
+                        `${totalUpdated} payment status(es) have been updated successfully.`,
+                        [{ text: 'OK' }]
+                    );
+                } else {
+                    Alert.alert(
+                        'Payment Statuses Up to Date',
+                        'All payment statuses are already current.',
+                        [{ text: 'OK' }]
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error refreshing payment statuses:', error);
+            Alert.alert(
+                'Refresh Failed',
+                'Failed to refresh payment statuses. Please try again.',
+                [{ text: 'OK' }]
+            );
+            setError('Failed to refresh payment statuses');
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
     const toggleExpanded = (bookingId: string) => {
         setExpandedBookings(prev => {
             const newSet = new Set(prev);
@@ -202,6 +279,7 @@ export function usePaymentHistory() {
 
 
         onRefresh,
+        refreshPaymentStatuses,
         toggleExpanded,
         fetchPaymentHistory,
     };

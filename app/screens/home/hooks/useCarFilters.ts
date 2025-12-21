@@ -1,5 +1,5 @@
-import {useState, useMemo} from 'react';
-import type {Car} from '../../../../lib/api';
+import { useState, useMemo } from 'react';
+import type { Car } from '../../../../lib/api';
 
 export function useCarFilters(cars: Car[]) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -9,6 +9,11 @@ export function useCarFilters(cars: Car[]) {
 
   const filteredCars = useMemo(() => {
     return cars.filter(car => {
+      // Exclude Reserved cars from display
+      if (car.status === 'Reserved') {
+        return false;
+      }
+
       if (
         searchQuery &&
         !car.name.toLowerCase().includes(searchQuery.toLowerCase())

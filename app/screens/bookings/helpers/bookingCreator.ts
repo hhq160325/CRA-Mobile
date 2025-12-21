@@ -9,7 +9,6 @@ interface CreateBookingParams {
     dropoffLocation: string;
     pickupDateTime: Date;
     dropoffDateTime: Date;
-    t: (key: string) => string;
 }
 
 
@@ -25,7 +24,6 @@ export const createBooking = async (
         dropoffLocation,
         pickupDateTime,
         dropoffDateTime,
-        t,
     } = params;
 
     if (!pickupLocation.trim() || !dropoffLocation.trim()) {

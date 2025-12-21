@@ -53,6 +53,13 @@ export type NavigatorParamList = {
     dropoffTime?: string;
   };
   ['VehicleReturn']: { bookingId: string };
+  ['UserReport']: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    carName: string;
+    bookingNumber: string;
+  };
   ['PaymentHistory']: undefined;
   ['Messages']: { bookingId: string; bookingNumber?: string };
   ['ChatHeads']: undefined;

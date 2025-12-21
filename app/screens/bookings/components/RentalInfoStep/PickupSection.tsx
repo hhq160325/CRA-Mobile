@@ -16,7 +16,6 @@ interface PickupSectionProps {
     onPickupLocationChange: (text: string) => void
     onShowParkLotModal: () => void
     onShowDateTimePicker: () => void
-    t: (key: string) => string
 }
 
 export default function PickupSection({
@@ -30,8 +29,7 @@ export default function PickupSection({
     onPickupModeChange,
     onPickupLocationChange,
     onShowParkLotModal,
-    onShowDateTimePicker,
-    t
+    onShowDateTimePicker
 }: PickupSectionProps) {
     return (
         <View>
@@ -68,6 +66,9 @@ export default function PickupSection({
                     placeholder="Enter custom pickup address"
                     value={pickupLocation}
                     onChangeText={onPickupLocationChange}
+                    multiline={true}
+                    numberOfLines={2}
+                    textAlignVertical="top"
                     style={{
                         borderWidth: 1,
                         borderColor: colors.border,
@@ -77,7 +78,9 @@ export default function PickupSection({
                         marginBottom: 12,
                         fontSize: 12,
                         backgroundColor: colors.white,
-                        color: colors.primary
+                        color: colors.primary,
+                        minHeight: 60,
+                        maxHeight: 100
                     }}
                 />
             )}

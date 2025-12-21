@@ -4,7 +4,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../theme/colors';
 import { useUserLocation } from '../../../../lib/hooks/useUserLocation';
 import { reverseGeocodingService } from '../../../../lib/api/services/reverseGeocoding.service';
-import { gpsLocationCardStyles } from '../styles';
+import { gpsLocationCardStyles } from '../styles/gpsLocationCard.styles';
 
 interface GPSLocationCardProps {
     userId: string;
@@ -219,7 +219,7 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
                                             <Text style={gpsLocationCardStyles.addressLoadingText}>Getting address...</Text>
                                         </View>
                                     ) : (
-                                        <Text style={gpsLocationCardStyles.infoValue} numberOfLines={3}>
+                                        <Text style={gpsLocationCardStyles.infoValue} numberOfLines={5}>
                                             {oldAddress || `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`}
                                         </Text>
                                     )}

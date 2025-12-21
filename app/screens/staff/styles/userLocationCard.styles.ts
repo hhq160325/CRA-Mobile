@@ -74,7 +74,7 @@ export const userLocationCardStyles = StyleSheet.create({
     },
     locationRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: scale(6),
     },
     coordinatesText: {
@@ -149,7 +149,8 @@ export const userLocationCardStyles = StyleSheet.create({
         fontSize: scale(12),
         color: colors.primary,
         fontWeight: '500',
-        lineHeight: scale(16),
+        lineHeight: scale(18),
+        flexWrap: 'wrap',
     },
     addressLoading: {
         flexDirection: 'row',

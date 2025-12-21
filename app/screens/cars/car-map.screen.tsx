@@ -208,7 +208,7 @@ export default function CarMapScreen() {
             {userAddress && (
                 <View style={styles.locationInfo}>
                     <MaterialIcons name="my-location" size={scale(20)} color={colors.morentBlue} />
-                    <Text style={styles.locationText} numberOfLines={1}>
+                    <Text style={styles.locationText} numberOfLines={3}>
                         {userAddress}
                     </Text>
                 </View>

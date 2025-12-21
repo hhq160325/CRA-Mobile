@@ -5,10 +5,9 @@ import { colors } from "../../../../theme/colors"
 interface DistanceCardProps {
     distanceInKm: number | null | undefined
     calculatingDistance: boolean
-    t: (key: string) => string
 }
 
-export default function DistanceCard({ distanceInKm, calculatingDistance, t }: DistanceCardProps) {
+export default function DistanceCard({ distanceInKm, calculatingDistance }: DistanceCardProps) {
     return (
         <View style={{
             backgroundColor: colors.white,

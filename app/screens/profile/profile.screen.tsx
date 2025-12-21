@@ -19,6 +19,8 @@ import {
   buildSafeUpdateData,
   getAvatarSource,
   getStatusColor,
+  getBehaviorScoreColor,
+  getBehaviorScoreLabel,
 } from './utils/profileHelpers';
 import { locationService } from '../../../lib/api';
 import { ocrService, DriverLicenseOCRResult } from '../../../lib/api/services/ocr.service';
@@ -447,6 +449,26 @@ export default function ProfileScreen() {
         />
 
         <View style={styles.accountDetailsCard}>
+          {/* Behavior Score Field */}
+          <View style={styles.behaviorScoreField}>
+            <Text style={styles.behaviorScoreLabel}>Behavior Score</Text>
+            <View style={styles.behaviorScoreContainer}>
+              <Text style={styles.behaviorScoreValue}>
+                {userData?.behaviourScore ?? 0}
+              </Text>
+              <View style={[
+                styles.behaviorScoreBadge,
+                {
+                  backgroundColor: getBehaviorScoreColor(userData?.behaviourScore ?? 0)
+                }
+              ]}>
+                <Text style={styles.behaviorScoreBadgeText}>
+                  {getBehaviorScoreLabel(userData?.behaviourScore ?? 0)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
           <ProfileField
             label="Phone Number"
             value={fieldValues.phone}

@@ -10,7 +10,6 @@ interface DropoffSectionProps {
     dropoffTimeError: string
     onShowDateTimePicker: () => void
     onDropoffLocationChange?: (location: string) => void
-    t: (key: string) => string
 }
 
 export default function DropoffSection({
@@ -20,8 +19,7 @@ export default function DropoffSection({
     dropoffDateError,
     dropoffTimeError,
     onShowDateTimePicker,
-    onDropoffLocationChange,
-    t
+    onDropoffLocationChange
 }: DropoffSectionProps) {
     return (
         <View>
@@ -33,6 +31,9 @@ export default function DropoffSection({
                 onChangeText={onDropoffLocationChange}
                 placeholder="Enter drop-off location or same as pickup"
                 placeholderTextColor={colors.placeholder}
+                multiline={true}
+                numberOfLines={2}
+                textAlignVertical="top"
                 style={{
                     borderWidth: 1,
                     borderColor: colors.border,
@@ -42,7 +43,9 @@ export default function DropoffSection({
                     marginBottom: 12,
                     backgroundColor: colors.white,
                     fontSize: 12,
-                    color: colors.primary
+                    color: colors.primary,
+                    minHeight: 60,
+                    maxHeight: 100
                 }}
             />
 

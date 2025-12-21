@@ -37,6 +37,12 @@ export const createAdditionalPayment = async (
     description: string,
     amount: number
 ): Promise<PaymentResponse> => {
+    // Divide the amount by 10 before sending to PayOS as requested
+    const payosAmount = Math.round(amount / 10);
+
+    console.log('Additional Payment: Original amount:', amount, 'VND');
+    console.log('Additional Payment: PayOS amount (divided by 10):', payosAmount, 'VND');
+
     const response = await fetch(
         'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/CreateAdditionalPayment',
         {
@@ -48,7 +54,7 @@ export const createAdditionalPayment = async (
             body: JSON.stringify({
                 bookingId: bookingId,
                 description: description,
-                amount: amount,
+                amount: payosAmount, // Send the divided amount to PayOS
             }),
         },
     );

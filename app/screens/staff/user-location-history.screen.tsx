@@ -157,7 +157,7 @@ export default function UserLocationHistoryScreen() {
                     {item.address && (
                         <View style={styles.detailRow}>
                             <MaterialIcons name="place" size={16} color={colors.primary} />
-                            <Text style={styles.addressText} numberOfLines={2}>
+                            <Text style={styles.addressText} numberOfLines={4}>
                                 {item.address}
                             </Text>
                         </View>

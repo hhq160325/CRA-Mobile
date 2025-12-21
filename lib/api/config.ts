@@ -156,4 +156,11 @@ export const API_ENDPOINTS = {
   // Inquiry
   CREATE_INQUIRY: "/Inquiry/initial",
   CHAT_LOG: (senderId: string, receiverId: string) => `/Inquiry/chatLog?senderId=${senderId}&receiverId=${receiverId}`,
+
+  // Reports
+  CREATE_REPORT: "/Report/reportedCar",
+  GET_REPORTS: "/Report/all",
+  GET_REPORT: (reportId: string) => `/Report/${reportId}`,
+  UPDATE_REPORT: (reportId: string) => `/Report/${reportId}`,
+  DELETE_REPORT: (reportId: string) => `/Report/${reportId}`,
 }

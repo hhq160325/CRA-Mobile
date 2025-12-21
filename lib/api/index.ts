@@ -53,4 +53,4 @@ export { bookingExtensionService, type BookingDetail, type InvoiceItem as Extens
 
 export { ocrService, type DriverLicenseOCRResult, type OCRResponse } from "./services/ocr.service"
 
-export { reportService, type CreateReportData, type ReportResponse } from "./services/report.service"
+export { reportService, type CreateReportData, type ReportResponse, type CreateUserReportData, type UserReportResponse } from "./services/report.service"

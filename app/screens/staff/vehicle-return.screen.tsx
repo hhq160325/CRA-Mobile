@@ -46,7 +46,7 @@ export default function VehicleReturnScreen() {
   const { user } = useAuth();
   const { bookingId } = (route.params as any) || {};
 
-  console.log(' VehicleReturnScreen: bookingId from route params:', bookingId);
+  // console.log(' VehicleReturnScreen: bookingId from route params:', bookingId);
 
   const [submitting, setSubmitting] = useState(false);
   const [showGPSCard, setShowGPSCard] = useState(false);
@@ -96,13 +96,13 @@ export default function VehicleReturnScreen() {
 
   // Debug logging for report section visibility
   React.useEffect(() => {
-    console.log('🔍 VehicleReturn: Report section visibility check:', {
-      returnCompleted,
-      isAlreadyCheckedOut,
-      shouldShowReport: returnCompleted || isAlreadyCheckedOut,
-      bookingId,
-      userId: booking?.userId
-    });
+    // console.log(' VehicleReturn: Report section visibility check:', {
+    //   returnCompleted,
+    //   isAlreadyCheckedOut,
+    //   shouldShowReport: returnCompleted || isAlreadyCheckedOut,
+    //   bookingId,
+    //   userId: booking?.userId
+    // });
   }, [returnCompleted, isAlreadyCheckedOut, booking?.userId]);
 
   React.useEffect(() => {
@@ -111,13 +111,13 @@ export default function VehicleReturnScreen() {
 
   const checkExtensionPaymentStatus = async () => {
     try {
-      console.log(' VehicleReturn: Checking extension payment status for booking:', bookingId);
+      // console.log(' VehicleReturn: Checking extension payment status for booking:', bookingId);
 
 
       const extensionResult = await fetchBookingExtensionInfo(bookingId);
 
       if (!extensionResult.hasExtension) {
-        console.log(' VehicleReturn: No extension found, allowing return');
+        // console.log(' VehicleReturn: No extension found, allowing return');
         setExtensionInfo({ hasExtension: false, isPaymentCompleted: true });
         return;
       }
@@ -130,7 +130,7 @@ export default function VehicleReturnScreen() {
       const invoiceId = bookingResult.data?.invoiceId;
 
       if (!invoiceId) {
-        console.log(' VehicleReturn: No invoiceId found, assuming payment not completed');
+        // console.log(' VehicleReturn: No invoiceId found, assuming payment not completed');
         setExtensionInfo({
           hasExtension: true,
           isPaymentCompleted: false,
@@ -156,11 +156,11 @@ export default function VehicleReturnScreen() {
 
         const isPaymentCompleted = extensionPayment?.status?.toLowerCase() === 'success';
 
-        console.log(' VehicleReturn: Extension payment status:', {
-          hasExtension: true,
-          isPaymentCompleted,
-          paymentStatus: extensionPayment?.status
-        });
+        // console.log(' VehicleReturn: Extension payment status:', {
+        //   hasExtension: true,
+        //   isPaymentCompleted,
+        //   paymentStatus: extensionPayment?.status
+        // });
 
         setExtensionInfo({
           hasExtension: true,
@@ -168,7 +168,7 @@ export default function VehicleReturnScreen() {
           extensionDescription: extensionResult.extensionDescription
         });
       } else {
-        console.log(' VehicleReturn: Failed to check payment status, assuming not completed');
+        // console.log(' VehicleReturn: Failed to check payment status, assuming not completed');
         setExtensionInfo({
           hasExtension: true,
           isPaymentCompleted: false,
@@ -176,7 +176,7 @@ export default function VehicleReturnScreen() {
         });
       }
     } catch (error) {
-      console.error(' VehicleReturn: Error checking extension payment status:', error);
+      // console.error(' VehicleReturn: Error checking extension payment status:', error);
       setExtensionInfo({ hasExtension: false, isPaymentCompleted: true });
     }
   };
@@ -246,7 +246,7 @@ export default function VehicleReturnScreen() {
                 return;
               }
 
-              console.log('✅ Vehicle return successful');
+              // console.log('Vehicle return successful');
               setSubmitting(false);
               setReturnCompleted(true);
 
@@ -334,13 +334,13 @@ export default function VehicleReturnScreen() {
     setReportSubmitting(true);
 
     try {
-      console.log('🚨 Creating user report:', {
-        title: reportTitle.trim(),
-        reporterId: user.id,
-        reportedUserId: booking?.userId,
-        deductedPoints: points,
-        bookingId: bookingId
-      });
+      // console.log(' Creating user report:', {
+      //   title: reportTitle.trim(),
+      //   reporterId: user.id,
+      //   reportedUserId: booking?.userId,
+      //   deductedPoints: points,
+      //   bookingId: bookingId
+      // });
 
       const result = await reportService.createUserReport({
         title: reportTitle.trim(),
@@ -351,7 +351,7 @@ export default function VehicleReturnScreen() {
       });
 
       if (result.error) {
-        console.error('❌ User report creation failed:', result.error);
+        // console.error(' User report creation failed:', result.error);
         Alert.alert(
           'Report Failed',
           `Failed to submit user report: ${result.error.message}`,
@@ -360,20 +360,20 @@ export default function VehicleReturnScreen() {
         return;
       }
 
-      console.log('✅ User report created successfully:', result.data);
+      // console.log(' User report created successfully:', result.data);
 
       // Get report details for success message
       const reportId = result.data?.reportNo || result.data?.id || 'N/A';
       const reportPoints = points || 0;
 
       // Debug logging for success message
-      console.log('📋 Report success details:', {
-        reportNo: result.data?.reportNo,
-        id: result.data?.id,
-        finalReportId: reportId,
-        deductedPoints: reportPoints,
-        rawResultData: result.data
-      });
+      // console.log(' Report success details:', {
+      //   reportNo: result.data?.reportNo,
+      //   id: result.data?.id,
+      //   finalReportId: reportId,
+      //   deductedPoints: reportPoints,
+      //   rawResultData: result.data
+      // });
 
       Alert.alert(
         'Report Submitted',
@@ -393,7 +393,7 @@ export default function VehicleReturnScreen() {
       );
 
     } catch (error) {
-      console.error('❌ Unexpected error creating user report:', error);
+      // console.error(' Unexpected error creating user report:', error);
       Alert.alert(
         'Unexpected Error',
         'An unexpected error occurred while submitting the report. Please try again.',
@@ -482,11 +482,11 @@ export default function VehicleReturnScreen() {
             <Pressable
               style={styles.gpsButton}
               onPress={() => {
-                console.log('🔍 VehicleReturn: Opening GPS card for CUSTOMER');
-                console.log('🔍 VehicleReturn: Full booking object:', booking);
-                console.log('🔍 VehicleReturn: booking.userId:', booking?.userId);
-                console.log('🔍 VehicleReturn: booking.customerName:', booking?.customerName);
-                console.log('🔍 VehicleReturn: All booking keys:', booking ? Object.keys(booking) : 'booking is null');
+                // console.log('🔍 VehicleReturn: Opening GPS card for CUSTOMER');
+                // console.log('🔍 VehicleReturn: Full booking object:', booking);
+                // console.log('🔍 VehicleReturn: booking.userId:', booking?.userId);
+                // console.log('🔍 VehicleReturn: booking.customerName:', booking?.customerName);
+                // console.log('🔍 VehicleReturn: All booking keys:', booking ? Object.keys(booking) : 'booking is null');
                 setShowGPSCard(true);
               }}
             >
@@ -745,9 +745,9 @@ export default function VehicleReturnScreen() {
           userId={booking.userId}
           visible={showGPSCard}
           onClose={() => {
-            console.log('🔍 VehicleReturn: Closing GPS card');
-            console.log('🔍 VehicleReturn: Customer userId (correct):', booking.userId);
-            console.log('🔍 VehicleReturn: Staff userId (wrong for GPS):', user?.id);
+            // console.log('🔍 VehicleReturn: Closing GPS card');
+            // console.log('🔍 VehicleReturn: Customer userId (correct):', booking.userId);
+            // console.log('🔍 VehicleReturn: Staff userId (wrong for GPS):', user?.id);
             setShowGPSCard(false);
           }}
         />

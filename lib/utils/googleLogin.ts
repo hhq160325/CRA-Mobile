@@ -1,6 +1,6 @@
 import { API_CONFIG, API_ENDPOINTS } from "../api/config"
 
-// Placeholder for native Google login - expo-auth-session removed
+
 export function useGoogleAuth() {
     return {
         request: null,
@@ -22,7 +22,7 @@ export async function processGoogleAuthResponse(
                 return { success: false, error: "No access token received" }
             }
 
-            console.log("✅ Got Google access token")
+            console.log(" Got Google access token")
 
 
             const userInfo = await fetchGoogleUserInfo(authentication.accessToken)
@@ -31,7 +31,7 @@ export async function processGoogleAuthResponse(
                 return { success: false, error: "Failed to get user info" }
             }
 
-            console.log("✅ Got Google user info:", userInfo.email)
+            console.log(" Got Google user info:", userInfo.email)
 
 
             const result = await exchangeWithBackend(authentication, userInfo)
@@ -46,7 +46,7 @@ export async function processGoogleAuthResponse(
         return { success: false, error: "Authentication failed" }
 
     } catch (error: any) {
-        console.error("❌ Process auth response error:", error)
+        console.error(" Process auth response error:", error)
         return { success: false, error: error.message }
     }
 }
@@ -180,7 +180,7 @@ function createUserFromGoogle(
     }
 
     saveAuthData(accessToken, user)
-    console.log("✅ User created from Google:", user.email)
+    console.log(" User created from Google:", user.email)
     return { success: true, user }
 }
 
@@ -193,7 +193,7 @@ function saveAuthData(token: string, user: any, refreshToken?: string) {
             if (refreshToken) {
                 localStorage.setItem("refreshToken", refreshToken)
             }
-            console.log("✅ Auth data saved")
+            console.log(" Auth data saved")
         }
     } catch (e) {
         console.error("Failed to save auth data:", e)

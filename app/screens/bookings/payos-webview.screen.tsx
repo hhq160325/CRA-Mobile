@@ -67,7 +67,7 @@ export default function PayOSWebViewScreen() {
 
   const updateBookingStatus = async (status: 'Confirmed' | 'Canceled') => {
     if (!bookingId || bookingId === 'pending') {
-      console.log('⚠️ No valid booking ID, skipping booking status update');
+      console.log(' No valid booking ID, skipping booking status update');
       return false;
     }
 
@@ -87,18 +87,18 @@ export default function PayOSWebViewScreen() {
       });
 
       const responseText = await response.text();
-      console.log('📥 Booking update response status:', response.status);
-      console.log('📥 Booking update response body:', responseText);
+      console.log(' Booking update response status:', response.status);
+      console.log(' Booking update response body:', responseText);
 
       if (!response.ok) {
-        console.error('❌ Booking update FAILED - Status:', response.status);
+        console.error(' Booking update FAILED - Status:', response.status);
         return false;
       }
 
-      console.log('✅ Booking status updated successfully');
+      console.log(' Booking status updated successfully');
       return true;
     } catch (err) {
-      console.error('❌ Failed to update booking status:', err);
+      console.error(' Failed to update booking status:', err);
       return false;
     }
   };
@@ -128,14 +128,50 @@ export default function PayOSWebViewScreen() {
       console.log('Payment update response body:', responseText);
 
       if (!response.ok) {
-        console.error('❌ Payment update failed with status:', response.status);
+        console.error(' Payment update failed with status:', response.status);
         return false;
       }
 
-      console.log('✅ Payment status updated to Success');
+      console.log(' Payment status updated to Success');
       return true;
     } catch (err) {
-      console.error('❌ Failed to update payment status:', err);
+      console.error('Failed to update payment status:', err);
+      return false;
+    }
+  };
+
+  const updateRentalFeeStatus = async () => {
+    console.log('Updating rental fee payment status...');
+    const rentalPaymentUpdateUrl = `${API_CONFIG.BASE_URL.replace(
+      '/api',
+      '',
+    )}/UpdatePayment/Booking/RentalPayment`;
+
+    try {
+      const response = await fetch(rentalPaymentUpdateUrl, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookingId: bookingId,
+          status: 'Paid',
+        }),
+      });
+
+      const responseText = await response.text();
+      console.log('Rental fee payment update response status:', response.status);
+      console.log('Rental fee payment update response body:', responseText);
+
+      if (!response.ok) {
+        console.error(' Rental fee payment update failed with status:', response.status);
+        return false;
+      }
+
+      console.log(' Rental fee payment status updated to Paid');
+      return true;
+    } catch (err) {
+      console.error(' Failed to update rental fee payment status:', err);
       return false;
     }
   };
@@ -148,13 +184,15 @@ export default function PayOSWebViewScreen() {
       const bookingUpdated = await updateBookingStatus('Confirmed');
 
       if (bookingUpdated) {
+        // Update both booking fee and rental fee payments
         await updatePaymentStatus();
+        await updateRentalFeeStatus();
       } else {
-        console.warn('⚠️ Booking update failed, skipping payment update');
+        console.warn(' Booking update failed, skipping payment updates');
       }
     }
 
-    navigateToDestination(true); // Success = true, navigate to Bookings
+    navigateToDestination(true);
   };
 
   const handlePaymentCancellation = async () => {
@@ -165,7 +203,7 @@ export default function PayOSWebViewScreen() {
       await updateBookingStatus('Canceled');
     }
 
-    navigateToDestination(false); // Success = false, navigate to Home
+    navigateToDestination(false);
 
     setTimeout(() => {
       Alert.alert(
@@ -184,18 +222,18 @@ export default function PayOSWebViewScreen() {
     // Check for PayOS success URL pattern
     if (url.includes('pay.payos.vn') && url.includes('/success')) {
       if (paymentProcessedRef.current) {
-        console.log('⚠️ Payment already processed, skipping...');
+        console.log(' Payment already processed, skipping...');
         return;
       }
       paymentProcessedRef.current = true;
-      console.log('🎉 PayOS payment success detected, navigating to bookings...');
+      console.log(' PayOS payment success detected, navigating to bookings...');
       handlePaymentSuccess();
       return;
     }
 
     // Block external website navigation after payment
     if (url.includes('cra-morent.vercel.app') || url.includes('payment-success') || url.includes('payment-cancel')) {
-      console.log('🚫 Blocking external website navigation:', url);
+      console.log(' Blocking external website navigation:', url);
       // Don't allow navigation to external pages
       return;
     }
@@ -203,14 +241,14 @@ export default function PayOSWebViewScreen() {
     // Handle other success/completion patterns
     if (url.includes('success') || url.includes('completed')) {
       if (paymentProcessedRef.current) {
-        console.log('⚠️ Payment already processed, skipping...');
+        console.log(' Payment already processed, skipping...');
         return;
       }
       paymentProcessedRef.current = true;
       handlePaymentSuccess();
     } else if (url.includes('cancel') || url.includes('failed')) {
       if (paymentProcessedRef.current) {
-        console.log('⚠️ Payment cancellation already processed, skipping...');
+        console.log(' Payment cancellation already processed, skipping...');
         return;
       }
       paymentProcessedRef.current = true;
@@ -264,27 +302,27 @@ export default function PayOSWebViewScreen() {
 
           // Block external page navigation and handle payment results
           if (url.includes('cra-morent.vercel.app') || url.includes('payment-success') || url.includes('payment-cancel')) {
-            console.log('🚫 Blocking external navigation to:', url);
+            console.log(' Blocking external navigation to:', url);
 
             if (!paymentProcessedRef.current) {
               paymentProcessedRef.current = true;
 
               // Check for cancellation first
               if (url.includes('payment-cancel') || url.includes('status=CANCELLED') || url.includes('cancel=true')) {
-                console.log('❌ Payment cancellation detected from blocked URL, navigating to home...');
+                console.log(' Payment cancellation detected from blocked URL, navigating to home...');
                 handlePaymentCancellation();
               }
               // Then check for success
               else if (url.includes('payment-success') || url.includes('status=PAID')) {
-                console.log('🎉 Payment success detected from blocked URL, navigating to bookings...');
+                console.log(' Payment success detected from blocked URL, navigating to bookings...');
                 handlePaymentSuccess();
               }
             }
 
-            return false; // Block the navigation
+            return false;
           }
 
-          // Allow other URLs (like initial payment URL)
+
           return true;
         }}
         style={styles.webView}

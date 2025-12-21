@@ -35,23 +35,23 @@ export function usePickupConfirm(bookingId: string) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching booking details for:', bookingId);
+        // console.log('Fetching booking details for:', bookingId);
 
         const checkInResult = await scheduleService.getCheckInImages(bookingId);
-        console.log(' Check-in result:', {
-          hasData: !!checkInResult.data,
-          hasError: !!checkInResult.error,
-          imagesCount: checkInResult.data?.images.length || 0,
-          description: checkInResult.data?.description || '',
-        });
+        // console.log(' Check-in result:', {
+        //   hasData: !!checkInResult.data,
+        //   hasError: !!checkInResult.error,
+        //   imagesCount: checkInResult.data?.images.length || 0,
+        //   description: checkInResult.data?.description || '',
+        // });
 
         if (checkInResult.data && checkInResult.data.images.length > 0) {
-          console.log(' Check-in data found - pickup already completed');
-          setIsAlreadyCheckedIn(true);
-          setExistingCheckInData(checkInResult.data);
-          setInitialDescription(checkInResult.data.description);
+          // console.log(' Check-in data found - pickup already completed');
+          // setIsAlreadyCheckedIn(true);
+          // setExistingCheckInData(checkInResult.data);
+          // setInitialDescription(checkInResult.data.description);
         } else {
-          console.log(' No check-in data found, proceeding with check-in flow');
+          // console.log(' No check-in data found, proceeding with check-in flow');
           setIsAlreadyCheckedIn(false);
         }
 
@@ -65,17 +65,17 @@ export function usePickupConfirm(bookingId: string) {
         const bookingData = bookingResult.data;
 
         // Debug logging for bookingNumber
-        console.log('🔍 usePickupConfirm: Raw booking data:', JSON.stringify(bookingData, null, 2));
-        console.log('🔍 usePickupConfirm: bookingNumber field:', bookingData.bookingNumber);
-        console.log('🔍 usePickupConfirm: All booking keys:', Object.keys(bookingData));
+        // console.log('🔍 usePickupConfirm: Raw booking data:', JSON.stringify(bookingData, null, 2));
+        // console.log('🔍 usePickupConfirm: bookingNumber field:', bookingData.bookingNumber);
+        // console.log('🔍 usePickupConfirm: All booking keys:', Object.keys(bookingData));
 
         // Check for alternative field names that might contain booking number
         const possibleBookingNumberFields = [
           'bookingNumber', 'bookingNo', 'bookingId', 'bookNum', 'number', 'code'
         ];
         possibleBookingNumberFields.forEach(field => {
-          if (bookingData[field]) {
-            console.log(`🔍 usePickupConfirm: Found ${field}:`, bookingData[field]);
+          if ((bookingData as any)[field]) {
+            // console.log(`🔍 usePickupConfirm: Found ${field}:`, (bookingData as any)[field]);
           }
         });
 
@@ -115,12 +115,12 @@ export function usePickupConfirm(bookingId: string) {
             rawBooking.bookingFee ||
             rawBooking.carRentPrice ||
             0;
-          console.log(' usePickupConfirm: fallback amount sources:', {
-            invoiceAmount: rawBooking.invoice?.amount,
-            bookingFee: rawBooking.bookingFee,
-            carRentPrice: rawBooking.carRentPrice,
-            finalAmount: amount
-          });
+          // console.log(' usePickupConfirm: fallback amount sources:', {
+          //   invoiceAmount: rawBooking.invoice?.amount,
+          //   bookingFee: rawBooking.bookingFee,
+          //   carRentPrice: rawBooking.carRentPrice,
+          //   finalAmount: amount
+          // });
         }
 
         // If still 0, try to get from payment data (Rental Fee)
@@ -143,11 +143,11 @@ export function usePickupConfirm(bookingId: string) {
 
               if (rentalFeePayment && rentalFeePayment.paidAmount) {
                 amount = rentalFeePayment.paidAmount;
-                console.log(' usePickupConfirm: found Rental Fee amount:', amount);
+                // console.log(' usePickupConfirm: found Rental Fee amount:', amount);
               }
             }
           } catch (error) {
-            console.warn(' usePickupConfirm: failed to fetch payment data:', error);
+            // console.warn(' usePickupConfirm: failed to fetch payment data:', error);
           }
         }
 
@@ -169,7 +169,7 @@ export function usePickupConfirm(bookingId: string) {
 
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching booking details:', err);
+        // console.error('Error fetching booking details:', err);
         setError('An error occurred');
         setLoading(false);
       }

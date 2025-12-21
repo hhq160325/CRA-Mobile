@@ -24,21 +24,21 @@ export default function BookingDetailScreen() {
   const { user } = useAuth();
   const { id } = (route.params as any) || {};
 
-  console.log('🔍 BookingDetailScreen: Rendering with ID:', id);
-  console.log('🔍 BookingDetailScreen: Route params:', route.params);
-  console.log('🔍 BookingDetailScreen: User auth state:', { hasUser: !!user, userId: user?.id });
+  console.log(' BookingDetailScreen: Rendering with ID:', id);
+  console.log(' BookingDetailScreen: Route params:', route.params);
+  console.log(' BookingDetailScreen: User auth state:', { hasUser: !!user, userId: user?.id });
 
 
   useEffect(() => {
     if (!user) {
-      console.log('🔍 BookingDetailScreen: No authenticated user, navigating to login');
+      console.log(' BookingDetailScreen: No authenticated user, navigating to login');
       navigation.navigate('SignIn' as any);
     }
   }, [user, navigation]);
 
   const { booking, invoice, payments, bookingFee, loading } = useBookingDetail(id, navigation);
 
-  console.log('🔍 BookingDetailScreen: Hook results:', {
+  console.log(' BookingDetailScreen: Hook results:', {
     hasBooking: !!booking,
     loading,
     bookingId: booking?.id,
@@ -137,7 +137,7 @@ export default function BookingDetailScreen() {
         {/* Report Car Button - Available for all booking statuses */}
         <ReportCarButton
           onPress={() => {
-            console.log('🔍 BookingDetail: Navigating to ReportCar with params:', {
+            console.log(' BookingDetail: Navigating to ReportCar with params:', {
               carId: booking.carId,
               carName: booking.carName,
               bookingId: booking.id,
@@ -152,9 +152,9 @@ export default function BookingDetailScreen() {
                 bookingNumber: booking.bookingNumber,
                 licensePlate: booking.carDetails?.licensePlate || 'N/A',
               });
-              console.log('🔍 BookingDetail: Navigation call completed');
+              console.log(' BookingDetail: Navigation call completed');
             } catch (error) {
-              console.error('🔍 BookingDetail: Navigation error:', error);
+              console.error(' BookingDetail: Navigation error:', error);
             }
           }}
         />

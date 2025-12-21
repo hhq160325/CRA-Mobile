@@ -33,7 +33,7 @@ export function useGoogleLogin() {
         isLoading,
         error,
         clearError,
-        isReady: true, // Always ready for native implementation
+        isReady: true,
         redirectUri: '',
     }
 }

@@ -15,7 +15,7 @@ export interface APIDebugInfo {
 }
 
 export async function debugAPIConnection(): Promise<APIDebugInfo> {
-    console.log('🔍 Starting API Debug...');
+    console.log(' Starting API Debug...');
 
     const connectionTest = await testConnection();
     const isProduction = !__DEV__;
@@ -58,19 +58,19 @@ export async function debugAPIConnection(): Promise<APIDebugInfo> {
         recommendations,
     };
 
-    console.log('📊 API Debug Results:', debugInfo);
+    console.log(' API Debug Results:', debugInfo);
     return debugInfo;
 }
 
 export function logAPIError(error: any, context: string) {
-    console.group(`🚨 API Error in ${context}`);
+    console.group(` API Error in ${context}`);
     console.error('Error:', error);
     console.log('Current API URL:', API_CONFIG.BASE_URL);
     console.log('Timestamp:', new Date().toISOString());
 
     // Check for specific error patterns
     if (error?.message?.includes('ER_NGROK_3200')) {
-        console.warn('💡 ER_NGROK_3200 detected - This is a tunnel error');
+        console.warn(' ER_NGROK_3200 detected - This is a tunnel error');
         console.warn('Solutions:');
         console.warn('1. Restart your ngrok tunnel');
         console.warn('2. Check if ngrok is still running');
@@ -79,7 +79,7 @@ export function logAPIError(error: any, context: string) {
     }
 
     if (error?.message?.includes('Network request failed')) {
-        console.warn('💡 Network error detected');
+        console.warn(' Network error detected');
         console.warn('Solutions:');
         console.warn('1. Check your internet connection');
         console.warn('2. Verify the server is running');

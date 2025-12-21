@@ -40,8 +40,8 @@ export const createAdditionalPayment = async (
     // Divide the amount by 10 before sending to PayOS as requested
     const payosAmount = Math.round(amount / 10);
 
-    console.log('Additional Payment: Original amount:', amount, 'VND');
-    console.log('Additional Payment: PayOS amount (divided by 10):', payosAmount, 'VND');
+    // console.log('Additional Payment: Original amount:', amount, 'VND');
+    // console.log('Additional Payment: PayOS amount (divided by 10):', payosAmount, 'VND');
 
     const response = await fetch(
         'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/CreateAdditionalPayment',
@@ -148,5 +148,46 @@ export const handlePaymentResult = (
                 }
             ]
         );
+    }
+};
+
+// Generic payment update function for additional and extension payments
+export const updateGenericPaymentStatus = async (
+    bookingId: string,
+    paymentId: string,
+    status: 'Paid' | 'Success' = 'Paid'
+): Promise<boolean> => {
+    console.log(`Updating generic payment status for payment ID: ${paymentId}`);
+
+    try {
+        const response = await fetch(
+            'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/UpdatePayment/Booking/Payment',
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bookingId: bookingId,
+                    paymentId: paymentId,
+                    status: status,
+                }),
+            }
+        );
+
+        const responseText = await response.text();
+        console.log(`Generic payment update response status: ${response.status}`);
+        console.log(`Generic payment update response body: ${responseText}`);
+
+        if (!response.ok) {
+            console.error(`❌ Generic payment update failed with status: ${response.status}`);
+            return false;
+        }
+
+        console.log(`✅ Generic payment status updated to ${status}`);
+        return true;
+    } catch (err) {
+        console.error('❌ Failed to update generic payment status:', err);
+        return false;
     }
 };

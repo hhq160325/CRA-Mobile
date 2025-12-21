@@ -36,7 +36,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
     useFocusEffect(
         React.useCallback(() => {
             if (extensionInfo.hasExtension) {
-                console.log(' BookingExtensionSection: Screen focused, refreshing payment status');
+                // console.log(' BookingExtensionSection: Screen focused, refreshing payment status');
                 checkForBookingExtension();
             }
         }, [extensionInfo.hasExtension])
@@ -47,7 +47,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
 
             const bookingResult = await bookingExtensionService.getBookingById(bookingId);
             if (!bookingResult.data?.invoiceId) {
-                console.log(' BookingExtensionSection: No invoiceId found');
+                // console.log(' BookingExtensionSection: No invoiceId found');
                 const info = {
                     hasExtension: true,
                     amount,
@@ -94,10 +94,10 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
                 setExtensionInfo(info);
                 onPaymentStatusChange?.(isPaymentCompleted);
 
-                console.log(' BookingExtensionSection: Payment status checked:', {
-                    paymentStatus,
-                    isPaymentCompleted
-                });
+                // console.log(' BookingExtensionSection: Payment status checked:', {
+                //     paymentStatus,
+                //     isPaymentCompleted
+                // });
             } else {
                 const info = {
                     hasExtension: true,
@@ -111,7 +111,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
                 onPaymentStatusChange?.(false);
             }
         } catch (error) {
-            console.error(' BookingExtensionSection: Error checking payment status:', error);
+            // console.error(' BookingExtensionSection: Error checking payment status:', error);
             const info = {
                 hasExtension: true,
                 amount,
@@ -128,12 +128,12 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
     const checkForBookingExtension = async () => {
         try {
             setCheckingExtension(true);
-            console.log(' BookingExtensionSection: Checking for booking extension:', bookingId);
+            // console.log(' BookingExtensionSection: Checking for booking extension:', bookingId);
 
 
             const extensionInfo = await fetchBookingExtensionInfo(bookingId);
 
-            console.log(' BookingExtensionSection: Extension info result:', extensionInfo);
+            // console.log(' BookingExtensionSection: Extension info result:', extensionInfo);
 
             if (extensionInfo.hasExtension && extensionInfo.extensionDescription) {
 
@@ -143,13 +143,13 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
 
                 await checkExtensionPaymentStatus(bookingId, extensionInfo.extensionAmount || 0, extensionInfo.extensionDescription, days);
             } else {
-                console.log(' BookingExtensionSection: No booking extension found');
+                // console.log(' BookingExtensionSection: No booking extension found');
                 setExtensionInfo({ hasExtension: false });
                 onPaymentStatusChange?.(true);
             }
 
         } catch (error) {
-            console.error(' BookingExtensionSection: Error checking booking extension:', error);
+            // console.error(' BookingExtensionSection: Error checking booking extension:', error);
             setExtensionInfo({ hasExtension: false });
         } finally {
             setCheckingExtension(false);
@@ -159,7 +159,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
     const handlePayExtension = async () => {
         try {
             setLoading(true);
-            console.log(' Starting extension payment for booking:', bookingId);
+            // console.log(' Starting extension payment for booking:', bookingId);
 
             const result = await bookingExtensionService.getBookingExtensionPaymentUrl(bookingId);
 
@@ -171,7 +171,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
                 return;
             }
 
-            console.log(' Payment URL created:', result.data.checkoutUrl);
+            // console.log(' Payment URL created:', result.data.checkoutUrl);
 
 
             navigation.navigate('PayOSWebView', {
@@ -180,7 +180,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
             });
 
         } catch (error) {
-            console.error(' Error creating extension payment:', error);
+            // console.error(' Error creating extension payment:', error);
             Alert.alert(
                 'Error',
                 'Failed to process extension payment. Please try again.'
@@ -206,16 +206,16 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
     }
 
 
-    console.log(' BookingExtensionSection: Render decision:', {
-        bookingId,
-        checkingExtension,
-        hasExtension: extensionInfo.hasExtension,
-        description: extensionInfo.description,
-        amount: extensionInfo.amount
-    });
+    // console.log(' BookingExtensionSection: Render decision:', {
+    //     bookingId,
+    //     checkingExtension,
+    //     hasExtension: extensionInfo.hasExtension,
+    //     description: extensionInfo.description,
+    //     amount: extensionInfo.amount
+    // });
 
     if (!extensionInfo.hasExtension) {
-        console.log(' BookingExtensionSection: No extension found, not rendering component');
+        // console.log(' BookingExtensionSection: No extension found, not rendering component');
         return null;
     }
 

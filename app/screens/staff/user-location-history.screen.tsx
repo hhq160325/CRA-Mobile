@@ -103,7 +103,7 @@ export default function UserLocationHistoryScreen() {
                     );
                     latestLocation.address = address;
                 } catch (error) {
-                    console.log('📍 Failed to get address for location:', error);
+                    // console.log('📍 Failed to get address for location:', error);
                 }
 
                 setLocationHistory([latestLocation]); // Only show the latest location
@@ -111,7 +111,7 @@ export default function UserLocationHistoryScreen() {
                 setLocationHistory([]);
             }
         } catch (error) {
-            console.error('📍 Error fetching latest location:', error);
+            // console.error('📍 Error fetching latest location:', error);
             setError(error instanceof Error ? error.message : 'Failed to fetch latest location');
         }
 

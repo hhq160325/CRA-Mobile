@@ -74,7 +74,7 @@ export const scheduleService = {
             const url = API_ENDPOINTS.CHECK_IN_OUT_INFO(bookingId, isCheckIn)
             const fullUrl = `${baseUrl}${url}`
 
-            console.log(`📸 getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): fetching from`, fullUrl)
+            console.log(` getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): fetching from`, fullUrl)
 
             const token = await getAuthToken()
 
@@ -91,34 +91,34 @@ export const scheduleService = {
 
                 // Handle expected cases where no data exists yet
                 if (response.status === 500 && errorText.includes('Object reference')) {
-                    console.log(`📸 getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): No data exists yet for booking ${bookingId}`)
+                    console.log(` getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): No data exists yet for booking ${bookingId}`)
                     return { data: { images: [], description: '' }, error: null }
                 }
 
                 if (response.status === 404) {
-                    console.log(`📸 getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): No data found for booking ${bookingId}`)
+                    console.log(` getCheckInOutInfo (${isCheckIn ? 'check-in' : 'check-out'}): No data found for booking ${bookingId}`)
                     return { data: { images: [], description: '' }, error: null }
                 }
 
                 // Only log actual errors
-                console.log(`📸 getCheckInOutInfo: response status ${response.status}`)
-                console.log(`📸 getCheckInOutInfo: error response`, errorText)
+                console.log(` getCheckInOutInfo: response status ${response.status}`)
+                console.log(` getCheckInOutInfo: error response`, errorText)
                 return { data: null, error: new Error(`Failed to fetch info: ${response.status}`) }
             }
 
             const responseData = await response.json()
-            console.log(`📸 getCheckInOutInfo: response data`, JSON.stringify(responseData, null, 2))
+            console.log(` getCheckInOutInfo: response data`, JSON.stringify(responseData, null, 2))
 
 
             const viewData = responseData?.view || responseData
             const images = viewData?.urls || []
             const description = viewData?.description || ""
 
-            console.log(`📸 getCheckInOutInfo: extracted`, { imagesCount: images.length, description })
+            console.log(` getCheckInOutInfo: extracted`, { imagesCount: images.length, description })
 
             return { data: { images, description }, error: null }
         } catch (error) {
-            console.error(`📸 getCheckInOutInfo: exception`, error)
+            console.error(` getCheckInOutInfo: exception`, error)
             return { data: null, error: error as Error }
         }
     },
@@ -146,11 +146,11 @@ export const scheduleService = {
         try {
             const token = await getAuthToken()
 
-            console.log('✅ checkIn: starting')
-            console.log('✅ checkIn: bookingId', bookingId)
-            console.log('✅ checkIn: staffId', responsibleStaffId)
-            console.log('✅ checkIn: images count', imageUris.length)
-            console.log('✅ checkIn: token available', !!token)
+            console.log(' checkIn: starting')
+            console.log(' checkIn: bookingId', bookingId)
+            console.log(' checkIn: staffId', responsibleStaffId)
+            console.log(' checkIn: images count', imageUris.length)
+            console.log(' checkIn: token available', !!token)
 
             const formData = new FormData()
 
@@ -170,7 +170,7 @@ export const scheduleService = {
                 const ext = match ? match[1].toLowerCase() : 'jpg'
                 const type = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg'
 
-                console.log(`✅ checkIn: adding image ${index + 1}:`, { filename, type, uri: imageUri.substring(0, 50) + '...' })
+                console.log(` checkIn: adding image ${index + 1}:`, { filename, type, uri: imageUri.substring(0, 50) + '...' })
 
 
                 formData.append('images', {
@@ -184,29 +184,29 @@ export const scheduleService = {
             const baseUrl = API_CONFIG.BASE_URL
             const fullUrl = `${baseUrl}${url}`
 
-            console.log('✅ checkIn: posting to', fullUrl)
+            console.log(' checkIn: posting to', fullUrl)
 
             const response = await fetch(fullUrl, {
                 method: "POST",
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
                     'Accept': 'application/json',
-                    // Don't set Content-Type for FormData - let the browser set it with boundary
+
                 },
                 body: formData,
             })
 
-            console.log('✅ checkIn: response status', response.status)
+            console.log(' checkIn: response status', response.status)
 
             if (!response.ok) {
                 const errorText = await response.text()
-                console.error('✅ checkIn: error response', errorText)
+                console.error(' checkIn: error response', errorText)
 
                 let userMessage = "Check-in failed. Please try again."
 
-                // Check if response is HTML (error page)
+
                 if (errorText.trim().startsWith('<')) {
-                    console.error('✅ checkIn: Server returned HTML error page')
+                    console.error(' checkIn: Server returned HTML error page')
                     if (response.status === 401) {
                         userMessage = "Authentication failed. Please login again."
                     } else if (response.status === 403) {
@@ -217,7 +217,7 @@ export const scheduleService = {
                         userMessage = `Server error (${response.status}). Please try again.`
                     }
                 } else {
-                    // Try to parse JSON error response
+
                     try {
                         const errorJson = JSON.parse(errorText)
                         if (errorJson.message) {
@@ -228,7 +228,7 @@ export const scheduleService = {
                             userMessage = Object.values(errorJson.errors).flat().join(', ')
                         }
                     } catch {
-                        // If not JSON, use the text directly if it's short
+
                         if (errorText.length < 200) {
                             userMessage = errorText
                         }
@@ -239,29 +239,29 @@ export const scheduleService = {
             }
 
             const responseText = await response.text()
-            console.log('✅ checkIn: success response', responseText)
+            console.log(' checkIn: success response', responseText)
 
             let data: any
             try {
-                // Handle empty response
+
                 if (!responseText || responseText.trim() === '') {
                     data = { success: true, message: 'Check-in successful' }
                 } else if (responseText.trim().startsWith('<')) {
-                    // Handle HTML response (shouldn't happen on success, but just in case)
-                    console.warn('✅ checkIn: Received HTML response on success')
+
+                    console.warn(' checkIn: Received HTML response on success')
                     data = { success: true, message: 'Check-in successful' }
                 } else {
                     data = JSON.parse(responseText)
                 }
             } catch (parseError) {
-                console.warn('✅ checkIn: Failed to parse response as JSON:', parseError)
+                console.warn(' checkIn: Failed to parse response as JSON:', parseError)
                 data = { success: true, message: responseText || 'Check-in successful' }
             }
 
-            console.log('✅ checkIn: parsed data', data)
+            console.log(' checkIn: parsed data', data)
             return { data, error: null }
         } catch (error) {
-            console.error('✅ checkIn: exception', error)
+            console.error(' checkIn: exception', error)
             return { data: null, error: error as Error }
         }
     },
@@ -275,11 +275,11 @@ export const scheduleService = {
         try {
             const token = await getAuthToken()
 
-            console.log('🔄 checkOut: starting')
-            console.log('🔄 checkOut: bookingId', bookingId)
-            console.log('🔄 checkOut: staffId', responsibleStaffId)
-            console.log('🔄 checkOut: images count', imageUris.length)
-            console.log('🔄 checkOut: token available', !!token)
+            console.log(' checkOut: starting')
+            console.log(' checkOut: bookingId', bookingId)
+            console.log(' checkOut: staffId', responsibleStaffId)
+            console.log(' checkOut: images count', imageUris.length)
+            console.log(' checkOut: token available', !!token)
 
             const formData = new FormData()
 
@@ -299,7 +299,7 @@ export const scheduleService = {
                 const ext = match ? match[1].toLowerCase() : 'jpg'
                 const type = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg'
 
-                console.log(`🔄 checkOut: adding image ${index + 1}:`, { filename, type })
+                console.log(` checkOut: adding image ${index + 1}:`, { filename, type })
 
 
                 formData.append('images', {
@@ -313,29 +313,29 @@ export const scheduleService = {
             const baseUrl = API_CONFIG.BASE_URL
             const fullUrl = `${baseUrl}${url}`
 
-            console.log('🔄 checkOut: posting to', fullUrl)
+            console.log(' checkOut: posting to', fullUrl)
 
             const response = await fetch(fullUrl, {
                 method: "POST",
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
                     'Accept': 'application/json',
-                    // Don't set Content-Type for FormData - let the browser set it with boundary
+
                 },
                 body: formData,
             })
 
-            console.log('🔄 checkOut: response status', response.status)
+            console.log(' checkOut: response status', response.status)
 
             if (!response.ok) {
                 const errorText = await response.text()
-                console.error('🔄 checkOut: error response', errorText)
+                console.error(' checkOut: error response', errorText)
 
                 let userMessage = "Check-out failed. Please try again."
 
-                // Check if response is HTML (error page)
+
                 if (errorText.trim().startsWith('<')) {
-                    console.error('🔄 checkOut: Server returned HTML error page')
+                    console.error(' checkOut: Server returned HTML error page')
                     if (response.status === 401) {
                         userMessage = "Authentication failed. Please login again."
                     } else if (response.status === 403) {
@@ -346,7 +346,7 @@ export const scheduleService = {
                         userMessage = `Server error (${response.status}). Please try again.`
                     }
                 } else {
-                    // Try to parse JSON error response
+
                     try {
                         const errorJson = JSON.parse(errorText)
                         if (errorJson.message) {
@@ -357,7 +357,7 @@ export const scheduleService = {
                             userMessage = Object.values(errorJson.errors).flat().join(', ')
                         }
                     } catch {
-                        // If not JSON, use the text directly if it's short
+
                         if (errorText.length < 200) {
                             userMessage = errorText
                         }
@@ -368,28 +368,28 @@ export const scheduleService = {
             }
 
             const responseText = await response.text()
-            console.log('🔄 checkOut: success response', responseText)
+            console.log(' checkOut: success response', responseText)
 
             let data: any
             try {
-                // Handle empty response
+
                 if (!responseText || responseText.trim() === '') {
                     data = { success: true, message: 'Check-out successful' }
                 } else if (responseText.trim().startsWith('<')) {
-                    // Handle HTML response (shouldn't happen on success, but just in case)
-                    console.warn('🔄 checkOut: Received HTML response on success')
+
+                    console.warn(' checkOut: Received HTML response on success')
                     data = { success: true, message: 'Check-out successful' }
                 } else {
                     data = JSON.parse(responseText)
                 }
             } catch (parseError) {
-                console.warn('🔄 checkOut: Failed to parse response as JSON:', parseError)
+                console.warn(' checkOut: Failed to parse response as JSON:', parseError)
                 data = { success: true, message: responseText || 'Check-out successful' }
             }
 
             return { data, error: null }
         } catch (error) {
-            console.error('🔄 checkOut: exception', error)
+            console.error(' checkOut: exception', error)
             return { data: null, error: error as Error }
         }
     },

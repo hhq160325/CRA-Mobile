@@ -17,7 +17,7 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
     const checkGPSStatus = async () => {
         setChecking(true);
         try {
-            console.log('🔍 Checking GPS status for user:', userId);
+            // console.log('🔍 Checking GPS status for user:', userId);
 
             // Check if user has any location data
             const result = await gpsTrackingService.getUserLocationHistory(userId);
@@ -52,7 +52,7 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
     const sendTestLocation = async () => {
         setSendingTest(true);
         try {
-            console.log('🧪 Sending test GPS location for user:', userId);
+            // console.log(' Sending test GPS location for user:', userId);
 
             // Get device ID
             const deviceId = await locationService.getDeviceId();

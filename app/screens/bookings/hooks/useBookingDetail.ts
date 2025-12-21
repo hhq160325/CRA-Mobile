@@ -17,9 +17,9 @@ export function useBookingDetail(bookingId: string, navigation: any) {
     let mounted = true;
 
     async function load() {
-      console.log('🔍 BookingDetail: Starting load process');
-      console.log('🔍 BookingDetail: Booking ID:', bookingId);
-      console.log('🔍 BookingDetail: Current user:', {
+      console.log(' BookingDetail: Starting load process');
+      console.log(' BookingDetail: Booking ID:', bookingId);
+      console.log(' BookingDetail: Current user:', {
         id: user?.id,
         role: user?.role,
         roleId: user?.roleId,
@@ -28,7 +28,7 @@ export function useBookingDetail(bookingId: string, navigation: any) {
 
 
       if (!user) {
-        console.log('🔍 BookingDetail: No authenticated user, skipping load');
+        console.log(' BookingDetail: No authenticated user, skipping load');
         setLoading(false);
         return;
       }
@@ -36,9 +36,9 @@ export function useBookingDetail(bookingId: string, navigation: any) {
       setLoading(true);
 
       try {
-        console.log('🔍 BookingDetail: Calling getBookingById...');
+        console.log(' BookingDetail: Calling getBookingById...');
         const res = await bookingsService.getBookingById(bookingId);
-        console.log('🔍 BookingDetail: API response:', {
+        console.log('BookingDetail: API response:', {
           hasData: !!res.data,
           hasError: !!res.error,
           errorMessage: res.error?.message,
@@ -52,12 +52,12 @@ export function useBookingDetail(bookingId: string, navigation: any) {
         });
 
         if (!mounted) {
-          console.log('🔍 BookingDetail: Component unmounted, stopping');
+          console.log(' BookingDetail: Component unmounted, stopping');
           return;
         }
 
         if (res.error) {
-          console.error('🔍 BookingDetail: Error loading booking:', res.error);
+          console.error(' BookingDetail: Error loading booking:', res.error);
           Alert.alert(
             'Error',
             'Failed to load booking details. Please try again.',
@@ -72,9 +72,9 @@ export function useBookingDetail(bookingId: string, navigation: any) {
 
           if (res.data.bookingNumber) {
             try {
-              console.log('🔍 BookingDetail: Fetching complete booking data for:', res.data.bookingNumber);
+              console.log(' BookingDetail: Fetching complete booking data for:', res.data.bookingNumber);
               const detailedRes = await bookingsService.getBookingByNumber(res.data.bookingNumber);
-              console.log('🔍 BookingDetail: Detailed booking response:', {
+              console.log(' BookingDetail: Detailed booking response:', {
                 hasData: !!detailedRes.data,
                 hasError: !!detailedRes.error,
                 hasCar: !!detailedRes.data?.car,
@@ -92,21 +92,21 @@ export function useBookingDetail(bookingId: string, navigation: any) {
                   carDetails: detailedRes.data.car,
                   userDetails: detailedRes.data.user
                 };
-                console.log('🔍 BookingDetail: Enhanced booking with complete data:', {
+                console.log(' BookingDetail: Enhanced booking with complete data:', {
                   userId: completeBooking.userId,
                   carName: completeBooking.carName
                 });
               }
             } catch (err) {
-              console.log('🔍 BookingDetail: Could not fetch detailed booking, using basic data:', err);
+              console.log(' BookingDetail: Could not fetch detailed booking, using basic data:', err);
             }
           }
 
-          console.log('🔍 BookingDetail: Checking permissions with complete data...');
+          console.log(' BookingDetail: Checking permissions with complete data...');
           const isStaff = user?.role === 'staff' || user?.roleId === 1002;
           const isOwner = completeBooking.userId === user?.id;
 
-          console.log('🔍 BookingDetail: Permission check:', {
+          console.log(' BookingDetail: Permission check:', {
             isStaff,
             isOwner,
             bookingUserId: completeBooking.userId,
@@ -116,7 +116,7 @@ export function useBookingDetail(bookingId: string, navigation: any) {
           });
 
           if (!isStaff && !isOwner) {
-            console.log('🔍 BookingDetail: Access denied - booking belongs to different user');
+            console.log(' BookingDetail: Access denied - booking belongs to different user');
             Alert.alert(
               'Access Denied',
               "You don't have permission to view this booking.",
@@ -126,7 +126,7 @@ export function useBookingDetail(bookingId: string, navigation: any) {
             return;
           }
 
-          console.log('🔍 BookingDetail: Permission granted, setting booking data');
+          console.log(' BookingDetail: Permission granted, setting booking data');
           setBooking(completeBooking);
 
           console.log(

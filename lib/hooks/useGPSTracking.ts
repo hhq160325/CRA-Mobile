@@ -8,7 +8,7 @@ export function useGPSTracking() {
     const [isTracking, setIsTracking] = useState(false);
     const [trackingError, setTrackingError] = useState<string | null>(null);
     const [lastLocationSent, setLastLocationSent] = useState<Date | null>(null);
-    const startingRef = useRef(false); // Prevent concurrent starts
+    const startingRef = useRef(false);
 
     // Start GPS tracking
     const startTracking = useCallback(async () => {
@@ -18,19 +18,19 @@ export function useGPSTracking() {
         }
 
         if (startingRef.current) {
-            console.log('🎯 GPS tracking start already in progress, skipping');
+            console.log(' GPS tracking start already in progress, skipping');
             return false;
         }
 
         if (isTracking) {
-            console.log('🎯 GPS tracking already active, skipping start');
+            console.log(' GPS tracking already active, skipping start');
             return true;
         }
 
         try {
             startingRef.current = true;
             setTrackingError(null);
-            console.log('🎯 Starting GPS tracking for user:', user.id);
+            console.log(' Starting GPS tracking for user:', user.id);
 
             const success = await locationService.startTracking(user.id, 60000); // 60 seconds (1 minute) interval
 
@@ -54,13 +54,13 @@ export function useGPSTracking() {
         }
     }, [user?.id, isTracking]);
 
-    // Stop GPS tracking
+
     const stopTracking = useCallback(() => {
         locationService.stopTracking();
         setIsTracking(false);
         setTrackingError(null);
         startingRef.current = false;
-        console.log('🎯 GPS tracking stopped');
+        console.log(' GPS tracking stopped');
     }, []);
 
     // Handle app state changes
@@ -68,10 +68,10 @@ export function useGPSTracking() {
         const handleAppStateChange = (nextAppState: AppStateStatus) => {
             if (nextAppState === 'background' || nextAppState === 'inactive') {
                 // Keep tracking in background for now
-                console.log('🎯 App went to background, continuing GPS tracking');
+                console.log(' App went to background, continuing GPS tracking');
             } else if (nextAppState === 'active' && user?.id && !isTracking && !startingRef.current) {
                 // Check if tracking should be active when app becomes active
-                console.log('🎯 App became active, checking GPS tracking status');
+                console.log(' App became active, checking GPS tracking status');
                 if (locationService.isTrackingActive()) {
                     setIsTracking(true);
                 }

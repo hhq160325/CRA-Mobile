@@ -6,6 +6,7 @@ import {
     isPaymentRedirectUrl,
     isPayOSUrl,
     handlePaymentResult,
+    updateGenericPaymentStatus,
 } from '../utils/paymentUtils';
 import { styles } from '../../styles/additionalPaymentSection.styles';
 import type { PaymentResponse } from '../types/additionalPaymentTypes';
@@ -16,6 +17,8 @@ interface PaymentWebViewProps {
     onClose: () => void;
     onReset: () => void;
     onNavigateToReturn?: () => void;
+    bookingId?: string;
+    paymentType?: 'additional' | 'extension';
 }
 
 export default function PaymentWebView({
@@ -23,13 +26,25 @@ export default function PaymentWebView({
     paymentResponse,
     onClose,
     onReset,
-    onNavigateToReturn
+    onNavigateToReturn,
+    bookingId,
+    paymentType = 'additional'
 }: PaymentWebViewProps) {
     const handleNavigationStateChange = (navState: any) => {
         console.log('WebView navigation:', navState.url);
 
+        // Check for PayOS success URL pattern
+        if (navState.url.includes('pay.payos.vn') && navState.url.includes('/success')) {
+            console.log(`🎉 PayOS ${paymentType} payment success detected`);
+
+            // Update payment status if we have the necessary info
+            if (bookingId && paymentResponse?.item3?.id) {
+                updateGenericPaymentStatus(bookingId, paymentResponse.item3.id, 'Paid');
+            }
+        }
+
         if (isPaymentRedirectUrl(navState.url)) {
-            console.log(' Payment redirect detected:', navState.url);
+            console.log(` Payment redirect detected: ${navState.url}`);
 
             onClose();
             onReset();
@@ -43,19 +58,16 @@ export default function PaymentWebView({
     const handleShouldStartLoadWithRequest = (request: any) => {
         console.log('WebView should start load:', request.url);
 
-
         if (isPayOSUrl(request.url) || request.url === paymentResponse?.payOSLink) {
             return true;
         }
 
-
         if (isPaymentRedirectUrl(request.url)) {
-            console.log(' PayOS redirect detected in shouldStart:', request.url);
+            console.log(` PayOS redirect detected in shouldStart: ${request.url}`);
             return true;
         }
 
-
-        console.log(' Blocking external navigation:', request.url);
+        console.log(` Blocking external navigation: ${request.url}`);
         return false;
     };
 

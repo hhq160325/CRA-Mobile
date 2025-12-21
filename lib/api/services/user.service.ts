@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 interface UserData {
     id: string
     username: string
-    password?: string // Backend now returns this field
+    password?: string
     email: string
     phoneNumber: string
     fullname: string
@@ -13,10 +13,10 @@ interface UserData {
     imageAvatar: string | null
     isGoogle: boolean
     googleId: string | null
-    isVerified?: boolean // New field from backend
-    isCarOwner?: boolean // Made optional since it's not in the response
+    isVerified?: boolean
+    isCarOwner?: boolean
     rating: number
-    behaviourScore?: number // New field for behavior score
+    behaviourScore?: number
     status: string
     roleId: number
     gender: number
@@ -24,7 +24,7 @@ interface UserData {
     licenseNumber?: string | null
     licenseExpiry?: string | null
     licenseImage?: string | null
-    // New fields from backend response
+
     cars?: any[]
     invoicesAsCustomer?: any[]
     invoicesAsVendor?: any[]

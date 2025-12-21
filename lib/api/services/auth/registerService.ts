@@ -35,8 +35,5 @@ export const register = async (
         console.error("registerService.register: error details", result.error);
         return { data: null, error: result.error };
     }
-
-    // The API now returns { "message": "Check your email for a verification code!" }
-    // No user data or token is returned until OTP verification is complete
     return { data: result.data, error: null };
 };

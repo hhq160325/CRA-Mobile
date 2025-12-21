@@ -1,16 +1,14 @@
-// Get base URL from environment variable
-// For React Native, we need to use a different approach than process.env
+
 const getBaseUrl = () => {
-  // In development, you can set this in .env file
-  // In production, this should be configured through your build process
+
   if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL
   }
 
-  // For Expo development - always use Azure directly to avoid tunnel issues
+
   if (__DEV__) {
-    console.log("🔧 Development mode: Using Azure URL directly for stable connection")
-    console.log("💡 This avoids ER_NGROK_3200 and tunnel expiration issues")
+    console.log(" Development mode: Using Azure URL directly for stable connection")
+    console.log(" This avoids ER_NGROK_3200 and tunnel expiration issues")
   }
 
   // Production Azure URL - stable and fast for both dev and prod
@@ -19,8 +17,8 @@ const getBaseUrl = () => {
 
 export const API_CONFIG = {
   BASE_URL: getBaseUrl(),
-  TIMEOUT: __DEV__ ? 20000 : 15000, // Slightly longer timeout for Expo development
-  RETRY_ATTEMPTS: __DEV__ ? 1 : 2, // Fewer retries in dev for faster feedback
+  TIMEOUT: __DEV__ ? 20000 : 15000,
+  RETRY_ATTEMPTS: __DEV__ ? 1 : 2,
   RETRY_DELAY: 1000,
   // Development flags
   ENABLE_LOGGING: __DEV__,

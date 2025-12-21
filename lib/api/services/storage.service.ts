@@ -11,50 +11,41 @@ const SUPPORTED_IMAGE_FORMATS = {
     'heif': 'image/heif',
 }
 
-/**
- * Get MIME type from file extension
- */
+
 function getMimeType(fileExt: string): string {
     const ext = fileExt.toLowerCase()
     return SUPPORTED_IMAGE_FORMATS[ext as keyof typeof SUPPORTED_IMAGE_FORMATS] || 'image/jpeg'
 }
 
-/**
- * Extract file extension from URI
- * Handles special cases like iPhone photo URIs
- */
+
 function getFileExtension(uri: string): string {
-    // Handle iPhone photo library URIs
+
     if (uri.includes('ph://') || uri.includes('assets-library://')) {
-        return 'jpg' // Default for iPhone photos
+        return 'jpg'
     }
 
-    // Extract extension from URI
+
     const match = uri.match(/\.([a-zA-Z0-9]+)(\?|$)/)
     if (match && match[1]) {
         const ext = match[1].toLowerCase()
-        // Validate it's a supported format
+
         if (SUPPORTED_IMAGE_FORMATS[ext as keyof typeof SUPPORTED_IMAGE_FORMATS]) {
             return ext
         }
     }
 
-    // Default to jpg
+
     return 'jpg'
 }
 
 export const storageService = {
-    /**
-     * Upload avatar image to Supabase Storage
-     * Supports: JPG, JPEG, PNG, GIF, WEBP, HEIC (iPhone), HEIF
-     */
+
     async uploadAvatar(userId: string, imageUri: string): Promise<{ url: string | null; error: Error | null }> {
         try {
             console.log("=== Storage Service: Upload Avatar ===")
             console.log("User ID:", userId)
             console.log("Image URI:", imageUri)
 
-            // Get file extension and MIME type
             const fileExt = getFileExtension(imageUri)
             const mimeType = getMimeType(fileExt)
             const fileName = `${userId}_${Date.now()}.${fileExt}`
@@ -64,7 +55,7 @@ export const storageService = {
             console.log("  - MIME type:", mimeType)
             console.log("  - File name:", fileName)
 
-            // Create FormData for upload
+
             const formData = new FormData()
             formData.append('file', {
                 uri: imageUri,
@@ -84,7 +75,7 @@ export const storageService = {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
-                    // Don't set Content-Type header - let FormData set it automatically with boundary
+
                 },
                 body: formData,
             })

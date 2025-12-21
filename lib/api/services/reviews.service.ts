@@ -70,10 +70,10 @@ export const reviewsService = {
           if (userResult.data) {
             userName = userResult.data.fullname || userResult.data.username || "Anonymous";
             userAvatar = userResult.data.imageAvatar || userResult.data.avatar || "";
-            console.log(`🔍 reviewsService: Enriched user data for ${feedback.userId}: ${userName}`);
+            console.log(` reviewsService: Enriched user data for ${feedback.userId}: ${userName}`);
           }
         } catch (err) {
-          console.log(`🔍 reviewsService: Could not fetch user details for ${feedback.userId}:`, err);
+          console.log(`reviewsService: Could not fetch user details for ${feedback.userId}:`, err);
         }
       }
 
@@ -108,11 +108,11 @@ export const reviewsService = {
 
 
   async getCarReviews(carId: string): Promise<{ data: Review[] | null; error: Error | null }> {
-    console.log("🚗 reviewsService.getCarReviews: fetching reviews for car", carId)
+    console.log(" reviewsService.getCarReviews: fetching reviews for car", carId)
 
     const result = await apiClient<any[]>(API_ENDPOINTS.FEEDBACK_BY_CAR(carId), { method: "GET" })
 
-    console.log("🚗 reviewsService.getCarReviews: Raw API result:", {
+    console.log("reviewsService.getCarReviews: Raw API result:", {
       hasError: !!result.error,
       hasData: !!result.data,
       dataLength: result.data?.length,
@@ -138,10 +138,10 @@ export const reviewsService = {
           if (userResult.data) {
             userName = userResult.data.fullname || userResult.data.username || "Anonymous";
             userAvatar = userResult.data.imageAvatar || userResult.data.avatar || "";
-            console.log(`🔍 reviewsService: Enriched user data for ${feedback.userId}: ${userName}`);
+            console.log(` reviewsService: Enriched user data for ${feedback.userId}: ${userName}`);
           }
         } catch (err) {
-          console.log(`🔍 reviewsService: Could not fetch user details for ${feedback.userId}:`, err);
+          console.log(` reviewsService: Could not fetch user details for ${feedback.userId}:`, err);
         }
       }
 
@@ -165,7 +165,7 @@ export const reviewsService = {
       (result.data || []).map(enrichUserData)
     );
 
-    console.log("🚗 reviewsService.getCarReviews: Final result", {
+    console.log(" reviewsService.getCarReviews: Final result", {
       hasError: !!result.error,
       dataLength: mappedReviews.length,
       sampleUserNames: mappedReviews.slice(0, 3).map(r => r.userName),

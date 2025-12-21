@@ -39,7 +39,7 @@ export default function ReportCarScreen() {
 
     const { carId, carName, bookingId, bookingNumber, licensePlate } = route.params || {};
 
-    console.log('🔍 ReportCarScreen: Screen loaded with params:', {
+    console.log(' ReportCarScreen: Screen loaded with params:', {
         carId,
         carName,
         bookingId,
@@ -146,7 +146,7 @@ export default function ReportCarScreen() {
                     result.error.message || 'Failed to submit report. Please try again.',
                 );
             } else if (result.data) {
-                console.log('✅ Report submitted successfully:', {
+                console.log(' Report submitted successfully:', {
                     reportNo: result.data.reportNo,
                     reportId: result.data.id,
                     status: result.data.status,

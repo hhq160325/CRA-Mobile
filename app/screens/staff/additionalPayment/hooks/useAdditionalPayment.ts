@@ -54,7 +54,7 @@ export function useAdditionalPayment(
 
             const response = await createAdditionalPayment(bookingId, description, totalAmount);
 
-            console.log('Payment response:', response);
+            // console.log('Payment response:', response);
 
             setPaymentResponse(response);
             setModalVisible(false);
@@ -62,7 +62,7 @@ export function useAdditionalPayment(
 
             onPaymentAdded?.();
         } catch (error) {
-            console.error('Error creating additional payment:', error);
+            // console.error('Error creating additional payment:', error);
             Alert.alert('Error', 'Failed to add additional payment. Please try again.');
         } finally {
             setSubmitting(false);

@@ -7,15 +7,13 @@ export interface ReverseGeocodingRequest {
 
 export interface ReverseGeocodingResponse {
     formattedAddress: string;
-    oldFormattedAddress: string; // Now we need this for the return screen GPS card
+    oldFormattedAddress: string;
 }
 
 class ReverseGeocodingService {
     private baseUrl = API_CONFIG.BASE_URL;
 
-    /**
-     * Get address from coordinates using TrackAsia reverse geocoding
-     */
+
     async getAddressFromCoordinates(
         latitude: number,
         longitude: number
@@ -24,7 +22,7 @@ class ReverseGeocodingService {
         error?: { message: string };
     }> {
         try {
-            console.log('🗺️ Getting address for coordinates:', latitude, longitude);
+            console.log(' Getting address for coordinates:', latitude, longitude);
 
             const requestData: ReverseGeocodingRequest = {
                 latitude: latitude.toString(),
@@ -45,11 +43,11 @@ class ReverseGeocodingService {
             }
 
             const data = await response.json();
-            console.log('🗺️ Address retrieved:', data.formattedAddress);
+            console.log(' Address retrieved:', data.formattedAddress);
 
             return { data };
         } catch (error) {
-            console.error('🗺️ Error getting address:', error);
+            console.error(' Error getting address:', error);
             return {
                 error: {
                     message: error instanceof Error ? error.message : 'Failed to get address'
@@ -58,9 +56,7 @@ class ReverseGeocodingService {
         }
     }
 
-    /**
-     * Get formatted address with fallback
-     */
+
     async getFormattedAddress(latitude: number, longitude: number): Promise<string> {
         try {
             const result = await this.getAddressFromCoordinates(latitude, longitude);
@@ -72,14 +68,12 @@ class ReverseGeocodingService {
             // Fallback to coordinates if address not available
             return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
         } catch (error) {
-            console.error('🗺️ Error getting formatted address:', error);
+            console.error(' Error getting formatted address:', error);
             return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
         }
     }
 
-    /**
-     * Get old formatted address (alternative format)
-     */
+
     async getOldFormattedAddress(latitude: number, longitude: number): Promise<string> {
         try {
             const result = await this.getAddressFromCoordinates(latitude, longitude);
@@ -96,7 +90,7 @@ class ReverseGeocodingService {
             // Final fallback to coordinates
             return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
         } catch (error) {
-            console.error('🗺️ Error getting old formatted address:', error);
+            console.error(' Error getting old formatted address:', error);
             return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
         }
     }

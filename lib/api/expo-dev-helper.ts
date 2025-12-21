@@ -29,31 +29,31 @@ export function getExpoDevInfo(): ExpoDevInfo {
 
     // Add platform-specific recommendations
     if (isExpoGo) {
-        recommendations.push('✅ Using Expo Go - Azure URL works perfectly');
-        recommendations.push('💡 No tunnel needed - direct Azure connection');
+        recommendations.push(' Using Expo Go - Azure URL works perfectly');
+        recommendations.push(' No tunnel needed - direct Azure connection');
     } else if (isStandalone) {
-        recommendations.push('📦 Standalone app - production-like environment');
-        recommendations.push('🚀 Direct Azure connection optimized');
+        recommendations.push(' Standalone app - production-like environment');
+        recommendations.push(' Direct Azure connection optimized');
     } else if (!isExpoGo && !isStandalone) {
-        recommendations.push('🔧 Development build or bare workflow');
-        recommendations.push('⚙️ Custom native code supported');
+        recommendations.push(' Development build or bare workflow');
+        recommendations.push(' Custom native code supported');
     }
 
     if (Platform.OS === 'android') {
-        recommendations.push('📱 Android detected - optimized for mobile networks');
+        recommendations.push(' Android detected - optimized for mobile networks');
     } else if (Platform.OS === 'ios') {
-        recommendations.push('📱 iOS detected - using iOS-optimized settings');
+        recommendations.push(' iOS detected - using iOS-optimized settings');
     }
 
     // Check for potential issues
     if (API_CONFIG.BASE_URL.includes('localhost')) {
-        recommendations.push('⚠️ Localhost detected - won\'t work on physical devices');
-        recommendations.push('🔧 Switch to Azure URL or use tunnel');
+        recommendations.push(' Localhost detected - won\'t work on physical devices');
+        recommendations.push(' Switch to Azure URL or use tunnel');
     }
 
     if (API_CONFIG.BASE_URL.includes('ngrok')) {
-        recommendations.push('⚠️ Ngrok tunnel detected - may expire during development');
-        recommendations.push('🔧 Consider using Azure URL directly for stability');
+        recommendations.push('Ngrok tunnel detected - may expire during development');
+        recommendations.push(' Consider using Azure URL directly for stability');
     }
 
     return {
@@ -69,7 +69,7 @@ export function getExpoDevInfo(): ExpoDevInfo {
 export function logExpoDevInfo() {
     const info = getExpoDevInfo();
 
-    console.group('🚀 Expo Development Info');
+    console.group(' Expo Development Info');
     const getAppType = () => {
         if (info.isExpoGo) return 'Expo Go';
         if (info.isStandalone) return 'Standalone';
@@ -91,8 +91,8 @@ export function getOptimalExpoConfig() {
 
     // Optimal settings for Expo development
     const config = {
-        timeout: info.isExpoGo ? 25000 : 20000, // Longer timeout for Expo Go
-        retries: 1, // Quick feedback in development
+        timeout: info.isExpoGo ? 25000 : 20000,
+        retries: 1,
         headers: {
             'User-Agent': `ExpoApp/${Constants.expoVersion} (${Platform.OS})`,
             'X-Expo-Platform': Platform.OS,
@@ -102,7 +102,7 @@ export function getOptimalExpoConfig() {
     };
 
     if (__DEV__) {
-        console.log('⚙️ Using optimal Expo config:', config);
+        console.log(' Using optimal Expo config:', config);
     }
 
     return config;

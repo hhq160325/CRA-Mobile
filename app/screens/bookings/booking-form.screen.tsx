@@ -66,8 +66,7 @@ export default function BookingFormScreen({ route }: any) {
     user,
     carId,
     car,
-    navigation,
-    t
+    navigation
   });
 
   // Debug logging for step 3
@@ -83,7 +82,7 @@ export default function BookingFormScreen({ route }: any) {
   }
 
   // Handle loading states
-  const loadingComponent = LoadingStates({ carLoading, car, t });
+  const loadingComponent = LoadingStates({ carLoading, car });
   if (loadingComponent) {
     return loadingComponent;
   }

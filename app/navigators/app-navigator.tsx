@@ -34,6 +34,7 @@ import CarMapRouteScreen from "../screens/cars/car-map-route.screen"
 import StaffScreen from "../screens/staff/staff.screen"
 import PickupReturnConfirmScreen from "../screens/staff/pickup-return-confirm.screen"
 import VehicleReturnScreen from "../screens/staff/vehicle-return.screen"
+import UserReportScreen from "../screens/staff/user-report.screen"
 import FeedbackFormScreen from "../screens/feedback/feedback-form.screen"
 import PaymentHistoryScreen from "../screens/payments/payment-history.screen"
 import MessagesScreen from "../screens/messages/messages.screen"
@@ -119,6 +120,13 @@ const StaffStack = () => {
       <Stack.Screen
         name="VehicleReturn"
         component={VehicleReturnScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="UserReport"
+        component={UserReportScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}

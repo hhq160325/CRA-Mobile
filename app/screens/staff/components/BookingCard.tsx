@@ -44,7 +44,7 @@ export default function BookingCard({
                         <Text style={styles.licensePlate}>License: {carLicensePlate}</Text>
                     )}
                     <Text style={styles.bookingId}>
-                        Booking ID: {bookingNumber || "N/A"}
+                        Booking ID: {bookingNumber || bookingId.substring(0, 8) + "..."}
                     </Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>

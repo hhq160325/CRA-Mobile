@@ -45,7 +45,20 @@ export default function BillingInfoStep({
                     placeholder="Address"
                     value={address}
                     onChangeText={onAddressChange}
-                    style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16, fontSize: 12 }}
+                    multiline={true}
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    style={{
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: 6,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        marginBottom: 16,
+                        fontSize: 12,
+                        minHeight: 80,
+                        maxHeight: 120
+                    }}
                 />
 
                 <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Phone Number</Text>

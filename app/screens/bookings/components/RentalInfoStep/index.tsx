@@ -5,7 +5,6 @@ import CustomDateTimePicker from "../CustomDateTimePicker"
 import ParkLotModal from "./ParkLotModal"
 import PickupSection from "./PickupSection"
 import DropoffSection from "./DropoffSection"
-import DistanceCard from "./DistanceCard"
 import type { RentalInfoStepProps } from "./types"
 import { styles } from "./styles"
 
@@ -107,7 +106,6 @@ export default function RentalInfoStep({
                     onPickupLocationChange={onPickupLocationChange}
                     onShowParkLotModal={() => setShowPickupModal(true)}
                     onShowDateTimePicker={() => setShowCustomPickupPicker(true)}
-                    t={t}
                 />
 
                 <DropoffSection
@@ -118,7 +116,6 @@ export default function RentalInfoStep({
                     dropoffTimeError={dropoffTimeError}
                     onShowDateTimePicker={() => setShowCustomDropoffPicker(true)}
                     onDropoffLocationChange={onDropoffLocationChange}
-                    t={t}
                 />
             </View>
 

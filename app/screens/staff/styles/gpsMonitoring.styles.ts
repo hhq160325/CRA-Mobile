@@ -148,7 +148,7 @@ export const gpsMonitoringStyles = StyleSheet.create({
     },
     locationRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: verticalScale(6),
     },
     locationText: {
@@ -238,7 +238,8 @@ export const gpsMonitoringStyles = StyleSheet.create({
         fontSize: scale(14),
         color: colors.primary,
         fontWeight: '500',
-        lineHeight: scale(18),
+        lineHeight: scale(20),
+        flexWrap: 'wrap',
     },
     coordinatesText: {
         fontSize: scale(12),

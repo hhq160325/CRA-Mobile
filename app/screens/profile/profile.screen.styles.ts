@@ -29,6 +29,40 @@ export const styles = StyleSheet.create({
     bottomSpacer: {
         height: verticalScale(20),
     },
+    behaviorScoreField: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: verticalScale(12),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    behaviorScoreLabel: {
+        fontSize: scale(14),
+        color: colors.primary,
+        fontWeight: '500',
+    },
+    behaviorScoreValue: {
+        fontSize: scale(16),
+        fontWeight: '600',
+        color: colors.primary,
+    },
+    behaviorScoreContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: scale(8),
+    },
+    behaviorScoreBadge: {
+        paddingHorizontal: scale(8),
+        paddingVertical: scale(4),
+        borderRadius: scale(12),
+        backgroundColor: colors.green,
+    },
+    behaviorScoreBadgeText: {
+        fontSize: scale(12),
+        fontWeight: '600',
+        color: colors.white,
+    },
     loadingOverlay: {
         position: 'absolute',
         top: 0,

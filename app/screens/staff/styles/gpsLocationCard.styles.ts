@@ -108,7 +108,8 @@ export const gpsLocationCardStyles = StyleSheet.create({
         fontSize: scale(15),
         color: '#1f2937',
         fontWeight: '500',
-        lineHeight: scale(20),
+        lineHeight: scale(22),
+        flexWrap: 'wrap',
     },
     infoValueSmall: {
         fontSize: scale(13),

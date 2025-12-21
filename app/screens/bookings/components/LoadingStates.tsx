@@ -7,10 +7,9 @@ import { styles } from '../styles/bookingForm.styles';
 interface LoadingStatesProps {
     carLoading: boolean;
     car: any;
-    t: any;
 }
 
-export default function LoadingStates({ carLoading, car, t }: LoadingStatesProps) {
+export default function LoadingStates({ carLoading, car }: LoadingStatesProps) {
     if (carLoading) {
         return (
             <View style={styles.container}>

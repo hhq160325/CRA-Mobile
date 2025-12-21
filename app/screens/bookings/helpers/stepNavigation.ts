@@ -12,7 +12,6 @@ interface StepNavigationProps {
     carId: string;
     car: Car | null;
     navigation: any;
-    t: any;
 }
 
 export function useStepNavigation({
@@ -24,8 +23,7 @@ export function useStepNavigation({
     user,
     carId,
     car,
-    navigation,
-    t
+    navigation
 }: StepNavigationProps) {
 
     const handleNextStep = async () => {
@@ -106,7 +104,6 @@ export function useStepNavigation({
                     dropoffLocation: formState.dropoffLocation,
                     pickupDateTime: step2Validation.pickupDateTime,
                     dropoffDateTime: step2Validation.dropoffDateTime,
-                    t,
                 },
                 navigation
             );

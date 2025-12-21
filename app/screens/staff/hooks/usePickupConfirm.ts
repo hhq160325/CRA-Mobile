@@ -6,6 +6,7 @@ import { scheduleService } from '../../../../lib/api/services/schedule.service';
 
 interface BookingDetails {
   id: string;
+  bookingNumber?: string; // Add bookingNumber field
   carName: string;
   carModel: string;
   carLicensePlate: string;
@@ -62,6 +63,21 @@ export function usePickupConfirm(bookingId: string) {
         }
 
         const bookingData = bookingResult.data;
+
+        // Debug logging for bookingNumber
+        console.log('🔍 usePickupConfirm: Raw booking data:', JSON.stringify(bookingData, null, 2));
+        console.log('🔍 usePickupConfirm: bookingNumber field:', bookingData.bookingNumber);
+        console.log('🔍 usePickupConfirm: All booking keys:', Object.keys(bookingData));
+
+        // Check for alternative field names that might contain booking number
+        const possibleBookingNumberFields = [
+          'bookingNumber', 'bookingNo', 'bookingId', 'bookNum', 'number', 'code'
+        ];
+        possibleBookingNumberFields.forEach(field => {
+          if (bookingData[field]) {
+            console.log(`🔍 usePickupConfirm: Found ${field}:`, bookingData[field]);
+          }
+        });
 
         let carName = 'Unknown Car';
         let carModel = '';
@@ -137,6 +153,7 @@ export function usePickupConfirm(bookingId: string) {
 
         setBooking({
           id: bookingData.id,
+          bookingNumber: bookingData.bookingNumber, // Add booking number
           carName,
           carModel,
           carLicensePlate,

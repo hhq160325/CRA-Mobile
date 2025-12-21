@@ -131,7 +131,7 @@ export default function UserLocationCard({ userId, compact = false }: UserLocati
                                 <Text style={styles.addressLoadingText}>Getting address...</Text>
                             </View>
                         ) : address ? (
-                            <Text style={styles.addressText} numberOfLines={2}>
+                            <Text style={styles.addressText} numberOfLines={4}>
                                 {address}
                             </Text>
                         ) : (

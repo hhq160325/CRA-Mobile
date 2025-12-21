@@ -90,3 +90,18 @@ export const getStatusColor = (field: string, fieldValues: any, colors: any) => 
     const emptyFields = ["phone"];
     return emptyFields.includes(field) || !fieldValues[field as keyof typeof fieldValues] ? colors.red : colors.green;
 };
+
+export const getBehaviorScoreColor = (score: number) => {
+    if (score >= 80) return '#10b981'; // Green for excellent behavior
+    if (score >= 60) return '#f59e0b'; // Orange for good behavior
+    if (score >= 40) return '#ef4444'; // Red for poor behavior
+    return '#6b7280'; // Gray for very poor behavior or no score
+};
+
+export const getBehaviorScoreLabel = (score: number) => {
+    if (score >= 80) return 'Excellent';
+    if (score >= 60) return 'Good';
+    if (score >= 40) return 'Fair';
+    if (score > 0) return 'Poor';
+    return 'New User';
+};

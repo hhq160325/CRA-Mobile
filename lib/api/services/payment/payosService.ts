@@ -85,11 +85,11 @@ export const createRentalPayment = async (
 export const updateRentalPaymentCash = async (
     bookingId: string
 ): Promise<{ data: any | null; error: Error | null }> => {
-    console.log("payosService.updateRentalPaymentCash: updating booking payment for booking", bookingId);
+    console.log("payosService.updateRentalPaymentCash: updating rental payment for booking", bookingId);
 
-    // Use UpdatePayment/Booking/BookingPayment endpoint without /api prefix
+    // Use UpdatePayment/Booking/RentalPayment endpoint for rental payments (not BookingPayment)
     const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
-    const fullUrl = `${baseUrl}/UpdatePayment/Booking/BookingPayment`;
+    const fullUrl = `${baseUrl}/UpdatePayment/Booking/RentalPayment`;
 
     console.log("payosService.updateRentalPaymentCash: calling", fullUrl);
 
@@ -126,7 +126,7 @@ export const updateRentalPaymentCash = async (
             console.error("payosService.updateRentalPaymentCash: error", errorText);
             return {
                 data: null,
-                error: new Error(`Failed to update payment: ${response.status}`),
+                error: new Error(`Failed to update rental payment: ${response.status}`),
             };
         }
 
@@ -137,7 +137,7 @@ export const updateRentalPaymentCash = async (
         console.error("payosService.updateRentalPaymentCash: exception", error);
         return {
             data: null,
-            error: new Error(error?.message || "Failed to update payment"),
+            error: new Error(error?.message || "Failed to update rental payment"),
         };
     }
 };

@@ -7,6 +7,7 @@ import { scheduleService } from '../../../../lib/api/services/schedule.service';
 
 interface BookingDetails {
   id: string;
+  bookingNumber?: string; // Add bookingNumber field
   userId: string; // Add userId field for customer ID
   carName: string;
   carModel: string;
@@ -64,10 +65,22 @@ export function useVehicleReturn(bookingId: string) {
 
         const bookingData = bookingResult.data;
 
-        // Debug logging for userId
-        console.log('🔍 useVehicleReturn: Raw booking data:', bookingData);
+        // Debug logging for bookingNumber
+        console.log('🔍 useVehicleReturn: Raw booking data:', JSON.stringify(bookingData, null, 2));
+        console.log('🔍 useVehicleReturn: bookingNumber field:', bookingData.bookingNumber);
+        console.log('🔍 useVehicleReturn: All booking keys:', Object.keys(bookingData));
+
+        // Check for alternative field names that might contain booking number
+        const possibleBookingNumberFields = [
+          'bookingNumber', 'bookingNo', 'bookingId', 'bookNum', 'number', 'code'
+        ];
+        possibleBookingNumberFields.forEach(field => {
+          if (bookingData[field]) {
+            console.log(`🔍 useVehicleReturn: Found ${field}:`, bookingData[field]);
+          }
+        });
+
         console.log('🔍 useVehicleReturn: Customer userId:', bookingData.userId);
-        console.log('🔍 useVehicleReturn: Expected GPS userId: 019a9f03-d063-79a6-937c-0611d4f49f12');
 
         let carName = 'Unknown Car';
         let carModel = '';
@@ -146,6 +159,7 @@ export function useVehicleReturn(bookingId: string) {
 
         setBooking({
           id: bookingData.id,
+          bookingNumber: bookingData.bookingNumber, // Add booking number
           userId: bookingData.userId, // Include customer userId for GPS tracking
           carName,
           carModel,

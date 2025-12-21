@@ -232,6 +232,7 @@ export default function PickupReturnConfirmScreen() {
           carName={booking.carName}
           carLicensePlate={booking.carLicensePlate}
           bookingId={booking.id}
+          bookingNumber={booking.bookingNumber}
           customerName={booking.customerName}
           amount={booking.amount}
           statusText={

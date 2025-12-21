@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ScrollView,
     ActivityIndicator,
+    TextStyle,
 } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { DriverLicenseOCRResult } from '../../../../lib/api/services/ocr.service';
@@ -192,21 +193,21 @@ const styles = {
     },
     processingContainer: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
         padding: 20,
     },
     processingTitle: {
         fontSize: 20,
-        fontWeight: '600',
-        color: colors.textPrimary,
+        fontWeight: '600' as TextStyle['fontWeight'],
+        color: colors.primary,
         marginTop: 20,
         marginBottom: 8,
     },
     processingSubtitle: {
         fontSize: 16,
-        color: colors.textSecondary,
-        textAlign: 'center',
+        color: colors.placeholder,
+        textAlign: 'center' as const,
         lineHeight: 22,
     },
     resultsContainer: {
@@ -218,56 +219,56 @@ const styles = {
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
+        fontWeight: 'bold' as TextStyle['fontWeight'],
+        color: colors.primary,
         marginBottom: 12,
     },
     confidenceContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
     },
     confidenceLabel: {
         fontSize: 16,
-        color: colors.textSecondary,
+        color: colors.placeholder,
     },
     confidenceValue: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '600' as TextStyle['fontWeight'],
     },
     fieldsContainer: {
         marginBottom: 20,
     },
     fieldContainer: {
-        backgroundColor: colors.backgroundSecondary,
+        backgroundColor: colors.background,
         borderRadius: 12,
         padding: 16,
         marginBottom: 12,
     },
     fieldHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        flexDirection: 'row' as const,
+        justifyContent: 'space-between' as const,
+        alignItems: 'center' as const,
         marginBottom: 8,
     },
     fieldLabel: {
         fontSize: 14,
-        fontWeight: '500',
-        color: colors.textSecondary,
+        fontWeight: '500' as TextStyle['fontWeight'],
+        color: colors.placeholder,
     },
     confidenceBadge: {
-        backgroundColor: colors.backgroundPrimary,
+        backgroundColor: colors.white,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
     },
     confidenceBadgeText: {
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '600' as TextStyle['fontWeight'],
     },
     fieldValue: {
         fontSize: 16,
-        fontWeight: '500',
-        color: colors.textPrimary,
+        fontWeight: '500' as TextStyle['fontWeight'],
+        color: colors.primary,
     },
     warningContainer: {
         backgroundColor: '#FFF3E0',
@@ -279,7 +280,7 @@ const styles = {
     },
     warningTitle: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '600' as TextStyle['fontWeight'],
         color: '#E65100',
         marginBottom: 8,
     },
@@ -289,7 +290,7 @@ const styles = {
         lineHeight: 20,
     },
     buttonContainer: {
-        flexDirection: 'row',
+        flexDirection: 'row' as const,
         padding: 20,
         paddingTop: 0,
         gap: 12,
@@ -298,33 +299,33 @@ const styles = {
         flex: 1,
         paddingVertical: 16,
         borderRadius: 12,
-        alignItems: 'center',
+        alignItems: 'center' as const,
     },
     retryButton: {
-        backgroundColor: colors.backgroundSecondary,
+        backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: colors.borderColor,
+        borderColor: colors.border,
     },
     retryButtonText: {
         fontSize: 16,
-        fontWeight: '600',
-        color: colors.textPrimary,
+        fontWeight: '600' as TextStyle['fontWeight'],
+        color: colors.primary,
     },
     acceptButton: {
         backgroundColor: colors.morentBlue,
     },
     acceptButtonText: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '600' as TextStyle['fontWeight'],
         color: '#fff',
     },
     closeButton: {
-        alignItems: 'center',
+        alignItems: 'center' as const,
         paddingVertical: 16,
         paddingHorizontal: 20,
     },
     closeButtonText: {
         fontSize: 16,
-        color: colors.textSecondary,
+        color: colors.placeholder,
     },
 };

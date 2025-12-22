@@ -4,7 +4,7 @@ import { apiClient } from "../client"
 // Simple fetch function for unauthenticated requests
 async function fetchWithoutAuth<T>(url: string): Promise<{ data: T | null; error: Error | null }> {
     try {
-        console.log("🔔 Making unauthenticated request to:", url)
+        console.log(" Making unauthenticated request to:", url)
 
         const response = await fetch(url, {
             method: "GET",
@@ -14,11 +14,11 @@ async function fetchWithoutAuth<T>(url: string): Promise<{ data: T | null; error
             },
         })
 
-        console.log("🔔 Response status:", response.status)
+        console.log(" Response status:", response.status)
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error("🔔 Error response:", errorText)
+            console.error(" Error response:", errorText)
             return {
                 data: null,
                 error: new Error(`HTTP ${response.status}: ${errorText}`)
@@ -26,10 +26,10 @@ async function fetchWithoutAuth<T>(url: string): Promise<{ data: T | null; error
         }
 
         const data = await response.json()
-        console.log("🔔 Success! Received data:", data?.length || 0, "items")
+        console.log(" Success! Received data:", data?.length || 0, "items")
         return { data, error: null }
     } catch (error) {
-        console.error("🔔 Fetch error:", error)
+        console.error(" Fetch error:", error)
         return {
             data: null,
             error: error instanceof Error ? error : new Error("Unknown error")
@@ -55,17 +55,17 @@ export const notificationService = {
         if (userRole === 'staff' || userRole === 'admin') {
             // Staff and admin users get all notifications
             notificationUrl = `${baseUrl}/AllNotif`
-            console.log("🔔 Staff/Admin user - fetching all notifications")
+            console.log(" Staff/Admin user - fetching all notifications")
         } else {
             // Regular users get user-specific notifications
             notificationUrl = `${baseUrl}/UserNotif/${userId}`
-            console.log("🔔 Regular user - fetching user-specific notifications")
+            console.log(" Regular user - fetching user-specific notifications")
         }
 
-        console.log("🔔 Base URL:", baseUrl)
-        console.log("🔔 User ID:", userId)
-        console.log("🔔 User Role:", userRole)
-        console.log("🔔 Full notification URL:", notificationUrl)
+        console.log(" Base URL:", baseUrl)
+        console.log(" User ID:", userId)
+        console.log(" User Role:", userRole)
+        console.log(" Full notification URL:", notificationUrl)
 
         // Use unauthenticated fetch to match the working curl command
         const result = await fetchWithoutAuth<Notification[]>(notificationUrl)
@@ -77,11 +77,11 @@ export const notificationService = {
 
             if (is404) {
                 // 404 is expected when no notifications exist, return empty array
-                console.log("🔔 No notifications found (404), returning empty array")
+                console.log(" No notifications found (404), returning empty array")
                 return { data: [], error: null }
             }
 
-            console.error("🔔 Notification API error:", result.error)
+            console.error(" Notification API error:", result.error)
             return { data: null, error: result.error }
         }
 

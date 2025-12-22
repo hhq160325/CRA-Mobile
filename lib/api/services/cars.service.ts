@@ -58,7 +58,7 @@ export interface Car {
   price: number
   image: string
   images?: string[]
-  imageUrls?: string[] // API returns this field
+  imageUrls?: string[] 
   rating: number
   reviews: number
   seats: number
@@ -74,7 +74,7 @@ export interface Car {
   preferredLot?: any
 }
 
-// Map API response to app Car model
+
 function mapApiCarToCar(apiCar: ApiCarResponse): Car {
   // Determine category based on car type/seats
   let category = "sedan"

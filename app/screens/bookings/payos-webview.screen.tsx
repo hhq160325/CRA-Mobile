@@ -8,6 +8,7 @@ import type { NavigatorParamList } from '../../navigators/navigation-route';
 import { colors } from '../../theme/colors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { API_CONFIG } from '../../../lib/api/config';
+import { bookingExtensionPaymentService, additionalFeePaymentService } from '../../../lib/api';
 import { styles } from './styles/payosWebview.styles';
 
 type PayOSWebViewRouteProp = RouteProp<
@@ -176,6 +177,52 @@ export default function PayOSWebViewScreen() {
     }
   };
 
+  const handleBookingExtensionPayment = async () => {
+    console.log('Handling booking extension payment...');
+
+    try {
+      // Check if there's a booking extension payment and handle it
+      const result = await bookingExtensionPaymentService.handlePayOSCompletion(
+        bookingId,
+        paymentUrl
+      );
+
+      if (result?.data?.success && result?.data?.wasUpdated) {
+        console.log(' Booking extension payment updated successfully');
+      } else if (result?.data?.success && !result?.data?.wasUpdated) {
+        console.log('ℹ Booking extension payment was already completed');
+      } else {
+        console.log('ℹ No booking extension payment found or update needed');
+      }
+    } catch (err) {
+      console.error(' Failed to handle booking extension payment:', err);
+
+    }
+  };
+
+  const handleAdditionalFeePayment = async () => {
+    console.log('Handling additional fee payment...');
+
+    try {
+      // Check if there's an additional fee payment and handle it
+      const result = await additionalFeePaymentService.handleAdditionalFeePayOSCompletion(
+        bookingId,
+        paymentUrl
+      );
+
+      if (result?.data?.success && result?.data?.wasUpdated) {
+        console.log(' Additional fee payment updated successfully');
+      } else if (result?.data?.success && !result?.data?.wasUpdated) {
+        console.log(' Additional fee payment was already completed');
+      } else {
+        console.log(' No additional fee payment found or update needed');
+      }
+    } catch (err) {
+      console.error(' Failed to handle additional fee payment:', err);
+      // Don't fail the entire flow for additional fee payment issues
+    }
+  };
+
   const handlePaymentSuccess = async () => {
     console.log('=== Payment Success Detected ===');
     console.log('Booking ID:', bookingId);
@@ -187,6 +234,12 @@ export default function PayOSWebViewScreen() {
         // Update both booking fee and rental fee payments
         await updatePaymentStatus();
         await updateRentalFeeStatus();
+
+        // Handle booking extension payment if applicable
+        await handleBookingExtensionPayment();
+
+        // Handle additional fee payment if applicable
+        await handleAdditionalFeePayment();
       } else {
         console.warn(' Booking update failed, skipping payment updates');
       }

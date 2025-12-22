@@ -100,7 +100,14 @@ export default function BookingPaymentCard({
                 <View style={styles.extensionInfo}>
                     <View style={styles.extensionHeader}>
                         <Text style={styles.extensionLabel}>🔔 BOOKING EXTENSION</Text>
-                        <Text style={styles.extensionStatus}>Payment Required</Text>
+                        <Text style={[
+                            styles.extensionStatus,
+                            item.isExtensionPaymentCompleted
+                                ? styles.extensionStatusCompleted
+                                : styles.extensionStatusPending
+                        ]}>
+                            {item.isExtensionPaymentCompleted ? 'Payment Completed' : 'Payment Required'}
+                        </Text>
                     </View>
                     <View style={styles.extensionDetails}>
                         <Text style={styles.extensionDescription}>
@@ -116,8 +123,13 @@ export default function BookingPaymentCard({
                                 Extended for {item.extensionDays} day{item.extensionDays > 1 ? 's' : ''}
                             </Text>
                         )}
+                        {item.extensionPaymentStatus && (
+                            <Text style={styles.extensionPaymentStatusText}>
+                                Status: {item.extensionPaymentStatus}
+                            </Text>
+                        )}
                     </View>
-                    {onPayExtension && (
+                    {onPayExtension && !item.isExtensionPaymentCompleted && (
                         <Pressable
                             onPress={() => onPayExtension(item.id)}
                             disabled={processingExtensionPayment === item.id}
@@ -133,6 +145,11 @@ export default function BookingPaymentCard({
                                 <Text style={styles.extensionPaymentText}>Request Extension Payment</Text>
                             )}
                         </Pressable>
+                    )}
+                    {item.isExtensionPaymentCompleted && (
+                        <View style={styles.extensionPaymentCompleted}>
+                            <Text style={styles.extensionPaymentCompletedText}>Extension payment completed</Text>
+                        </View>
                     )}
                 </View>
             )}

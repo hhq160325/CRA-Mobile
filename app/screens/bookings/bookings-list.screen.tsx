@@ -241,7 +241,6 @@ export default function BookingsListScreen() {
       <View style={styles.container}>
         <Header />
         <StaffLoadingState
-          progress="Loading bookings..."
           isComplete={loadingComplete}
           onAnimationComplete={handleAnimationComplete}
         />

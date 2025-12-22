@@ -74,7 +74,8 @@ export function useStaffBookings() {
             hasExtension: false,
             extensionDescription: undefined,
             extensionDays: undefined,
-            extensionAmount: undefined
+            extensionAmount: undefined,
+            extensionStatus: undefined
         };
 
         return {
@@ -95,6 +96,8 @@ export function useStaffBookings() {
             extensionDescription: extensionInfo.extensionDescription,
             extensionDays: extensionInfo.extensionDays,
             extensionAmount: extensionInfo.extensionAmount,
+            extensionPaymentStatus: extensionInfo.extensionPaymentStatus,
+            isExtensionPaymentCompleted: extensionInfo.isExtensionPaymentCompleted,
         };
     };
 

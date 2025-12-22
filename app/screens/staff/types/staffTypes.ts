@@ -22,4 +22,6 @@ export interface BookingItem {
     extensionDescription?: string;
     extensionDays?: number;
     extensionAmount?: number;
+    extensionPaymentStatus?: string;
+    isExtensionPaymentCompleted?: boolean;
 }

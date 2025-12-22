@@ -11,7 +11,7 @@ import { navigationRef } from "./navigation-utilities"
 import { useAuth } from "../../lib/auth-context"
 
 import OnBoardingScreen from "../screens/onboarding/onboarding.screen"
-import OnBoardingScreenTwo from "../screens/onboarding/onboardingTwo.screen"
+
 import HomeScreen from "../screens/home/home.screen"
 import BookingsListScreen from "../screens/bookings/bookings-list.screen"
 import ProfileScreen from "../screens/profile/profile.screen"
@@ -147,13 +147,7 @@ const AuthStack = () => {
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       />
-      <Stack.Screen
-        name="OnBoardingScreenTwo"
-        component={OnBoardingScreenTwo}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
+
       <Stack.Screen
         name="SignInScreen"
         component={SignInScreen}

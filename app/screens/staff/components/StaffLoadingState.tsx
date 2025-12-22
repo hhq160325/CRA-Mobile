@@ -1,16 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, Easing, Image } from 'react-native';
+import { View, Animated, Easing, Image } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { colors } from '../../../theme/colors';
 import { styles } from '../styles/staffScreen.styles';
 
 interface StaffLoadingStateProps {
-    progress?: string;
     isComplete?: boolean;
     onAnimationComplete?: () => void;
 }
 
-export default function StaffLoadingState({ progress, isComplete, onAnimationComplete }: StaffLoadingStateProps) {
+export default function StaffLoadingState({ isComplete, onAnimationComplete }: StaffLoadingStateProps) {
     const carAnimation = useRef(new Animated.Value(0)).current;
     const wheelRotation = useRef(new Animated.Value(0)).current;
     const wheelRotationCount = useRef(0);
@@ -21,6 +19,12 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
     const smokeAnimation = useRef(new Animated.Value(0)).current;
     const exitAnimation = useRef(new Animated.Value(0)).current;
     const brandFadeAnimation = useRef(new Animated.Value(1)).current;
+
+    // Tire burning effect animations
+    const tireSmokeAnimation = useRef(new Animated.Value(0)).current;
+    const sparksAnimation = useRef(new Animated.Value(0)).current;
+    const burnoutAnimation = useRef(new Animated.Value(0)).current;
+    const skidMarkAnimation = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         let carMovement: Animated.CompositeAnimation;
@@ -85,7 +89,6 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
             const createDotAnimation = (dotAnim: Animated.Value, delay: number) => {
                 return Animated.loop(
                     Animated.sequence([
-                        Animated.delay(delay),
                         Animated.timing(dotAnim, {
                             toValue: 1,
                             duration: 400,
@@ -103,8 +106,8 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
             };
 
             dot1Anim = createDotAnimation(dot1Animation, 0);
-            dot2Anim = createDotAnimation(dot2Animation, 200);
-            dot3Anim = createDotAnimation(dot3Animation, 400);
+            dot2Anim = createDotAnimation(dot2Animation, 0);
+            dot3Anim = createDotAnimation(dot3Animation, 0);
 
             smoke = Animated.loop(
                 Animated.sequence([
@@ -131,44 +134,111 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
             dot3Anim.start();
             smoke.start();
         } else {
-
-            const exitSequence = Animated.sequence([
-
+            // Tire burning effect sequence
+            const tireBurnSequence = Animated.sequence([
+                // Initial burnout phase
                 Animated.parallel([
-                    Animated.timing(dot1Animation, {
-                        toValue: 0,
-                        duration: 200,
+                    // Intense wheel spinning
+                    Animated.timing(wheelRotation, {
+                        toValue: wheelRotationCount.current + 3,
+                        duration: 800,
+                        easing: Easing.out(Easing.quad),
                         useNativeDriver: true,
                     }),
-                    Animated.timing(dot2Animation, {
-                        toValue: 0,
-                        duration: 200,
+                    // Tire smoke buildup
+                    Animated.timing(tireSmokeAnimation, {
+                        toValue: 1,
+                        duration: 800,
+                        easing: Easing.out(Easing.ease),
                         useNativeDriver: true,
                     }),
-                    Animated.timing(dot3Animation, {
-                        toValue: 0,
-                        duration: 200,
+                    // Sparks effect
+                    Animated.timing(sparksAnimation, {
+                        toValue: 1,
+                        duration: 600,
+                        easing: Easing.out(Easing.ease),
+                        useNativeDriver: true,
+                    }),
+                    // Skid marks appear
+                    Animated.timing(skidMarkAnimation, {
+                        toValue: 1,
+                        duration: 800,
+                        easing: Easing.out(Easing.ease),
+                        useNativeDriver: true,
+                    }),
+                    // Car vibration effect
+                    Animated.timing(burnoutAnimation, {
+                        toValue: 1,
+                        duration: 800,
+                        easing: Easing.out(Easing.ease),
                         useNativeDriver: true,
                     }),
                 ]),
 
-                Animated.delay(100),
+                // Brief pause at peak burnout
 
+                // Exit sequence with enhanced effects
                 Animated.parallel([
+                    // Dots fade out
+                    Animated.parallel([
+                        Animated.timing(dot1Animation, {
+                            toValue: 0,
+                            duration: 200,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(dot2Animation, {
+                            toValue: 0,
+                            duration: 200,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(dot3Animation, {
+                            toValue: 0,
+                            duration: 200,
+                            useNativeDriver: true,
+                        }),
+                    ]),
+
+                    // Car accelerates away
                     Animated.timing(exitAnimation, {
                         toValue: 1,
-                        duration: 1500,
+                        duration: 1200,
                         easing: Easing.in(Easing.cubic),
                         useNativeDriver: true,
                     }),
 
+                    // Wheels spin faster during exit
                     Animated.timing(wheelRotation, {
-                        toValue: wheelRotationCount.current + 5,
-                        duration: 1500,
+                        toValue: wheelRotationCount.current + 8,
+                        duration: 1200,
                         easing: Easing.linear,
                         useNativeDriver: true,
                     }),
 
+                    // Tire smoke trails behind
+                    Animated.sequence([
+                        Animated.timing(tireSmokeAnimation, {
+                            toValue: 0.8,
+                            duration: 400,
+                            easing: Easing.out(Easing.ease),
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(tireSmokeAnimation, {
+                            toValue: 0,
+                            duration: 800,
+                            easing: Easing.in(Easing.ease),
+                            useNativeDriver: true,
+                        }),
+                    ]),
+
+                    // Sparks fade out
+                    Animated.timing(sparksAnimation, {
+                        toValue: 0,
+                        duration: 600,
+                        easing: Easing.in(Easing.ease),
+                        useNativeDriver: true,
+                    }),
+
+                    // Regular exhaust smoke
                     Animated.sequence([
                         Animated.timing(smokeAnimation, {
                             toValue: 1,
@@ -178,26 +248,23 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
                         }),
                         Animated.timing(smokeAnimation, {
                             toValue: 0.3,
-                            duration: 900,
+                            duration: 600,
                             easing: Easing.in(Easing.ease),
                             useNativeDriver: true,
                         }),
                     ]),
 
-                    Animated.sequence([
-                        Animated.delay(800),
-                        Animated.timing(brandFadeAnimation, {
-                            toValue: 0.1,
-                            duration: 400,
-                            easing: Easing.out(Easing.ease),
-                            useNativeDriver: true,
-                        }),
-                    ]),
+                    // Brand fade
+                    Animated.timing(brandFadeAnimation, {
+                        toValue: 0.1,
+                        duration: 400,
+                        easing: Easing.out(Easing.ease),
+                        useNativeDriver: true,
+                    }),
                 ]),
             ]);
 
-            exitSequence.start(() => {
-
+            tireBurnSequence.start(() => {
                 if (onAnimationComplete) {
                     onAnimationComplete();
                 }
@@ -252,8 +319,90 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
         })
         : pulseAnimation;
 
+    // Tire burning effect interpolations
+    const tireSmokeOpacity = tireSmokeAnimation.interpolate({
+        inputRange: [0, 0.5, 1],
+        outputRange: [0, 1, 0.7],
+    });
+
+    const tireSmokeScale = tireSmokeAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.3, 2.5],
+    });
+
+    const sparksOpacity = sparksAnimation.interpolate({
+        inputRange: [0, 0.3, 0.7, 1],
+        outputRange: [0, 1, 0.8, 0],
+    });
+
+    const sparksScale = sparksAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.5, 1.5],
+    });
+
+    const burnoutVibration = burnoutAnimation.interpolate({
+        inputRange: [0, 0.5, 1],
+        outputRange: [0, 3, 0],
+    });
+
+    const skidMarkOpacity = skidMarkAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 0.6],
+    });
+
     return (
         <View style={styles.loadingContainer}>
+            {/* Animated Background */}
+            <View style={styles.backgroundContainer}>
+                <View style={styles.gradientBackground} />
+
+                {/* Background Pattern */}
+                <View style={styles.backgroundPattern}>
+                    <Animated.View
+                        style={[
+                            styles.backgroundCircle1,
+                            {
+                                transform: [
+                                    {
+                                        rotate: carAnimation.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: ['0deg', '360deg'],
+                                        })
+                                    }
+                                ]
+                            }
+                        ]}
+                    />
+                    <Animated.View
+                        style={[
+                            styles.backgroundCircle2,
+                            {
+                                transform: [
+                                    {
+                                        rotate: carAnimation.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: ['360deg', '0deg'],
+                                        })
+                                    }
+                                ]
+                            }
+                        ]}
+                    />
+                    <Animated.View
+                        style={[
+                            styles.backgroundCircle3,
+                            {
+                                transform: [
+                                    {
+                                        scale: pulseAnimation
+                                    }
+                                ]
+                            }
+                        ]}
+                    />
+                </View>
+            </View>
+
             {/* Car Animation Container */}
             <View style={styles.carAnimationContainer}>
                 {/* Enhanced Road with Dashed Lines */}
@@ -277,24 +426,62 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
                         {
                             transform: [
                                 { translateX: carTranslateX },
-                                { scale: carScale }
+                                { scale: carScale },
+                                { translateY: burnoutVibration }
                             ],
                         },
                     ]}
                 >
-                    {/* Car Body */}
+                    {/* Skid Marks - Behind the car */}
+                    {isComplete && (
+                        <Animated.View
+                            style={[
+                                styles.skidMarks,
+                                {
+                                    opacity: skidMarkOpacity,
+                                },
+                            ]}
+                        >
+                            <View style={styles.skidMark} />
+                            <View style={styles.skidMark} />
+                        </Animated.View>
+                    )}
+
+                    {/* Tire Smoke - Behind wheels */}
+                    {isComplete && (
+                        <Animated.View
+                            style={[
+                                styles.tireSmokeContainer,
+                                {
+                                    opacity: tireSmokeOpacity,
+                                    transform: [
+                                        { scale: tireSmokeScale },
+                                        { translateX: -20 },
+                                    ],
+                                },
+                            ]}
+                        >
+                            <MaterialIcons name="cloud" size={20} color="#666" />
+                            <MaterialIcons name="cloud" size={16} color="#888" />
+                            <MaterialIcons name="cloud" size={18} color="#777" />
+                        </Animated.View>
+                    )}
+
+                    {/* Loading Image */}
                     <View style={styles.carBody}>
                         <Image
-                            source={require('../../../../assets/porsche-911-interior.jpg')}
+                            source={require('../../../../assets/loading.jpg')}
                             style={styles.carImage}
-                            resizeMode="cover"
+                            resizeMode="contain"
+                            onError={(error) => console.log('Loading image load error:', error)}
+                            onLoad={() => console.log('Loading image loaded successfully')}
                         />
-                        {/* Car Reflection */}
+                        {/* Image Reflection */}
                         <View style={styles.carReflection}>
                             <Image
-                                source={require('../../../../assets/porsche-911-interior.jpg')}
+                                source={require('../../../../assets/loading.jpg')}
                                 style={[styles.carImage, styles.reflectionImage]}
-                                resizeMode="cover"
+                                resizeMode="contain"
                             />
                         </View>
                     </View>
@@ -322,6 +509,27 @@ export default function StaffLoadingState({ progress, isComplete, onAnimationCom
                             <MaterialIcons name="radio-button-unchecked" size={16} color="#333" />
                         </Animated.View>
                     </View>
+
+                    {/* Sparks Effect - Around wheels */}
+                    {isComplete && (
+                        <Animated.View
+                            style={[
+                                styles.sparksContainer,
+                                {
+                                    opacity: sparksOpacity,
+                                    transform: [
+                                        { scale: sparksScale },
+                                    ],
+                                },
+                            ]}
+                        >
+                            <View style={styles.spark} />
+                            <View style={[styles.spark, styles.spark2]} />
+                            <View style={[styles.spark, styles.spark3]} />
+                            <View style={[styles.spark, styles.spark4]} />
+                            <View style={[styles.spark, styles.spark5]} />
+                        </Animated.View>
+                    )}
 
                     {/* Exhaust Smoke */}
                     <Animated.View

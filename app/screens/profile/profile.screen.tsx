@@ -430,7 +430,6 @@ export default function ProfileScreen() {
       {showAvatarLoading && (
         <View style={styles.loadingOverlay}>
           <StaffLoadingState
-            progress="Uploading avatar..."
             isComplete={avatarLoadingComplete}
             onAnimationComplete={handleAvatarAnimationComplete}
           />

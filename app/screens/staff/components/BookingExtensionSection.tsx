@@ -63,13 +63,17 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
 
 
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
-            const paymentUrl = `${baseUrl}/Invoice/${bookingResult.data.invoiceId}`;
+            const timestamp = new Date().getTime();
+            const paymentUrl = `${baseUrl}/Invoice/${bookingResult.data.invoiceId}?_t=${timestamp}`;
 
             const response = await fetch(paymentUrl, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'accept': '*/*'
+                    'accept': '*/*',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
                 },
             });
 
@@ -80,7 +84,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
                 );
 
                 const paymentStatus = extensionPayment?.status || 'Pending';
-                const isPaymentCompleted = paymentStatus.toLowerCase() === 'success';
+                const isPaymentCompleted = paymentStatus.toLowerCase() === 'success' || paymentStatus.toLowerCase() === 'paid';
 
                 const info = {
                     hasExtension: true,

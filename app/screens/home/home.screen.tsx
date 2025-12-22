@@ -71,7 +71,6 @@ export default function HomeScreen() {
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Header />
         <StaffLoadingState
-          progress="Loading cars..."
           isComplete={loadingComplete}
           onAnimationComplete={handleAnimationComplete}
         />

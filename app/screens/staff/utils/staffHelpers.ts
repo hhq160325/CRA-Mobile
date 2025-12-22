@@ -429,7 +429,8 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
 
         // Step 3: Check payment details (using the non-/api/ endpoint)
         const invoiceBaseUrl = API_CONFIG.BASE_URL.replace('/api', '');
-        const paymentUrl = `${invoiceBaseUrl}/Invoice/${invoiceId}`;
+        const timestamp = new Date().getTime();
+        const paymentUrl = `${invoiceBaseUrl}/Invoice/${invoiceId}?_t=${timestamp}`;
 
         // console.log(` fetchBookingExtensionInfo: Step 2b - Getting payment details for ${invoiceId}`);
         // console.log(` fetchBookingExtensionInfo: Full payment URL: ${paymentUrl}`);
@@ -439,7 +440,10 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             headers: {
                 Authorization: token ? `Bearer ${token}` : '',
                 'Content-Type': 'application/json',
-                'accept': '*/*'
+                'accept': '*/*',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             },
         });
 
@@ -515,11 +519,17 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         const extensionDays = 1; // Default to 1 day, could be extracted from description if available
         const extensionAmount = extensionPayment.paidAmount || 0;
 
+        // Check payment status - handle both 'Success' and 'Paid'
+        const paymentStatus = extensionPayment.status || 'Pending';
+        const isPaymentCompleted = paymentStatus.toLowerCase() === 'success' || paymentStatus.toLowerCase() === 'paid';
+
         return {
             hasExtension: true,
             extensionDescription,
             extensionDays,
-            extensionAmount
+            extensionAmount,
+            extensionPaymentStatus: paymentStatus,
+            isExtensionPaymentCompleted: isPaymentCompleted
         };
 
     } catch (error) {

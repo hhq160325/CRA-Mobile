@@ -88,8 +88,8 @@ export async function confirmBookingWithPayment(bookingId: string): Promise<Book
         const { data: paymentUpdate, error: paymentError } = await paymentService.updateRentalPaymentCash(bookingId)
 
         if (paymentError) {
-            console.warn("⚠️ Payment update failed:", paymentError.message)
-            console.log("✅ Booking confirmed successfully (payment update skipped)")
+            console.warn(" Payment update failed:", paymentError.message)
+            console.log(" Booking confirmed successfully (payment update skipped)")
 
             return {
                 success: true,

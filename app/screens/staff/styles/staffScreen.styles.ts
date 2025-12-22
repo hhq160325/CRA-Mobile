@@ -425,6 +425,35 @@ export const styles = StyleSheet.create({
         color: '#92400e',
         marginBottom: verticalScale(4),
     },
+    extensionStatusCompleted: {
+        color: '#059669', // Green for completed
+    },
+    extensionStatusPending: {
+        color: '#dc2626', // Red for pending
+    },
+    extensionPaymentStatusText: {
+        fontSize: scale(11),
+        color: '#6b7280',
+        fontWeight: '500',
+        marginTop: verticalScale(2),
+    },
+    extensionPaymentCompleted: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: scale(16),
+        paddingVertical: verticalScale(8),
+        backgroundColor: '#f0fdf4',
+        borderRadius: scale(8),
+        marginTop: verticalScale(8),
+        borderWidth: 1,
+        borderColor: '#bbf7d0',
+    },
+    extensionPaymentCompletedText: {
+        fontSize: scale(12),
+        color: '#059669',
+        fontWeight: '600',
+    },
     extensionDetails: {
         marginBottom: verticalScale(8),
     },
@@ -456,5 +485,112 @@ export const styles = StyleSheet.create({
         fontSize: scale(12),
         fontWeight: '600',
         color: 'white',
+    },
+
+    // Background Animation Styles
+    backgroundContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
+    },
+    gradientBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#f9fafb',
+    },
+    backgroundPattern: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    backgroundCircle1: {
+        position: 'absolute',
+        width: scale(200),
+        height: scale(200),
+        borderRadius: scale(100),
+        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+        top: '10%',
+        left: '10%',
+    },
+    backgroundCircle2: {
+        position: 'absolute',
+        width: scale(150),
+        height: scale(150),
+        borderRadius: scale(75),
+        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+        top: '60%',
+        right: '10%',
+    },
+    backgroundCircle3: {
+        position: 'absolute',
+        width: scale(100),
+        height: scale(100),
+        borderRadius: scale(50),
+        backgroundColor: 'rgba(245, 158, 11, 0.05)',
+        top: '30%',
+        right: '30%',
+    },
+
+    // Tire Burning Effects
+    skidMarks: {
+        position: 'absolute',
+        bottom: scale(-5),
+        left: scale(-30),
+        flexDirection: 'row',
+        gap: scale(15),
+    },
+    skidMark: {
+        width: scale(2),
+        height: scale(20),
+        backgroundColor: '#1f2937',
+        opacity: 0.6,
+    },
+    tireSmokeContainer: {
+        position: 'absolute',
+        bottom: scale(5),
+        left: scale(-25),
+        flexDirection: 'row',
+        gap: scale(5),
+    },
+    sparksContainer: {
+        position: 'absolute',
+        bottom: scale(0),
+        left: scale(10),
+        right: scale(10),
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+    spark: {
+        width: scale(3),
+        height: scale(3),
+        backgroundColor: '#fbbf24',
+        borderRadius: scale(1.5),
+    },
+    spark2: {
+        backgroundColor: '#f59e0b',
+        transform: [{ translateX: scale(5) }, { translateY: scale(-3) }],
+    },
+    spark3: {
+        backgroundColor: '#ef4444',
+        transform: [{ translateX: scale(-5) }, { translateY: scale(-2) }],
+    },
+    spark4: {
+        backgroundColor: '#fbbf24',
+        transform: [{ translateX: scale(8) }, { translateY: scale(2) }],
+    },
+    spark5: {
+        backgroundColor: '#f59e0b',
+        transform: [{ translateX: scale(-8) }, { translateY: scale(1) }],
     },
 });

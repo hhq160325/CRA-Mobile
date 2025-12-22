@@ -17,6 +17,8 @@ import LocationInfoCard from './components/LocationInfoCard';
 import PaymentInfoSection from './components/PaymentInfoSection';
 import FeedbackButton from './components/FeedbackButton';
 import ReportCarButton from './components/ReportCarButton';
+import { BookingExtensionPayment } from '../../components/BookingExtensionPayment';
+import { AdditionalFeePayment } from '../../components/AdditionalFeePayment';
 
 export default function BookingDetailScreen() {
   const route = useRoute<RouteProp<{ params: { id?: string; bookingNumber?: string } }, 'params'>>();
@@ -151,6 +153,26 @@ export default function BookingDetailScreen() {
           bookingDate={booking.bookingDate}
           payments={payments}
           bookingFee={bookingFee}
+        />
+
+        {/* Booking Extension Payment Component */}
+        <BookingExtensionPayment
+          bookingId={booking.id}
+          onPaymentComplete={() => {
+            // Refresh the booking detail data after payment completion
+            console.log(' Booking extension payment completed, refreshing data...');
+            // The useBookingDetail hook should automatically refresh
+          }}
+        />
+
+        {/* Additional Fee Payment Component */}
+        <AdditionalFeePayment
+          bookingId={booking.id}
+          onPaymentComplete={() => {
+            // Refresh the booking detail data after payment completion
+            console.log(' Additional fee payment completed, refreshing data...');
+            // The useBookingDetail hook should automatically refresh
+          }}
         />
 
         {/* Report Car Button - Available for all booking statuses */}

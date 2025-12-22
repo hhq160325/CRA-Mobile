@@ -27,7 +27,7 @@ class OCRService {
 
     async extractDriverLicenseInfo(imageUri: string): Promise<OCRResponse> {
         try {
-            console.log('🔍 OCR: Starting driver license extraction...');
+            console.log(' OCR: Starting driver license extraction...');
 
             // Create FormData for multipart/form-data request
             const formData = new FormData();

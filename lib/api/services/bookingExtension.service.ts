@@ -145,11 +145,10 @@ export const bookingExtensionService = {
                 return { data: null, error: new Error('No booking extension payment found') };
             }
 
-            // Extract payment details according to your API response format
-            // From your example: "id": "f048a837-c9bf-49f9-b6a6-74f5f27fbdf2", "paidAmount": 35000, "invoiceId": "bc1dae82-d005-46cf-b183-5d6d0af50db2"
+
             const paymentDetail: PaymentDetail = {
-                paymentId: extensionPayment.id, // Use 'id' field as paymentId
-                amount: extensionPayment.paidAmount, // Use paidAmount field
+                paymentId: extensionPayment.id, 
+                amount: extensionPayment.paidAmount, 
                 invoiceId: invoiceId
             };
 

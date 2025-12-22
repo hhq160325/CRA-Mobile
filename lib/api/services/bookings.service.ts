@@ -50,7 +50,7 @@ export interface Booking {
 
 // Map API response to app Booking model
 function mapApiBookingToBooking(apiBooking: ApiBookingResponse): Booking {
- 
+
   let status: "upcoming" | "completed" | "cancelled" = "upcoming"
   const apiStatus = apiBooking.status?.toLowerCase()
 
@@ -95,7 +95,7 @@ export interface CreateBookingData {
   carRentPrice: number
   rentime: number
   rentType: string
-  request?: string // Required by API
+  request?: string
 }
 
 export interface UpdateBookingData {

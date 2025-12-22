@@ -189,7 +189,7 @@ const SignInScreen = () => {
 
       if (success) {
         console.log(' Google login successful');
-       
+
         await new Promise(resolve => setTimeout(resolve, 300));
 
         refreshUser();
@@ -202,7 +202,7 @@ const SignInScreen = () => {
         }
       } else {
         console.log(' Google login failed or cancelled');
-       
+
       }
     } catch (error: any) {
       console.error('Google login error:', error);
@@ -212,11 +212,9 @@ const SignInScreen = () => {
     }
   };
 
-  const { logo_black } = assets;
   return (
     <ScrollView style={styles.container}>
       <View style={styles.flexRow}>
-        <Image source={logo_black} style={styles.carLogo} />
         <Text style={styles.titleStyle}>MORENT</Text>
       </View>
       <View style={styles.textContainer}>

@@ -1,7 +1,4 @@
-/**
- * Format price with Vietnamese formatting (dots as thousand separators)
- * Examples: 1.000 VND, 10.000 VND, 100.000 VND, 1.000.000 VND
- */
+
 export function formatPrice(price: number): string {
     if (price === 0) return '0 VND';
 
@@ -12,9 +9,7 @@ export function formatPrice(price: number): string {
     return `${formatted} VND`;
 }
 
-/**
- * Format price without VND suffix
- */
+
 export function formatPriceNumber(price: number): string {
     if (price === 0) return '0';
 

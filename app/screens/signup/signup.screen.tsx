@@ -415,11 +415,9 @@ const SignUpScreen = () => {
     }
   };
 
-  const { logo_black } = assets;
   return (
     <ScrollView style={styles.container}>
       <View style={styles.flexRow}>
-        <Image source={logo_black} style={styles.carLogo} />
         <Text style={[styles.titleStyle, { color: 'blue' }]}>MORENT</Text>
       </View>
 

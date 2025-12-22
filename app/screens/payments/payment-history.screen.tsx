@@ -64,7 +64,6 @@ export default function PaymentHistoryScreen() {
 
       {showLoadingAnimation ? (
         <StaffLoadingState
-          progress="Loading payment history..."
           isComplete={loadingComplete}
           onAnimationComplete={handleAnimationComplete}
         />

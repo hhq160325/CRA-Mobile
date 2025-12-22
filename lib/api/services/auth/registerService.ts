@@ -15,7 +15,7 @@ export const register = async (
         phoneNumber: data.phoneNumber || "",
         fullname: data.fullname,
         address: data.address || "",
-        gender: data.gender !== undefined ? data.gender : 0, // Default to 0 as per API example
+        gender: data.gender !== undefined ? data.gender : 0,
     };
 
     console.log("registerService.register: request body", requestBody);

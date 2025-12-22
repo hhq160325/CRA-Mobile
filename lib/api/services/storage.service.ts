@@ -95,8 +95,8 @@ export const storageService = {
             // Generate public URL
             const publicUrl = `${SUPABASE_CONFIG.URL}/storage/v1/object/public/${SUPABASE_CONFIG.BUCKETS.USER_AVATARS}/${fileName}`
 
-            console.log("✓ Upload successful!")
-            console.log("✓ Public URL:", publicUrl)
+            console.log(" Upload successful!")
+            console.log(" Public URL:", publicUrl)
             console.log("=== Storage Service: Complete ===")
 
             return { url: publicUrl, error: null }

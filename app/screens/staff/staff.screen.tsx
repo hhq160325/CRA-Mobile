@@ -83,7 +83,6 @@ export default function StaffScreen() {
 
       {showLoadingAnimation ? (
         <StaffLoadingState
-          progress={loadingProgress}
           isComplete={loadingComplete}
           onAnimationComplete={handleAnimationComplete}
         />

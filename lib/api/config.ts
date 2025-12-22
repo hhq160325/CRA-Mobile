@@ -138,7 +138,7 @@ export const API_ENDPOINTS = {
   PARK_LOTS: "/ParkLot",
 
   // Notifications
-  GET_NOTIFICATIONS: (userId: string) => `/Notification/GetNotificationsForUser/${userId}`,
+  GET_NOTIFICATIONS: (userId: string) => `/UserNotif/${userId}`,
   MARK_NOTIFICATION_READ: (notificationId: string) => `/Notification/MarkAsRead/${notificationId}`,
   DELETE_NOTIFICATION: (notificationId: string) => `/Notification/DeleteNotification/${notificationId}`,
 

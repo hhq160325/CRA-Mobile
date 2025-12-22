@@ -104,18 +104,18 @@ const SignUpScreen = () => {
   // Check if email already exists
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
-      console.log('🔍 Checking if email exists:', email);
+      // console.log('🔍 Checking if email exists:', email);
       const result = await userService.findUserByEmail(email);
 
       if (result.data) {
-        console.log('❌ Email already exists:', email);
+        // console.log('❌ Email already exists:', email);
         return true;
       }
 
-      console.log('✅ Email is available:', email);
+      // console.log('✅ Email is available:', email);
       return false;
     } catch (error) {
-      console.log('✅ Email is available (not found):', email);
+      // console.log('✅ Email is available (not found):', email);
       return false;
     }
   };
@@ -123,11 +123,11 @@ const SignUpScreen = () => {
   // Check if username already exists
   const checkUsernameExists = async (username: string): Promise<boolean> => {
     try {
-      console.log('🔍 Checking if username exists:', username);
+      // console.log('🔍 Checking if username exists:', username);
       const result = await userService.getAllUsers();
 
       if (result.error || !result.data) {
-        console.log('⚠️ Could not check username, allowing signup');
+        // console.log('⚠️ Could not check username, allowing signup');
         return false;
       }
 
@@ -136,14 +136,14 @@ const SignUpScreen = () => {
       );
 
       if (existingUser) {
-        console.log('❌ Username already exists:', username);
+        // console.log('❌ Username already exists:', username);
         return true;
       }
 
-      console.log('✅ Username is available:', username);
+      // console.log('✅ Username is available:', username);
       return false;
     } catch (error) {
-      console.log('⚠️ Error checking username, allowing signup:', error);
+      // console.log('⚠️ Error checking username, allowing signup:', error);
       return false;
     }
   };
@@ -276,8 +276,8 @@ const SignUpScreen = () => {
         console.log('✅ Signup API called successfully, OTP sent to email');
         setCurrentStep(4);
         Alert.alert(
-          'Check Your Email',
-          'We\'ve sent a verification code to your email. Please check your email and enter the code below.',
+          'Check Your Phone',
+          'We\'ve sent a verification code to your phone. Please check your messages and enter the code below.',
         );
       }
     } catch (error: any) {
@@ -293,7 +293,8 @@ const SignUpScreen = () => {
     try {
       console.log('=== Verifying OTP ===');
 
-      const verifyResult = await authService.verifySignupOtp(formData.email, otp);
+      const cleanPhone = formData.phone.replace(/\D/g, '');
+      const verifyResult = await authService.verifySignupOtpByPhone(cleanPhone, otp);
 
       if (verifyResult.error) {
         console.error('Verify OTP error:', verifyResult.error);
@@ -401,7 +402,7 @@ const SignUpScreen = () => {
       case 4:
         return (
           <SignupStep4
-            email={formData.email}
+            phone={formData.phone}
             onResendOtp={handleResendOtp}
             onVerifyOtp={handleVerifyOtp}
             onBack={handleStepBack}

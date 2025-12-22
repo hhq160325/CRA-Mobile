@@ -46,7 +46,6 @@ export function useBookingForm() {
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('qr-payos');
-  const [agreeMarketing, setAgreeMarketing] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [pickupMode, setPickupMode] = useState<'parklot' | 'custom'>('parklot');
   const [dropoffMode, setDropoffMode] = useState<'parklot' | 'custom'>(
@@ -165,8 +164,6 @@ export function useBookingForm() {
     setDiscount,
     paymentMethod,
     setPaymentMethod,
-    agreeMarketing,
-    setAgreeMarketing,
     agreeTerms,
     setAgreeTerms,
     pickupMode,

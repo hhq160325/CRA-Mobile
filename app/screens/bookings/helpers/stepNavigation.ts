@@ -61,7 +61,7 @@ export function useStepNavigation({
             }
         } else if (currentStep === 4) {
             if (
-                validation.validateStep4(formState.agreeMarketing, formState.agreeTerms)
+                validation.validateStep4(formState.agreeTerms)
             ) {
                 handleCreate();
             }

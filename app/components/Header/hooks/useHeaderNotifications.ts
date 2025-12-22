@@ -1,40 +1,46 @@
-import {useState} from 'react';
-import {useAuth} from '../../../../lib/auth-context';
+import { useState } from 'react';
+import { useAuth } from '../../../../lib/auth-context';
 import {
   notificationService,
   type Notification,
 } from '../../../../lib/api/services/notification.service';
-import {useNavigation} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../../navigators/navigation-route';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../../navigators/navigation-route';
 
 export function useHeaderNotifications() {
-  const {user} = useAuth();
+  const { user } = useAuth();
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const loadNotifications = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log("🔔 No user ID available for notifications");
+      return;
+    }
 
+    console.log("🔔 Loading notifications for user ID:", user.id);
+    console.log("🔔 User role:", user.role);
     setLoadingNotifications(true);
     try {
-      const {data, error} = await notificationService.getNotifications(user.id);
+      const { data, error } = await notificationService.getNotifications(user.id, user.role);
       if (error) {
         console.log(
-          'Failed to load notifications (this is normal if no notifications exist)',
+          '🔔 Failed to load notifications (this is normal if no notifications exist)',
         );
         setNotifications([]);
         return;
       }
       if (data) {
+        console.log("🔔 Loaded notifications:", data.length);
         setNotifications(data);
       } else {
         setNotifications([]);
       }
     } catch (err) {
       console.log(
-        'Failed to load notifications (this is normal if no notifications exist)',
+        '🔔 Failed to load notifications (this is normal if no notifications exist)',
       );
       setNotifications([]);
     } finally {
@@ -43,14 +49,45 @@ export function useHeaderNotifications() {
   };
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.isRead) {
+    if (!notification.isViewed) {
       await notificationService.markAsRead(notification.id);
     }
 
-    if (notification.type === 'booking' && notification.relatedId) {
-      navigation.navigate('BookingDetail' as any, {
-        bookingId: notification.relatedId,
-      });
+    // Since the new API doesn't have type/relatedId, we can try to parse the content
+    // to determine if it's booking-related and extract booking info
+    const content = notification.content.toLowerCase();
+    if (content.includes('booking') && content.includes('bk')) {
+      // Try to extract booking number from content like "BK19-22-12-2025"
+      const bookingMatch = content.match(/bk\d+-\d+-\d+-\d+/i);
+      if (bookingMatch) {
+        const bookingNumber = bookingMatch[0].toUpperCase();
+        console.log("🔔 Extracted booking number:", bookingNumber);
+
+        try {
+          // First get the booking details by booking number to get the booking ID
+          const { bookingsService } = await import('../../../../lib/api');
+          const bookingResult = await bookingsService.getBookingByNumber(bookingNumber);
+
+          if (bookingResult.data && bookingResult.data.id) {
+            console.log("🔔 Found booking ID:", bookingResult.data.id);
+            navigation.navigate('BookingDetail' as any, {
+              id: bookingResult.data.id,
+            });
+          } else {
+            console.log("🔔 Could not find booking ID for number:", bookingNumber);
+            // Fallback to using booking number
+            navigation.navigate('BookingDetail' as any, {
+              bookingNumber: bookingNumber,
+            });
+          }
+        } catch (error) {
+          console.error("🔔 Error fetching booking by number:", error);
+          // Fallback to using booking number
+          navigation.navigate('BookingDetail' as any, {
+            bookingNumber: bookingNumber,
+          });
+        }
+      }
     }
 
     loadNotifications();

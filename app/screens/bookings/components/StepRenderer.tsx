@@ -75,9 +75,7 @@ export default function StepRenderer({ currentStep, formState }: StepRendererPro
         case 4:
             return (
                 <ConfirmationStep
-                    agreeMarketing={formState.agreeMarketing}
                     agreeTerms={formState.agreeTerms}
-                    onAgreeMarketingChange={formState.setAgreeMarketing}
                     onAgreeTermsChange={formState.setAgreeTerms}
                 />
             );

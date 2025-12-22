@@ -6,7 +6,7 @@ import { renderMarginTop } from '../../../utils/ui-utils';
 import { navigate } from '../../../navigators/navigation-utilities';
 
 interface SignupStep4Props {
-    email: string;
+    phone: string;
     onResendOtp: () => void;
     onVerifyOtp: (otp: string) => void;
     onBack: () => void;
@@ -15,7 +15,7 @@ interface SignupStep4Props {
 }
 
 export default function SignupStep4({
-    email,
+    phone,
     onResendOtp,
     onVerifyOtp,
     onBack,
@@ -76,7 +76,7 @@ export default function SignupStep4({
             setCanResend(false);
             Alert.alert(
                 'Code Resent',
-                'A new verification code has been sent to your email. Please check your inbox.',
+                'A new verification code has been sent to your phone. Please check your messages.',
             );
         } catch (error) {
             // Error handling is done in parent component
@@ -94,24 +94,32 @@ export default function SignupStep4({
         return `${seconds}s`;
     };
 
-    const maskEmail = (email: string) => {
-        if (!email) return '****@****.com';
-        const [username, domain] = email.split('@');
-        const maskedUsername = username.substring(0, 2) + '****';
-        return `${maskedUsername}@${domain}`;
+    const maskPhone = (phone: string) => {
+        if (!phone) return '****';
+        // Remove any non-digit characters
+        const cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.length < 4) return '****';
+
+        // Show first 2 and last 2 digits, mask the middle
+        const firstTwo = cleanPhone.substring(0, 2);
+        const lastTwo = cleanPhone.substring(cleanPhone.length - 2);
+        const middleLength = cleanPhone.length - 4;
+        const masked = '*'.repeat(Math.max(middleLength, 2));
+
+        return `${firstTwo}${masked}${lastTwo}`;
     };
 
     return (
         <>
             <View style={styles.textContainer}>
-                <Text style={[styles.textStyle, styles.textCenter]}>Verify Your Email</Text>
+                <Text style={[styles.textStyle, styles.textCenter]}>Verify Your Phone</Text>
                 <Text style={[styles.stepIndicator, styles.textCenter]}>Step 4 of 4</Text>
                 {renderMarginTop(12)}
                 <Text style={[styles.dontHaveText, styles.textCenter]}>
                     We've sent a verification code to:
                 </Text>
                 <Text style={[styles.dontHaveText, styles.textCenter, { fontWeight: 'bold', color: 'blue' }]}>
-                    {maskEmail(email)}
+                    {maskPhone(phone)}
                 </Text>
             </View>
 
@@ -121,7 +129,7 @@ export default function SignupStep4({
 
             <View style={styles.infoContainer}>
                 <Text style={styles.infoText}>
-                    📧 Check your email inbox and spam folder
+                    📱 Check your phone messages
                 </Text>
                 <Text style={styles.infoText}>
                     🔢 Enter the 6-digit code to complete registration

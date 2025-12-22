@@ -102,7 +102,7 @@ export default function Header() {
                 onOpenNotifications={handleOpenNotifications}
                 onOpenFavorites={handleOpenFavorites}
                 isStaff={isStaff}
-                notificationCount={notifications.filter((n) => !n.isRead).length}
+                notificationCount={notifications.filter((n) => !n.isViewed).length}
                 favoritesCount={favorites.length}
             />
 

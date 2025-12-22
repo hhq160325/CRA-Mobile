@@ -15,7 +15,7 @@ import { register } from './auth/registerService';
 import { loginWithGoogle, loginWithGoogleMobile, getGoogleLoginUrl } from './auth/googleLoginService';
 import { refreshToken as refreshTokenFn } from './auth/tokenRefreshService';
 import { forgotPassword, verifyResetCode, resetPassword, resetPasswordByPhone } from './auth/passwordResetService';
-import { verifySignupOtp } from './auth/signupOtpService';
+import { verifySignupOtp, verifySignupOtpByPhone } from './auth/signupOtpService';
 import {
   getUserFromStorage,
   getRefreshTokenFromStorage,
@@ -54,4 +54,5 @@ export const authService = {
 
   // Signup OTP
   verifySignupOtp,
+  verifySignupOtpByPhone,
 };

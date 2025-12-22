@@ -5,7 +5,7 @@ import { invoiceService } from '../../../../lib/api/services/invoice.service';
 import { paymentService } from '../../../../lib/api/services/payment.service';
 import { useAuth } from '../../../../lib/auth-context';
 
-export function useBookingDetail(bookingId: string, navigation: any) {
+export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
   const { user } = useAuth();
   const [booking, setBooking] = useState<any>(null);
   const [invoice, setInvoice] = useState<any>(null);
@@ -18,7 +18,7 @@ export function useBookingDetail(bookingId: string, navigation: any) {
 
     async function load() {
       console.log(' BookingDetail: Starting load process');
-      console.log(' BookingDetail: Booking ID:', bookingId);
+      console.log(' BookingDetail: Booking ID or Number:', bookingIdOrNumber);
       console.log(' BookingDetail: Current user:', {
         id: user?.id,
         role: user?.role,
@@ -26,9 +26,8 @@ export function useBookingDetail(bookingId: string, navigation: any) {
         hasUser: !!user
       });
 
-
-      if (!user) {
-        console.log(' BookingDetail: No authenticated user, skipping load');
+      if (!user || !bookingIdOrNumber) {
+        console.log(' BookingDetail: No authenticated user or booking identifier, skipping load');
         setLoading(false);
         return;
       }
@@ -36,8 +35,18 @@ export function useBookingDetail(bookingId: string, navigation: any) {
       setLoading(true);
 
       try {
-        console.log(' BookingDetail: Calling getBookingById...');
-        const res = await bookingsService.getBookingById(bookingId);
+        let res;
+
+        // Detect if it's a booking number (starts with BK) or booking ID (UUID format)
+        const isBookingNumber = bookingIdOrNumber.toUpperCase().startsWith('BK');
+
+        if (isBookingNumber) {
+          console.log(' BookingDetail: Calling getBookingByNumber...');
+          res = await bookingsService.getBookingByNumber(bookingIdOrNumber);
+        } else {
+          console.log(' BookingDetail: Calling getBookingById...');
+          res = await bookingsService.getBookingById(bookingIdOrNumber);
+        }
         console.log('BookingDetail: API response:', {
           hasData: !!res.data,
           hasError: !!res.error,
@@ -129,13 +138,16 @@ export function useBookingDetail(bookingId: string, navigation: any) {
           console.log(' BookingDetail: Permission granted, setting booking data');
           setBooking(completeBooking);
 
+          // Use the actual booking ID from the response data
+          const actualBookingId = completeBooking.id;
+
           console.log(
             'BookingDetail: Fetching payments for booking:',
-            bookingId,
+            actualBookingId,
           );
           try {
             const paymentsRes = await paymentService.getBookingPayments(
-              bookingId,
+              actualBookingId,
             );
             if (mounted && paymentsRes.data) {
               console.log(
@@ -190,17 +202,17 @@ export function useBookingDetail(bookingId: string, navigation: any) {
       }
     }
 
-    if (bookingId && user) {
+    if (bookingIdOrNumber && user) {
       load();
     } else {
-      console.error('BookingDetail: No booking ID provided or no authenticated user');
+      console.error('BookingDetail: No booking identifier provided or no authenticated user');
       setLoading(false);
     }
 
     return () => {
       mounted = false;
     };
-  }, [bookingId, user?.id]);
+  }, [bookingIdOrNumber, user?.id]);
 
   return { booking, invoice, payments, bookingFee, loading };
 }

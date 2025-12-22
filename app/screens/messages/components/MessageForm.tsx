@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-nativ
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../theme/colors';
 import { styles } from '../messages.styles';
+import MessageOptions from './MessageOptions';
 
 interface MessageFormProps {
     title: string;
@@ -21,8 +22,15 @@ export default function MessageForm({
     onContentChange,
     onSend
 }: MessageFormProps) {
+    const handleOptionSelect = (option: 'custom' | 'rent_more', value: string) => {
+        onContentChange(value);
+    };
+
     return (
         <>
+            {/* Message Options */}
+            <MessageOptions onOptionSelect={handleOptionSelect} />
+
             <View style={styles.inputCard}>
                 <Text style={styles.inputLabel}>Subject</Text>
                 <TextInput
@@ -31,7 +39,6 @@ export default function MessageForm({
                     placeholder="Enter message subject"
                     placeholderTextColor={colors.placeholder}
                     style={styles.input}
-                    editable={false}
                     multiline={true}
                     numberOfLines={3}
                 />
@@ -42,7 +49,7 @@ export default function MessageForm({
                 <TextInput
                     value={content}
                     onChangeText={onContentChange}
-                    placeholder="Type your message here..."
+                    placeholder="Type your message here or use quick options above..."
                     placeholderTextColor={colors.placeholder}
                     multiline
                     numberOfLines={8}

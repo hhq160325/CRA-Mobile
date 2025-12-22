@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { userService } from '../../../../lib/api/services/user.service';
 
@@ -143,10 +143,49 @@ export const useProfileActions = (
       return;
     }
 
+    console.log('uploadAvatar: starting validation and upload');
+    console.log('uploadAvatar: platform', Platform.OS);
+    console.log('uploadAvatar: image URI', uri);
+
+    // Enhanced format validation for real devices
+    const fileExtension = uri.split('.').pop()?.toLowerCase();
+    const supportedFormats = ['jpg', 'jpeg', 'png'];
+
+    console.log('uploadAvatar: detected file extension', fileExtension);
+
+    if (!fileExtension || !supportedFormats.includes(fileExtension)) {
+      console.error('uploadAvatar: unsupported format', fileExtension);
+      Alert.alert(
+        'Unsupported Format',
+        `Image format validation failed (${fileExtension}). Please try selecting a different image or take a new photo.`,
+        [
+          { text: 'OK' },
+          { text: 'Try Again', onPress: () => console.log('User wants to try again') }
+        ]
+      );
+      return;
+    }
+
+    // Check if file URI is accessible (important for real devices)
+    try {
+      const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error(`File not accessible: ${response.status}`);
+      }
+      console.log('uploadAvatar: file accessibility verified');
+    } catch (fileError) {
+      console.error('uploadAvatar: file not accessible', fileError);
+      Alert.alert(
+        'File Access Error',
+        'The selected image file is not accessible. Please try selecting a different image.',
+      );
+      return;
+    }
+
     setIsSaving(true);
     try {
       console.log('uploadAvatar: starting upload for user', userId);
-      console.log('uploadAvatar: image URI', uri);
+      console.log('uploadAvatar: image format', fileExtension);
 
       const { data, error } = await userService.uploadAvatar(userId, uri);
 

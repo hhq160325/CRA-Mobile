@@ -20,18 +20,4 @@ export const styles = StyleSheet.create({
         color: colors.primary,
         flex: 1,
     },
-    refreshButton: {
-        padding: scale(8),
-        borderRadius: scale(8),
-        backgroundColor: colors.background,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: scale(40),
-        minHeight: scale(40),
-    },
-    refreshButtonDisabled: {
-        opacity: 0.6,
-    },
 });

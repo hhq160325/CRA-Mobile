@@ -238,23 +238,8 @@ export function useBookingValidation() {
   };
 
   const validateStep4 = (
-    agreeMarketing: boolean,
     agreeTerms: boolean,
   ): boolean => {
-    if (!agreeMarketing && !agreeTerms) {
-      Alert.alert(
-        'Required',
-        'Please check both boxes:\n\n✓ Marketing and newsletter emails\n✓ Terms and conditions',
-      );
-      return false;
-    }
-    if (!agreeMarketing) {
-      Alert.alert(
-        'Required',
-        'Please agree to receive marketing and newsletter emails to continue.',
-      );
-      return false;
-    }
     if (!agreeTerms) {
       Alert.alert(
         'Required',

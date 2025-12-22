@@ -2,16 +2,12 @@ import { View, Text, Pressable } from "react-native"
 import { colors } from "../../../theme/colors"
 
 interface ConfirmationStepProps {
-    agreeMarketing: boolean
     agreeTerms: boolean
-    onAgreeMarketingChange: (value: boolean) => void
     onAgreeTermsChange: (value: boolean) => void
 }
 
 export default function ConfirmationStep({
-    agreeMarketing,
     agreeTerms,
-    onAgreeMarketingChange,
     onAgreeTermsChange,
 }: ConfirmationStepProps) {
     return (
@@ -22,16 +18,6 @@ export default function ConfirmationStep({
             </Text>
 
             <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12, marginBottom: 16 }}>
-                <Pressable onPress={() => onAgreeMarketingChange(!agreeMarketing)} style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 16 }}>
-                    <View style={{ width: 18, height: 18, borderWidth: 2, borderColor: agreeMarketing ? colors.morentBlue : colors.border, borderRadius: 4, marginRight: 12, marginTop: 2, justifyContent: "center", alignItems: "center", backgroundColor: agreeMarketing ? colors.morentBlue : colors.white }}>
-                        {agreeMarketing && <Text style={{ color: colors.white, fontSize: 12, fontWeight: "700" }}>✓</Text>}
-                    </View>
-                    <Text style={{ fontSize: 12, flex: 1, color: colors.primary }}>
-                        <Text style={{ color: "#EF4444", fontWeight: "700" }}>* </Text>
-                        I agree with sending an Marketing and newsletter emails. No spam, promised!
-                    </Text>
-                </Pressable>
-
                 <Pressable onPress={() => onAgreeTermsChange(!agreeTerms)} style={{ flexDirection: "row", alignItems: "flex-start" }}>
                     <View style={{ width: 18, height: 18, borderWidth: 2, borderColor: agreeTerms ? colors.morentBlue : colors.border, borderRadius: 4, marginRight: 12, marginTop: 2, justifyContent: "center", alignItems: "center", backgroundColor: agreeTerms ? colors.morentBlue : colors.white }}>
                         {agreeTerms && <Text style={{ color: colors.white, fontSize: 12, fontWeight: "700" }}>✓</Text>}

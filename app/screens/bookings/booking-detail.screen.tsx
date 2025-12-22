@@ -19,12 +19,13 @@ import FeedbackButton from './components/FeedbackButton';
 import ReportCarButton from './components/ReportCarButton';
 
 export default function BookingDetailScreen() {
-  const route = useRoute<RouteProp<{ params: { id: string } }, 'params'>>();
+  const route = useRoute<RouteProp<{ params: { id?: string; bookingNumber?: string } }, 'params'>>();
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
   const { user } = useAuth();
-  const { id } = (route.params as any) || {};
+  const { id, bookingNumber } = (route.params as any) || {};
 
   console.log(' BookingDetailScreen: Rendering with ID:', id);
+  console.log(' BookingDetailScreen: Rendering with booking number:', bookingNumber);
   console.log(' BookingDetailScreen: Route params:', route.params);
   console.log(' BookingDetailScreen: User auth state:', { hasUser: !!user, userId: user?.id });
 
@@ -36,7 +37,7 @@ export default function BookingDetailScreen() {
     }
   }, [user, navigation]);
 
-  const { booking, invoice, payments, bookingFee, loading } = useBookingDetail(id, navigation);
+  const { booking, invoice, payments, bookingFee, loading } = useBookingDetail(id || bookingNumber, navigation);
 
   console.log(' BookingDetailScreen: Hook results:', {
     hasBooking: !!booking,
@@ -70,6 +71,21 @@ export default function BookingDetailScreen() {
     );
   }
 
+  if (!id && !bookingNumber) {
+    console.error('BookingDetail: No booking ID or booking number provided');
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Header />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <MaterialIcons name="error-outline" size={64} color={colors.placeholder} />
+          <Text style={{ marginTop: 16, fontSize: 16, color: colors.placeholder }}>
+            No booking identifier provided
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   if (!booking) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -78,6 +94,9 @@ export default function BookingDetailScreen() {
           <MaterialIcons name="error-outline" size={64} color={colors.placeholder} />
           <Text style={{ marginTop: 16, fontSize: 16, color: colors.placeholder }}>
             Booking not found
+          </Text>
+          <Text style={{ marginTop: 8, fontSize: 14, color: colors.placeholder }}>
+            {id ? `ID: ${id}` : `Number: ${bookingNumber}`}
           </Text>
         </View>
       </View>

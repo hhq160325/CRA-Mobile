@@ -73,7 +73,7 @@ export default function SignupStep2({ onNext, onBack, styles, isLoading = false,
 
             <View style={styles.infoContainer}>
                 <Text style={styles.infoText}>
-                    📧 We'll send a verification code to your email address
+                    📱 We'll send a verification code to your email when you change a password
                 </Text>
                 <Text style={styles.infoText}>
                     👤 Your full name will be displayed on your profile

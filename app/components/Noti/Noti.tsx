@@ -95,7 +95,7 @@ export default function Noti({
                                         padding: scale(16),
                                         borderBottomWidth: 1,
                                         borderBottomColor: colors.border,
-                                        backgroundColor: notification.isRead
+                                        backgroundColor: notification.isViewed
                                             ? colors.white
                                             : colors.morentBlue + "10",
                                     }}
@@ -115,9 +115,9 @@ export default function Noti({
                                                 flex: 1,
                                             }}
                                         >
-                                            {notification.title}
+                                            {notification.content}
                                         </Text>
-                                        {!notification.isRead && (
+                                        {!notification.isViewed && (
                                             <View
                                                 style={{
                                                     width: scale(8),
@@ -130,17 +130,8 @@ export default function Noti({
                                             />
                                         )}
                                     </View>
-                                    <Text
-                                        style={{
-                                            fontSize: scale(12),
-                                            color: colors.placeholder,
-                                            marginBottom: scale(4),
-                                        }}
-                                    >
-                                        {notification.message}
-                                    </Text>
                                     <Text style={{ fontSize: scale(10), color: colors.placeholder }}>
-                                        {new Date(notification.createdAt).toLocaleString()}
+                                        {new Date(notification.createDate).toLocaleString()}
                                     </Text>
                                 </Pressable>
                             ))}

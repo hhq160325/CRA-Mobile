@@ -73,8 +73,6 @@ export default function PaymentHistoryScreen() {
           <PaymentHistoryHeader
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onRefreshStatuses={refreshPaymentStatuses}
-            refreshing={refreshing}
           />
 
           {error ? (

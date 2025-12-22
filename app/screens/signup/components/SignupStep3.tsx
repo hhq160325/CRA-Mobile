@@ -21,7 +21,10 @@ export default function SignupStep3({ onNext, onBack, styles, initialData }: Sig
     // Phone number validation function
     const validatePhoneNumber = (phoneNumber: string): { valid: boolean; error?: string } => {
         if (!phoneNumber.trim()) {
-            return { valid: true }; // Phone is optional
+            return {
+                valid: false,
+                error: 'Phone number is required for account verification'
+            };
         }
 
         // Remove all non-digit characters
@@ -102,7 +105,7 @@ export default function SignupStep3({ onNext, onBack, styles, initialData }: Sig
                 <InputComponent
                     onChangeText={handlePhoneChange}
                     value={phone}
-                    placeholder={'Phone Number (Optional)'}
+                    placeholder={'Phone Number'}
                     keyboardType="numeric"
                     maxLength={12}
                 />
@@ -116,14 +119,14 @@ export default function SignupStep3({ onNext, onBack, styles, initialData }: Sig
 
             <View style={styles.infoContainer}>
                 <Text style={styles.infoText}>
-                    📱 Phone number helps us contact you about your bookings
+                    📱 Phone number is required for account verification
                 </Text>
                 <Text style={styles.infoText}>
                     📍 Address can be used for faster car delivery
                 </Text>
-                <Text style={[styles.infoText, styles.optionalText]}>
-                    Both fields are optional and can be added later
-                </Text>
+                {/* <Text style={[styles.infoText, styles.optionalText]}>
+                    Address is optional and can be added later
+                </Text> */}
             </View>
 
             {renderMarginTop(24)}

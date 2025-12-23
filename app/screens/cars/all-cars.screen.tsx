@@ -30,10 +30,8 @@ export default function AllCarsScreen() {
         let mounted = true;
         async function load() {
             setLoading(true);
-            console.log('Fetching all cars...');
             const res = await carsService.getAllCars();
             if (mounted && res.data) {
-                console.log('All cars loaded:', res.data.length);
                 setCars(res.data);
             }
             setLoading(false);
@@ -162,15 +160,7 @@ export default function AllCarsScreen() {
                             <View style={styles.priceRentContainer}>
                                 <View>
                                     <Text style={styles.priceText}>
-                                        {item.price && item.price > 0
-                                            ? `${item.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND`
-                                            : 'Price on request'
-                                        }
-                                        {item.price && item.price > 0 && (
-                                            <Text style={styles.priceUnit}>
-                                                /day
-                                            </Text>
-                                        )}
+                                        {item.price > 0 ? `${item.price.toLocaleString()} VND/day` : 'Price on request'}
                                     </Text>
                                 </View>
                                 <Pressable

@@ -10,7 +10,8 @@ export type NavigatorParamList = {
   ['Home']: undefined;
   ['Bookings']: undefined;
   ['Cars']: undefined;
-  ['AllCars']: undefined;
+  ['AllCars']: { fuelType?: string } | undefined;
+  ['ElectricCars']: undefined;
   ['Profile']: undefined;
   ['CarDetail']: { id: string };
   ['BookingDetail']: { id: string };

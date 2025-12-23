@@ -43,7 +43,6 @@ export const styles = StyleSheet.create({
         color: colors.primary,
     },
     stationsContainer: {
-        flex: 1,
         backgroundColor: "white",
         padding: scale(16),
     },
@@ -54,7 +53,7 @@ export const styles = StyleSheet.create({
         marginBottom: verticalScale(12),
     },
     stationsList: {
-        flex: 1,
+        maxHeight: scale(200),
     },
     stationCard: {
         flexDirection: "row",
@@ -90,6 +89,88 @@ export const styles = StyleSheet.create({
     stationDetails: {
         fontSize: scale(12),
         color: colors.placeholder,
+    },
+    stationViewButton: {
+        padding: scale(8),
+        borderRadius: scale(6),
+        borderWidth: 1,
+        borderColor: colors.morentBlue,
+    },
+    locationsContainer: {
+        backgroundColor: "white",
+        padding: scale(16),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    locationCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: scale(12),
+        backgroundColor: colors.background,
+        borderRadius: scale(12),
+        gap: scale(12),
+    },
+    locationIcon: {
+        width: scale(40),
+        height: scale(40),
+        borderRadius: scale(20),
+        backgroundColor: "white",
+        justifyContent: "center",
+        alignItems: "center",
+        borderWidth: 2,
+        borderColor: colors.border,
+    },
+    locationInfo: {
+        flex: 1,
+        gap: verticalScale(2),
+    },
+    locationTitle: {
+        fontSize: scale(12),
+        fontWeight: "600",
+        color: colors.placeholder,
+        textTransform: "uppercase",
+    },
+    locationAddress: {
+        fontSize: scale(14),
+        fontWeight: "600",
+        color: colors.primary,
+    },
+    locationTime: {
+        fontSize: scale(12),
+        color: colors.placeholder,
+    },
+    locationButton: {
+        padding: scale(8),
+        borderRadius: scale(6),
+        borderWidth: 1,
+        borderColor: colors.morentBlue,
+    },
+    routeLine: {
+        width: 2,
+        height: scale(20),
+        backgroundColor: colors.border,
+        marginLeft: scale(32),
+        marginVertical: verticalScale(4),
+    },
+    navigationContainer: {
+        backgroundColor: "white",
+        padding: scale(16),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    navigationButton: {
+        backgroundColor: colors.morentBlue,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: verticalScale(14),
+        borderRadius: scale(12),
+        gap: scale(8),
+    },
+    navigationButtonText: {
+        fontSize: scale(16),
+        fontWeight: "600",
+        color: "white",
     },
     actionButtons: {
         flexDirection: "row",

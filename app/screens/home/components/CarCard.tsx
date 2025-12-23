@@ -140,12 +140,6 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
 
                 <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: scale(12) }}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <MaterialIcons name="local-gas-station" size={scale(14)} color={colors.placeholder} />
-                        <Text style={{ fontSize: scale(12), color: colors.placeholder, marginLeft: scale(4) }}>
-                            {car.fuelType === "Electric" ? "90L" : "70L"}
-                        </Text>
-                    </View>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
                         <MaterialIcons name="settings" size={scale(14)} color={colors.placeholder} />
                         <Text style={{ fontSize: scale(12), color: colors.placeholder, marginLeft: scale(4) }}>
                             {car.transmission}

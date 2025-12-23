@@ -65,27 +65,6 @@ export const styles = StyleSheet.create({
         fontWeight: '600',
         color: colors.primary,
     },
-    fuelConsumptionContainer: {
-        marginTop: scale(12),
-        paddingVertical: scale(12),
-        paddingHorizontal: scale(16),
-        backgroundColor: colors.background,
-        borderRadius: scale(8),
-    },
-    fuelConsumptionRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    fuelConsumptionLabel: {
-        fontSize: scale(13),
-        color: colors.placeholder,
-    },
-    fuelConsumptionValue: {
-        fontSize: scale(14),
-        fontWeight: '600',
-        color: colors.primary,
-    },
     parkingContainer: {
         marginTop: scale(16),
         padding: scale(16),

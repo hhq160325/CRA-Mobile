@@ -25,7 +25,12 @@ export function usePickupConfirm(bookingId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAlreadyCheckedIn, setIsAlreadyCheckedIn] = useState(false);
+  const [isAlreadyCheckedOut, setIsAlreadyCheckedOut] = useState(false);
   const [existingCheckInData, setExistingCheckInData] = useState<{
+    images: string[];
+    description: string;
+  } | null>(null);
+  const [existingCheckOutData, setExistingCheckOutData] = useState<{
     images: string[];
     description: string;
   } | null>(null);
@@ -37,7 +42,12 @@ export function usePickupConfirm(bookingId: string) {
         setLoading(true);
         // console.log('Fetching booking details for:', bookingId);
 
-        const checkInResult = await scheduleService.getCheckInImages(bookingId);
+        // Check both pickup (check-in) and return (check-out) status
+        const [checkInResult, checkOutResult] = await Promise.all([
+          scheduleService.getCheckInOutInfo(bookingId, true),  // Check pickup status
+          scheduleService.getCheckInOutInfo(bookingId, false)  // Check return status
+        ]);
+
         // console.log(' Check-in result:', {
         //   hasData: !!checkInResult.data,
         //   hasError: !!checkInResult.error,
@@ -45,14 +55,32 @@ export function usePickupConfirm(bookingId: string) {
         //   description: checkInResult.data?.description || '',
         // });
 
+        // console.log(' Check-out result:', {
+        //   hasData: !!checkOutResult.data,
+        //   hasError: !!checkOutResult.error,
+        //   imagesCount: checkOutResult.data?.images.length || 0,
+        //   description: checkOutResult.data?.description || '',
+        // });
+
+        // Handle pickup status
         if (checkInResult.data && checkInResult.data.images.length > 0) {
           // console.log(' Check-in data found - pickup already completed');
-          // setIsAlreadyCheckedIn(true);
-          // setExistingCheckInData(checkInResult.data);
-          // setInitialDescription(checkInResult.data.description);
+          setIsAlreadyCheckedIn(true);
+          setExistingCheckInData(checkInResult.data);
+          setInitialDescription(checkInResult.data.description);
         } else {
           // console.log(' No check-in data found, proceeding with check-in flow');
           setIsAlreadyCheckedIn(false);
+        }
+
+        // Handle return status
+        if (checkOutResult.data && checkOutResult.data.images.length > 0) {
+          // console.log(' Check-out data found - return already completed');
+          setIsAlreadyCheckedOut(true);
+          setExistingCheckOutData(checkOutResult.data);
+        } else {
+          // console.log(' No check-out data found');
+          setIsAlreadyCheckedOut(false);
         }
 
         const bookingResult = await bookingsService.getBookingById(bookingId);
@@ -185,7 +213,9 @@ export function usePickupConfirm(bookingId: string) {
     loading,
     error,
     isAlreadyCheckedIn,
+    isAlreadyCheckedOut,
     existingCheckInData,
+    existingCheckOutData,
     initialDescription,
   };
 }

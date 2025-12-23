@@ -1,4 +1,14 @@
 import { API_CONFIG } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getAuthToken = async (): Promise<string | null> => {
+    try {
+        return await AsyncStorage.getItem("token");
+    } catch (e) {
+        console.error("Failed to get token:", e);
+        return null;
+    }
+};
 
 export interface BookingPayment {
     id: string;
@@ -32,6 +42,22 @@ export const bookingExtensionPaymentService = {
         try {
             console.log(' Checking booking extension payment for:', bookingId);
 
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 Auth token available:', !!token);
+
+            const authHeaders: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'accept': '*/*',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            };
+
+            if (token) {
+                authHeaders['Authorization'] = `Bearer ${token}`;
+            }
+
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
             // Add timestamp to prevent caching
             const timestamp = new Date().getTime();
@@ -41,13 +67,7 @@ export const bookingExtensionPaymentService = {
 
             const response = await fetch(url, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'accept': '*/*',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                },
+                headers: authHeaders,
             });
 
             if (!response.ok) {
@@ -98,6 +118,19 @@ export const bookingExtensionPaymentService = {
         try {
             console.log(' Updating payment status:', { orderCode, status, method });
 
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 Auth token available:', !!token);
+
+            const authHeaders: Record<string, string> = {
+                'accept': '*/*',
+                'Content-Type': 'application/json'
+            };
+
+            if (token) {
+                authHeaders['Authorization'] = `Bearer ${token}`;
+            }
+
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
             const url = `${baseUrl}/UpdatePayment/Booking/PaymentOrderCode`;
 
@@ -112,10 +145,7 @@ export const bookingExtensionPaymentService = {
 
             const response = await fetch(url, {
                 method: 'PATCH',
-                headers: {
-                    'accept': '*/*',
-                    'Content-Type': 'application/json'
-                },
+                headers: authHeaders,
                 body: JSON.stringify(payload)
             });
 

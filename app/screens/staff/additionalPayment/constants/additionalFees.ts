@@ -15,8 +15,8 @@ export const ADDITIONAL_FEES: AdditionalFee[] = [
     {
         id: 'cleaning',
         name: 'Cleaning Fee',
-        amount: 70000,
-        description: 'VND 70,000 - Unsanitary return (stains, mud, etc.)',
+        amount: 100000,
+        description: 'VND 100,000 - Unsanitary return (stains, mud, etc.)',
         icon: 'cleaning-services',
     },
     {

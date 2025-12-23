@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { PaymentItem } from '../types/paymentTypes';
 
 export function formatDate(dateString: string): string {
@@ -38,13 +39,11 @@ export function calculateTotal(payments: PaymentItem[]): number {
         .reduce((sum, payment) => sum + payment.paidAmount, 0);
 }
 
-export function getAuthToken(): string | null {
+export async function getAuthToken(): Promise<string | null> {
     try {
-        if (typeof localStorage !== 'undefined' && localStorage?.getItem) {
-            return localStorage.getItem('token');
-        }
+        return await AsyncStorage.getItem('token');
     } catch (e) {
         console.error('Error getting auth token:', e);
+        return null;
     }
-    return null;
 }

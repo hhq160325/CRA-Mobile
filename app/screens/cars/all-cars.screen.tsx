@@ -138,22 +138,12 @@ export default function AllCarsScreen() {
                             <View style={styles.carDetails}>
                                 <View style={styles.carDetailItem}>
                                     <MaterialIcons
-                                        name="local-gas-station"
-                                        size={scale(16)}
-                                        color={colors.placeholder}
-                                    />
-                                    <Text style={styles.carDetailText}>
-                                        {item.fuelConsumption || 'N/A'}L
-                                    </Text>
-                                </View>
-                                <View style={styles.carDetailItem}>
-                                    <MaterialIcons
                                         name="settings"
                                         size={scale(16)}
                                         color={colors.placeholder}
                                     />
                                     <Text style={styles.carDetailText}>
-                                        {item.transmission || 'Manual'}
+                                        {item.transmission || 'Automatic'}
                                     </Text>
                                 </View>
                                 <View style={styles.carDetailItem}>
@@ -172,10 +162,15 @@ export default function AllCarsScreen() {
                             <View style={styles.priceRentContainer}>
                                 <View>
                                     <Text style={styles.priceText}>
-                                        {item.price > 0 ? `${item.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND` : 'Price on request'}
-                                        <Text style={styles.priceUnit}>
-                                            /day
-                                        </Text>
+                                        {item.price && item.price > 0
+                                            ? `${item.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND`
+                                            : 'Price on request'
+                                        }
+                                        {item.price && item.price > 0 && (
+                                            <Text style={styles.priceUnit}>
+                                                /day
+                                            </Text>
+                                        )}
                                     </Text>
                                 </View>
                                 <Pressable

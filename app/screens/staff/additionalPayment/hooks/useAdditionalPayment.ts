@@ -52,9 +52,14 @@ export function useAdditionalPayment(
             const description = buildPaymentDescription(selectedFees, overtimeHours);
             const totalAmount = calculateTotal(selectedFees, overtimeHours);
 
+            console.log('🚀 Starting additional payment creation...');
+            console.log('📋 Booking ID:', bookingId);
+            console.log('📝 Description:', description);
+            console.log('💰 Total Amount:', totalAmount);
+
             const response = await createAdditionalPayment(bookingId, description, totalAmount);
 
-            // console.log('Payment response:', response);
+            console.log('✅ Payment response received:', response);
 
             setPaymentResponse(response);
             setModalVisible(false);
@@ -62,8 +67,14 @@ export function useAdditionalPayment(
 
             onPaymentAdded?.();
         } catch (error) {
-            // console.error('Error creating additional payment:', error);
-            Alert.alert('Error', 'Failed to add additional payment. Please try again.');
+            console.error('💥 Error creating additional payment:', error);
+
+            // Show more specific error message
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            Alert.alert(
+                'Error',
+                `Failed to add additional payment.\n\nDetails: ${errorMessage}\n\nPlease try again or contact support.`
+            );
         } finally {
             setSubmitting(false);
         }

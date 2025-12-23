@@ -54,10 +54,6 @@ export const styles = StyleSheet.create({
         fontWeight: '600',
         color: 'white',
     },
-    clearFilterButton: {
-        marginLeft: scale(4),
-        padding: scale(2),
-    },
     listContainer: {
         padding: scale(16),
     },
@@ -72,6 +68,13 @@ export const styles = StyleSheet.create({
         color: colors.placeholder,
         marginTop: scale(16),
         textAlign: 'center',
+        fontWeight: '600',
+    },
+    emptySubtext: {
+        fontSize: scale(14),
+        color: colors.placeholder,
+        marginTop: scale(8),
+        textAlign: 'center',
     },
     carCard: {
         backgroundColor: colors.white,
@@ -80,6 +83,11 @@ export const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: colors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     carCardContent: {
         padding: scale(16),
@@ -98,9 +106,20 @@ export const styles = StyleSheet.create({
         color: colors.primary,
         marginBottom: scale(4),
     },
-    carCategory: {
-        fontSize: scale(12),
-        color: colors.placeholder,
+    electricBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E8F5E8',
+        paddingHorizontal: scale(8),
+        paddingVertical: scale(2),
+        borderRadius: scale(12),
+        alignSelf: 'flex-start',
+        gap: scale(2),
+    },
+    electricText: {
+        fontSize: scale(10),
+        fontWeight: '700',
+        color: '#00B050',
         textTransform: 'uppercase',
     },
     favoriteButton: {
@@ -121,6 +140,8 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: scale(12),
+        flexWrap: 'wrap',
+        gap: scale(8),
     },
     carDetailItem: {
         flexDirection: 'row',
@@ -141,13 +162,14 @@ export const styles = StyleSheet.create({
         fontWeight: '700',
         color: colors.primary,
     },
-    priceUnit: {
+    ecoText: {
         fontSize: scale(12),
-        fontWeight: '400',
-        color: colors.placeholder,
+        color: '#00B050',
+        marginTop: scale(2),
+        fontWeight: '500',
     },
     rentButton: {
-        backgroundColor: colors.morentBlue,
+        backgroundColor: '#00B050',
         paddingHorizontal: scale(16),
         paddingVertical: scale(8),
         borderRadius: scale(6),

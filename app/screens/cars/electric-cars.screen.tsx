@@ -9,9 +9,8 @@ import {
 } from 'react-native';
 import { carsService, type Car } from '../../../lib/api';
 import { getAsset } from '../../../lib/getAsset';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import type { RouteProp } from '@react-navigation/native';
 import type { NavigatorParamList } from '../../navigators/navigation-route';
 import { colors } from '../../theme/colors';
 import { scale } from '../../theme/scale';
@@ -19,40 +18,27 @@ import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useFavorites } from '../../../lib/favorites-context';
-import { styles } from './styles/allCars.styles';
+import { styles } from './styles/electricCars.styles';
 
-type AllCarsScreenRouteProp = RouteProp<NavigatorParamList, 'AllCars'>;
-
-export default function AllCarsScreen() {
+export default function ElectricCarsScreen() {
     const [cars, setCars] = useState<Car[]>([]);
-    const [filteredCars, setFilteredCars] = useState<Car[]>([]);
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-    const route = useRoute<AllCarsScreenRouteProp>();
     const { isFavorite, toggleFavorite } = useFavorites();
-
-    const fuelTypeFilter = route.params?.fuelType;
-
-    console.log('AllCarsScreen: Screen loaded with params:', route.params);
-    console.log('AllCarsScreen: fuelTypeFilter:', fuelTypeFilter);
 
     useEffect(() => {
         let mounted = true;
         async function load() {
             setLoading(true);
+            console.log('ElectricCarsScreen: Loading electric cars...');
             const res = await carsService.getAllCars();
             if (mounted && res.data) {
-                setCars(res.data);
-
-                // Apply fuel type filter if specified
-                if (fuelTypeFilter) {
-                    const filtered = res.data.filter(car =>
-                        car.fuelType?.toLowerCase() === fuelTypeFilter.toLowerCase()
-                    );
-                    setFilteredCars(filtered);
-                } else {
-                    setFilteredCars(res.data);
-                }
+                // Filter only electric cars
+                const electricCars = res.data.filter(car =>
+                    car.fuelType?.toLowerCase() === 'electric'
+                );
+                console.log('ElectricCarsScreen: Found', electricCars.length, 'electric cars');
+                setCars(electricCars);
             }
             setLoading(false);
         }
@@ -60,7 +46,7 @@ export default function AllCarsScreen() {
         return () => {
             mounted = false;
         };
-    }, [fuelTypeFilter]);
+    }, []);
 
     const handleFavoritePress = (carId: string, e: any) => {
         e.stopPropagation();
@@ -73,7 +59,7 @@ export default function AllCarsScreen() {
                 <Header />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.morentBlue} />
-                    <Text style={styles.loadingText}>Loading all cars...</Text>
+                    <Text style={styles.loadingText}>Loading electric cars...</Text>
                 </View>
             </View>
         );
@@ -86,45 +72,41 @@ export default function AllCarsScreen() {
             {/* Header Title */}
             <View style={styles.headerContainer}>
                 <MaterialIcons
-                    name="directions-car"
+                    name="electric-bolt"
                     size={scale(20)}
-                    color={colors.morentBlue}
+                    color="#00B050"
                     style={{ marginRight: scale(8) }}
                 />
                 <Text style={styles.headerTitle}>
-                    {fuelTypeFilter ? `${fuelTypeFilter} Cars (${filteredCars.length})` : `All Cars (${filteredCars.length})`}
+                    Electric Cars ({cars.length})
                 </Text>
             </View>
 
-            {/* Filter Badge */}
-            {fuelTypeFilter && (
-                <View style={styles.filterContainer}>
-                    <View style={styles.filterBadge}>
-                        <MaterialIcons name="electric-bolt" size={scale(16)} color="white" />
-                        <Text style={styles.filterText}>Electric Vehicles Only</Text>
-                        <Pressable
-                            onPress={() => navigation.setParams({ fuelType: undefined })}
-                            style={styles.clearFilterButton}
-                        >
-                            <MaterialIcons name="close" size={scale(14)} color="white" />
-                        </Pressable>
-                    </View>
+            {/* Electric Badge */}
+            <View style={styles.filterContainer}>
+                <View style={styles.filterBadge}>
+                    <MaterialIcons name="electric-car" size={scale(16)} color="white" />
+                    <Text style={styles.filterText}>Zero Emission Vehicles</Text>
+                    <MaterialIcons name="eco" size={scale(16)} color="white" />
                 </View>
-            )}
+            </View>
 
             <FlatList
-                data={filteredCars}
+                data={cars}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.listContainer}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <MaterialIcons
-                            name="directions-car"
+                            name="electric-car"
                             size={scale(64)}
                             color={colors.border}
                         />
                         <Text style={styles.emptyText}>
-                            {fuelTypeFilter ? `No ${fuelTypeFilter.toLowerCase()} cars available` : 'No cars available'}
+                            No electric cars available
+                        </Text>
+                        <Text style={styles.emptySubtext}>
+                            Check back later for new electric vehicles
                         </Text>
                     </View>
                 }
@@ -140,9 +122,10 @@ export default function AllCarsScreen() {
                                     <Text style={styles.carTitle}>
                                         {item.manufacturer} {item.model}
                                     </Text>
-                                    <Text style={styles.carCategory}>
-                                        {item.category || 'SEDAN'}
-                                    </Text>
+                                    <View style={styles.electricBadge}>
+                                        <MaterialIcons name="electric-bolt" size={scale(12)} color="#00B050" />
+                                        <Text style={styles.electricText}>ELECTRIC</Text>
+                                    </View>
                                 </View>
                                 <Pressable
                                     onPress={(e) => handleFavoritePress(item.id, e)}
@@ -192,15 +175,12 @@ export default function AllCarsScreen() {
                                 </View>
                                 <View style={styles.carDetailItem}>
                                     <MaterialIcons
-                                        name={item.fuelType?.toLowerCase() === 'electric' ? 'electric-bolt' : 'local-gas-station'}
+                                        name="battery-charging-full"
                                         size={scale(16)}
-                                        color={item.fuelType?.toLowerCase() === 'electric' ? '#00B050' : colors.placeholder}
+                                        color="#00B050"
                                     />
-                                    <Text style={[
-                                        styles.carDetailText,
-                                        item.fuelType?.toLowerCase() === 'electric' && { color: '#00B050', fontWeight: '600' }
-                                    ]}>
-                                        {item.fuelType || 'Gasoline'}
+                                    <Text style={[styles.carDetailText, { color: '#00B050', fontWeight: '600' }]}>
+                                        Electric
                                     </Text>
                                 </View>
                             </View>
@@ -210,6 +190,9 @@ export default function AllCarsScreen() {
                                 <View>
                                     <Text style={styles.priceText}>
                                         {item.price > 0 ? `${item.price.toLocaleString()} VND/day` : 'Price on request'}
+                                    </Text>
+                                    <Text style={styles.ecoText}>
+                                        🌱 Eco-friendly choice
                                     </Text>
                                 </View>
                                 <Pressable

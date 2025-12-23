@@ -70,6 +70,7 @@ export const styles = StyleSheet.create({
         color: "white",
     },
     carListContainer: {
+        flex: 1,
         backgroundColor: "white",
         paddingVertical: verticalScale(16),
     },
@@ -88,6 +89,10 @@ export const styles = StyleSheet.create({
     carList: {
         paddingHorizontal: scale(16),
     },
+    carListVertical: {
+        flex: 1,
+        paddingHorizontal: scale(16),
+    },
     carCard: {
         width: scale(200),
         backgroundColor: colors.background,
@@ -97,10 +102,22 @@ export const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: "transparent",
     },
+    carCardVertical: {
+        backgroundColor: colors.background,
+        borderRadius: scale(12),
+        padding: scale(16),
+        marginBottom: verticalScale(12),
+        borderWidth: 1,
+        borderColor: colors.border,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
     carCardSelected: {
         borderColor: colors.morentBlue,
     },
     carInfo: {
+        flex: 1,
         marginBottom: verticalScale(8),
     },
     carName: {
@@ -123,6 +140,94 @@ export const styles = StyleSheet.create({
         fontSize: scale(16),
         fontWeight: "bold",
         color: colors.morentBlue,
+    },
+    carActions: {
+        flexDirection: "row",
+        gap: scale(8),
+        alignItems: "center",
+    },
+    actionButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: scale(12),
+        paddingVertical: verticalScale(8),
+        borderRadius: scale(6),
+        borderWidth: 1,
+        borderColor: colors.morentBlue,
+        gap: scale(4),
+    },
+    actionButtonText: {
+        fontSize: scale(12),
+        color: colors.morentBlue,
+        fontWeight: "500",
+    },
+    primaryActionButton: {
+        backgroundColor: colors.morentBlue,
+        paddingHorizontal: scale(16),
+        paddingVertical: verticalScale(8),
+        borderRadius: scale(6),
+    },
+    primaryActionButtonText: {
+        fontSize: scale(12),
+        color: "white",
+        fontWeight: "600",
+    },
+    mapButtonContainer: {
+        backgroundColor: "white",
+        paddingHorizontal: scale(16),
+        paddingVertical: verticalScale(12),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    openMapButton: {
+        backgroundColor: colors.morentBlue,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: verticalScale(12),
+        borderRadius: scale(8),
+        gap: scale(8),
+    },
+    openMapButtonText: {
+        fontSize: scale(14),
+        fontWeight: "600",
+        color: "white",
+    },
+    emptyState: {
+        alignItems: "center",
+        paddingVertical: verticalScale(40),
+    },
+    emptyStateText: {
+        fontSize: scale(16),
+        fontWeight: "600",
+        color: colors.placeholder,
+        marginTop: verticalScale(12),
+    },
+    emptyStateSubtext: {
+        fontSize: scale(14),
+        color: colors.placeholder,
+        marginTop: verticalScale(4),
+    },
+    browseButtonContainer: {
+        backgroundColor: "white",
+        paddingHorizontal: scale(16),
+        paddingVertical: verticalScale(12),
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+    },
+    browseElectricButton: {
+        backgroundColor: '#00B050',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: verticalScale(12),
+        borderRadius: scale(8),
+        gap: scale(8),
+    },
+    browseElectricButtonText: {
+        fontSize: scale(14),
+        fontWeight: "600",
+        color: "white",
     },
     availableBadge: {
         backgroundColor: "#d1fae5",

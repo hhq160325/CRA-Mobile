@@ -139,7 +139,7 @@ export const API_ENDPOINTS = {
 
   // Notifications
   GET_NOTIFICATIONS: (userId: string) => `/UserNotif/${userId}`,
-  MARK_NOTIFICATION_READ: (notificationId: string) => `/Notification/MarkAsRead/${notificationId}`,
+  MARK_NOTIFICATION_READ: (notificationId: string) => `/MarkAsRead/${notificationId}`,
   DELETE_NOTIFICATION: (notificationId: string) => `/Notification/DeleteNotification/${notificationId}`,
 
   // Schedules

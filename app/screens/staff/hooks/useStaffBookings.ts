@@ -54,17 +54,29 @@ export function useStaffBookings() {
         const customerName = batchData.userDetailsMap.get(booking.userId) || 'Customer';
 
         // Get payment details from cache
-        const paymentDetails = batchData.paymentDetailsMap.get(booking.id) || { amount: 0, status: 'pending' };
+        const paymentDetails = batchData.paymentDetailsMap.get(booking.id) || { amount: 0, status: 'no_payment', hasPaymentRecord: false };
         let invoiceAmount = paymentDetails.amount;
         let invoiceStatus = paymentDetails.status;
+
+        console.log(`🔍 mapSingleBooking: Processing booking ${booking.id} (${booking.bookingNumber})`);
+        console.log(`🔍 mapSingleBooking: Payment details:`, paymentDetails);
+        console.log(`🔍 mapSingleBooking: Original booking status: ${booking.status}, mapped: ${mappedStatus}`);
 
         if (invoiceAmount === 0 && booking.totalPrice > 0) {
             invoiceAmount = booking.totalPrice;
         }
 
-        if (mappedStatus === 'successfully' && invoiceStatus === 'pending') {
+        // If there's no payment record for the booking fee, consider the booking as cancelled
+        if (!paymentDetails.hasPaymentRecord || invoiceStatus === 'no_payment') {
+            console.log(`🔍 mapSingleBooking: No payment record found for ${booking.id} - setting to cancelled`);
+            invoiceStatus = 'cancelled';
+            mappedStatus = 'cancelled';
+        } else if (mappedStatus === 'successfully' && invoiceStatus === 'pending') {
+            console.log(`🔍 mapSingleBooking: Booking ${booking.id} is successful but payment pending - setting payment to paid`);
             invoiceStatus = 'paid';
         }
+
+        console.log(`🔍 mapSingleBooking: Final status for ${booking.id}: ${mappedStatus}, invoice status: ${invoiceStatus}`);
 
         // Get check-in/out status from cache
         const checkInOutStatus = batchData.checkInOutMap.get(booking.id) || { hasCheckIn: false, hasCheckOut: false };

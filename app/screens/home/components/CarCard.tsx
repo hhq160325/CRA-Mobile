@@ -162,7 +162,7 @@ export default function CarCard({ car, isHorizontal = false, onPress, onRentPres
                             </Text>
                         ) : (
                             <Text style={{ fontSize: scale(12), color: colors.placeholder }}>
-                                Contact for price
+                                Price on request
                             </Text>
                         )}
                     </View>

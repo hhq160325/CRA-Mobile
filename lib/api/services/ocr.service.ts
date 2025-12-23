@@ -21,6 +21,17 @@ export interface OCRResponse {
     };
 }
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getAuthToken = async (): Promise<string | null> => {
+    try {
+        return await AsyncStorage.getItem("token");
+    } catch (e) {
+        console.error("Failed to get token:", e);
+        return null;
+    }
+};
+
 class OCRService {
     private readonly baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/FPTAI';
 
@@ -28,6 +39,10 @@ class OCRService {
     async extractDriverLicenseInfo(imageUri: string): Promise<OCRResponse> {
         try {
             console.log(' OCR: Starting driver license extraction...');
+
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 OCR: Auth token available:', !!token);
 
             // Create FormData for multipart/form-data request
             const formData = new FormData();
@@ -41,12 +56,18 @@ class OCRService {
 
             console.log(' OCR: Sending request to API...');
 
+            const headers: Record<string, string> = {
+                'Accept': '*/*',
+                'Content-Type': 'multipart/form-data',
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${this.baseUrl}/ExtractDriverLicenseInfo`, {
                 method: 'POST',
-                headers: {
-                    'Accept': '*/*',
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers,
                 body: formData,
             });
 

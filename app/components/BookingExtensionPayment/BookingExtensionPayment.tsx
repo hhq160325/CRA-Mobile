@@ -24,7 +24,6 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
     onPaymentComplete,
 }) => {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
-    const [forceRefreshKey, setForceRefreshKey] = useState(0);
 
     const {
         loading,
@@ -35,12 +34,6 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
         checkPaymentStatus,
         handlePayOSCompletion,
     } = useBookingExtensionPayment(bookingId);
-
-    const handleForceRefresh = () => {
-        console.log(' Force refreshing extension payment...');
-        setForceRefreshKey(prev => prev + 1);
-        checkPaymentStatus();
-    };
 
     // Check payment status on mount
     useEffect(() => {
@@ -171,13 +164,10 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
     });
 
     return (
-        <View key={`extension-payment-${bookingId}-${forceRefreshKey}`} style={styles.container}>
+        <View key={`extension-payment-${bookingId}`} style={styles.container}>
             <View style={styles.header}>
                 <MaterialIcons name="schedule" size={24} color={colors.morentBlue} />
                 <Text style={styles.title}>Booking Extension</Text>
-                <Pressable onPress={handleForceRefresh} style={styles.refreshButton}>
-                    <MaterialIcons name="refresh" size={20} color={colors.morentBlue} />
-                </Pressable>
             </View>
 
             <View style={styles.paymentInfo}>
@@ -293,9 +283,6 @@ const styles = {
         fontWeight: '600' as const,
         color: colors.black,
         flex: 1,
-    },
-    refreshButton: {
-        padding: 4,
     },
     paymentInfo: {
         marginBottom: 16,

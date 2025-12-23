@@ -135,12 +135,18 @@ export default function BookingFormScreen({ route }: any) {
             )}
             <Pressable
               onPress={handleNextStep}
-              disabled={loading}
-              style={styles.nextButton}>
+              disabled={loading || (currentStep === 4 && !formState.agreeTerms)}
+              style={[
+                styles.nextButton,
+                (loading || (currentStep === 4 && !formState.agreeTerms)) && styles.nextButtonDisabled
+              ]}>
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.nextButtonText}>
+                <Text style={[
+                  styles.nextButtonText,
+                  (currentStep === 4 && !formState.agreeTerms) && styles.nextButtonTextDisabled
+                ]}>
                   {currentStep === 4 ? 'Rent Now' : 'Next'}
                 </Text>
               )}

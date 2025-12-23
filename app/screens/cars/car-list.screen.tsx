@@ -177,12 +177,12 @@ export default function CarListScreen() {
                 <View style={styles.carSpecs}>
                   <View style={styles.carSpecItem}>
                     <MaterialIcons
-                      name="local-gas-station"
+                      name="settings"
                       size={scale(14)}
                       color={colors.placeholder}
                     />
                     <Text style={styles.carSpecText}>
-                      {item.fuelType || 'N/A'}
+                      {item.transmission || 'Automatic'}
                     </Text>
                   </View>
                   <View style={styles.carSpecItem}>

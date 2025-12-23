@@ -242,8 +242,9 @@ export function useBookingValidation() {
   ): boolean => {
     if (!agreeTerms) {
       Alert.alert(
-        'Required',
-        'Please agree to our terms and conditions and privacy policy to continue.',
+        'Terms and Conditions Required',
+        'You must agree to our terms and conditions and privacy policy before proceeding with your rental. Please check the checkbox to continue.',
+        [{ text: 'OK', style: 'default' }]
       );
       return false;
     }

@@ -17,12 +17,23 @@ export default function ConfirmationStep({
                 We are getting to the end. Just few clicks and your rental is ready!
             </Text>
 
-            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12, marginBottom: 16 }}>
+            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: agreeTerms ? colors.morentBlue : colors.border }}>
                 <Pressable onPress={() => onAgreeTermsChange(!agreeTerms)} style={{ flexDirection: "row", alignItems: "flex-start" }}>
-                    <View style={{ width: 18, height: 18, borderWidth: 2, borderColor: agreeTerms ? colors.morentBlue : colors.border, borderRadius: 4, marginRight: 12, marginTop: 2, justifyContent: "center", alignItems: "center", backgroundColor: agreeTerms ? colors.morentBlue : colors.white }}>
-                        {agreeTerms && <Text style={{ color: colors.white, fontSize: 12, fontWeight: "700" }}>✓</Text>}
+                    <View style={{
+                        width: 20,
+                        height: 20,
+                        borderWidth: 2,
+                        borderColor: agreeTerms ? colors.morentBlue : colors.border,
+                        borderRadius: 4,
+                        marginRight: 12,
+                        marginTop: 2,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: agreeTerms ? colors.morentBlue : colors.white
+                    }}>
+                        {agreeTerms && <Text style={{ color: colors.white, fontSize: 14, fontWeight: "700" }}>✓</Text>}
                     </View>
-                    <Text style={{ fontSize: 12, flex: 1, color: colors.primary }}>
+                    <Text style={{ fontSize: 14, flex: 1, color: colors.primary, lineHeight: 20 }}>
                         <Text style={{ color: "#EF4444", fontWeight: "700" }}>* </Text>
                         I agree with our terms and conditions and privacy policy!
                     </Text>

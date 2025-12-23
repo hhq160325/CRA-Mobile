@@ -1,4 +1,14 @@
 import { API_CONFIG } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getAuthToken = async (): Promise<string | null> => {
+    try {
+        return await AsyncStorage.getItem("token");
+    } catch (e) {
+        console.error("Failed to get token:", e);
+        return null;
+    }
+};
 
 export interface ReverseGeocodingRequest {
     latitude: string | number;
@@ -24,17 +34,27 @@ class ReverseGeocodingService {
         try {
             console.log(' Getting address for coordinates:', latitude, longitude);
 
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 ReverseGeocoding: Auth token available:', !!token);
+
             const requestData: ReverseGeocodingRequest = {
                 latitude: latitude.toString(),
                 longitude: longitude.toString(),
             };
 
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${this.baseUrl}/TrackAsia/GetReverseGeocoding`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'accept': '*/*'
-                },
+                headers,
                 body: JSON.stringify(requestData),
             });
 

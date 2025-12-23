@@ -1,17 +1,37 @@
 import { API_ENDPOINTS, getApiBaseUrl } from "../config"
 import { apiClient } from "../client"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
-// Simple fetch function for unauthenticated requests
-async function fetchWithoutAuth<T>(url: string): Promise<{ data: T | null; error: Error | null }> {
+const getAuthToken = async (): Promise<string | null> => {
     try {
-        console.log(" Making unauthenticated request to:", url)
+        return await AsyncStorage.getItem("token")
+    } catch (e) {
+        console.error("Failed to get token:", e)
+        return null
+    }
+}
+
+// Authenticated fetch function for notification requests
+async function fetchWithAuth<T>(url: string): Promise<{ data: T | null; error: Error | null }> {
+    try {
+        console.log(" Making authenticated request to:", url)
+
+        // Get authentication token
+        const token = await getAuthToken()
+        console.log('🔐 Notification: Auth token available:', !!token)
+
+        const headers: Record<string, string> = {
+            "accept": "*/*",
+            "Content-Type": "application/json",
+        }
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`
+        }
 
         const response = await fetch(url, {
             method: "GET",
-            headers: {
-                "accept": "*/*",
-                "Content-Type": "application/json",
-            },
+            headers,
         })
 
         console.log(" Response status:", response.status)
@@ -67,8 +87,8 @@ export const notificationService = {
         console.log(" User Role:", userRole)
         console.log(" Full notification URL:", notificationUrl)
 
-        // Use unauthenticated fetch to match the working curl command
-        const result = await fetchWithoutAuth<Notification[]>(notificationUrl)
+        // Use authenticated fetch since all APIs now require authentication
+        const result = await fetchWithAuth<Notification[]>(notificationUrl)
 
         if (result.error) {
             // Check if it's a 404 error (no notifications found)
@@ -89,18 +109,46 @@ export const notificationService = {
     },
 
     async markAsRead(notificationId: string): Promise<{ data: any | null; error: Error | null }> {
-        // console.log("notificationService.markAsRead: marking notification as read", notificationId)
+        try {
+            console.log("notificationService.markAsRead: marking notification as read", notificationId)
 
-        const result = await apiClient(API_ENDPOINTS.MARK_NOTIFICATION_READ(notificationId), {
-            method: "PATCH",
-        })
+            // Get authentication token
+            const token = await getAuthToken()
+            console.log('🔐 MarkAsRead: Auth token available:', !!token)
 
-        if (result.error) {
-            console.error("notificationService.markAsRead: error details", result.error)
-            return { data: null, error: result.error }
+            const headers: Record<string, string> = {
+                'accept': '*/*',
+                'Content-Type': 'application/json'
+            }
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`
+            }
+
+            const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net'
+            const url = `${baseUrl}/MarkAsRead/${notificationId}`
+
+            console.log("notificationService.markAsRead: calling URL:", url)
+
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers,
+            })
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                console.error("notificationService.markAsRead: error response", errorText)
+                return { data: null, error: new Error(`HTTP ${response.status}: ${errorText}`) }
+            }
+
+            const data = await response.json()
+            console.log("notificationService.markAsRead: success", data)
+            return { data, error: null }
+
+        } catch (error) {
+            console.error("notificationService.markAsRead: caught error", error)
+            return { data: null, error: error as Error }
         }
-
-        return { data: result.data, error: null }
     },
 
     async deleteNotification(notificationId: string): Promise<{ data: any | null; error: Error | null }> {

@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, Modal, ActivityIndicator, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { colors } from '../../../../theme/colors';
+import { additionalFeePaymentService } from '../../../../../lib/api';
 import {
     isPaymentRedirectUrl,
     isPayOSUrl,
     handlePaymentResult,
-    updateGenericPaymentStatus,
 } from '../utils/paymentUtils';
 import { styles } from '../../styles/additionalPaymentSection.styles';
 import type { PaymentResponse } from '../types/additionalPaymentTypes';
@@ -30,16 +30,36 @@ export default function PaymentWebView({
     bookingId,
     paymentType = 'additional'
 }: PaymentWebViewProps) {
-    const handleNavigationStateChange = (navState: any) => {
+    const handleNavigationStateChange = async (navState: any) => {
         console.log('WebView navigation:', navState.url);
 
         // Check for PayOS success URL pattern
         if (navState.url.includes('pay.payos.vn') && navState.url.includes('/success')) {
             console.log(`🎉 PayOS ${paymentType} payment success detected`);
 
-            // Update payment status if we have the necessary info
-            if (bookingId && paymentResponse?.item3?.id) {
-                updateGenericPaymentStatus(bookingId, paymentResponse.item3.id, 'Paid');
+            // Update payment status using the correct additional fee payment service
+            if (bookingId && paymentResponse?.orderCode) {
+                console.log('🔄 Updating additional fee payment status with orderCode:', paymentResponse.orderCode);
+
+                try {
+                    const result = await additionalFeePaymentService.updateAdditionalFeePaymentStatus(
+                        paymentResponse.orderCode,
+                        'Paid',
+                        'payos'
+                    );
+
+                    if (result.data) {
+                        console.log('✅ Additional fee payment status updated successfully');
+                    } else {
+                        console.error('❌ Failed to update additional fee payment status:', result.error);
+                    }
+                } catch (error) {
+                    console.error('💥 Exception updating additional fee payment status:', error);
+                }
+            } else {
+                console.log('⚠️ Missing bookingId or orderCode for payment status update');
+                console.log('📋 BookingId:', bookingId);
+                console.log('📋 OrderCode:', paymentResponse?.orderCode);
             }
         }
 

@@ -1,4 +1,14 @@
 import { API_CONFIG, API_ENDPOINTS } from "../config";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getAuthToken = async (): Promise<string | null> => {
+    try {
+        return await AsyncStorage.getItem("token");
+    } catch (e) {
+        console.error("Failed to get token:", e);
+        return null;
+    }
+};
 
 export interface CreateReportData {
     title: string;
@@ -48,7 +58,9 @@ export const reportService = {
         });
 
         try {
-
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 Report: Auth token available:', !!token);
 
             const formData = new FormData();
             formData.append('Title', data.title);
@@ -64,12 +76,17 @@ export const reportService = {
                 ReportedCarId: data.carId
             });
 
+            const headers: Record<string, string> = {
+                'accept': '*/*',
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREATE_REPORT}`, {
                 method: 'POST',
-                headers: {
-                    'accept': '*/*',
-
-                },
+                headers,
                 body: formData,
             });
 
@@ -110,7 +127,9 @@ export const reportService = {
         });
 
         try {
-
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 UserReport: Auth token available:', !!token);
 
             const formData = new FormData();
             formData.append('Title', data.title);
@@ -128,12 +147,17 @@ export const reportService = {
                 ReportedUserId: data.reportedUserId
             });
 
+            const headers: Record<string, string> = {
+                'accept': '*/*',
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${API_CONFIG.BASE_URL}/Report/reportedUser`, {
                 method: 'POST',
-                headers: {
-                    'accept': '*/*',
-
-                },
+                headers,
                 body: formData,
             });
 

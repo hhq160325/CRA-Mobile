@@ -25,29 +25,43 @@ export function usePaymentHistory() {
         try {
             const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
             const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`;
-            const token = getAuthToken();
+            const token = await getAuthToken(); // Make this async
+
+            console.log('💰 Fetching payments for booking:', booking.id);
+            console.log('🔐 Auth token available:', !!token);
 
             const response = await fetch(paymentsUrl, {
                 method: 'GET',
                 headers: {
                     Authorization: token ? `Bearer ${token}` : '',
                     'Content-Type': 'application/json',
+                    'accept': '*/*',
                 },
             });
 
+            console.log('📥 Payment fetch response status:', response.status);
+
             if (response.ok) {
                 const paymentsData = await response.json();
+                console.log('📋 Payment data received:', paymentsData);
 
                 if (Array.isArray(paymentsData) && paymentsData.length > 0) {
-                    const userPayments = paymentsData.filter(
-                        (p: PaymentItem) => p.userId === user?.id,
-                    );
+                    // Don't filter by userId on individual payments since additional fees and extensions
+                    // might not have userId set correctly. Instead, we already know this booking belongs to the user.
+                    console.log('📋 All payments for user booking:', paymentsData.length);
 
-                    if (userPayments.length > 0) {
-
-                        const sortedPayments = userPayments.sort((a: PaymentItem, b: PaymentItem) =>
+                    if (paymentsData.length > 0) {
+                        // Sort payments by creation date (newest first)
+                        const sortedPayments = paymentsData.sort((a: PaymentItem, b: PaymentItem) =>
                             new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
                         );
+
+                        console.log('📋 Payment items found:', sortedPayments.map(p => ({
+                            item: p.item,
+                            amount: p.paidAmount,
+                            status: p.status,
+                            hasUserId: !!p.userId
+                        })));
 
                         return {
                             bookingId: booking.id,
@@ -56,10 +70,15 @@ export function usePaymentHistory() {
                             payments: sortedPayments,
                         };
                     }
+                } else {
+                    console.log('📋 No payment data found for booking:', booking.id);
                 }
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Payment fetch failed:', response.status, errorText);
             }
         } catch (err) {
-            console.error('Error fetching booking payments:', err);
+            console.error('💥 Error fetching booking payments:', err);
         }
 
         return null;

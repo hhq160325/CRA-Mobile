@@ -1,4 +1,14 @@
 import { apiClient } from '../client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getAuthToken = async (): Promise<string | null> => {
+    try {
+        return await AsyncStorage.getItem("token");
+    } catch (e) {
+        console.error("Failed to get token:", e);
+        return null;
+    }
+};
 
 export interface BookingDetail {
     id: string;
@@ -112,6 +122,19 @@ export const bookingExtensionService = {
         console.log(' getPaymentDetailsByInvoiceId: fetching payment details', invoiceId);
 
         try {
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 Auth token available:', !!token);
+
+            const authHeaders: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+            };
+
+            if (token) {
+                authHeaders['Authorization'] = `Bearer ${token}`;
+            }
+
             // Use direct fetch since this endpoint doesn't use /api/ prefix
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
             const url = `${baseUrl}/Invoice/${invoiceId}`;
@@ -120,10 +143,7 @@ export const bookingExtensionService = {
 
             const response = await fetch(url, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'accept': '*/*'
-                },
+                headers: authHeaders,
             });
 
             if (!response.ok) {
@@ -147,8 +167,8 @@ export const bookingExtensionService = {
 
 
             const paymentDetail: PaymentDetail = {
-                paymentId: extensionPayment.id, 
-                amount: extensionPayment.paidAmount, 
+                paymentId: extensionPayment.id,
+                amount: extensionPayment.paidAmount,
                 invoiceId: invoiceId
             };
 
@@ -219,7 +239,19 @@ export const bookingExtensionService = {
         console.log(' createPayOSPaymentRequest: creating payment', paymentRequest);
 
         try {
-           
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 Auth token available:', !!token);
+
+            const authHeaders: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+            };
+
+            if (token) {
+                authHeaders['Authorization'] = `Bearer ${token}`;
+            }
+
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
             const url = `${baseUrl}/CreatePayOSPaymentRequest`;
 
@@ -228,10 +260,7 @@ export const bookingExtensionService = {
 
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'accept': '*/*'
-                },
+                headers: authHeaders,
                 body: JSON.stringify(paymentRequest),
             });
 

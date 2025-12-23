@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { NavigatorParamList } from '../../navigators/navigation-route';
 import { useAdditionalFeePayment } from '../../hooks/useAdditionalFeePayment';
-import { bookingExtensionService } from '../../../lib/api';
+import { additionalFeePaymentService } from '../../../lib/api';
 import { colors } from '../../theme/colors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
@@ -24,6 +24,7 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
     onPaymentComplete,
 }) => {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
+
     const {
         loading,
         hasAdditionalFee,
@@ -48,6 +49,9 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
         }, [checkPaymentStatus])
     );
 
+    // Removed periodic refresh - WebView handles status updates directly
+    // Manual refresh is available via the refresh button if needed
+
     // Add debugging for state changes
     useEffect(() => {
         console.log(' AdditionalFeePayment state:', {
@@ -58,7 +62,15 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
             status: additionalFeePayment?.status,
             error
         });
-    }, [bookingId, loading, hasAdditionalFee, isPending, additionalFeePayment?.status, error]);
+
+        // Force re-render when isPending changes - similar to BookingExtensionPayment
+        if (additionalFeePayment?.status === 'Paid' && isPending === true) {
+            console.log(' DETECTED STALE STATE: Status is Paid but isPending is true, forcing refresh...');
+            setTimeout(() => {
+                checkPaymentStatus();
+            }, 100);
+        }
+    }, [bookingId, loading, hasAdditionalFee, isPending, additionalFeePayment?.status, error, checkPaymentStatus]);
 
     const handleRequestPayment = async () => {
         if (!additionalFeePayment) {
@@ -67,13 +79,15 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
         }
 
         try {
-
-            const result = await bookingExtensionService.getBookingExtensionPaymentUrl(bookingId);
+            // Use the specific additional fee payment URL service
+            const result = await additionalFeePaymentService.getAdditionalFeePaymentUrl(bookingId);
 
             if (result.error || !result.data) {
-                Alert.alert('Error', result.error?.message || 'Failed to create payment URL');
+                Alert.alert('Error', result.error?.message || 'Failed to create additional fee payment URL');
                 return;
             }
+
+            console.log('🎯 Additional fee payment URL created:', result.data);
 
             // Navigate to PayOS WebView
             navigation.navigate('PayOSWebView' as any, {
@@ -132,14 +146,33 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
         return null;
     }
 
+    // Direct status check to bypass any hook issues - same as BookingExtensionPayment
+    const directIsPending = additionalFeePayment.status.toLowerCase() === 'pending';
+    const shouldShowButton = directIsPending;
+    const shouldShowCompleted = !directIsPending;
+
+    // Extra safety check - explicitly check for "Paid" status
+    const isPaidStatus = additionalFeePayment.status.toLowerCase() === 'paid';
+    const finalShowButton = directIsPending && !isPaidStatus;
+    const finalShowCompleted = !directIsPending || isPaidStatus;
+
+    console.log('🔍 AdditionalFee Direct status check:', {
+        status: additionalFeePayment.status,
+        statusLower: additionalFeePayment.status.toLowerCase(),
+        hookIsPending: isPending,
+        directIsPending,
+        isPaidStatus,
+        shouldShowButton,
+        shouldShowCompleted,
+        finalShowButton,
+        finalShowCompleted
+    });
+
     return (
-        <View style={styles.container}>
+        <View key={`additional-fee-payment-${bookingId}`} style={styles.container}>
             <View style={styles.header}>
                 <MaterialIcons name="attach-money" size={24} color={colors.orange} />
                 <Text style={styles.title}>Additional Fee</Text>
-                <Pressable onPress={checkPaymentStatus} style={styles.refreshButton}>
-                    <MaterialIcons name="refresh" size={20} color={colors.orange} />
-                </Pressable>
             </View>
 
             <View style={styles.paymentInfo}>
@@ -158,11 +191,11 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
                     <View style={styles.statusContainer}>
                         <View style={[
                             styles.statusDot,
-                            { backgroundColor: isPending ? colors.orange : colors.green }
+                            { backgroundColor: directIsPending ? colors.orange : colors.green }
                         ]} />
                         <Text style={[
                             styles.statusText,
-                            { color: isPending ? colors.orange : colors.green }
+                            { color: directIsPending ? colors.orange : colors.green }
                         ]}>
                             {additionalFeePayment.status}
                         </Text>
@@ -170,7 +203,7 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
                 </View>
             </View>
 
-            {isPending && (
+            {finalShowButton && (
                 <Pressable
                     onPress={handleRequestPayment}
                     style={styles.paymentButton}
@@ -187,7 +220,7 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
                 </Pressable>
             )}
 
-            {!isPending && (
+            {finalShowCompleted && (
                 <View style={styles.completedContainer}>
                     <MaterialIcons name="check-circle" size={20} color={colors.green} />
                     <Text style={styles.completedText}>Additional fee payment completed</Text>
@@ -255,9 +288,6 @@ const styles = {
         fontWeight: '600' as const,
         color: colors.black,
         flex: 1,
-    },
-    refreshButton: {
-        padding: 4,
     },
     paymentInfo: {
         marginBottom: 16,

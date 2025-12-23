@@ -10,6 +10,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { API_CONFIG } from '../../../lib/api/config';
 import { bookingExtensionPaymentService, additionalFeePaymentService } from '../../../lib/api';
 import { styles } from './styles/payosWebview.styles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type PayOSWebViewRouteProp = RouteProp<
   { params: { paymentUrl: string; bookingId?: string; returnScreen?: string } },
@@ -201,50 +202,197 @@ export default function PayOSWebViewScreen() {
   };
 
   const handleAdditionalFeePayment = async () => {
-    console.log('Handling additional fee payment...');
+    console.log('🎯 === STARTING ADDITIONAL FEE PAYMENT HANDLER ===');
+    console.log('🎯 Booking ID:', bookingId);
+    console.log('🎯 Payment URL:', paymentUrl);
+
+    if (!bookingId) {
+      console.error('❌ No booking ID provided for additional fee payment');
+      return false;
+    }
 
     try {
+      console.log('🔄 Calling additionalFeePaymentService.handleAdditionalFeePayOSCompletion...');
+
       // Check if there's an additional fee payment and handle it
       const result = await additionalFeePaymentService.handleAdditionalFeePayOSCompletion(
         bookingId,
         paymentUrl
       );
 
-      if (result?.data?.success && result?.data?.wasUpdated) {
-        console.log(' Additional fee payment updated successfully');
-      } else if (result?.data?.success && !result?.data?.wasUpdated) {
-        console.log(' Additional fee payment was already completed');
+      console.log('📋 Additional fee payment service returned:');
+      console.log('📋 Result:', JSON.stringify(result, null, 2));
+
+      if (result?.error) {
+        console.error('❌ Additional fee payment service error:', result.error.message);
+        console.error('❌ Full error:', result.error);
+        return false;
+      }
+
+      if (!result?.data) {
+        console.error('❌ Additional fee payment service returned no data');
+        return false;
+      }
+
+      const { success, wasUpdated, orderCode } = result.data;
+      console.log('📋 Service result details:', { success, wasUpdated, orderCode });
+
+      if (success && wasUpdated) {
+        console.log('✅ Additional fee payment updated successfully');
+        console.log('✅ OrderCode that was updated:', orderCode);
+        return true;
+      } else if (success && !wasUpdated) {
+        console.log('ℹ️ Additional fee payment was already completed');
+        console.log('ℹ️ OrderCode (already completed):', orderCode);
+        return true;
       } else {
-        console.log(' No additional fee payment found or update needed');
+        console.log('ℹ️ Additional fee payment service returned success=false');
+        return false;
       }
     } catch (err) {
-      console.error(' Failed to handle additional fee payment:', err);
+      console.error('💥 Exception in handleAdditionalFeePayment:', err);
+      console.error('💥 Error details:', JSON.stringify(err, null, 2));
       // Don't fail the entire flow for additional fee payment issues
+      return false;
+    }
+  };
+
+  const testDirectPatchCall = async (orderCode: number) => {
+    console.log('🧪 === TESTING DIRECT PATCH CALL ===');
+    console.log('🧪 OrderCode:', orderCode);
+
+    try {
+      // Get authentication token
+      const token = await AsyncStorage.getItem("token");
+      console.log('🧪 Auth token available:', !!token);
+
+      const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
+      const url = `${baseUrl}/UpdatePayment/Booking/PaymentOrderCode`;
+
+      const payload = {
+        orderCode: orderCode,
+        status: 'Paid',
+        method: 'payos'
+      };
+
+      console.log('🧪 Direct PATCH URL:', url);
+      console.log('🧪 Direct PATCH payload:', JSON.stringify(payload, null, 2));
+
+      const headers: Record<string, string> = {
+        'accept': '*/*',
+        'Content-Type': 'application/json'
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('🧪 Direct PATCH headers:', JSON.stringify(headers, null, 2));
+
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      console.log('🧪 Direct PATCH response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🧪 Direct PATCH failed:', errorText);
+        return false;
+      }
+
+      const responseText = await response.text();
+      console.log('🧪 Direct PATCH success response:', responseText);
+      return true;
+
+    } catch (error) {
+      console.error('🧪 Direct PATCH exception:', error);
+      return false;
+    }
+  };
+
+  const testDirectServiceCall = async () => {
+    console.log('🧪 === TESTING DIRECT SERVICE CALL ===');
+    console.log('🧪 Booking ID:', bookingId);
+
+    try {
+      // First, let's check what payments exist
+      console.log('🧪 Step 1: Checking payments for booking...');
+      const checkResult = await additionalFeePaymentService.checkAdditionalFeePayment(bookingId);
+      console.log('🧪 Check result:', JSON.stringify(checkResult, null, 2));
+
+      if (checkResult.data?.hasAdditionalFee && checkResult.data?.isPending && checkResult.data?.additionalFeePayment) {
+        const orderCode = checkResult.data.additionalFeePayment.orderCode;
+        console.log('🧪 Step 2: Found pending payment with orderCode:', orderCode);
+
+        // Now test the update directly
+        console.log('🧪 Step 3: Testing direct update...');
+        const updateResult = await additionalFeePaymentService.updateAdditionalFeePaymentStatus(orderCode);
+        console.log('🧪 Update result:', JSON.stringify(updateResult, null, 2));
+
+        return updateResult;
+      } else {
+        console.log('🧪 No pending additional fee payment found');
+        return null;
+      }
+    } catch (error) {
+      console.error('🧪 Service call exception:', error);
+      return null;
     }
   };
 
   const handlePaymentSuccess = async () => {
+    console.log('🚀 === HANDLE PAYMENT SUCCESS CALLED ===');
     console.log('=== Payment Success Detected ===');
-    console.log('Booking ID:', bookingId);
+    console.log('🎯 Booking ID:', bookingId);
+    console.log('🔗 Payment URL:', paymentUrl);
+    console.log('🔗 Return Screen:', returnScreen);
 
+    // TEMPORARY: Test direct PATCH call with the current pending orderCode
+    console.log('🧪 Testing direct PATCH call with orderCode 1766521979542...');
+    await testDirectPatchCall(1766521979542);
+
+    // TEMPORARY: Test direct service call
+    console.log('🧪 Testing direct service call...');
+    await testDirectServiceCall();
+
+    // For additional fee payments, we should focus on updating the additional fee status
+    // rather than booking status (which might already be confirmed)
+
+    // Always try to handle additional fee payment first
+    console.log('🎯 Processing additional fee payment...');
+    const additionalFeeResult = await handleAdditionalFeePayment();
+    console.log('📋 Additional fee payment processing result:', additionalFeeResult);
+
+    if (additionalFeeResult) {
+      console.log('✅ Additional fee payment processed successfully');
+    } else {
+      console.log('⚠️ Additional fee payment processing failed or not needed');
+    }
+
+    // Only update booking status if we have a valid booking ID and it's not already confirmed
     if (bookingId && bookingId !== 'pending') {
+      console.log('🔄 Attempting to update booking status...');
       const bookingUpdated = await updateBookingStatus('Confirmed');
 
       if (bookingUpdated) {
+        console.log('✅ Booking status updated successfully');
         // Update both booking fee and rental fee payments
         await updatePaymentStatus();
         await updateRentalFeeStatus();
 
         // Handle booking extension payment if applicable
         await handleBookingExtensionPayment();
-
-        // Handle additional fee payment if applicable
-        await handleAdditionalFeePayment();
       } else {
-        console.warn(' Booking update failed, skipping payment updates');
+        console.log('⚠️ Booking update failed or not needed, continuing...');
       }
+    } else {
+      console.log('ℹ️ No valid booking ID, skipping booking status updates');
     }
 
+    console.log('🏁 Navigating to destination...');
     navigateToDestination(true);
   };
 
@@ -279,8 +427,14 @@ export default function PayOSWebViewScreen() {
         return;
       }
       paymentProcessedRef.current = true;
-      console.log(' PayOS payment success detected, navigating to bookings...');
-      handlePaymentSuccess();
+      console.log('🎉 PayOS payment success detected!');
+      console.log('🔗 Success URL:', url);
+      console.log('🎯 About to call handlePaymentSuccess...');
+
+      // Add a small delay to ensure the success page is fully loaded
+      setTimeout(() => {
+        handlePaymentSuccess();
+      }, 1000);
       return;
     }
 
@@ -298,7 +452,10 @@ export default function PayOSWebViewScreen() {
         return;
       }
       paymentProcessedRef.current = true;
-      handlePaymentSuccess();
+      console.log('🎉 Generic success pattern detected:', url);
+      setTimeout(() => {
+        handlePaymentSuccess();
+      }, 1000);
     } else if (url.includes('cancel') || url.includes('failed')) {
       if (paymentProcessedRef.current) {
         console.log(' Payment cancellation already processed, skipping...');

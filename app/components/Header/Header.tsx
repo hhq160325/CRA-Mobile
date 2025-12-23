@@ -115,6 +115,7 @@ export default function Header() {
                 notifications={notifications}
                 loading={loadingNotifications}
                 onNotificationClick={handleNotificationClickWrapper}
+                onNotificationsUpdate={loadNotifications}
             />
         </>
     )

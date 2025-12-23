@@ -54,6 +54,8 @@ export default function AdditionalPaymentSection({
                 onClose={() => setShowWebView(false)}
                 onReset={resetForm}
                 onNavigateToReturn={onNavigateToReturn}
+                bookingId={bookingId}
+                paymentType="additional"
             />
         </View>
     );

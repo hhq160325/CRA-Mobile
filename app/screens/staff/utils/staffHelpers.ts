@@ -107,6 +107,9 @@ export const fetchPaymentDetails = async (bookingId: string) => {
         const paymentsUrl = `${baseUrl}/Booking/${bookingId}/Payments`;
         const token = await getAuthToken();
 
+        console.log(`🔍 fetchPaymentDetails: Checking payments for booking ${bookingId}`);
+        console.log(`🔍 fetchPaymentDetails: URL: ${paymentsUrl}`);
+
         const response = await fetch(paymentsUrl, {
             method: 'GET',
             headers: {
@@ -115,26 +118,44 @@ export const fetchPaymentDetails = async (bookingId: string) => {
             },
         });
 
+        console.log(`🔍 fetchPaymentDetails: Response status for ${bookingId}: ${response.status}`);
+
         if (response.ok) {
             const paymentsData = await response.json();
+            console.log(`🔍 fetchPaymentDetails: Payments data for ${bookingId}:`, JSON.stringify(paymentsData, null, 2));
 
             if (Array.isArray(paymentsData) && paymentsData.length > 0) {
                 const rentalFeePayment = paymentsData.find(
                     p => p.item === 'Rental Fee',
                 );
 
+                console.log(`🔍 fetchPaymentDetails: Rental Fee payment for ${bookingId}:`, rentalFeePayment);
+
                 if (rentalFeePayment) {
-                    return {
+                    const result = {
                         amount: Number(rentalFeePayment.paidAmount) || 0,
                         status: rentalFeePayment.status?.toLowerCase() || 'pending',
+                        hasPaymentRecord: true,
                     };
+                    console.log(`🔍 fetchPaymentDetails: Returning for ${bookingId}:`, result);
+                    return result;
                 }
             }
+
+            // If we get a successful response but no Rental Fee payment found,
+            // it means no payment has been created for this booking yet
+            console.log(`🔍 fetchPaymentDetails: No Rental Fee payment found for ${bookingId} - returning no_payment`);
+            return { amount: 0, status: 'no_payment', hasPaymentRecord: false };
+        } else {
+            console.log(`🔍 fetchPaymentDetails: API call failed for ${bookingId} with status ${response.status}`);
         }
     } catch (err) {
-        // console.error('Error fetching payment details:', err);
+        console.error(`🔍 fetchPaymentDetails: Error for ${bookingId}:`, err);
     }
-    return { amount: 0, status: 'pending' };
+
+    // If API call fails, assume no payment record exists
+    console.log(`🔍 fetchPaymentDetails: Returning no_payment for ${bookingId} due to error/failure`);
+    return { amount: 0, status: 'no_payment', hasPaymentRecord: false };
 };
 
 export const fetchCheckInOutStatus = async (bookingId: string) => {
@@ -268,7 +289,7 @@ export const batchFetchPaymentDetails = async (bookingIds: string[]): Promise<Ma
                 return { bookingId, details };
             } catch (error) {
                 // console.error(` batchFetchPaymentDetails: error for ${bookingId}:`, error);
-                return { bookingId, details: { amount: 0, status: 'pending' } };
+                return { bookingId, details: { amount: 0, status: 'no_payment', hasPaymentRecord: false } };
             }
         });
 

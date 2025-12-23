@@ -1,6 +1,16 @@
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ADDITIONAL_FEES } from '../constants/additionalFees';
 import type { PaymentResponse } from '../types/additionalPaymentTypes';
+
+const getAuthToken = async (): Promise<string | null> => {
+    try {
+        return await AsyncStorage.getItem("token");
+    } catch (e) {
+        console.error("Failed to get token:", e);
+        return null;
+    }
+};
 
 export const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('vi-VN', {
@@ -40,31 +50,61 @@ export const createAdditionalPayment = async (
     // Divide the amount by 10 before sending to PayOS as requested
     const payosAmount = Math.round(amount / 10);
 
-    // console.log('Additional Payment: Original amount:', amount, 'VND');
-    // console.log('Additional Payment: PayOS amount (divided by 10):', payosAmount, 'VND');
+    console.log('🔄 Creating additional payment...');
+    console.log('📋 Booking ID:', bookingId);
+    console.log('📝 Description:', description);
+    console.log('💰 Original amount:', amount, 'VND');
+    console.log('💰 PayOS amount (divided by 10):', payosAmount, 'VND');
 
-    const response = await fetch(
-        'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/CreateAdditionalPayment',
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Accept: '*/*',
+    const requestBody = {
+        bookingId: bookingId,
+        description: description,
+        amount: payosAmount, // Send the divided amount to PayOS
+    };
+
+    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
+
+    try {
+        // Get authentication token
+        const token = await getAuthToken();
+        console.log('🔐 Auth token available:', !!token);
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        console.log('📤 Request headers:', JSON.stringify(headers, null, 2));
+
+        const response = await fetch(
+            'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/CreateAdditionalPayment',
+            {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(requestBody),
             },
-            body: JSON.stringify({
-                bookingId: bookingId,
-                description: description,
-                amount: payosAmount, // Send the divided amount to PayOS
-            }),
-        },
-    );
+        );
 
-    if (!response.ok) {
-        throw new Error('Failed to create additional payment');
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', errorText);
+            throw new Error(`Failed to create additional payment: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Success response:', JSON.stringify(data, null, 2));
+        return data;
+    } catch (error) {
+        console.error('💥 Exception in createAdditionalPayment:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    return data;
 };
 
 export const isPaymentRedirectUrl = (url: string): boolean => {

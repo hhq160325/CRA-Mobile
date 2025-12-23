@@ -47,8 +47,16 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
     },
+    nextButtonDisabled: {
+        backgroundColor: colors.placeholder,
+        opacity: 0.6,
+    },
     nextButtonText: {
         color: colors.white,
         fontWeight: '600',
+    },
+    nextButtonTextDisabled: {
+        color: colors.white,
+        opacity: 0.8,
     },
 })

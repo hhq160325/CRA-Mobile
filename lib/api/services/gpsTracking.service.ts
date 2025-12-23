@@ -1,4 +1,14 @@
 import { API_CONFIG } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getAuthToken = async (): Promise<string | null> => {
+    try {
+        return await AsyncStorage.getItem("token");
+    } catch (e) {
+        console.error("Failed to get token:", e);
+        return null;
+    }
+};
 
 export interface LocationData {
     latitude: number;
@@ -45,12 +55,22 @@ class GPSTrackingService {
             console.log(' Base URL:', this.baseUrl);
             console.log(' Full API URL:', `${this.baseUrl}/FromDevice`);
 
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 GPS: Auth token available:', !!token);
+
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${this.baseUrl}/FromDevice`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'accept': '*/*'
-                },
+                headers,
                 body: JSON.stringify(locationData),
             });
 
@@ -82,12 +102,22 @@ class GPSTrackingService {
             console.log(' Base URL:', this.baseUrl);
             console.log(' Full API URL:', `${this.baseUrl}/ByUser/${userId}`);
 
+            // Get authentication token
+            const token = await getAuthToken();
+            console.log('🔐 GPS: Auth token available:', !!token);
+
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${this.baseUrl}/ByUser/${userId}`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'accept': '*/*'
-                },
+                headers,
             });
 
             console.log(' Response status:', response.status, response.statusText);

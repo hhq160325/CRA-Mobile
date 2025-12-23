@@ -58,7 +58,7 @@ export interface Car {
   price: number
   image: string
   images?: string[]
-  imageUrls?: string[] 
+  imageUrls?: string[]
   rating: number
   reviews: number
   seats: number
@@ -86,13 +86,6 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
 
   // Get price from rentalRate if available
   const price = apiCar.rentalRate?.dailyRate || 0
-
-  // Debug logging
-  if (apiCar.rentalRate) {
-    console.log(` ${apiCar.manufacturer} ${apiCar.model}: rentalRate found, dailyRate = ${apiCar.rentalRate.dailyRate}, status = ${apiCar.status}`)
-  } else {
-    console.log(` ${apiCar.manufacturer} ${apiCar.model}: NO rentalRate, status = ${apiCar.status}`)
-  }
 
   return {
     id: apiCar.id,
@@ -132,7 +125,6 @@ export const carsService = {
     maxPrice?: number
     search?: string
   }): Promise<{ data: Car[] | null; error: Error | null }> {
-    console.log("carsService.getCars: fetching cars with filters", filters)
 
     // Check cache first (only for unfiltered requests)
     const cacheKey = cacheKeys.cars();
@@ -152,79 +144,110 @@ export const carsService = {
     const endpoint = params.toString() ? `${API_ENDPOINTS.CARS}?${params}` : API_ENDPOINTS.CARS
     const result = await apiClient<ApiCarResponse[]>(endpoint, { method: "GET" })
 
-    console.log("carsService.getCars: result", {
-      hasError: !!result.error,
-      dataLength: result.data?.length
-    })
-
     if (result.error) {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model
-    let mappedData = result.data?.map(mapApiCarToCar) || []
+    if (!result.data) {
+      return { data: null, error: null }
+    }
+
+    // Fetch rental rates for each car
+    const carsWithRates = await Promise.all(
+      result.data.map(async (apiCar) => {
+        // Try to get rental rate for this car
+        const rateResult = await this.getCarRentalRate(apiCar.id)
+
+        // Add rental rate to the car data if available
+        const carWithRate = {
+          ...apiCar,
+          rentalRate: rateResult.data || null
+        }
+
+        return mapApiCarToCar(carWithRate)
+      })
+    )
 
     // Cache unfiltered results
     if (!filters || Object.keys(filters).length === 0) {
-      apiCache.set(cacheKey, mappedData, 3 * 60 * 1000); // 3 minutes
+      apiCache.set(cacheKey, carsWithRates, 3 * 60 * 1000); // 3 minutes
     }
 
     // Apply client-side filters if needed
+    let filteredData = carsWithRates
     if (filters?.category && filters.category !== "all") {
-      mappedData = mappedData.filter(car => car.category === filters.category)
+      filteredData = filteredData.filter(car => car.category === filters.category)
     }
     if (filters?.minPrice !== undefined) {
-      mappedData = mappedData.filter(car => car.price >= filters.minPrice!)
+      filteredData = filteredData.filter(car => car.price >= filters.minPrice!)
     }
     if (filters?.maxPrice !== undefined) {
-      mappedData = mappedData.filter(car => car.price <= filters.maxPrice!)
+      filteredData = filteredData.filter(car => car.price <= filters.maxPrice!)
     }
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase()
-      mappedData = mappedData.filter(car =>
+      filteredData = filteredData.filter(car =>
         car.name.toLowerCase().includes(searchLower) ||
         car.brand.toLowerCase().includes(searchLower) ||
         car.model.toLowerCase().includes(searchLower)
       )
     }
 
-    return { data: mappedData, error: null }
+    return { data: filteredData, error: null }
   },
 
 
   async getAllCars(): Promise<{ data: Car[] | null; error: Error | null }> {
-    console.log("carsService.getAllCars: fetching all cars")
     const result = await apiClient<ApiCarResponse[]>(API_ENDPOINTS.CARS, { method: "GET" })
-
-    console.log("carsService.getAllCars: result", {
-      hasError: !!result.error,
-      dataLength: result.data?.length
-    })
 
     if (result.error) {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model (rentalRate.dailyRate is already included)
-    const mappedData = result.data?.map(mapApiCarToCar) || null
-    return { data: mappedData, error: null }
+    if (!result.data) {
+      return { data: null, error: null }
+    }
+
+    // Fetch rental rates for each car
+    const carsWithRates = await Promise.all(
+      result.data.map(async (apiCar) => {
+        // Try to get rental rate for this car
+        const rateResult = await this.getCarRentalRate(apiCar.id)
+
+        // Add rental rate to the car data if available
+        const carWithRate = {
+          ...apiCar,
+          rentalRate: rateResult.data || null
+        }
+
+        return mapApiCarToCar(carWithRate)
+      })
+    )
+
+    return { data: carsWithRates, error: null }
   },
 
   async getCarById(id: string): Promise<{ data: Car | null; error: Error | null }> {
-    console.log("carsService.getCarById: fetching car", id)
     const result = await apiClient<ApiCarResponse>(API_ENDPOINTS.CAR_DETAILS(id), { method: "GET" })
-
-    console.log("carsService.getCarById: result", {
-      hasError: !!result.error,
-      hasData: !!result.data
-    })
 
     if (result.error) {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model (rentalRate.dailyRate is already included)
-    const mappedData = result.data ? mapApiCarToCar(result.data) : null
+    if (!result.data) {
+      return { data: null, error: null }
+    }
+
+    // Fetch rental rate for this car
+    const rateResult = await this.getCarRentalRate(id)
+
+    // Add rental rate to the car data if available
+    const carWithRate = {
+      ...result.data,
+      rentalRate: rateResult.data || null
+    }
+
+    const mappedData = mapApiCarToCar(carWithRate)
     return { data: mappedData, error: null }
   },
 
@@ -262,11 +285,6 @@ export const carsService = {
     if (result.data) {
       apiCache.set(cacheKey, result.data, 5 * 60 * 1000); // 5 minutes
     }
-
-    console.log("carsService.getCarRentalRate: found rate for car", carId, {
-      dailyRate: result.data?.dailyRate,
-      status: result.data?.status
-    })
 
     return { data: result.data, error: null }
   },

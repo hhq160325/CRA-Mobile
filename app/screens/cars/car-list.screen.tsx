@@ -57,11 +57,6 @@ export default function CarListScreen() {
             }),
           );
 
-          // Debug image data
-          carsWithRates.forEach(car => {
-            console.log(`Car ${car.name}: image="${car.image}", imageUrls=${JSON.stringify(car.imageUrls)}, images=${JSON.stringify(car.images)}`);
-          });
-
           setCars(carsWithRates);
         }
       } catch (error) {

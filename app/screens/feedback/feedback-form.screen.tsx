@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
     View,
     Text,
@@ -17,8 +17,9 @@ import { scale, verticalScale } from "../../theme/scale"
 import Header from "../../components/Header/Header"
 import Button from "../../components/button/component"
 import Icon from "react-native-vector-icons/MaterialIcons"
-import { reviewsService } from "../../../lib/api"
+import { reviewsService, bookingsService } from "../../../lib/api"
 import { useAuth } from "../../../lib/auth-context"
+import { styles } from "./feedback-form.styles"
 
 const FEEDBACK_CATEGORIES = [
     "Service Quality",
@@ -35,400 +36,254 @@ export default function FeedbackFormScreen() {
     const { user } = useAuth()
     const carId = (route.params as any)?.carId || ""
     const bookingId = (route.params as any)?.bookingId || ""
+    const bookingNumber = (route.params as any)?.bookingNumber || ""
 
     const [rating, setRating] = useState(0)
     const [category, setCategory] = useState<string | null>(null)
     const [title, setTitle] = useState("")
     const [message, setMessage] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [bookingDetails, setBookingDetails] = useState<any>(null)
+    const [loading, setLoading] = useState(false)
 
     const isFormValid = rating > 0 && category && title.trim() && message.trim()
 
-    const handleSubmit = async () => {
-        if (!isFormValid) {
-            Alert.alert("Please fill all fields", "All fields are required")
-            return
+
+    useEffect(() => {
+        const fetchBookingDetails = async () => {
+            if (!bookingNumber) return
+
+            setLoading(true)
+            try {
+                console.log('Fetching booking details for:', bookingNumber)
+                const result = await bookingsService.getBookingByNumber(bookingNumber)
+
+                if (result.data) {
+                    console.log('Booking details fetched successfully:', result.data)
+                    setBookingDetails(result.data)
+                } else {
+                    console.error('Failed to fetch booking details:', result.error)
+                }
+            } catch (error) {
+                console.error('Error fetching booking details:', error)
+            } finally {
+                setLoading(false)
+            }
         }
 
-        if (!carId) {
+        fetchBookingDetails()
+    }, [bookingNumber])
+
+    const validateForm = () => {
+        if (!isFormValid) {
+            Alert.alert("Please fill all fields", "All fields are required")
+            return false
+        }
+
+
+        const hasCarInfo = carId || (bookingDetails && bookingDetails.car)
+        if (!hasCarInfo) {
             Alert.alert("Error", "Car information is missing. Please try again.")
-            return
+            return false
         }
 
         if (!bookingId) {
             Alert.alert("Error", "Booking information is missing. Feedback can only be submitted for completed bookings.")
+            return false
+        }
+
+        return true
+    }
+
+    const submitFeedback = async () => {
+        const content = `${message}\n\nCategory: ${category}`
+
+
+        const finalCarId = carId || (bookingDetails && bookingDetails.car ? bookingDetails.car.id : null)
+
+        if (!finalCarId) {
+            throw new Error("Car ID is required for feedback submission")
+        }
+
+        const { error } = await reviewsService.createFeedback({
+            carId: finalCarId,
+            bookingId: bookingId || undefined,
+            rating: rating,
+            title: title,
+            content: content,
+        })
+
+        if (error) {
+            throw new Error(error.message || "Failed to submit feedback")
+        }
+    }
+
+    const handleSubmit = async () => {
+        if (!validateForm()) {
             return
         }
 
         setIsSubmitting(true)
         try {
-     
-            const content = `${message}\n\nCategory: ${category}`
-
-            const { data, error } = await reviewsService.createFeedback({
-                carId: carId,
-                bookingId: bookingId || undefined,
-                rating: rating,
-                title: title,
-                content: content,
-            })
-
-            if (error) {
-                Alert.alert("Error", error.message || "Failed to submit feedback. Please try again.")
-                return
-            }
+            await submitFeedback()
 
             Alert.alert("Success", "Thank you for your feedback!", [
                 {
                     text: "OK",
-                    onPress: () => {
-                        navigation.goBack()
-                    },
+                    onPress: () => navigation.goBack(),
                 },
             ])
         } catch (error) {
             console.error("Feedback submission error:", error)
-            Alert.alert("Error", "Failed to submit feedback. Please try again.")
+            const errorMessage = error instanceof Error ? error.message : "Failed to submit feedback. Please try again."
+            Alert.alert("Error", errorMessage)
         } finally {
             setIsSubmitting(false)
         }
     }
 
-    const renderStarRating = () => {
+    const renderStarRating = () => (
+        <View style={styles.starContainer}>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <Pressable
+                    key={star}
+                    onPress={() => setRating(star)}
+                    style={styles.starButton}
+                >
+                    <Icon
+                        name={star <= rating ? "star" : "star-outline"}
+                        size={scale(32)}
+                        color={star <= rating ? "#FFB800" : colors.border}
+                    />
+                </Pressable>
+            ))}
+        </View>
+    )
+
+    const renderCategoryButton = (cat: string) => (
+        <Pressable
+            key={cat}
+            onPress={() => setCategory(cat)}
+            style={[
+                styles.categoryButton,
+                category === cat ? styles.categoryButtonActive : styles.categoryButtonInactive
+            ]}
+        >
+            <Text style={category === cat ? styles.categoryTextActive : styles.categoryTextInactive}>
+                {cat}
+            </Text>
+        </Pressable>
+    )
+
+    if (loading) {
         return (
-            <View style={{ flexDirection: "row", gap: scale(8) }}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                    <Pressable
-                        key={star}
-                        onPress={() => setRating(star)}
-                        style={{
-                            padding: scale(8),
-                        }}
-                    >
-                        <Icon
-                            name={star <= rating ? "star" : "star-outline"}
-                            size={scale(32)}
-                            color={star <= rating ? "#FFB800" : colors.border}
-                        />
-                    </Pressable>
-                ))}
+            <View style={styles.container}>
+                <Header />
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Icon name="hourglass-empty" size={scale(48)} color={colors.morentBlue} />
+                    <Text style={{ marginTop: 16, color: colors.placeholder }}>Loading booking details...</Text>
+                </View>
             </View>
         )
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={styles.container}>
             <Header />
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ padding: scale(16), paddingBottom: verticalScale(24) }}
+                contentContainerStyle={styles.scrollContent}
             >
-                {/* Title */}
-                <Text
-                    style={{
-                        fontSize: scale(20),
-                        fontWeight: "700",
-                        color: colors.primary,
-                        marginBottom: verticalScale(8),
-                    }}
-                >
-                    Send us Your Feedback
-                </Text>
-                <Text
-                    style={{
-                        fontSize: scale(13),
-                        color: colors.placeholder,
-                        marginBottom: verticalScale(24),
-                        lineHeight: scale(18),
-                    }}
-                >
+                <Text style={styles.title}>Send us Your Feedback</Text>
+                <Text style={styles.subtitle}>
                     We value your feedback and would love to hear about your experience with us.
                 </Text>
 
-                {/* Booking Info Notice */}
-                {bookingId && (
-                    <View
-                        style={{
-                            backgroundColor: colors.morentBlue + "15",
-                            borderRadius: scale(8),
-                            padding: scale(12),
-                            marginBottom: verticalScale(16),
-                            flexDirection: "row",
-                            alignItems: "center",
-                        }}
-                    >
+                {(bookingId || bookingNumber) && (
+                    <View style={styles.bookingNotice}>
                         <Icon
                             name="info"
                             size={scale(20)}
                             color={colors.morentBlue}
-                            style={{ marginRight: scale(8) }}
+                            style={styles.iconMargin}
                         />
-                        <Text
-                            style={{
-                                fontSize: scale(12),
-                                color: colors.morentBlue,
-                                flex: 1,
-                            }}
-                        >
-                            Feedback for your completed booking
-                        </Text>
+                        <View>
+                            <Text style={styles.bookingNoticeText}>
+                                Feedback for your completed booking
+                            </Text>
+                            {bookingDetails && bookingDetails.car && (
+                                <Text style={[styles.bookingNoticeText, { fontSize: scale(12), marginTop: 4 }]}>
+                                    {bookingDetails.car.manufacturer} {bookingDetails.car.model}
+                                </Text>
+                            )}
+                            {bookingNumber && (
+                                <Text style={[styles.bookingNoticeText, { fontSize: scale(12), marginTop: 2 }]}>
+                                    Booking: {bookingNumber}
+                                </Text>
+                            )}
+                        </View>
                     </View>
                 )}
 
-                {/* Rating Section */}
-                <View
-                    style={{
-                        backgroundColor: colors.white,
-                        borderRadius: scale(12),
-                        padding: scale(16),
-                        marginBottom: verticalScale(16),
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                    }}
-                >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginBottom: verticalScale(12),
-                        }}
-                    >
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
                         <Icon
                             name="star"
                             size={scale(18)}
                             color={colors.morentBlue}
-                            style={{ marginRight: scale(8) }}
+                            style={styles.iconMargin}
                         />
-                        <Text
-                            style={{
-                                fontSize: scale(14),
-                                fontWeight: "600",
-                                color: colors.primary,
-                            }}
-                        >
-                            How would you rate us?
-                        </Text>
-                        <Text
-                            style={{
-                                fontSize: scale(12),
-                                color: colors.destructive,
-                                marginLeft: scale(4),
-                            }}
-                        >
-                            *
-                        </Text>
+                        <Text style={styles.cardTitle}>How would you rate us?</Text>
+                        <Text style={styles.requiredMark}>*</Text>
                     </View>
                     {renderStarRating()}
                     {rating > 0 && (
-                        <Text
-                            style={{
-                                fontSize: scale(12),
-                                color: colors.morentBlue,
-                                marginTop: verticalScale(8),
-                                fontWeight: "600",
-                            }}
-                        >
+                        <Text style={styles.ratingText}>
                             Rating: {rating} out of 5
                         </Text>
                     )}
                 </View>
 
-                {/* Category Section */}
-                <View
-                    style={{
-                        backgroundColor: colors.white,
-                        borderRadius: scale(12),
-                        padding: scale(16),
-                        marginBottom: verticalScale(16),
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                    }}
-                >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginBottom: verticalScale(12),
-                        }}
-                    >
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
                         <Icon
                             name="category"
                             size={scale(18)}
                             color={colors.morentBlue}
-                            style={{ marginRight: scale(8) }}
+                            style={styles.iconMargin}
                         />
-                        <Text
-                            style={{
-                                fontSize: scale(14),
-                                fontWeight: "600",
-                                color: colors.primary,
-                            }}
-                        >
-                            Feedback Category
-                        </Text>
-                        <Text
-                            style={{
-                                fontSize: scale(12),
-                                color: colors.destructive,
-                                marginLeft: scale(4),
-                            }}
-                        >
-                            *
-                        </Text>
+                        <Text style={styles.cardTitle}>Feedback Category</Text>
+                        <Text style={styles.requiredMark}>*</Text>
                     </View>
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            flexWrap: "wrap",
-                            gap: scale(8),
-                        }}
-                    >
-                        {FEEDBACK_CATEGORIES.map((cat) => (
-                            <Pressable
-                                key={cat}
-                                onPress={() => setCategory(cat)}
-                                style={{
-                                    paddingHorizontal: scale(12),
-                                    paddingVertical: scale(8),
-                                    borderRadius: scale(20),
-                                    backgroundColor:
-                                        category === cat ? colors.morentBlue : colors.background,
-                                    borderWidth: 1,
-                                    borderColor:
-                                        category === cat ? colors.morentBlue : colors.border,
-                                }}
-                            >
-                                <Text
-                                    style={{
-                                        fontSize: scale(12),
-                                        fontWeight: "600",
-                                        color: category === cat ? colors.white : colors.primary,
-                                    }}
-                                >
-                                    {cat}
-                                </Text>
-                            </Pressable>
-                        ))}
+                    <View style={styles.categoryContainer}>
+                        {FEEDBACK_CATEGORIES.map(renderCategoryButton)}
                     </View>
                 </View>
 
-                {/* Title Input */}
-                <View
-                    style={{
-                        backgroundColor: colors.white,
-                        borderRadius: scale(12),
-                        padding: scale(16),
-                        marginBottom: verticalScale(16),
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                    }}
-                >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginBottom: verticalScale(8),
-                        }}
-                    >
-                        <Text
-                            style={{
-                                fontSize: scale(14),
-                                fontWeight: "600",
-                                color: colors.primary,
-                            }}
-                        >
-                            Feedback Title
-                        </Text>
-                        <Text
-                            style={{
-                                fontSize: scale(12),
-                                color: colors.destructive,
-                                marginLeft: scale(4),
-                            }}
-                        >
-                            *
-                        </Text>
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>Feedback Title</Text>
+                        <Text style={styles.requiredMark}>*</Text>
                     </View>
                     <TextInput
-                        style={{
-                            borderRadius: scale(8),
-                            borderWidth: 1,
-                            borderColor: colors.border,
-                            paddingHorizontal: scale(12),
-                            paddingVertical: verticalScale(10),
-                            fontSize: scale(13),
-                            color: colors.primary,
-                            backgroundColor: colors.background,
-                        }}
+                        style={styles.input}
                         placeholder="Enter feedback title"
                         placeholderTextColor={colors.placeholder}
                         value={title}
                         onChangeText={setTitle}
                         maxLength={100}
                     />
-                    <Text
-                        style={{
-                            fontSize: scale(10),
-                            color: colors.placeholder,
-                            marginTop: verticalScale(4),
-                            textAlign: "right",
-                        }}
-                    >
-                        {title.length}/100
-                    </Text>
+                    <Text style={styles.charCount}>{title.length}/100</Text>
                 </View>
 
-                {/* Message Input */}
-                <View
-                    style={{
-                        backgroundColor: colors.white,
-                        borderRadius: scale(12),
-                        padding: scale(16),
-                        marginBottom: verticalScale(24),
-                        borderWidth: 1,
-                        borderColor: colors.border,
-                    }}
-                >
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "flex-start",
-                            marginBottom: verticalScale(8),
-                        }}
-                    >
-                        <Text
-                            style={{
-                                fontSize: scale(14),
-                                fontWeight: "600",
-                                color: colors.primary,
-                            }}
-                        >
-                            Your Message
-                        </Text>
-                        <Text
-                            style={{
-                                fontSize: scale(12),
-                                color: colors.destructive,
-                                marginLeft: scale(4),
-                            }}
-                        >
-                            *
-                        </Text>
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>Your Message</Text>
+                        <Text style={styles.requiredMark}>*</Text>
                     </View>
                     <TextInput
-                        style={{
-                            borderRadius: scale(8),
-                            borderWidth: 1,
-                            borderColor: colors.border,
-                            paddingHorizontal: scale(12),
-                            paddingVertical: verticalScale(10),
-                            fontSize: scale(13),
-                            color: colors.primary,
-                            backgroundColor: colors.background,
-                            minHeight: scale(120),
-                            textAlignVertical: "top",
-                        }}
+                        style={[styles.input, styles.textArea]}
                         placeholder="Please share your detailed feedback here..."
                         placeholderTextColor={colors.placeholder}
                         value={message}
@@ -436,44 +291,23 @@ export default function FeedbackFormScreen() {
                         multiline
                         maxLength={500}
                     />
-                    <Text
-                        style={{
-                            fontSize: scale(10),
-                            color: colors.placeholder,
-                            marginTop: verticalScale(4),
-                            textAlign: "right",
-                        }}
-                    >
-                        {message.length}/500
-                    </Text>
+                    <Text style={styles.charCount}>{message.length}/500</Text>
                 </View>
 
-                {/* Buttons */}
-                <View style={{ gap: scale(12) }}>
+                <View style={styles.buttonContainer}>
                     <Button
                         text={isSubmitting ? "Submitting..." : "Submit Feedback"}
-                        textStyles={{ color: colors.white, fontSize: scale(14) }}
+                        textStyles={styles.submitButtonText}
                         buttonStyles={{
-                            backgroundColor: isFormValid && !isSubmitting ? colors.morentBlue : colors.border,
-                            paddingVertical: verticalScale(12),
-                            borderRadius: scale(8),
+                            ...styles.submitButton,
+                            ...(isFormValid && !isSubmitting ? styles.submitButtonActive : styles.submitButtonInactive)
                         }}
                         onPress={handleSubmit}
                     />
                     <Button
                         text="Cancel"
-                        textStyles={{
-                            color: colors.morentBlue,
-                            fontSize: scale(14),
-                            fontWeight: "600",
-                        }}
-                        buttonStyles={{
-                            backgroundColor: colors.background,
-                            paddingVertical: verticalScale(12),
-                            borderRadius: scale(8),
-                            borderWidth: 2,
-                            borderColor: colors.morentBlue,
-                        }}
+                        textStyles={styles.cancelButtonText}
+                        buttonStyles={styles.cancelButton}
                         onPress={() => navigation.goBack()}
                     />
                 </View>

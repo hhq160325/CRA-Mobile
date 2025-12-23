@@ -5,10 +5,9 @@ import { colors } from "../../../../theme/colors"
 interface DistanceCardProps {
     distanceInKm: number | null | undefined
     calculatingDistance: boolean
-    t: (key: string) => string
 }
 
-export default function DistanceCard({ distanceInKm, calculatingDistance, t }: DistanceCardProps) {
+export default function DistanceCard({ distanceInKm, calculatingDistance }: DistanceCardProps) {
     return (
         <View style={{
             backgroundColor: colors.white,
@@ -22,7 +21,7 @@ export default function DistanceCard({ distanceInKm, calculatingDistance, t }: D
                 <MaterialIcons name="straighten" size={24} color={colors.morentBlue} style={{ marginRight: 12 }} />
                 <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 4 }}>
-                        {t("estimatedDistance") || "Distance from Park Lot"}
+                        Distance from Park Lot
                     </Text>
                     {calculatingDistance ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>

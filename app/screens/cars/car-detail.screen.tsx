@@ -9,11 +9,10 @@ import type { RouteProp } from "@react-navigation/native"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import { colors } from "../../theme/colors"
-import { scale } from "../../theme/scale"
 import { getAsset } from "../../../lib/getAsset"
 import Header from "../../components/Header/Header"
 import { useAuth } from "../../../lib/auth-context"
-
+import { styles } from "./styles/carDetail.styles"
 
 import CarImageGallery from "./components/CarImageGallery"
 import CarSpecifications from "./components/CarSpecifications"
@@ -39,7 +38,8 @@ export default function CarDetailScreen() {
 
   useEffect(() => {
     let mounted = true
-    async function load() {
+
+    async function loadCarDetails() {
       if (!id) return
 
       setLoading(true)
@@ -56,23 +56,26 @@ export default function CarDetailScreen() {
         }
       } catch (err) {
         console.error("Error loading car details:", err)
+        if (mounted) {
+          Alert.alert("Error", "Failed to load car details. Please try again.")
+        }
       } finally {
         if (mounted) setLoading(false)
       }
     }
 
-    load()
+    loadCarDetails()
 
     return () => {
       mounted = false
     }
-  }, [id, user?.id])
+  }, [id])
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={styles.container}>
         <Header />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.morentBlue} />
         </View>
       </View>
@@ -81,10 +84,10 @@ export default function CarDetailScreen() {
 
   if (!car) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={styles.container}>
         <Header />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ fontSize: scale(16), color: colors.placeholder }}>Car not found</Text>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.notFoundText}>Car not found</Text>
         </View>
       </View>
     )
@@ -105,59 +108,80 @@ export default function CarDetailScreen() {
     return getAsset(img) || require("../../../assets/tesla-model-s-luxury.png")
   }
 
+  const checkDriverLicense = async () => {
+    if (!user?.id || !user?.email) {
+      return { hasLicense: false, error: "No user credentials" }
+    }
+
+    try {
+      const { data: licenseData, error: licenseError } = await userService.getDriverLicense(user.id, user.email)
+
+      const hasLicense = !licenseError && licenseData && licenseData.urls && licenseData.urls.length > 0
+      return { hasLicense, error: licenseError }
+    } catch (error) {
+      console.error("Error checking driver's license:", error)
+      return { hasLicense: false, error: error }
+    }
+  }
+
+  const showLicenseRequiredAlert = () => {
+    Alert.alert(
+      "Driver's License Required",
+      "You must upload your driver's license before booking a car. Would you like to upload it now?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Upload Now",
+          onPress: () => navigation.navigate("Profile" as any)
+        }
+      ]
+    )
+  }
+
   const handleBookNow = async () => {
     if (!user?.id || !user?.email) {
       Alert.alert("Login Required", "Please login to book a car")
       return
     }
 
-    try {
-      
-      const { data: licenseData, error: licenseError } = await userService.getDriverLicense(user.id, user.email)
+    const { hasLicense } = await checkDriverLicense()
 
-      if (licenseError || !licenseData || !licenseData.urls || licenseData.urls.length === 0) {
-        
-        Alert.alert(
-          "Driver's License Required",
-          "You must upload your driver's license before booking a car. Would you like to upload it now?",
-          [
-            {
-              text: "Cancel",
-              style: "cancel"
-            },
-            {
-              text: "Upload Now",
-              onPress: () => navigation.navigate("Profile" as any)
-            }
-          ]
-        )
-        return
-      }
-
-      navigation.navigate("BookingForm" as any, { id: car?.id })
-    } catch (error) {
-      console.error("Error checking driver's license:", error)
-      Alert.alert(
-        "Driver's License Required",
-        "You must upload your driver's license before booking a car. Would you like to upload it now?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
-          {
-            text: "Upload Now",
-            onPress: () => navigation.navigate("Profile" as any)
-          }
-        ]
-      )
+    if (!hasLicense) {
+      showLicenseRequiredAlert()
+      return
     }
+
+    navigation.navigate("BookingForm" as any, { id: car?.id })
   }
 
+
+
+  const renderPriceAndBooking = () => (
+    <View style={styles.priceBookContainer}>
+      {car.price > 0 && (
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceLabel}>Price per day</Text>
+          <Text style={styles.priceValue} numberOfLines={2} adjustsFontSizeToFit>
+            {car.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')} VND
+          </Text>
+        </View>
+      )}
+      <Pressable
+        onPress={handleBookNow}
+        style={[styles.bookButton, !car.price && { marginLeft: 'auto' }]}
+      >
+        <Text style={styles.bookButtonText}>Rent Now</Text>
+      </Pressable>
+    </View>
+  )
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={styles.container}>
       <Header />
-      <ScrollView contentContainerStyle={{ paddingBottom: scale(20) }}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <CarImageGallery
           carImages={carImages}
           selectedImageIndex={selectedImageIndex}
@@ -165,16 +189,9 @@ export default function CarDetailScreen() {
           getImageSource={getImageSource}
         />
 
-        {/* Car Details */}
-        <View style={{
-          backgroundColor: colors.white,
-          padding: scale(16),
-          marginHorizontal: scale(16),
-          borderRadius: scale(12),
-          marginBottom: scale(16)
-        }}>
-          <Text style={{ fontSize: scale(24), fontWeight: "700", color: colors.primary }}>{car.model}</Text>
-          <Text style={{ fontSize: scale(14), color: colors.placeholder, marginTop: scale(4) }}>
+        <View style={styles.carDetailsCard}>
+          <Text style={styles.carTitle}>{car.model}</Text>
+          <Text style={styles.carSubtitle}>
             {car.manufacturer} • {car.yearofManufacture}
           </Text>
 
@@ -186,105 +203,16 @@ export default function CarDetailScreen() {
             onRefundPress={() => setRefundModalVisible(true)}
           />
 
-          {/* Description */}
-          <Text style={{
-            fontSize: scale(16),
-            fontWeight: '600',
-            color: colors.primary,
-            marginTop: scale(20),
-            marginBottom: scale(8)
-          }}>
-            Description
-          </Text>
-          <Text style={{
-            fontSize: scale(14),
-            color: colors.placeholder,
-            lineHeight: scale(22)
-          }}>
-            {car.description}
-          </Text>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>{car.description}</Text>
 
-          {/* Deposit Information */}
-          <View style={{
-            marginTop: scale(20),
-            padding: scale(16),
-            backgroundColor: colors.background,
-            borderRadius: scale(8),
-            borderLeftWidth: 4,
-            borderLeftColor: colors.morentBlue
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: scale(8) }}>
-              <Text style={{ fontSize: scale(16), fontWeight: '600', color: colors.primary }}>
-                💰 Deposit Information
-              </Text>
-            </View>
-            <View style={{ marginLeft: scale(4) }}>
-              <View style={{ flexDirection: 'row', marginBottom: scale(6) }}>
-                <Text style={{ fontSize: scale(14), color: colors.primary, marginRight: scale(4) }}>•</Text>
-                <Text style={{ fontSize: scale(14), color: colors.primary, flex: 1, lineHeight: scale(20) }}>
-                  Mandatory deposit: <Text style={{ fontWeight: '600', color: colors.morentBlue }}>10,000,000 VND</Text>
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', marginBottom: scale(6) }}>
-                <Text style={{ fontSize: scale(14), color: colors.primary, marginRight: scale(4) }}>•</Text>
-                <Text style={{ fontSize: scale(14), color: colors.primary, flex: 1, lineHeight: scale(20) }}>
-                  Motorbike deposit not accepted.
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row' }}>
-                <Text style={{ fontSize: scale(14), color: colors.primary, marginRight: scale(4) }}>•</Text>
-                <Text style={{ fontSize: scale(14), color: colors.primary, flex: 1, lineHeight: scale(20) }}>
-                  Deposit will be returned after returning the vehicle 15 days.
-                </Text>
-              </View>
-            </View>
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactLabel}>Contact: morent.com</Text>
           </View>
 
-          {/* Price and Book Button */}
-          <View style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: scale(24),
-            paddingTop: scale(16),
-            borderTopWidth: 1,
-            borderTopColor: colors.border,
-            gap: scale(12)
-          }}>
-            {car.price > 0 && (
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontSize: scale(11), color: colors.placeholder }}>Price per day</Text>
-                <Text
-                  style={{
-                    fontSize: scale(18),
-                    fontWeight: '700',
-                    color: colors.morentBlue,
-                    flexWrap: 'wrap'
-                  }}
-                  numberOfLines={2}
-                  adjustsFontSizeToFit
-                >
-                  {car.price.toLocaleString()} VND
-                </Text>
-              </View>
-            )}
-            <Pressable
-              onPress={handleBookNow}
-              style={{
-                backgroundColor: colors.morentBlue,
-                paddingHorizontal: scale(24),
-                paddingVertical: scale(12),
-                borderRadius: scale(8),
-                marginLeft: car.price > 0 ? 0 : 'auto',
-                flexShrink: 0
-              }}
-            >
-              <Text style={{ color: colors.white, fontSize: scale(14), fontWeight: "600" }}>Rent Now</Text>
-            </Pressable>
-          </View>
+          {renderPriceAndBooking()}
         </View>
 
-        {/* Customer Reviews Section */}
         <CarReviews
           reviews={reviews}
           onViewAllReviews={() => navigation.navigate("FeedbackList" as any)}

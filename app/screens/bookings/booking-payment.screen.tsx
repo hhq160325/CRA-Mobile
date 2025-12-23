@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,15 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import type {RouteProp} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {NavigatorParamList} from '../../navigators/navigation-route';
-import {colors} from '../../theme/colors';
-import {bookingsService, paymentService} from '../../../lib/api';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
+import { colors } from '../../theme/colors';
+import { bookingsService, paymentService } from '../../../lib/api';
 import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { styles } from './styles/bookingPayment.styles';
 
 export default function BookingPaymentScreen() {
   const route = useRoute<
@@ -35,7 +36,7 @@ export default function BookingPaymentScreen() {
   >();
   const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
 
-  const {bookingId, bookingNumber, paymentMethod, amount} =
+  const { bookingId, bookingNumber, paymentMethod, amount } =
     (route.params as any) || {};
 
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ export default function BookingPaymentScreen() {
   const createPayOSPayment = async () => {
     setLoading(true);
     try {
-      const {data, error} = await paymentService.createPayOSPayment({
+      const { data, error } = await paymentService.createPayOSPayment({
         amount: amount,
         description: `Payment for booking ${bookingId}`,
         returnUrl: 'morent://payment-success',
@@ -69,7 +70,6 @@ export default function BookingPaymentScreen() {
 
       if (data && data.qrCode) {
         setQrCodeUrl(data.qrCode);
-
         pollPaymentStatus(data.orderCode);
       }
     } catch (err: any) {
@@ -84,7 +84,7 @@ export default function BookingPaymentScreen() {
   const pollPaymentStatus = async (orderCode: string) => {
     const interval = setInterval(async () => {
       try {
-        const {data} = await paymentService.getPayOSPayment(orderCode);
+        const { data } = await paymentService.getPayOSPayment(orderCode);
 
         if (data && data.status === 'PAID') {
           clearInterval(interval);
@@ -95,7 +95,7 @@ export default function BookingPaymentScreen() {
             {
               text: 'OK',
               onPress: () =>
-                navigation.navigate('BookingDetail' as any, {id: bookingId}),
+                navigation.navigate('BookingDetail' as any, { id: bookingId }),
             },
           ]);
         } else if (data && data.status === 'CANCELLED') {
@@ -114,7 +114,7 @@ export default function BookingPaymentScreen() {
   const handleCashPayment = async () => {
     setLoading(true);
     try {
-      const {error} = await bookingsService.updateBooking({
+      const { error } = await bookingsService.updateBooking({
         bookingId: bookingId,
         status: '1',
       } as any);
@@ -131,7 +131,7 @@ export default function BookingPaymentScreen() {
           {
             text: 'OK',
             onPress: () =>
-              navigation.navigate('BookingDetail' as any, {id: bookingId}),
+              navigation.navigate('BookingDetail' as any, { id: bookingId }),
           },
         ],
       );
@@ -158,7 +158,7 @@ export default function BookingPaymentScreen() {
       'Cancel Payment',
       'Are you sure you want to cancel this payment?',
       [
-        {text: 'No', style: 'cancel'},
+        { text: 'No', style: 'cancel' },
         {
           text: 'Yes',
           style: 'destructive',
@@ -171,119 +171,46 @@ export default function BookingPaymentScreen() {
   };
 
   return (
-    <View style={{flex: 1, backgroundColor: colors.background}}>
+    <View style={styles.container}>
       <Header />
 
-      <ScrollView contentContainerStyle={{padding: 16}}>
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: '700',
-            color: colors.primary,
-            marginBottom: 8,
-          }}>
-          Payment
-        </Text>
-
-        <Text
-          style={{fontSize: 14, color: colors.placeholder, marginBottom: 24}}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Payment</Text>
+        <Text style={styles.subtitle}>
           Complete your payment to confirm the booking
         </Text>
 
         {/* Payment Method Card */}
-        <View
-          style={{
-            backgroundColor: colors.white,
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 24,
-          }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}>
-            <Text style={{fontSize: 14, color: colors.placeholder}}>
-              Payment Method
-            </Text>
-            <Text
-              style={{fontSize: 14, fontWeight: '600', color: colors.primary}}>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <Text style={styles.label}>Payment Method</Text>
+            <Text style={styles.value}>
               {paymentMethod === 'cash' ? 'Cash' : 'QR PayOS'}
             </Text>
           </View>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}>
-            <Text style={{fontSize: 14, color: colors.placeholder}}>
-              Booking ID
-            </Text>
-            <Text
-              style={{fontSize: 14, fontWeight: '600', color: colors.primary}}>
-              {bookingNumber || 'N/A'}
-            </Text>
+          <View style={styles.row}>
+            <Text style={styles.label}>Booking ID</Text>
+            <Text style={styles.value}>{bookingNumber || 'N/A'}</Text>
           </View>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              paddingTop: 12,
-              borderTopWidth: 1,
-              borderTopColor: colors.border,
-            }}>
-            <Text
-              style={{fontSize: 16, fontWeight: '700', color: colors.primary}}>
-              Total Amount
-            </Text>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '700',
-                color: colors.morentBlue,
-              }}>
-              {amount} VND
-            </Text>
+          <View style={styles.rowBordered}>
+            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalValue}>{amount} VND</Text>
           </View>
         </View>
 
         {/* Cash Payment */}
         {paymentMethod === 'cash' && (
-          <View
-            style={{
-              backgroundColor: colors.white,
-              borderRadius: 8,
-              padding: 16,
-              marginBottom: 24,
-              alignItems: 'center',
-            }}>
+          <View style={styles.cardCentered}>
             <MaterialIcons
               name="payments"
               size={64}
               color={colors.morentBlue}
+              style={styles.icon}
             />
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '600',
-                color: colors.primary,
-                marginTop: 16,
-                marginBottom: 8,
-                textAlign: 'center',
-              }}>
-              Cash Payment
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: colors.placeholder,
-                textAlign: 'center',
-                marginBottom: 24,
-              }}>
+            <Text style={styles.paymentTitle}>Cash Payment</Text>
+            <Text style={styles.paymentDescription}>
               You will pay cash when picking up the car. Please bring the exact
               amount or card for payment.
             </Text>
@@ -291,25 +218,11 @@ export default function BookingPaymentScreen() {
             <Pressable
               onPress={handleCashPayment}
               disabled={loading}
-              style={{
-                backgroundColor: colors.morentBlue,
-                paddingVertical: 14,
-                paddingHorizontal: 32,
-                borderRadius: 8,
-                width: '100%',
-                alignItems: 'center',
-              }}>
+              style={styles.confirmButton}>
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text
-                  style={{
-                    color: colors.white,
-                    fontSize: 16,
-                    fontWeight: '600',
-                  }}>
-                  Confirm Booking
-                </Text>
+                <Text style={styles.confirmButtonText}>Confirm Booking</Text>
               )}
             </Pressable>
           </View>
@@ -317,115 +230,49 @@ export default function BookingPaymentScreen() {
 
         {/* PayOS QR Code */}
         {paymentMethod === 'qr-payos' && (
-          <View
-            style={{
-              backgroundColor: colors.white,
-              borderRadius: 8,
-              padding: 16,
-              marginBottom: 24,
-              alignItems: 'center',
-            }}>
+          <View style={styles.cardCentered}>
             {loading ? (
-              <>
+              <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.morentBlue} />
-                <Text style={{marginTop: 16, color: colors.placeholder}}>
-                  Generating QR code...
-                </Text>
-              </>
+                <Text style={styles.loadingText}>Generating QR code...</Text>
+              </View>
             ) : qrCodeUrl ? (
               <>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: '600',
-                    color: colors.primary,
-                    marginBottom: 16,
-                  }}>
-                  Scan QR Code to Pay
-                </Text>
+                <Text style={styles.qrTitle}>Scan QR Code to Pay</Text>
 
-                <Image
-                  source={{uri: qrCodeUrl}}
-                  style={{
-                    width: 250,
-                    height: 250,
-                    marginBottom: 16,
-                  }}
-                />
+                <Image source={{ uri: qrCodeUrl }} style={styles.qrImage} />
 
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: colors.placeholder,
-                    textAlign: 'center',
-                    marginBottom: 8,
-                  }}>
+                <Text style={styles.qrDescription}>
                   Scan this QR code with your banking app
                 </Text>
 
                 {paymentStatus === 'pending' && (
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginTop: 16,
-                    }}>
+                  <View style={styles.statusContainer}>
                     <ActivityIndicator size="small" color={colors.morentBlue} />
-                    <Text style={{marginLeft: 8, color: colors.placeholder}}>
-                      Waiting for payment...
-                    </Text>
+                    <Text style={styles.statusText}>Waiting for payment...</Text>
                   </View>
                 )}
 
                 {paymentStatus === 'success' && (
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginTop: 16,
-                      backgroundColor: '#00B050',
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 6,
-                    }}>
+                  <View style={styles.successContainer}>
                     <MaterialIcons
                       name="check-circle"
                       size={20}
                       color={colors.white}
                     />
-                    <Text
-                      style={{
-                        marginLeft: 8,
-                        color: colors.white,
-                        fontWeight: '600',
-                      }}>
-                      Payment Successful!
-                    </Text>
+                    <Text style={styles.successText}>Payment Successful!</Text>
                   </View>
                 )}
               </>
             ) : (
-              <Text style={{color: colors.placeholder}}>
-                Failed to generate QR code
-              </Text>
+              <Text style={styles.errorText}>Failed to generate QR code</Text>
             )}
           </View>
         )}
 
         {/* Cancel Button */}
-        <Pressable
-          onPress={handleCancel}
-          style={{
-            borderWidth: 2,
-            borderColor: colors.morentBlue,
-            paddingVertical: 14,
-            borderRadius: 8,
-            alignItems: 'center',
-          }}>
-          <Text
-            style={{color: colors.morentBlue, fontSize: 16, fontWeight: '600'}}>
-            Cancel
-          </Text>
+        <Pressable onPress={handleCancel} style={styles.cancelButton}>
+          <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>
       </ScrollView>
     </View>

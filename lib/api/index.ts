@@ -46,3 +46,15 @@ export { invoiceService, type Invoice as InvoiceData } from "./services/invoice.
 
 
 export { checkAndUpdatePaymentStatuses, areAllPaymentsPaid } from "./services/payment-status-checker"
+
+export { inquiryService, type CreateInquiryData } from "./services/inquiry.service"
+
+export { bookingExtensionService, type BookingDetail, type InvoiceItem as ExtensionInvoiceItem, type PayOSPaymentRequest, type PayOSPaymentResponse } from "./services/bookingExtension.service"
+
+export { ocrService, type DriverLicenseOCRResult, type OCRResponse } from "./services/ocr.service"
+
+export { reportService, type CreateReportData, type ReportResponse, type CreateUserReportData, type UserReportResponse } from "./services/report.service"
+
+export { bookingExtensionPaymentService, type BookingPayment, type UpdatePaymentStatusRequest } from "./services/booking-extension-payment.service"
+
+export { additionalFeePaymentService, type AdditionalFeePayment, type UpdateAdditionalFeePaymentStatusRequest } from "./services/additional-fee-payment.service"

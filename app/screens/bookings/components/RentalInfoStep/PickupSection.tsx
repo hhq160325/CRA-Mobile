@@ -16,7 +16,6 @@ interface PickupSectionProps {
     onPickupLocationChange: (text: string) => void
     onShowParkLotModal: () => void
     onShowDateTimePicker: () => void
-    t: (key: string) => string
 }
 
 export default function PickupSection({
@@ -30,20 +29,19 @@ export default function PickupSection({
     onPickupModeChange,
     onPickupLocationChange,
     onShowParkLotModal,
-    onShowDateTimePicker,
-    t
+    onShowDateTimePicker
 }: PickupSectionProps) {
     return (
         <View>
-            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 {t("pickUp")}</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 Pick Up</Text>
 
-            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{t("locations")}</Text>
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Location</Text>
 
             <LocationModeSelector
                 mode={pickupMode}
                 onModeChange={onPickupModeChange}
-                parkLotLabel={t("parkLot")}
-                customLabel={t("customAddress")}
+                parkLotLabel="Park Lot"
+                customLabel="Custom Address"
             />
 
             {pickupMode === "parklot" ? (
@@ -60,55 +58,35 @@ export default function PickupSection({
                     }}
                 >
                     <Text style={{ fontSize: 12, color: pickupLocation ? colors.primary : colors.placeholder }}>
-                        {pickupLocation || t("selectParkLot")}
+                        {pickupLocation || "Select Park Lot"}
                     </Text>
                 </Pressable>
             ) : (
-                <>
-                    <Text style={{ fontSize: 11, color: colors.placeholder, marginBottom: 6 }}>
-                        Step 1: Select park lot (starting point)
-                    </Text>
-                    <Pressable
-                        onPress={onShowParkLotModal}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: selectedParkLot ? colors.morentBlue : colors.border,
-                            borderRadius: 6,
-                            paddingHorizontal: 12,
-                            paddingVertical: 10,
-                            marginBottom: 12,
-                            backgroundColor: colors.white
-                        }}
-                    >
-                        <Text style={{ fontSize: 12, color: selectedParkLot ? colors.primary : colors.placeholder }}>
-                            {selectedParkLot ? (selectedParkLot.address || selectedParkLot.name) : t("selectParkLot")}
-                        </Text>
-                    </Pressable>
-                    <Text style={{ fontSize: 11, color: colors.placeholder, marginBottom: 6 }}>
-                        Step 2: Enter custom pickup address
-                    </Text>
-                    <TextInput
-                        placeholder={t("enterCustomAddress")}
-                        value={pickupLocation}
-                        onChangeText={onPickupLocationChange}
-                        editable={!!selectedParkLot}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: selectedParkLot ? colors.border : colors.placeholder,
-                            borderRadius: 6,
-                            paddingHorizontal: 12,
-                            paddingVertical: 10,
-                            marginBottom: 12,
-                            fontSize: 12,
-                            backgroundColor: selectedParkLot ? colors.white : '#f5f5f5',
-                            color: selectedParkLot ? colors.primary : colors.placeholder
-                        }}
-                    />
-                </>
+                <TextInput
+                    placeholder="Enter custom pickup address"
+                    value={pickupLocation}
+                    onChangeText={onPickupLocationChange}
+                    multiline={true}
+                    numberOfLines={2}
+                    textAlignVertical="top"
+                    style={{
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: 6,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        marginBottom: 12,
+                        fontSize: 12,
+                        backgroundColor: colors.white,
+                        color: colors.primary,
+                        minHeight: 60,
+                        maxHeight: 100
+                    }}
+                />
             )}
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>
-                {t("dateAndTime") || "Date & Time"}
+                Date & Time
             </Text>
             <Pressable
                 onPress={onShowDateTimePicker}

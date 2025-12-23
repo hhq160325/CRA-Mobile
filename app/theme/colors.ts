@@ -21,5 +21,8 @@ export const colors = {
   divider: "#D9D9D9",
   btnBorder: "#D7D7D7",
   morentBlue: "#3563E9",
+  gray: "#6B7280",
+  lightGray: "#F3F4F6",
+  lightRed: "#FEE2E2",
 }
 export const transparent = 'transparent';

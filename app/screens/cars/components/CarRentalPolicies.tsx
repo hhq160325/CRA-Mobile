@@ -103,6 +103,99 @@ export default function CarRentalPolicies({
                 </View>
             </View>
 
+            {/* Additional Fees */}
+            <View style={{ marginTop: scale(20) }}>
+                <Text style={{ fontSize: scale(16), fontWeight: '600', color: colors.primary, marginBottom: scale(12) }}>
+                    Additional fees
+                </Text>
+                <View style={{
+                    backgroundColor: colors.white,
+                    borderRadius: scale(8),
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    overflow: 'hidden'
+                }}>
+                    {/* Overtime Fee */}
+                    <View style={{
+                        flexDirection: 'row',
+                        paddingVertical: scale(12),
+                        paddingHorizontal: scale(12),
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.border,
+                        backgroundColor: colors.background
+                    }}>
+                        <View style={{ marginRight: scale(10) }}>
+                            <Icon name="schedule" size={scale(20)} color="#F57C00" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scale(4) }}>
+                                <Text style={{ fontSize: scale(13), fontWeight: '600', color: colors.primary }}>
+                                    Overtime fee
+                                </Text>
+                                <Text style={{ fontSize: scale(13), fontWeight: '700', color: '#F44336' }}>
+                                    500.000 VND/hour
+                                </Text>
+                            </View>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder, lineHeight: scale(16) }}>
+                                Surcharge if the car is returned late. In case of delay of more than 5 hours, an additional day of rental fee will be charged.
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Cleaning Fee */}
+                    <View style={{
+                        flexDirection: 'row',
+                        paddingVertical: scale(12),
+                        paddingHorizontal: scale(12),
+                        borderBottomWidth: 1,
+                        borderBottomColor: colors.border,
+                        backgroundColor: colors.white
+                    }}>
+                        <View style={{ marginRight: scale(10) }}>
+                            <Icon name="cleaning-services" size={scale(20)} color="#2196F3" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scale(4) }}>
+                                <Text style={{ fontSize: scale(13), fontWeight: '600', color: colors.primary }}>
+                                    Cleaning fee
+                                </Text>
+                                <Text style={{ fontSize: scale(13), fontWeight: '700', color: '#F44336' }}>
+                                    70.000 VND
+                                </Text>
+                            </View>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder, lineHeight: scale(16) }}>
+                                Surcharge if the car is returned unsanitary (many stains, mud, etc.)
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Deodorization Fee */}
+                    <View style={{
+                        flexDirection: 'row',
+                        paddingVertical: scale(12),
+                        paddingHorizontal: scale(12),
+                        backgroundColor: colors.background
+                    }}>
+                        <View style={{ marginRight: scale(10) }}>
+                            <Icon name="air" size={scale(20)} color="#9C27B0" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scale(4) }}>
+                                <Text style={{ fontSize: scale(13), fontWeight: '600', color: colors.primary }}>
+                                    Deodorization fee
+                                </Text>
+                                <Text style={{ fontSize: scale(13), fontWeight: '700', color: '#F44336' }}>
+                                    500.000 VND
+                                </Text>
+                            </View>
+                            <Text style={{ fontSize: scale(11), color: colors.placeholder, lineHeight: scale(16) }}>
+                                Surcharge if the car is returned with an unpleasant odor (cigarette smell, strong-smelling food, etc.)
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+
             {/* Cancellation Policy */}
             <View style={{ marginTop: scale(20) }}>
                 <Text style={{ fontSize: scale(16), fontWeight: '600', color: colors.primary, marginBottom: scale(12) }}>

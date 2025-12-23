@@ -43,14 +43,14 @@ export interface Booking {
     phone: string
     licenseNumber: string
   }
+  carDetails?: any
+  userDetails?: any
   addons?: string[]
 }
 
 // Map API response to app Booking model
 function mapApiBookingToBooking(apiBooking: ApiBookingResponse): Booking {
-  // Map status from backend to app
-  // Backend statuses: cancelled, confirmed, completed
-  // App statuses: cancelled, upcoming, completed
+
   let status: "upcoming" | "completed" | "cancelled" = "upcoming"
   const apiStatus = apiBooking.status?.toLowerCase()
 
@@ -95,7 +95,7 @@ export interface CreateBookingData {
   carRentPrice: number
   rentime: number
   rentType: string
-  request?: string // Required by API
+  request?: string
 }
 
 export interface UpdateBookingData {
@@ -122,6 +122,11 @@ export const bookingsService = {
     console.log("bookingsService.getAllBookings: fetching all bookings")
     const result = await apiClient<ApiBookingResponse[]>(API_ENDPOINTS.BOOKINGS, { method: "GET" })
     console.log("bookingsService.getAllBookings: result", { hasError: !!result.error, dataLength: result.data?.length })
+
+    // Log sample booking data to understand structure
+    if (result.data && result.data.length > 0) {
+      console.log(" Sample booking from API:", JSON.stringify(result.data[0], null, 2));
+    }
 
     if (result.error) {
       return { data: null, error: result.error }
@@ -195,19 +200,69 @@ export const bookingsService = {
   },
 
   async getBookingById(id: string): Promise<{ data: Booking | null; error: Error | null }> {
-    console.log("bookingsService.getBookingById: fetching booking", id)
+    console.log(" bookingsService.getBookingById: fetching booking", id)
+    console.log(" bookingsService.getBookingById: endpoint", API_ENDPOINTS.BOOKING_DETAILS(id))
+
     const result = await apiClient<ApiBookingResponse>(API_ENDPOINTS.BOOKING_DETAILS(id), { method: "GET" })
-    console.log("bookingsService.getBookingById: result", { hasError: !!result.error, hasData: !!result.data })
+
+    console.log(" bookingsService.getBookingById: result", {
+      hasError: !!result.error,
+      hasData: !!result.data,
+      errorMessage: result.error?.message,
+      rawData: result.data ? {
+        id: result.data.id,
+        userId: result.data.userId,
+        bookingNumber: result.data.bookingNumber,
+        status: result.data.status,
+        carId: result.data.carId
+      } : null
+    })
 
     if (result.error) {
+      console.log(" bookingsService.getBookingById: returning error", result.error.message)
       return { data: null, error: result.error }
     }
 
     // Map API response to app model
     const mappedData = result.data ? mapApiBookingToBooking(result.data) : null
+    console.log(" bookingsService.getBookingById: mapped data", mappedData ? {
+      id: mappedData.id,
+      userId: mappedData.userId,
+      bookingNumber: mappedData.bookingNumber,
+      carName: mappedData.carName,
+      status: mappedData.status
+    } : null)
+
     return { data: mappedData, error: null }
   },
 
+  async getBookingByNumber(bookingNumber: string): Promise<{ data: any | null; error: Error | null }> {
+    console.log(" bookingsService.getBookingByNumber: fetching booking", bookingNumber)
+    console.log(" bookingsService.getBookingByNumber: endpoint", API_ENDPOINTS.BOOKING_BY_NUMBER(bookingNumber))
+
+    const result = await apiClient<any>(API_ENDPOINTS.BOOKING_BY_NUMBER(bookingNumber), { method: "GET" })
+
+    console.log(" bookingsService.getBookingByNumber: result", {
+      hasError: !!result.error,
+      hasData: !!result.data,
+      errorMessage: result.error?.message,
+      hasCar: !!result.data?.car,
+      carData: result.data?.car ? {
+        model: result.data.car.model,
+        manufacturer: result.data.car.manufacturer,
+        licensePlate: result.data.car.licensePlate
+      } : null
+    })
+
+    if (result.error) {
+      console.log(" bookingsService.getBookingByNumber: returning error", result.error.message)
+      return { data: null, error: result.error }
+    }
+
+    // Return raw data since it includes car details
+    console.log(" bookingsService.getBookingByNumber: returning raw data with car details")
+    return { data: result.data, error: null }
+  },
 
   async getBookingsForCar(carId: string): Promise<{ data: Booking[] | null; error: Error | null }> {
     console.log("bookingsService.getBookingsForCar: fetching bookings for car", carId)
@@ -337,22 +392,22 @@ export const bookingsService = {
 
       // If successful, return immediately
       if (!result.error) {
-        console.log(`✅ Success with ${attempt.description}`)
+        console.log(` Success with ${attempt.description}`)
         console.log("bookingsService.updateBookingPayment: result", { hasError: false, hasData: !!result.data })
         return { data: result.data, error: null }
       }
 
       // If not 404, it's a different error - return it
       if (!result.error.message.includes('404')) {
-        console.error(`❌ Failed with ${attempt.description}:`, result.error.message)
+        console.error(` Failed with ${attempt.description}:`, result.error.message)
         return { data: null, error: result.error }
       }
 
-      console.log(`⚠️ 404 with ${attempt.description}, trying next...`)
+      console.log(`404 with ${attempt.description}, trying next...`)
     }
 
     // All attempts failed
-    console.error("❌ All attempts failed to update booking payment")
+    console.error(" All attempts failed to update booking payment")
     return {
       data: null,
       error: new Error("Failed to update booking payment: endpoint not found. Please check API documentation.")

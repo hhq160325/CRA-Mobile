@@ -1,7 +1,7 @@
-import {useState} from 'react';
-import {Alert} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import {userService} from '../../../../lib/api/services/user.service';
+import { useState } from 'react';
+import { Alert, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { userService } from '../../../../lib/api/services/user.service';
 
 export const useProfileActions = (
   userId: string | undefined,
@@ -10,7 +10,6 @@ export const useProfileActions = (
   setUserData: (data: any) => void,
   setFieldValues: (fn: (prev: any) => any) => void,
   setLicenseImage: (uri: string) => void,
-  setLicenseImages: (urls: string[]) => void,
   refreshUser: () => void,
   buildSafeUpdateData: (latestData: any, overrides?: any) => any,
 ) => {
@@ -21,7 +20,7 @@ export const useProfileActions = (
 
     setIsSaving(true);
     try {
-      const {data: currentUserData, error: fetchError} =
+      const { data: currentUserData, error: fetchError } =
         await userService.getUserById(userId);
 
       if (fetchError || !currentUserData) {
@@ -31,9 +30,9 @@ export const useProfileActions = (
       const latestData = currentUserData || userData;
       const genderValue = gender === 'Male' ? 0 : gender === 'Female' ? 1 : 2;
 
-      const updateData = buildSafeUpdateData(latestData, {gender: genderValue});
+      const updateData = buildSafeUpdateData(latestData, { gender: genderValue });
 
-      const {data, error} = await userService.updateUserInfo(
+      const { data, error } = await userService.updateUserInfo(
         userId,
         updateData,
       );
@@ -46,7 +45,7 @@ export const useProfileActions = (
         return;
       }
 
-      setFieldValues(prev => ({...prev, gender}));
+      setFieldValues(prev => ({ ...prev, gender }));
       if (data) setUserData(data);
       Alert.alert('Success', 'Gender updated successfully!');
     } catch (err: any) {
@@ -64,9 +63,13 @@ export const useProfileActions = (
 
     setIsSaving(true);
     try {
-      const {data, error} = await userService.uploadDriverLicense(userId, uri);
+      console.log('uploadDriverLicense: starting upload for user', userId);
+      console.log('uploadDriverLicense: image URI', uri);
+
+      const { data, error } = await userService.uploadDriverLicense(userId, uri);
 
       if (error) {
+        console.error('uploadDriverLicense: upload failed', error);
         Alert.alert(
           'Upload Failed',
           error.message || "Failed to upload driver's license",
@@ -74,21 +77,59 @@ export const useProfileActions = (
         return;
       }
 
-      const {data: licenseData, error: licenseError} =
-        await userService.getDriverLicense(userId, userEmail);
-      if (
-        !licenseError &&
-        licenseData &&
-        licenseData.urls &&
-        licenseData.urls.length > 0
-      ) {
-        setLicenseImages(licenseData.urls);
-        setLicenseImage(licenseData.urls[0]);
-      } else {
-        setLicenseImage(uri);
-      }
+      if (data && data.urls && data.urls.length > 0) {
+        console.log('Driver license uploaded successfully:', {
+          urlCount: data.urls.length,
+          licenseNumber: data.licenseNumber,
+          licenseName: data.licenseName,
+          licenseClass: data.licenseClass,
+          status: data.status,
+          createDate: data.createDate
+        });
 
-      Alert.alert('Success', "Driver's license uploaded successfully!");
+        setLicenseImage(data.urls[0]);
+
+        // Show extracted license information to user
+        const extractedInfo = [
+          data.licenseNumber && `License Number: ${data.licenseNumber}`,
+          data.licenseName && `Name: ${data.licenseName}`,
+          data.licenseClass && `Class: ${data.licenseClass}`,
+          data.status && `Status: ${data.status}`
+        ].filter(Boolean).join('\n');
+
+        const statusMessage = data.status === 'AutoApproved'
+          ? `Driver's license uploaded and auto-approved successfully!\n\nExtracted Information:\n${extractedInfo}`
+          : data.status === 'Pending'
+            ? `Driver's license uploaded successfully! It's currently pending review.\n\nExtracted Information:\n${extractedInfo}`
+            : `Driver's license uploaded successfully!\n\nExtracted Information:\n${extractedInfo}`;
+
+        Alert.alert('Success', statusMessage);
+
+        return data;
+      } else {
+        console.warn('Driver license upload succeeded but response missing URLs');
+
+
+        try {
+          const { data: licenseData, error: licenseError } =
+            await userService.getDriverLicense(userId, userEmail);
+          if (
+            !licenseError &&
+            licenseData &&
+            licenseData.urls &&
+            licenseData.urls.length > 0
+          ) {
+            setLicenseImage(licenseData.urls[0]);
+          } else {
+            setLicenseImage(uri);
+          }
+        } catch (refreshError) {
+          console.warn('Failed to refresh license images:', refreshError);
+          setLicenseImage(uri);
+        }
+
+        Alert.alert('Success', "Driver's license uploaded successfully!");
+      }
     } catch (err: any) {
       Alert.alert('Error', err?.message || "Failed to upload driver's license");
     } finally {
@@ -102,11 +143,54 @@ export const useProfileActions = (
       return;
     }
 
+    console.log('uploadAvatar: starting validation and upload');
+    console.log('uploadAvatar: platform', Platform.OS);
+    console.log('uploadAvatar: image URI', uri);
+
+    // Enhanced format validation for real devices
+    const fileExtension = uri.split('.').pop()?.toLowerCase();
+    const supportedFormats = ['jpg', 'jpeg', 'png'];
+
+    console.log('uploadAvatar: detected file extension', fileExtension);
+
+    if (!fileExtension || !supportedFormats.includes(fileExtension)) {
+      console.error('uploadAvatar: unsupported format', fileExtension);
+      Alert.alert(
+        'Unsupported Format',
+        `Image format validation failed (${fileExtension}). Please try selecting a different image or take a new photo.`,
+        [
+          { text: 'OK' },
+          { text: 'Try Again', onPress: () => console.log('User wants to try again') }
+        ]
+      );
+      return;
+    }
+
+    // Check if file URI is accessible (important for real devices)
+    try {
+      const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error(`File not accessible: ${response.status}`);
+      }
+      console.log('uploadAvatar: file accessibility verified');
+    } catch (fileError) {
+      console.error('uploadAvatar: file not accessible', fileError);
+      Alert.alert(
+        'File Access Error',
+        'The selected image file is not accessible. Please try selecting a different image.',
+      );
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const {data, error} = await userService.uploadAvatar(userId, uri);
+      console.log('uploadAvatar: starting upload for user', userId);
+      console.log('uploadAvatar: image format', fileExtension);
+
+      const { data, error } = await userService.uploadAvatar(userId, uri);
 
       if (error) {
+        console.error('uploadAvatar: upload failed', error);
         Alert.alert(
           'Upload Failed',
           error.message || 'Failed to update profile picture',
@@ -116,31 +200,43 @@ export const useProfileActions = (
 
       if (data && data.imageAvatar) {
         console.log('Avatar uploaded successfully, URL:', data.imageAvatar);
+
+
         setUserData(data);
 
-        try {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            const currentUser = JSON.parse(userStr);
 
-            currentUser.avatar = data.imageAvatar;
-            currentUser.imageAvatar = data.imageAvatar;
-            localStorage.setItem('user', JSON.stringify(currentUser));
-            console.log(
-              'Updated user in localStorage with new avatar:',
-              data.imageAvatar,
-            );
+        setFieldValues(prev => ({
+          ...prev,
+          imageAvatar: data.imageAvatar,
+        }));
+
+
+        try {
+          const currentUserStr = await AsyncStorage.getItem('user');
+          if (currentUserStr) {
+            const currentUser = JSON.parse(currentUserStr);
+            const updatedUser = {
+              ...currentUser,
+              imageAvatar: data.imageAvatar,
+              avatar: data.imageAvatar,
+            };
+            await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+            console.log('AsyncStorage updated with new avatar for header sync');
           }
-        } catch (err) {
-          console.error('Failed to update localStorage:', err);
+        } catch (storageError) {
+          console.warn('Failed to update AsyncStorage with new avatar:', storageError);
         }
 
+
         setTimeout(() => {
+          console.log('Syncing header avatar with new upload');
           refreshUser();
         }, 100);
-      }
 
-      Alert.alert('Success', 'Profile picture updated successfully!');
+        console.log('Avatar UI updated successfully, staying on profile screen');
+      } else {
+        console.warn('Avatar upload succeeded but response missing imageAvatar');
+      }
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Failed to upload avatar');
     } finally {

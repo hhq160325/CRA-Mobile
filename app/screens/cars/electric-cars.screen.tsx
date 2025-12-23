@@ -1,0 +1,214 @@
+import React, { useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    FlatList,
+    Pressable,
+    Image,
+    ActivityIndicator,
+} from 'react-native';
+import { carsService, type Car } from '../../../lib/api';
+import { getAsset } from '../../../lib/getAsset';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { NavigatorParamList } from '../../navigators/navigation-route';
+import { colors } from '../../theme/colors';
+import { scale } from '../../theme/scale';
+import Header from '../../components/Header/Header';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useFavorites } from '../../../lib/favorites-context';
+import { styles } from './styles/electricCars.styles';
+
+export default function ElectricCarsScreen() {
+    const [cars, setCars] = useState<Car[]>([]);
+    const [loading, setLoading] = useState(true);
+    const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>();
+    const { isFavorite, toggleFavorite } = useFavorites();
+
+    useEffect(() => {
+        let mounted = true;
+        async function load() {
+            setLoading(true);
+            console.log('ElectricCarsScreen: Loading electric cars...');
+            const res = await carsService.getAllCars();
+            if (mounted && res.data) {
+                // Filter only electric cars
+                const electricCars = res.data.filter(car =>
+                    car.fuelType?.toLowerCase() === 'electric'
+                );
+                console.log('ElectricCarsScreen: Found', electricCars.length, 'electric cars');
+                setCars(electricCars);
+            }
+            setLoading(false);
+        }
+        load();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const handleFavoritePress = (carId: string, e: any) => {
+        e.stopPropagation();
+        toggleFavorite(carId);
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Header />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.morentBlue} />
+                    <Text style={styles.loadingText}>Loading electric cars...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <Header />
+
+            {/* Header Title */}
+            <View style={styles.headerContainer}>
+                <MaterialIcons
+                    name="electric-bolt"
+                    size={scale(20)}
+                    color="#00B050"
+                    style={{ marginRight: scale(8) }}
+                />
+                <Text style={styles.headerTitle}>
+                    Electric Cars ({cars.length})
+                </Text>
+            </View>
+
+            {/* Electric Badge */}
+            <View style={styles.filterContainer}>
+                <View style={styles.filterBadge}>
+                    <MaterialIcons name="electric-car" size={scale(16)} color="white" />
+                    <Text style={styles.filterText}>Zero Emission Vehicles</Text>
+                    <MaterialIcons name="eco" size={scale(16)} color="white" />
+                </View>
+            </View>
+
+            <FlatList
+                data={cars}
+                keyExtractor={item => item.id}
+                contentContainerStyle={styles.listContainer}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <MaterialIcons
+                            name="electric-car"
+                            size={scale(64)}
+                            color={colors.border}
+                        />
+                        <Text style={styles.emptyText}>
+                            No electric cars available
+                        </Text>
+                        <Text style={styles.emptySubtext}>
+                            Check back later for new electric vehicles
+                        </Text>
+                    </View>
+                }
+                renderItem={({ item }) => (
+                    <Pressable
+                        onPress={() =>
+                            navigation.navigate('CarDetail' as any, { id: item.id })
+                        }
+                        style={styles.carCard}>
+                        <View style={styles.carCardContent}>
+                            <View style={styles.carHeader}>
+                                <View style={styles.carHeaderContent}>
+                                    <Text style={styles.carTitle}>
+                                        {item.manufacturer} {item.model}
+                                    </Text>
+                                    <View style={styles.electricBadge}>
+                                        <MaterialIcons name="electric-bolt" size={scale(12)} color="#00B050" />
+                                        <Text style={styles.electricText}>ELECTRIC</Text>
+                                    </View>
+                                </View>
+                                <Pressable
+                                    onPress={(e) => handleFavoritePress(item.id, e)}
+                                    style={styles.favoriteButton}>
+                                    <Ionicons
+                                        name={isFavorite(item.id) ? 'heart' : 'heart-outline'}
+                                        size={scale(20)}
+                                        color={isFavorite(item.id) ? '#FF6B6B' : colors.placeholder}
+                                    />
+                                </Pressable>
+                            </View>
+
+                            {/* Car Image */}
+                            <View style={styles.carImage}>
+                                <Image
+                                    source={
+                                        item.imageUrls && item.imageUrls.length > 0
+                                            ? { uri: item.imageUrls[0] }
+                                            : getAsset('luxury-sedan')
+                                    }
+                                    style={styles.carImageContent}
+                                    resizeMode="cover"
+                                />
+                            </View>
+
+                            {/* Car Details */}
+                            <View style={styles.carDetails}>
+                                <View style={styles.carDetailItem}>
+                                    <MaterialIcons
+                                        name="settings"
+                                        size={scale(16)}
+                                        color={colors.placeholder}
+                                    />
+                                    <Text style={styles.carDetailText}>
+                                        {item.transmission || 'Automatic'}
+                                    </Text>
+                                </View>
+                                <View style={styles.carDetailItem}>
+                                    <MaterialIcons
+                                        name="people"
+                                        size={scale(16)}
+                                        color={colors.placeholder}
+                                    />
+                                    <Text style={styles.carDetailText}>
+                                        {item.seats || 4} People
+                                    </Text>
+                                </View>
+                                <View style={styles.carDetailItem}>
+                                    <MaterialIcons
+                                        name="battery-charging-full"
+                                        size={scale(16)}
+                                        color="#00B050"
+                                    />
+                                    <Text style={[styles.carDetailText, { color: '#00B050', fontWeight: '600' }]}>
+                                        Electric
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* Price and Rent Button */}
+                            <View style={styles.priceRentContainer}>
+                                <View>
+                                    <Text style={styles.priceText}>
+                                        {item.price > 0 ? `${item.price.toLocaleString()} VND/day` : 'Price on request'}
+                                    </Text>
+                                    <Text style={styles.ecoText}>
+                                        🌱 Eco-friendly choice
+                                    </Text>
+                                </View>
+                                <Pressable
+                                    onPress={() =>
+                                        navigation.navigate('BookingForm' as any, { id: item.id })
+                                    }
+                                    style={styles.rentButton}>
+                                    <Text style={styles.rentButtonText}>
+                                        Rent Now
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </Pressable>
+                )}
+            />
+        </View>
+    );
+}

@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from "react-native"
+import { View, Text, Pressable, TextInput } from "react-native"
 import MaterialIcons from "react-native-vector-icons/MaterialIcons"
 import { colors } from "../../../../theme/colors"
 
@@ -9,7 +9,7 @@ interface DropoffSectionProps {
     dropoffDateError: string
     dropoffTimeError: string
     onShowDateTimePicker: () => void
-    t: (key: string) => string
+    onDropoffLocationChange?: (location: string) => void
 }
 
 export default function DropoffSection({
@@ -19,29 +19,38 @@ export default function DropoffSection({
     dropoffDateError,
     dropoffTimeError,
     onShowDateTimePicker,
-    t
+    onDropoffLocationChange
 }: DropoffSectionProps) {
     return (
         <View>
-            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 {t("dropOff")}</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", marginBottom: 12 }}>🔵 Drop Off</Text>
 
-            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{t("locations")}</Text>
-            <View style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 6,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                marginBottom: 12,
-                backgroundColor: '#f5f5f5'
-            }}>
-                <Text style={{ fontSize: 12, color: colors.placeholder }}>
-                    {dropoffLocation || "Same as pickup location"}
-                </Text>
-            </View>
+            <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Location</Text>
+            <TextInput
+                value={dropoffLocation}
+                onChangeText={onDropoffLocationChange}
+                placeholder="Enter drop-off location or same as pickup"
+                placeholderTextColor={colors.placeholder}
+                multiline={true}
+                numberOfLines={2}
+                textAlignVertical="top"
+                style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 6,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    marginBottom: 12,
+                    backgroundColor: colors.white,
+                    fontSize: 12,
+                    color: colors.primary,
+                    minHeight: 60,
+                    maxHeight: 100
+                }}
+            />
 
             <Text style={{ fontSize: 12, fontWeight: "600", marginBottom: 6 }}>
-                {t("dateAndTime") || "Date & Time"}
+                Date & Time
             </Text>
             <Pressable
                 onPress={onShowDateTimePicker}

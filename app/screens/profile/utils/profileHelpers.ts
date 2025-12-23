@@ -15,38 +15,51 @@ export const buildSafeUpdateData = (latestData: any, overrides: any = {}) => {
         isCarOwner: latestData?.isCarOwner || false,
         rating: latestData?.rating || 0,
         roleId: latestData?.roleId || 1,
+        isVerified: latestData?.isVerified || false,
+        // IMPORTANT: Preserve the password if it exists in the original data
+        password: latestData?.password || undefined,
     };
-
-    if (latestData?.password) {
-        baseData.password = latestData.password;
-    }
 
     const mergedData = { ...baseData, ...overrides };
 
+    // Remove truly sensitive fields that should never be updated through this method
     const sensitiveFields = [
         'passwordHash',
         'passwordSalt',
         'googleId',
         'isGoogle',
         'refreshToken',
+        'refreshTokens',
         'accessToken',
         'token',
         'tokens',
+        'cars',
+        'invoicesAsCustomer',
+        'invoicesAsVendor',
+        'bookingHistory',
+        'id',
     ];
 
     sensitiveFields.forEach(field => {
         delete mergedData[field];
     });
 
+    // Only remove password-related fields if they're not explicitly being updated
     Object.keys(mergedData).forEach(key => {
-        if (key !== 'password' && (key.toLowerCase().includes('password') || key.toLowerCase().includes('pass'))) {
-            delete mergedData[key];
+        if (key.toLowerCase().includes('password') || key.toLowerCase().includes('pass')) {
+            // Don't delete the password field - we want to preserve it
+            if (key !== 'password' && !overrides.hasOwnProperty(key)) {
+                delete mergedData[key];
+            }
         }
     });
 
-    if (!mergedData.password || mergedData.password === "" || mergedData.password === null) {
-        delete mergedData.password;
-    }
+    // Clean up undefined values to avoid sending them to the server
+    Object.keys(mergedData).forEach(key => {
+        if (mergedData[key] === undefined) {
+            delete mergedData[key];
+        }
+    });
 
     return mergedData;
 };
@@ -76,4 +89,19 @@ export const getAvatarSource = (userData: any, userAvatar: string | undefined) =
 export const getStatusColor = (field: string, fieldValues: any, colors: any) => {
     const emptyFields = ["phone"];
     return emptyFields.includes(field) || !fieldValues[field as keyof typeof fieldValues] ? colors.red : colors.green;
+};
+
+export const getBehaviorScoreColor = (score: number) => {
+    if (score >= 80) return '#10b981'; // Green for excellent behavior
+    if (score >= 60) return '#f59e0b'; // Orange for good behavior
+    if (score >= 40) return '#ef4444'; // Red for poor behavior
+    return '#6b7280'; // Gray for very poor behavior or no score
+};
+
+export const getBehaviorScoreLabel = (score: number) => {
+    if (score >= 80) return 'Excellent';
+    if (score >= 60) return 'Good';
+    if (score >= 40) return 'Fair';
+    if (score > 0) return 'Poor';
+    return 'New User';
 };

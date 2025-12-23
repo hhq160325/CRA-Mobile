@@ -219,9 +219,8 @@ export const locationService = {
         let country = ''
 
         if (responseData) {
-            // TrackAsia API returns formattedAddress or oldFormattedAddress
+            // TrackAsia API returns formattedAddress - only use the main formatted address
             address = responseData.formattedAddress ||
-                responseData.oldFormattedAddress ||
                 responseData.address ||
                 responseData.display_name ||
                 responseData.formatted_address ||

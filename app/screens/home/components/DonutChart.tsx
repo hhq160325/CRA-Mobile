@@ -1,69 +1,159 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, ActivityIndicator} from 'react-native';
-import {colors} from '../../../theme/colors';
-import {scale} from '../../../theme/scale';
-import {carsService} from '../../../../lib/api';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ActivityIndicator } from 'react-native';
+import { colors } from '../../../theme/colors';
+import { scale } from '../../../theme/scale';
+import { bookingsService, carsService } from '../../../../lib/api';
 
 interface ChartDataItem {
-  label: string;
-  value: number;
+  carId: string;
+  carName: string;
+  bookingCount: number;
   color: string;
 }
 
-const categoryColors: Record<string, string> = {
-  Sport: '#1E3A8A',
-  SUV: '#3B82F6',
-  Coupe: '#60A5FA',
-  Sedan: '#93C5FD',
-  Hatchback: '#DBEAFE',
-  MPV: '#BFDBFE',
-  Luxury: '#1E40AF',
-  Electric: '#3B82F6',
-};
+const chartColors = [
+  '#1E3A8A', 
+  '#3B82F6', 
+  '#60A5FA', 
+  '#93C5FD', 
+  '#DBEAFE', 
+];
 
 export default function DonutChart() {
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadCarStatistics();
+    loadTopRentalCars();
   }, []);
 
-  const loadCarStatistics = async () => {
+  const loadTopRentalCars = async () => {
     try {
-      const {data, error} = await carsService.getCars({});
+      console.log(' DonutChart: Loading top rental cars...');
+      console.log(' DonutChart: API URL:', 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Booking/GetAllBookings');
 
-      if (data && data.length > 0) {
-        const categoryCounts: Record<string, number> = {};
+  
+      const bookingsResult = await bookingsService.getAllBookings();
 
-        data.forEach(car => {
-          const category = car.category || 'Other';
-          categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-        });
+      console.log(' DonutChart: Bookings API result:', {
+        hasError: !!bookingsResult.error,
+        hasData: !!bookingsResult.data,
+        dataLength: bookingsResult.data?.length,
+        errorMessage: bookingsResult.error?.message,
+        sampleBooking: bookingsResult.data?.[0]
+      });
 
-        const chartItems: ChartDataItem[] = Object.entries(categoryCounts)
-          .map(([label, value]) => ({
-            label,
-            value,
-            color: categoryColors[label] || '#94A3B8',
-          }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 5);
-
-        setChartData(chartItems);
+      if (bookingsResult.error) {
+        console.error(' DonutChart: Bookings API error:', bookingsResult.error);
+        setLoading(false);
+        return;
       }
+
+      if (!bookingsResult.data || bookingsResult.data.length === 0) {
+        console.log(' DonutChart: No bookings data available - empty array or null');
+        setLoading(false);
+        return;
+      }
+
+      console.log(' DonutChart: Found', bookingsResult.data.length, 'bookings');
+      console.log(' DonutChart: Sample bookings:', bookingsResult.data.slice(0, 3).map(b => ({
+        id: b.id,
+        carId: b.carId,
+        carName: b.carName,
+        status: b.status
+      })));
+
+    
+      const carBookingCounts: Record<string, { count: number; carName?: string }> = {};
+
+      bookingsResult.data.forEach(booking => {
+        let key = booking.carId;
+
+      
+        if (!key && booking.carName) {
+          key = `name_${booking.carName}`;
+        }
+
+        if (key) {
+          if (!carBookingCounts[key]) {
+            carBookingCounts[key] = { count: 0, carName: booking.carName };
+          }
+          carBookingCounts[key].count += 1;
+
+        
+          if (booking.carName && !carBookingCounts[key].carName) {
+            carBookingCounts[key].carName = booking.carName;
+          }
+        }
+      });
+
+      console.log(' DonutChart: Car booking counts:', carBookingCounts);
+
+    
+      const topCars = Object.entries(carBookingCounts)
+        .sort(([, a], [, b]) => b.count - a.count)
+        .slice(0, 5)
+        .map(([key, data]) => ({
+          key,
+          count: data.count,
+          carName: data.carName,
+          isCarId: !key.startsWith('name_')
+        }));
+
+      console.log(' DonutChart: Top cars:', topCars);
+
+  
+      const chartItems: ChartDataItem[] = [];
+
+      for (let i = 0; i < topCars.length; i++) {
+        const { key, count, carName, isCarId } = topCars[i];
+
+        let finalCarName = carName || 'Unknown Car';
+
+     
+        if (isCarId && key) {
+          try {
+            console.log(' DonutChart: Fetching car details for carId:', key);
+            const carResult = await carsService.getCarById(key);
+
+            if (carResult.data) {
+              finalCarName = carResult.data.name || carName || 'Unknown Car';
+              console.log('DonutChart: Got car name from API:', finalCarName);
+            } else {
+              console.log(' DonutChart: No car data returned for:', key);
+            }
+          } catch (err) {
+            console.log(' DonutChart: Error fetching car details for', key, err);
+          }
+        }
+
+        chartItems.push({
+          carId: key,
+          carName: finalCarName,
+          bookingCount: count,
+          color: chartColors[i] || '#94A3B8',
+        });
+      }
+
+      console.log(' DonutChart: Final chart data:', chartItems);
+
+      if (chartItems.length === 0) {
+        console.log(' DonutChart: No chart items created - no valid car data found');
+      }
+
+      setChartData(chartItems);
     } catch (err) {
-      console.error('Error loading car statistics:', err);
+      console.error(' DonutChart: Error loading top rental cars:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const total = chartData.reduce((sum, item) => sum + item.value, 0);
+  const totalBookings = chartData.reduce((sum, item) => sum + item.bookingCount, 0);
 
   if (loading) {
     return (
-      <View style={{alignItems: 'center', paddingVertical: scale(40)}}>
+      <View style={{ alignItems: 'center', paddingVertical: scale(40) }}>
         <ActivityIndicator size="small" color={colors.morentBlue} />
         <Text
           style={{
@@ -79,8 +169,8 @@ export default function DonutChart() {
 
   if (chartData.length === 0) {
     return (
-      <View style={{alignItems: 'center', paddingVertical: scale(40)}}>
-        <Text style={{color: colors.placeholder, fontSize: scale(14)}}>
+      <View style={{ alignItems: 'center', paddingVertical: scale(40) }}>
+        <Text style={{ color: colors.placeholder, fontSize: scale(14) }}>
           No data available
         </Text>
       </View>
@@ -88,7 +178,7 @@ export default function DonutChart() {
   }
 
   return (
-    <View style={{alignItems: 'center'}}>
+    <View style={{ alignItems: 'center' }}>
       <View
         style={{
           width: scale(150),
@@ -102,14 +192,14 @@ export default function DonutChart() {
           borderColor: '#3563E9',
           position: 'relative',
         }}>
-        <View style={{alignItems: 'center'}}>
+        <View style={{ alignItems: 'center' }}>
           <Text
             style={{
               fontSize: scale(24),
               fontWeight: '700',
               color: colors.primary,
             }}>
-            {total.toLocaleString()}
+            {totalBookings.toLocaleString()}
           </Text>
           <Text
             style={{
@@ -117,15 +207,15 @@ export default function DonutChart() {
               color: colors.placeholder,
               marginTop: scale(4),
             }}>
-            Rental Car
+            Total Bookings
           </Text>
         </View>
       </View>
 
-      <View style={{width: '100%'}}>
+      <View style={{ width: '100%' }}>
         {chartData.map(item => (
           <View
-            key={item.label}
+            key={item.carId}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -147,7 +237,7 @@ export default function DonutChart() {
                 fontWeight: '500',
                 flex: 1,
               }}>
-              {item.label}
+              {item.carName}
             </Text>
             <Text
               style={{
@@ -155,7 +245,7 @@ export default function DonutChart() {
                 color: colors.placeholder,
                 fontWeight: '600',
               }}>
-              {item.value.toLocaleString()}
+              {item.bookingCount.toLocaleString()}
             </Text>
           </View>
         ))}

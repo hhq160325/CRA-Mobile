@@ -1,7 +1,12 @@
 import React from "react"
-import { View, Text, Image, StyleSheet } from "react-native"
+import { View, Text, Image, StyleSheet, Dimensions } from "react-native"
 import { colors } from "../../../theme/colors"
 import { scale, verticalScale } from "../../../theme/scale"
+
+const { width: screenWidth } = Dimensions.get('window')
+
+const cardWidth = screenWidth - scale(32)
+const imageHeight = Math.min(cardWidth * 0.5, verticalScale(200))
 
 interface BookingCardProps {
     carImage: string
@@ -10,7 +15,7 @@ interface BookingCardProps {
     bookingId: string
     bookingNumber?: string
     customerName: string
-    amount: number
+    amount: number | string | null | undefined
     statusText: string
     statusColor: string
 }
@@ -39,7 +44,7 @@ export default function BookingCard({
                         <Text style={styles.licensePlate}>License: {carLicensePlate}</Text>
                     )}
                     <Text style={styles.bookingId}>
-                        Booking ID: {bookingNumber || "N/A"}
+                        Booking ID: {bookingNumber || bookingId.substring(0, 8) + "..."}
                     </Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
@@ -54,7 +59,27 @@ export default function BookingCard({
                 </View>
                 <View style={styles.infoItem}>
                     <Text style={styles.infoLabel}>AMOUNT</Text>
-                    <Text style={styles.infoValue}>${amount.toFixed(2)}</Text>
+                    <Text style={styles.infoValue}>
+                        {(() => {
+                            // console.log('BookingCard amount:', amount, typeof amount);
+                            // Handle different amount data types
+                            if (amount === null || amount === undefined || amount === '') {
+                                return 'N/A';
+                            }
+                            const numAmount = Number(amount);
+                            // Check if conversion resulted in a valid number
+                            if (isNaN(numAmount)) {
+                                return 'N/A';
+                            }
+                            // Display the amount (including 0) with proper VND formatting
+                            return numAmount.toLocaleString('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                        })()}
+                    </Text>
                 </View>
             </View>
         </View>
@@ -75,7 +100,7 @@ const styles = StyleSheet.create({
     },
     carImage: {
         width: "100%",
-        height: verticalScale(180),
+        height: imageHeight,
         backgroundColor: "#e5e7eb",
     },
     cardHeader: {

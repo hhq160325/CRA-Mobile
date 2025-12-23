@@ -1,14 +1,12 @@
 import { View, Text } from "react-native"
 import { useState, useEffect } from "react"
-import { colors } from "../../../../theme/colors"
 import { parkLotService, type ParkLot } from "../../../../../lib/api"
-import { useLanguage } from "../../../../../lib/language-context"
 import CustomDateTimePicker from "../CustomDateTimePicker"
 import ParkLotModal from "./ParkLotModal"
 import PickupSection from "./PickupSection"
 import DropoffSection from "./DropoffSection"
-import DistanceCard from "./DistanceCard"
 import type { RentalInfoStepProps } from "./types"
+import { styles } from "./styles"
 
 export default function RentalInfoStep({
     pickupLocation,
@@ -37,48 +35,41 @@ export default function RentalInfoStep({
     const [parkLots, setParkLots] = useState<ParkLot[]>([])
     const [loading, setLoading] = useState(false)
     const [showPickupModal, setShowPickupModal] = useState(false)
-    const [calculatingDistance, setCalculatingDistance] = useState(false)
     const [showCustomPickupPicker, setShowCustomPickupPicker] = useState(false)
     const [showCustomDropoffPicker, setShowCustomDropoffPicker] = useState(false)
     const [selectedParkLot, setSelectedParkLot] = useState<ParkLot | null>(null)
-    const { t } = useLanguage()
 
     useEffect(() => {
         fetchParkLots()
     }, [])
 
-   
+
     useEffect(() => {
         if (pickupLocation && pickupMode === "parklot") {
-          
+
             onDropoffLocationChange(pickupLocation)
         }
     }, [pickupLocation, pickupMode])
 
 
-    useEffect(() => {
-        const shouldCalculate =
-            pickupMode === "custom" &&
-            selectedParkLot &&
-            pickupLocation.trim().length > 5 &&
-            onCalculateDistance
 
-        if (shouldCalculate) {
-            const timer = setTimeout(async () => {
-                setCalculatingDistance(true)
-                await onCalculateDistance(selectedParkLot.address || selectedParkLot.name)
-                setCalculatingDistance(false)
-            }, 1500)
-
-            return () => clearTimeout(timer)
-        }
-    }, [pickupLocation, pickupMode, selectedParkLot, onCalculateDistance])
 
     const fetchParkLots = async () => {
         setLoading(true)
         const result = await parkLotService.getAllParkLots()
         if (result.data) {
             setParkLots(result.data)
+
+
+            if (!selectedParkLot && !pickupLocation) {
+                const thuDucLot = result.data.find(lot => lot.name === "ThuDucLot")
+                if (thuDucLot) {
+                    setSelectedParkLot(thuDucLot)
+                    const parkLotAddress = thuDucLot.address || thuDucLot.name
+                    onPickupLocationChange(parkLotAddress)
+                    onDropoffLocationChange(parkLotAddress)
+                }
+            }
         }
         setLoading(false)
     }
@@ -89,20 +80,20 @@ export default function RentalInfoStep({
 
         if (pickupMode === "parklot") {
             onPickupLocationChange(parkLotAddress)
-            
+
             onDropoffLocationChange(parkLotAddress)
         }
         setShowPickupModal(false)
     }
 
     return (
-        <View style={{ paddingHorizontal: 16 }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 4 }}>{t("rentalInfo")}</Text>
-            <Text style={{ fontSize: 12, color: colors.placeholder, marginBottom: 16 }}>
-                {t("rentalInfoDesc")}
+        <View style={styles.container}>
+            <Text style={styles.title}>Rental Information</Text>
+            <Text style={styles.description}>
+                Please specify your pick-up and drop-off location and date & time.
             </Text>
 
-            <View style={{ backgroundColor: colors.white, borderRadius: 8, padding: 12 }}>
+            <View style={styles.contentCard}>
                 <PickupSection
                     pickupMode={pickupMode}
                     pickupLocation={pickupLocation}
@@ -115,7 +106,6 @@ export default function RentalInfoStep({
                     onPickupLocationChange={onPickupLocationChange}
                     onShowParkLotModal={() => setShowPickupModal(true)}
                     onShowDateTimePicker={() => setShowCustomPickupPicker(true)}
-                    t={t}
                 />
 
                 <DropoffSection
@@ -125,7 +115,7 @@ export default function RentalInfoStep({
                     dropoffDateError={dropoffDateError}
                     dropoffTimeError={dropoffTimeError}
                     onShowDateTimePicker={() => setShowCustomDropoffPicker(true)}
-                    t={t}
+                    onDropoffLocationChange={onDropoffLocationChange}
                 />
             </View>
 
@@ -134,8 +124,8 @@ export default function RentalInfoStep({
                 visible={showPickupModal}
                 loading={loading}
                 parkLots={parkLots}
-                title={t("selectPickupLocation")}
-                emptyText={t("noParkLots")}
+                title="Select Pickup Location"
+                emptyText="No park lots available"
                 onClose={() => setShowPickupModal(false)}
                 onSelect={handleSelectPickupParkLot}
             />
@@ -155,7 +145,8 @@ export default function RentalInfoStep({
                 initialDate={pickupDate ? new Date(pickupDate) : new Date()}
                 initialTime={pickupTime || '06:00'}
                 minimumDate={new Date()}
-                title={t("selectPickupDateTime") || "Select Pickup Date & Time"}
+                title="Select Pickup Date & Time"
+                isPickup={true}
             />
 
             {/* Custom Dropoff Date & Time Picker */}
@@ -173,17 +164,11 @@ export default function RentalInfoStep({
                 initialDate={dropoffDate ? new Date(dropoffDate) : pickupDate ? new Date(pickupDate) : new Date()}
                 initialTime={dropoffTime || '23:00'}
                 minimumDate={pickupDate ? new Date(pickupDate) : new Date()}
-                title={t("selectDropoffDateTime") || "Select Dropoff Date & Time"}
+                title="Select Dropoff Date & Time"
+                isPickup={false}
             />
 
-            {/* Distance Display */}
-            {pickupMode === "custom" && selectedParkLot && (
-                <DistanceCard
-                    distanceInKm={distanceInKm}
-                    calculatingDistance={calculatingDistance}
-                    t={t}
-                />
-            )}
+
         </View>
     )
 }

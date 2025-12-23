@@ -7,12 +7,12 @@ export function useHeaderNavigation() {
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
     const { user, logout } = useAuth()
 
-    const handleLogout = () => {
-        logout()
-      
+    const handleLogout = async () => {
+        await logout()
+
         navigation.reset({
             index: 0,
-            routes: [{ name: "authStack" as any }],
+            routes: [{ name: "auth" as any }],
         })
     }
 
@@ -22,35 +22,49 @@ export function useHeaderNavigation() {
         console.log("Header navigation:", { screen, isStaff, userRole: user?.role, roleId: user?.roleId })
 
         try {
-            if (screen === "Profile") {
-                console.log("Navigating to Profile")
-                navigation.navigate("Profile" as any)
-            } else if (screen === "Bookings") {
-                console.log("Navigating to Bookings")
-                navigation.navigate("Bookings" as any)
-            } else if (screen === "PaymentHistory") {
+            // For screens that are in AppStack, use direct navigation
+            if (screen === "PaymentHistory") {
                 console.log("Navigating to PaymentHistory")
                 navigation.navigate("PaymentHistory" as any)
-            } else if (screen === "Home") {
-                console.log("Navigating to Home")
-                navigation.reset({
-                    index: 0,
-                    routes: [
-                        {
-                            name: (isStaff ? "staffStack" : "tabStack") as any,
-                            state: {
-                                routes: [{ name: "Home" }],
-                            },
-                        },
-                    ],
-                })
+                return
             }
-        } catch (error) {
-            console.error("Navigation error:", error)
-            console.log("Resetting to", isStaff ? "staffStack" : "tabStack")
+
+            // For all other screens, reset to the auth level with the correct stack and screen
+            console.log(`Navigating to ${screen}`)
             navigation.reset({
                 index: 0,
-                routes: [{ name: (isStaff ? "staffStack" : "tabStack") as any }],
+                routes: [
+                    {
+                        name: "auth" as any,
+                        state: {
+                            routes: [
+                                {
+                                    name: (isStaff ? "staffStack" : "tabStack") as any,
+                                    state: {
+                                        routes: [{ name: screen as any }],
+                                        index: 0,
+                                    },
+                                },
+                            ],
+                            index: 0,
+                        },
+                    },
+                ],
+            })
+        } catch (error) {
+            console.error("Navigation error:", error)
+            console.log("Fallback: Resetting to auth with default stack")
+            navigation.reset({
+                index: 0,
+                routes: [
+                    {
+                        name: "auth" as any,
+                        state: {
+                            routes: [{ name: (isStaff ? "staffStack" : "tabStack") as any }],
+                            index: 0,
+                        },
+                    },
+                ],
             })
         }
     }

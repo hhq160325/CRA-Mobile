@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { View, Text, ActivityIndicator, Pressable, ScrollView } from "react-native"
-import MapViewComponent, { MapMarker } from "../../components/Map/MapView"
+import { View, Text, ActivityIndicator, Pressable, ScrollView, Linking, Alert } from "react-native"
 import { locationService } from "../../../lib/api"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
@@ -20,12 +19,18 @@ export default function CarMapRouteScreen() {
     const [loading, setLoading] = useState(true)
     const [chargingStations, setChargingStations] = useState<Array<{ id: string; latitude: number; longitude: number; name: string }>>([])
     const [routeDistance, setRouteDistance] = useState<number>(0)
+    const [pickupCoords, setPickupCoords] = useState<{ latitude: number; longitude: number } | null>(null)
+    const [dropoffCoords, setDropoffCoords] = useState<{ latitude: number; longitude: number } | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
-    const params = route.params
-
-
-    const pickupCoords = { latitude: 10.8231, longitude: 106.6297 }
-    const dropoffCoords = { latitude: 10.7769, longitude: 106.7009 }
+    const params = route.params || {
+        pickupLocation: 'Pickup Location',
+        dropoffLocation: 'Dropoff Location',
+        pickupDate: new Date().toISOString().split('T')[0],
+        pickupTime: '10:00',
+        dropoffDate: new Date().toISOString().split('T')[0],
+        dropoffTime: '10:00',
+    }
 
     useEffect(() => {
         loadRouteData()
@@ -33,78 +38,134 @@ export default function CarMapRouteScreen() {
 
     const loadRouteData = async () => {
         setLoading(true)
+        setError(null)
 
+        try {
+            // Get coordinates for pickup location
+            console.log('Getting coordinates for pickup location:', params.pickupLocation)
+            const pickupResult = await locationService.getCoordinatesFromAddress(params.pickupLocation)
 
-        const distance = locationService.calculateDistance(
-            pickupCoords.latitude,
-            pickupCoords.longitude,
-            dropoffCoords.latitude,
-            dropoffCoords.longitude
-        )
-        setRouteDistance(distance)
+            if (pickupResult.error || !pickupResult.data) {
+                console.error('Failed to get pickup coordinates:', pickupResult.error)
+                setError(`Could not find pickup location: ${params.pickupLocation}`)
+                setLoading(false)
+                return
+            }
 
+            // Get coordinates for dropoff location
+            console.log('Getting coordinates for dropoff location:', params.dropoffLocation)
+            const dropoffResult = await locationService.getCoordinatesFromAddress(params.dropoffLocation)
 
-        const mockStations = [
-            {
-                id: "station1",
-                latitude: 10.8100,
-                longitude: 106.6500,
-                name: "VinFast Charging Station",
-            },
-            {
-                id: "station2",
-                latitude: 10.7950,
-                longitude: 106.6700,
-                name: "EV Point District 2",
-            },
-            {
-                id: "station3",
-                latitude: 10.7850,
-                longitude: 106.6900,
-                name: "Green Energy Station",
-            },
-        ]
-        setChargingStations(mockStations)
+            if (dropoffResult.error || !dropoffResult.data) {
+                console.error('Failed to get dropoff coordinates:', dropoffResult.error)
+                setError(`Could not find dropoff location: ${params.dropoffLocation}`)
+                setLoading(false)
+                return
+            }
 
-        setLoading(false)
+            const pickupCoordinates = {
+                latitude: parseFloat(pickupResult.data.latitude.toString()),
+                longitude: parseFloat(pickupResult.data.longitude.toString())
+            }
+
+            const dropoffCoordinates = {
+                latitude: parseFloat(dropoffResult.data.latitude.toString()),
+                longitude: parseFloat(dropoffResult.data.longitude.toString())
+            }
+
+            setPickupCoords(pickupCoordinates)
+            setDropoffCoords(dropoffCoordinates)
+
+            // Calculate distance between actual coordinates
+            const distance = locationService.calculateDistance(
+                pickupCoordinates.latitude,
+                pickupCoordinates.longitude,
+                dropoffCoordinates.latitude,
+                dropoffCoordinates.longitude
+            )
+            setRouteDistance(distance)
+
+            console.log('Route loaded successfully:', {
+                pickup: pickupCoordinates,
+                dropoff: dropoffCoordinates,
+                distance: distance
+            })
+
+            // Generate charging stations along the route (mock data for now)
+            const mockStations = [
+                {
+                    id: "station1",
+                    latitude: (pickupCoordinates.latitude + dropoffCoordinates.latitude) / 2 + 0.01,
+                    longitude: (pickupCoordinates.longitude + dropoffCoordinates.longitude) / 2 + 0.01,
+                    name: "VinFast Charging Station",
+                },
+                {
+                    id: "station2",
+                    latitude: (pickupCoordinates.latitude + dropoffCoordinates.latitude) / 2,
+                    longitude: (pickupCoordinates.longitude + dropoffCoordinates.longitude) / 2,
+                    name: "EV Point Midway",
+                },
+                {
+                    id: "station3",
+                    latitude: (pickupCoordinates.latitude + dropoffCoordinates.latitude) / 2 - 0.01,
+                    longitude: (pickupCoordinates.longitude + dropoffCoordinates.longitude) / 2 - 0.01,
+                    name: "Green Energy Station",
+                },
+            ]
+            setChargingStations(mockStations)
+
+        } catch (err) {
+            console.error('Error loading route data:', err)
+            setError('Failed to load route information')
+        } finally {
+            setLoading(false)
+        }
     }
 
 
-    const routeCoordinates = [
-        pickupCoords,
-        ...chargingStations.map(station => ({ latitude: station.latitude, longitude: station.longitude })),
-        dropoffCoords,
-    ]
+    const openRouteInNativeMap = () => {
+        if (pickupCoords && dropoffCoords) {
+            const url = `google.navigation:q=${dropoffCoords.latitude},${dropoffCoords.longitude}&saddr=${pickupCoords.latitude},${pickupCoords.longitude}`
+            const iosUrl = `maps:daddr=${dropoffCoords.latitude},${dropoffCoords.longitude}&saddr=${pickupCoords.latitude},${pickupCoords.longitude}`
 
-    const markers: MapMarker[] = [
+            Linking.canOpenURL(iosUrl).then(supported => {
+                if (supported) {
+                    Linking.openURL(iosUrl)
+                } else {
+                    Linking.canOpenURL(url).then(androidSupported => {
+                        if (androidSupported) {
+                            Linking.openURL(url)
+                        } else {
+                            // Fallback to web Google Maps
+                            const webUrl = `https://www.google.com/maps/dir/${pickupCoords.latitude},${pickupCoords.longitude}/${dropoffCoords.latitude},${dropoffCoords.longitude}`
+                            Linking.openURL(webUrl)
+                        }
+                    })
+                }
+            })
+        } else {
+            Alert.alert('Error', 'Route coordinates not available')
+        }
+    }
 
-        {
-            id: "pickup",
-            latitude: pickupCoords.latitude,
-            longitude: pickupCoords.longitude,
-            title: `📍 ${params.pickupLocation}`,
-            description: `Pickup: ${params.pickupDate} ${params.pickupTime}`,
-            type: "user" as const,
-        },
+    const openLocationInMap = (latitude: number, longitude: number, name: string) => {
+        const url = `geo:${latitude},${longitude}?q=${latitude},${longitude}(${name})`
+        const iosUrl = `maps:${latitude},${longitude}?q=${name}`
 
-        {
-            id: "dropoff",
-            latitude: dropoffCoords.latitude,
-            longitude: dropoffCoords.longitude,
-            title: `🏁 ${params.dropoffLocation}`,
-            description: `Dropoff: ${params.dropoffDate} ${params.dropoffTime}`,
-            type: "car" as const,
-        },
-
-        ...chargingStations.map((station) => ({
-            id: station.id,
-            latitude: station.latitude,
-            longitude: station.longitude,
-            title: `⚡ ${station.name}`,
-            description: "EV Charging Available",
-            type: "car" as const,
-        })),
-    ]
+        Linking.canOpenURL(iosUrl).then(supported => {
+            if (supported) {
+                Linking.openURL(iosUrl)
+            } else {
+                Linking.canOpenURL(url).then(androidSupported => {
+                    if (androidSupported) {
+                        Linking.openURL(url)
+                    } else {
+                        Alert.alert('Error', 'No map application found')
+                    }
+                })
+            }
+        })
+    }
 
     if (loading) {
         return (
@@ -113,6 +174,25 @@ export default function CarMapRouteScreen() {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles.loadingText}>Loading route...</Text>
+                </View>
+            </View>
+        )
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <Header />
+                <View style={styles.loadingContainer}>
+                    <MaterialIcons name="error-outline" size={scale(48)} color={colors.placeholder} />
+                    <Text style={styles.loadingText}>{error}</Text>
+                    <Pressable
+                        style={[styles.actionButton, styles.primaryButton, { marginTop: scale(16) }]}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <MaterialIcons name="arrow-back" size={scale(20)} color="white" />
+                        <Text style={styles.primaryButtonText}>Go Back</Text>
+                    </Pressable>
                 </View>
             </View>
         )
@@ -140,23 +220,55 @@ export default function CarMapRouteScreen() {
                 </View>
             </View>
 
-            {/* Map */}
-            <MapViewComponent
-                initialRegion={{
-                    latitude: (pickupCoords.latitude + dropoffCoords.latitude) / 2,
-                    longitude: (pickupCoords.longitude + dropoffCoords.longitude) / 2,
-                    latitudeDelta: 0.15,
-                    longitudeDelta: 0.15,
-                }}
-                markers={markers}
-                route={{
-                    coordinates: routeCoordinates,
-                    color: "#3B82F6",
-                    width: 4,
-                }}
-                showUserLocation={false}
-                height={400}
-            />
+            {/* Route Locations */}
+            <View style={styles.locationsContainer}>
+                <View style={styles.locationCard}>
+                    <View style={styles.locationIcon}>
+                        <MaterialIcons name="my-location" size={scale(20)} color={colors.morentBlue} />
+                    </View>
+                    <View style={styles.locationInfo}>
+                        <Text style={styles.locationTitle}>Pickup Location</Text>
+                        <Text style={styles.locationAddress}>{params.pickupLocation}</Text>
+                        <Text style={styles.locationTime}>{params.pickupDate} at {params.pickupTime}</Text>
+                    </View>
+                    <Pressable
+                        style={styles.locationButton}
+                        onPress={() => pickupCoords && openLocationInMap(pickupCoords.latitude, pickupCoords.longitude, params.pickupLocation)}
+                    >
+                        <MaterialIcons name="place" size={scale(18)} color={colors.morentBlue} />
+                    </Pressable>
+                </View>
+
+                <View style={styles.routeLine} />
+
+                <View style={styles.locationCard}>
+                    <View style={styles.locationIcon}>
+                        <MaterialIcons name="flag" size={scale(20)} color="#ef4444" />
+                    </View>
+                    <View style={styles.locationInfo}>
+                        <Text style={styles.locationTitle}>Dropoff Location</Text>
+                        <Text style={styles.locationAddress}>{params.dropoffLocation}</Text>
+                        <Text style={styles.locationTime}>{params.dropoffDate} at {params.dropoffTime}</Text>
+                    </View>
+                    <Pressable
+                        style={styles.locationButton}
+                        onPress={() => dropoffCoords && openLocationInMap(dropoffCoords.latitude, dropoffCoords.longitude, params.dropoffLocation)}
+                    >
+                        <MaterialIcons name="place" size={scale(18)} color={colors.morentBlue} />
+                    </Pressable>
+                </View>
+            </View>
+
+            {/* Navigation Button */}
+            <View style={styles.navigationContainer}>
+                <Pressable
+                    style={styles.navigationButton}
+                    onPress={openRouteInNativeMap}
+                >
+                    <MaterialIcons name="navigation" size={scale(24)} color="white" />
+                    <Text style={styles.navigationButtonText}>Start Navigation</Text>
+                </Pressable>
+            </View>
 
             {/* Charging Stations List */}
             <View style={styles.stationsContainer}>
@@ -171,7 +283,12 @@ export default function CarMapRouteScreen() {
                                 <Text style={styles.stationName}>{station.name}</Text>
                                 <Text style={styles.stationDetails}>Fast charging available • Open 24/7</Text>
                             </View>
-                            <MaterialIcons name="chevron-right" size={scale(24)} color={colors.placeholder} />
+                            <Pressable
+                                style={styles.stationViewButton}
+                                onPress={() => openLocationInMap(station.latitude, station.longitude, station.name)}
+                            >
+                                <MaterialIcons name="place" size={scale(18)} color={colors.morentBlue} />
+                            </Pressable>
                         </View>
                     ))}
                 </ScrollView>
@@ -189,14 +306,40 @@ export default function CarMapRouteScreen() {
                 <Pressable
                     style={[styles.actionButton, styles.primaryButton]}
                     onPress={() => {
-                        // Navigate back to main tab stack (home screen)
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: "tabStack" as any }],
-                        })
+                        console.log('Browse Cars button pressed - navigating to AllCars with Electric filter');
+                        try {
+                            // Navigate to AllCars with electric filter
+                            navigation.navigate('AllCars' as any, { fuelType: 'Electric' });
+                        } catch (error) {
+                            console.error('Navigation error:', error);
+                            // Fallback: Navigate to root and then to AllCars
+                            navigation.reset({
+                                index: 0,
+                                routes: [
+                                    {
+                                        name: 'auth' as any,
+                                        state: {
+                                            routes: [
+                                                {
+                                                    name: 'tabStack' as any,
+                                                    state: {
+                                                        routes: [
+                                                            {
+                                                                name: 'AllCars' as any,
+                                                                params: { fuelType: 'Electric' }
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            });
+                        }
                     }}
                 >
-                    <MaterialIcons name="directions-car" size={scale(20)} color="white" />
+                    <MaterialIcons name="electric-car" size={scale(20)} color="white" />
                     <Text style={styles.primaryButtonText}>Browse Cars</Text>
                 </Pressable>
             </View>

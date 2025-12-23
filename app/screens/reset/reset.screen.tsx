@@ -7,59 +7,15 @@ import InputComponent from '../../components/input/component';
 import Button from '../../components/button/component';
 import { navigate } from '../../navigators/navigation-utilities';
 import { userService } from '../../../lib/api';
-import { validateEmail } from '../singin/signin.validation';
 
 const ResetScreen = () => {
   const styles = createStyles();
   const { logo_black } = assets;
-  const [step, setStep] = useState<'email' | 'phone'>('email');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [maskedPhone, setMaskedPhone] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleEmailSubmit = async () => {
-    // Validate email
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.valid) {
-      Alert.alert('Invalid Email', emailValidation.error || 'Please enter a valid email');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      console.log('Checking if email exists:', email);
-
-      // Find user by email from GetAllUsers API
-      const { data: user, error } = await userService.findUserByEmail(email);
-
-      if (error || !user) {
-        console.error('Email check error:', error);
-        Alert.alert('Error', 'This email is not registered in our system');
-      } else {
-        console.log('Email exists, user found:', {
-          email: user.email,
-          phone: user.phoneNumber,
-        });
-
-        // Mask the phone number (e.g., 0931234519 -> 093*****19)
-        const masked = userService.maskPhoneNumber(user.phoneNumber);
-        setMaskedPhone(masked);
-
-        console.log('Masked phone:', masked);
-
-        // Move to phone verification step
-        setStep('phone');
-      }
-    } catch (err: any) {
-      console.error('Email check exception:', err);
-      Alert.alert('Error', 'Unable to verify email. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePhoneSubmit = async () => {
+  const handlePhoneVerification = async () => {
     if (!phone.trim()) {
       Alert.alert('Error', 'Please enter your phone number');
       return;
@@ -87,37 +43,48 @@ const ResetScreen = () => {
     try {
       console.log('Verifying phone number:', cleanPhone);
 
-      // Get user again to verify phone matches
-      const { data: user, error } = await userService.findUserByEmail(email);
 
-      if (error || !user) {
-        console.error('User not found');
+      const { data: users, error } = await userService.getAllUsers();
+
+      if (error || !users) {
+        console.error('Failed to get users:', error);
         Alert.alert('Error', 'Unable to verify phone number. Please try again.');
         return;
       }
 
-      // Check if phone matches
-      if (user.phoneNumber !== cleanPhone) {
-        console.error('Phone mismatch:', {
-          entered: cleanPhone,
-          expected: user.phoneNumber,
-        });
-        Alert.alert('Error', 'Phone number does not match our records. Please try again.');
-      } else {
-        console.log('Phone verified successfully');
 
-        // Navigate to OTP screen to enter verification code
-        Alert.alert(
-          'Success',
-          'Phone number verified! A verification code will be sent to your email.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigate('OtpScreen', { email, phone: cleanPhone, type: 'reset' } as any),
-            },
-          ]
-        );
+      const user = users.find(u => u.phoneNumber === cleanPhone);
+
+      if (!user) {
+        console.error('Phone number not found:', cleanPhone);
+        Alert.alert('Error', 'This phone number is not registered in our system');
+        return;
       }
+
+      console.log('Phone verified successfully, user found:', {
+        email: user.email,
+        phone: user.phoneNumber,
+      });
+
+
+      setUserEmail(user.email);
+
+
+      Alert.alert(
+        'Phone Verified',
+        'Phone number verified successfully! You can now reset your password.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigate('OtpScreen', {
+              email: user.email,
+              phone: cleanPhone,
+              type: 'reset',
+              skipOtp: true
+            } as any),
+          },
+        ]
+      );
     } catch (err: any) {
       console.error('Phone verification exception:', err);
       Alert.alert('Error', err.message || 'Unable to verify phone number');
@@ -125,6 +92,8 @@ const ResetScreen = () => {
       setLoading(false);
     }
   };
+
+
 
   return (
     <View style={styles.container}>
@@ -139,53 +108,21 @@ const ResetScreen = () => {
               Reset your password
             </Text>
             {renderMarginTop(12)}
-            {step === 'email' ? (
-              <>
-                <Text style={styles.infoText}>
-                  Enter your Gmail address to reset your password
-                </Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.infoText}>
-                  To verify your identity, please enter your phone number
-                </Text>
-                {maskedPhone && (
-                  <>
-                    {renderMarginTop(8)}
-                    <Text style={[styles.infoText, { fontWeight: 'bold' }]}>
-                      Hint: {maskedPhone}
-                    </Text>
-                  </>
-                )}
-              </>
-            )}
+            <Text style={styles.infoText}>
+              Enter your phone number to verify your identity and reset your password
+            </Text>
           </View>
           <View style={styles.inputContainer}>
-            {step === 'email' ? (
-              <InputComponent
-                onChangeText={setEmail}
-                placeholder={'Email address'}
-              />
-            ) : (
-              <>
-                <View style={{ opacity: 0.6 }}>
-                  <InputComponent
-                    onChangeText={() => { }}
-                    placeholder={email}
-                  />
-                </View>
-                <InputComponent
-                  onChangeText={setPhone}
-                  placeholder={'Phone Number (10 digits)'}
-                />
-              </>
-            )}
+            <InputComponent
+              onChangeText={setPhone}
+              placeholder={'Phone Number (10 digits)'}
+              keyboardType="numeric"
+            />
           </View>
           {renderMarginTop(28)}
           <Button
-            onPress={step === 'email' ? handleEmailSubmit : handlePhoneSubmit}
-            text={loading ? 'Verifying...' : 'Continue'}
+            onPress={handlePhoneVerification}
+            text={loading ? 'Verifying...' : 'Verify Phone Number'}
             textStyles={styles.buttonText}
             buttonStyles={loading ? { opacity: 0.7 } : undefined}
           />
@@ -196,17 +133,6 @@ const ResetScreen = () => {
             </View>
           )}
           {renderMarginTop(28)}
-          {step === 'phone' && (
-            <Text
-              onPress={() => {
-                setStep('email');
-                setPhone('');
-                setMaskedPhone('');
-              }}
-              style={[styles.dontHaveText, styles.textCenter]}>
-              Back to email
-            </Text>
-          )}
           {renderMarginTop(12)}
           <Text
             onPress={() => navigate('SignInScreen')}

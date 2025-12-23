@@ -1,11 +1,12 @@
-import {useState, useEffect} from 'react';
-import {bookingsService} from '../../../../lib/api/services/bookings.service';
-import {carsService} from '../../../../lib/api/services/cars.service';
-import {userService} from '../../../../lib/api/services/user.service';
-import {scheduleService} from '../../../../lib/api/services/schedule.service';
+import { useState, useEffect } from 'react';
+import { bookingsService } from '../../../../lib/api/services/bookings.service';
+import { carsService } from '../../../../lib/api/services/cars.service';
+import { userService } from '../../../../lib/api/services/user.service';
+import { scheduleService } from '../../../../lib/api/services/schedule.service';
 
 interface BookingDetails {
   id: string;
+  bookingNumber?: string; // Add bookingNumber field
   carName: string;
   carModel: string;
   carLicensePlate: string;
@@ -24,7 +25,12 @@ export function usePickupConfirm(bookingId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAlreadyCheckedIn, setIsAlreadyCheckedIn] = useState(false);
+  const [isAlreadyCheckedOut, setIsAlreadyCheckedOut] = useState(false);
   const [existingCheckInData, setExistingCheckInData] = useState<{
+    images: string[];
+    description: string;
+  } | null>(null);
+  const [existingCheckOutData, setExistingCheckOutData] = useState<{
     images: string[];
     description: string;
   } | null>(null);
@@ -34,19 +40,47 @@ export function usePickupConfirm(bookingId: string) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching booking details for:', bookingId);
+        // console.log('Fetching booking details for:', bookingId);
 
-        const checkInResult = await scheduleService.getCheckInImages(bookingId);
+        // Check both pickup (check-in) and return (check-out) status
+        const [checkInResult, checkOutResult] = await Promise.all([
+          scheduleService.getCheckInOutInfo(bookingId, true),  // Check pickup status
+          scheduleService.getCheckInOutInfo(bookingId, false)  // Check return status
+        ]);
+
+        // console.log(' Check-in result:', {
+        //   hasData: !!checkInResult.data,
+        //   hasError: !!checkInResult.error,
+        //   imagesCount: checkInResult.data?.images.length || 0,
+        //   description: checkInResult.data?.description || '',
+        // });
+
+        // console.log(' Check-out result:', {
+        //   hasData: !!checkOutResult.data,
+        //   hasError: !!checkOutResult.error,
+        //   imagesCount: checkOutResult.data?.images.length || 0,
+        //   description: checkOutResult.data?.description || '',
+        // });
+
+        // Handle pickup status
         if (checkInResult.data && checkInResult.data.images.length > 0) {
-          console.log('✅ Check-in data found:', checkInResult.data);
+          // console.log(' Check-in data found - pickup already completed');
           setIsAlreadyCheckedIn(true);
           setExistingCheckInData(checkInResult.data);
           setInitialDescription(checkInResult.data.description);
         } else {
-          console.log(
-            'ℹ️ No check-in data found, proceeding with check-in flow',
-          );
+          // console.log(' No check-in data found, proceeding with check-in flow');
           setIsAlreadyCheckedIn(false);
+        }
+
+        // Handle return status
+        if (checkOutResult.data && checkOutResult.data.images.length > 0) {
+          // console.log(' Check-out data found - return already completed');
+          setIsAlreadyCheckedOut(true);
+          setExistingCheckOutData(checkOutResult.data);
+        } else {
+          // console.log(' No check-out data found');
+          setIsAlreadyCheckedOut(false);
         }
 
         const bookingResult = await bookingsService.getBookingById(bookingId);
@@ -57,6 +91,21 @@ export function usePickupConfirm(bookingId: string) {
         }
 
         const bookingData = bookingResult.data;
+
+        // Debug logging for bookingNumber
+        // console.log('🔍 usePickupConfirm: Raw booking data:', JSON.stringify(bookingData, null, 2));
+        // console.log('🔍 usePickupConfirm: bookingNumber field:', bookingData.bookingNumber);
+        // console.log('🔍 usePickupConfirm: All booking keys:', Object.keys(bookingData));
+
+        // Check for alternative field names that might contain booking number
+        const possibleBookingNumberFields = [
+          'bookingNumber', 'bookingNo', 'bookingId', 'bookNum', 'number', 'code'
+        ];
+        possibleBookingNumberFields.forEach(field => {
+          if ((bookingData as any)[field]) {
+            // console.log(`🔍 usePickupConfirm: Found ${field}:`, (bookingData as any)[field]);
+          }
+        });
 
         let carName = 'Unknown Car';
         let carModel = '';
@@ -84,8 +133,55 @@ export function usePickupConfirm(bookingId: string) {
           }
         }
 
+        // Try to get amount from multiple sources
+        let amount = bookingData.totalPrice || 0;
+
+        // If totalPrice is 0, try to get from raw booking data
+        if (amount === 0) {
+          const rawBooking = bookingResult.data as any; // Use any to access raw API fields
+          amount = rawBooking.invoice?.amount ||
+            rawBooking.bookingFee ||
+            rawBooking.carRentPrice ||
+            0;
+          // console.log(' usePickupConfirm: fallback amount sources:', {
+          //   invoiceAmount: rawBooking.invoice?.amount,
+          //   bookingFee: rawBooking.bookingFee,
+          //   carRentPrice: rawBooking.carRentPrice,
+          //   finalAmount: amount
+          // });
+        }
+
+        // If still 0, try to get from payment data (Rental Fee)
+        if (amount === 0 && bookingData.invoiceId) {
+          try {
+            const paymentUrl = `https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/Invoice/${bookingData.invoiceId}`;
+            const paymentResponse = await fetch(paymentUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+              },
+            });
+
+            if (paymentResponse.ok) {
+              const paymentData = await paymentResponse.json();
+              const rentalFeePayment = paymentData.find((payment: any) =>
+                payment.item === 'Rental Fee'
+              );
+
+              if (rentalFeePayment && rentalFeePayment.paidAmount) {
+                amount = rentalFeePayment.paidAmount;
+                // console.log(' usePickupConfirm: found Rental Fee amount:', amount);
+              }
+            }
+          } catch (error) {
+            // console.warn(' usePickupConfirm: failed to fetch payment data:', error);
+          }
+        }
+
         setBooking({
           id: bookingData.id,
+          bookingNumber: bookingData.bookingNumber, // Add booking number
           carName,
           carModel,
           carLicensePlate,
@@ -95,13 +191,13 @@ export function usePickupConfirm(bookingId: string) {
           pickupTime: bookingData.startDate,
           dropoffPlace: bookingData.dropoffLocation,
           dropoffTime: bookingData.endDate,
-          amount: bookingData.totalPrice,
+          amount: amount,
           status: bookingData.status,
         });
 
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching booking details:', err);
+        // console.error('Error fetching booking details:', err);
         setError('An error occurred');
         setLoading(false);
       }
@@ -117,7 +213,9 @@ export function usePickupConfirm(bookingId: string) {
     loading,
     error,
     isAlreadyCheckedIn,
+    isAlreadyCheckedOut,
     existingCheckInData,
+    existingCheckOutData,
     initialDescription,
   };
 }

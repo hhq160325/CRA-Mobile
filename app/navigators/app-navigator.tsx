@@ -11,7 +11,7 @@ import { navigationRef } from "./navigation-utilities"
 import { useAuth } from "../../lib/auth-context"
 
 import OnBoardingScreen from "../screens/onboarding/onboarding.screen"
-import OnBoardingScreenTwo from "../screens/onboarding/onboardingTwo.screen"
+
 import HomeScreen from "../screens/home/home.screen"
 import BookingsListScreen from "../screens/bookings/bookings-list.screen"
 import ProfileScreen from "../screens/profile/profile.screen"
@@ -23,6 +23,8 @@ import OtpScreen from "../screens/otp/otp.screen"
 import GoogleLoginWebView from "../screens/singin/google-login-webview.screen"
 import GoogleOAuthHandler from "../screens/singin/google-oauth-handler.screen"
 import CarListScreen from "../screens/cars/car-list.screen"
+import AllCarsScreen from "../screens/cars/all-cars.screen"
+import ElectricCarsScreen from "../screens/cars/electric-cars.screen"
 import CarDetailScreen from "../screens/cars/car-detail.screen"
 import BookingDetailScreen from "../screens/bookings/booking-detail.screen"
 import BookingFormScreen from "../screens/bookings/booking-form.screen"
@@ -33,8 +35,13 @@ import CarMapRouteScreen from "../screens/cars/car-map-route.screen"
 import StaffScreen from "../screens/staff/staff.screen"
 import PickupReturnConfirmScreen from "../screens/staff/pickup-return-confirm.screen"
 import VehicleReturnScreen from "../screens/staff/vehicle-return.screen"
+import UserReportScreen from "../screens/staff/user-report.screen"
 import FeedbackFormScreen from "../screens/feedback/feedback-form.screen"
 import PaymentHistoryScreen from "../screens/payments/payment-history.screen"
+import MessagesScreen from "../screens/messages/messages.screen"
+import ChatHeadsScreen from "../screens/chat/chat-heads.screen"
+import ChatScreen from "../screens/chat/chat.screen"
+import ReportCarScreen from "../screens/bookings/report-car.screen"
 
 type NavigationProps = Partial<React.ComponentProps<typeof NavigationContainer>>
 
@@ -65,6 +72,20 @@ const MainStack = () => {
       <Stack.Screen
         name="Cars"
         component={CarListScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="AllCars"
+        component={AllCarsScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="ElectricCars"
+        component={ElectricCarsScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
@@ -111,6 +132,13 @@ const StaffStack = () => {
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       />
+      <Stack.Screen
+        name="UserReport"
+        component={UserReportScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
     </Stack.Navigator>
   )
 }
@@ -127,13 +155,7 @@ const AuthStack = () => {
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       />
-      <Stack.Screen
-        name="OnBoardingScreenTwo"
-        component={OnBoardingScreenTwo}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
+
       <Stack.Screen
         name="SignInScreen"
         component={SignInScreen}
@@ -208,34 +230,85 @@ const CombinedStack = () => {
 
   const { isAuthenticated, user } = useAuth()
 
+  // Check if user is staff
+  const userRole = user?.role?.toLowerCase()
+  const isStaff = userRole === "staff" || user?.roleId === 1002
 
-  const getInitialComponent = () => {
-    if (!isAuthenticated) {
-      console.log("CombinedStack: User not authenticated, returning AuthStack")
-      return AuthStack
-    }
+  console.log("CombinedStack: Navigation decision", {
+    isAuthenticated,
+    userRole,
+    roleId: user?.roleId,
+    isStaff,
+    userId: user?.id
+  })
 
-    // Check if user is staff
-    const userRole = user?.role?.toLowerCase()
-    const isStaff = userRole === "staff" || user?.roleId === 1002
-
-    if (isStaff) {
-      console.log("CombinedStack: User is staff, returning StaffStack")
-      return StaffStack
-    }
-
-    console.log("CombinedStack: User authenticated, returning MainStack")
-    return MainStack
+  if (!isAuthenticated) {
+    console.log("CombinedStack: User not authenticated, showing AuthStack")
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="authStack"
+          component={AuthStack}
+          options={{
+            cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+          }}
+        />
+      </Stack.Navigator>
+    )
   }
 
+  if (isStaff) {
+    console.log("CombinedStack: User is staff, showing StaffStack")
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="staffStack"
+          component={StaffStack}
+          options={{
+            cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+          }}
+        />
+      </Stack.Navigator>
+    )
+  }
+
+  console.log("CombinedStack: User authenticated as customer, showing MainStack")
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen
+        name="tabStack"
+        component={MainStack}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+    </Stack.Navigator>
+  )
+}
+
+const AppStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name="auth"
+        component={CombinedStack}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
-        component={getInitialComponent()}
+      />
+      <Stack.Screen
+        name="AllCars"
+        component={AllCarsScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="ElectricCars"
+        component={ElectricCarsScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
       />
       <Stack.Screen
         name="CarDetail"
@@ -288,71 +361,8 @@ const CombinedStack = () => {
         }}
       />
       <Stack.Screen
-        name="tabStack"
-        component={MainStack}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="staffStack"
-        component={StaffStack}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="authStack"
-        component={AuthStack}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="rootStack"
-        component={RootStack}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="StaffScreen"
-        component={StaffScreen}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="PickupReturnConfirm"
-        component={PickupReturnConfirmScreen}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="VehicleReturn"
-        component={VehicleReturnScreen}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
         name="FeedbackForm"
         component={FeedbackFormScreen}
-        options={{
-          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-        }}
-      />
-      <Stack.Screen
-        name="Bookings"
-        component={BookingsListScreen}
         options={{
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
@@ -364,6 +374,34 @@ const CombinedStack = () => {
           cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
         }}
       />
+      <Stack.Screen
+        name="Messages"
+        component={MessagesScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="ChatHeads"
+        component={ChatHeadsScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="Chat"
+        component={ChatScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
+      <Stack.Screen
+        name="ReportCar"
+        component={ReportCarScreen}
+        options={{
+          cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+        }}
+      />
     </Stack.Navigator>
   )
 }
@@ -371,7 +409,7 @@ const CombinedStack = () => {
 export function AppNavigator(props: NavigationProps) {
   return (
     <NavigationContainer ref={navigationRef as any} {...props}>
-      {CombinedStack()}
+      <AppStack />
     </NavigationContainer>
   )
 }

@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from "react"
-import { View, Text, Pressable, Image } from "react-native"
+import { View, Text, Pressable, Image, StyleSheet } from "react-native"
 import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../navigators/navigation-route"
-import MaterialIcons from "react-native-vector-icons/MaterialIcons"
-import Ionicons from "react-native-vector-icons/Ionicons"
 import { colors } from "../../theme/colors"
 import { scale } from "../../theme/scale"
 import { useAuth } from "../../../lib/auth-context"
-import { useLanguage } from "../../../lib/language-context"
 import { useFavorites } from "../../../lib/favorites-context"
-
 
 import Noti from "../Noti/Noti"
 import MenuModal from "./components/MenuModal"
-import LanguageModal from "./components/LanguageModal"
 
 
 import { useHeaderAvatar } from "./hooks/useHeaderAvatar"
@@ -23,13 +18,11 @@ import { useHeaderNavigation } from "./hooks/useHeaderNavigation"
 
 export default function Header() {
     const { user } = useAuth()
-    const { language, setLanguage, version } = useLanguage()
     const { favorites } = useFavorites()
     const navigation = useNavigation<StackNavigationProp<NavigatorParamList>>()
 
 
     const [menuVisible, setMenuVisible] = useState(false)
-    const [languageModalVisible, setLanguageModalVisible] = useState(false)
     const [notificationModalVisible, setNotificationModalVisible] = useState(false)
 
 
@@ -39,9 +32,7 @@ export default function Header() {
     const { handleLogout, handleMenuNavigation } = useHeaderNavigation()
 
 
-    useEffect(() => {
-        console.log("Header: Language changed to:", language, "version:", version)
-    }, [language, version])
+
 
 
     useFocusEffect(
@@ -64,10 +55,7 @@ export default function Header() {
         handleLogout()
     }
 
-    const handleOpenLanguageModal = () => {
-        setMenuVisible(false)
-        setLanguageModalVisible(true)
-    }
+
 
     const handleNotificationClickWrapper = (notification: any) => {
         setNotificationModalVisible(false)
@@ -90,38 +78,16 @@ export default function Header() {
     return (
         <>
             {/* Header Bar */}
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingHorizontal: scale(20),
-                    paddingTop: scale(50),
-                    paddingBottom: scale(16),
-                    backgroundColor: colors.white,
-                }}
-            >
+            <View style={styles.headerContainer}>
                 <Pressable onPress={() => handleMenuNavigationWrapper("Home")}>
-                    <Text
-                        style={{
-                            fontSize: scale(28),
-                            fontWeight: "700",
-                            color: colors.morentBlue,
-                            letterSpacing: 1,
-                        }}
-                    >
-                        MORENT
-                    </Text>
+                    <Text style={styles.logo}>MORENT</Text>
                 </Pressable>
 
-                <View style={{ flexDirection: "row", alignItems: "center", gap: scale(16) }}>
+                <View style={styles.rightSection}>
                     {/* Avatar */}
                     <Pressable onPress={() => setMenuVisible(true)}>
                         <View key={`avatar-${refreshKey}`}>
-                            <Image
-                                source={avatarSource}
-                                style={{ width: scale(40), height: scale(40), borderRadius: scale(20) }}
-                            />
+                            <Image source={avatarSource} style={styles.avatar} />
                         </View>
                     </Pressable>
                 </View>
@@ -133,22 +99,14 @@ export default function Header() {
                 onClose={() => setMenuVisible(false)}
                 onNavigate={handleMenuNavigationWrapper}
                 onLogout={handleLogoutWrapper}
-                onOpenLanguageModal={handleOpenLanguageModal}
                 onOpenNotifications={handleOpenNotifications}
                 onOpenFavorites={handleOpenFavorites}
                 isStaff={isStaff}
-                language={language}
-                notificationCount={notifications.filter((n) => !n.isRead).length}
+                notificationCount={notifications.filter((n) => !n.isViewed).length}
                 favoritesCount={favorites.length}
             />
 
-            {/* Language Selection Modal */}
-            <LanguageModal
-                visible={languageModalVisible}
-                onClose={() => setLanguageModalVisible(false)}
-                currentLanguage={language}
-                onSelectLanguage={setLanguage}
-            />
+
 
             {/* Notifications Modal */}
             <Noti
@@ -157,7 +115,36 @@ export default function Header() {
                 notifications={notifications}
                 loading={loadingNotifications}
                 onNotificationClick={handleNotificationClickWrapper}
+                onNotificationsUpdate={loadNotifications}
             />
         </>
     )
 }
+
+const styles = StyleSheet.create({
+    headerContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: scale(20),
+        paddingTop: scale(50),
+        paddingBottom: scale(16),
+        backgroundColor: colors.white,
+    },
+    logo: {
+        fontSize: scale(28),
+        fontWeight: "700",
+        color: colors.morentBlue,
+        letterSpacing: 1,
+    },
+    rightSection: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: scale(16),
+    },
+    avatar: {
+        width: scale(40),
+        height: scale(40),
+        borderRadius: scale(20),
+    },
+})

@@ -1,6 +1,5 @@
 export type NavigatorParamList = {
   ['OnBoardingScreen']: undefined;
-  ['OnBoardingScreenTwo']: undefined;
   ['SignInScreen']: undefined;
   ['SignUpScreen']: undefined;
   ['ResetScreen']: undefined;
@@ -11,13 +10,16 @@ export type NavigatorParamList = {
   ['Home']: undefined;
   ['Bookings']: undefined;
   ['Cars']: undefined;
+  ['AllCars']: { fuelType?: string } | undefined;
+  ['ElectricCars']: undefined;
   ['Profile']: undefined;
   ['CarDetail']: { id: string };
   ['BookingDetail']: { id: string };
   ['BookingForm']: { id: string } | undefined;
   ['BookingPayment']: { bookingId: string; paymentMethod: string; amount: number };
   ['PayOSWebView']: { paymentUrl: string; bookingId?: string };
-  ['FeedbackForm']: { carId: string; bookingId?: string };
+  ['FeedbackForm']: { carId: string; bookingId?: string; bookingNumber?: string };
+  ['ReportCar']: { carId: string; carName?: string; bookingId?: string; bookingNumber?: string; licensePlate?: string };
   ['CarMapScreen']: {
     pickupLocation: string;
     pickupDate: string;
@@ -51,7 +53,17 @@ export type NavigatorParamList = {
     dropoffTime?: string;
   };
   ['VehicleReturn']: { bookingId: string };
+  ['UserReport']: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    carName: string;
+    bookingNumber: string;
+  };
   ['PaymentHistory']: undefined;
+  ['Messages']: { bookingId: string; bookingNumber?: string };
+  ['ChatHeads']: undefined;
+  ['Chat']: { carId: string };
   ['auth']: undefined;
   ['tabStack']: undefined;
   ['staffStack']: undefined;

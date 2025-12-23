@@ -1,12 +1,14 @@
-import {useState, useEffect} from 'react';
-import {Alert} from 'react-native';
-import {bookingsService} from '../../../../lib/api/services/bookings.service';
-import {carsService} from '../../../../lib/api/services/cars.service';
-import {userService} from '../../../../lib/api/services/user.service';
-import {scheduleService} from '../../../../lib/api/services/schedule.service';
+import { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
+import { bookingsService } from '../../../../lib/api/services/bookings.service';
+import { carsService } from '../../../../lib/api/services/cars.service';
+import { userService } from '../../../../lib/api/services/user.service';
+import { scheduleService } from '../../../../lib/api/services/schedule.service';
 
 interface BookingDetails {
   id: string;
+  bookingNumber?: string; // Add bookingNumber field
+  userId: string; // Add userId field for customer ID
   carName: string;
   carModel: string;
   carLicensePlate: string;
@@ -36,7 +38,7 @@ export function useVehicleReturn(bookingId: string) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching data for return:', bookingId);
+        // console.log('Fetching data for return:', bookingId);
 
         const checkOutResult = await scheduleService.getCheckOutImages(
           bookingId,
@@ -62,6 +64,23 @@ export function useVehicleReturn(bookingId: string) {
         }
 
         const bookingData = bookingResult.data;
+
+        // Debug logging for bookingNumber
+        // console.log(' useVehicleReturn: Raw booking data:', JSON.stringify(bookingData, null, 2));
+        // console.log(' useVehicleReturn: bookingNumber field:', bookingData.bookingNumber);
+        // console.log(' useVehicleReturn: All booking keys:', Object.keys(bookingData));
+
+        // Check for alternative field names that might contain booking number
+        const possibleBookingNumberFields = [
+          'bookingNumber', 'bookingNo', 'bookingId', 'bookNum', 'number', 'code'
+        ];
+        possibleBookingNumberFields.forEach(field => {
+          if ((bookingData as any)[field]) {
+            // console.log(` useVehicleReturn: Found ${field}:`, (bookingData as any)[field]);
+          }
+        });
+
+        // console.log(' useVehicleReturn: Customer userId:', bookingData.userId);
 
         let carName = 'Unknown Car';
         let carModel = '';
@@ -89,8 +108,59 @@ export function useVehicleReturn(bookingId: string) {
           }
         }
 
+        // console.log(' useVehicleReturn: bookingData.totalPrice:', bookingData.totalPrice, typeof bookingData.totalPrice);
+        // console.log(' useVehicleReturn: raw bookingResult.data:', JSON.stringify(bookingResult.data, null, 2));
+
+        // Try to get amount from multiple sources
+        let amount = bookingData.totalPrice || 0;
+
+        // If totalPrice is 0, try to get from raw booking data
+        if (amount === 0) {
+          const rawBooking = bookingResult.data as any; // Use any to access raw API fields
+          amount = rawBooking.invoice?.amount ||
+            rawBooking.bookingFee ||
+            rawBooking.carRentPrice ||
+            0;
+          // console.log(' useVehicleReturn: fallback amount sources:', {
+          //   invoiceAmount: rawBooking.invoice?.amount,
+          //   bookingFee: rawBooking.bookingFee,
+          //   carRentPrice: rawBooking.carRentPrice,
+          //   finalAmount: amount
+          // });
+        }
+
+        // If still 0, try to get from payment data (Rental Fee)
+        if (amount === 0 && bookingData.invoiceId) {
+          try {
+            const paymentUrl = `https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/Invoice/${bookingData.invoiceId}`;
+            const paymentResponse = await fetch(paymentUrl, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'accept': '*/*'
+              },
+            });
+
+            if (paymentResponse.ok) {
+              const paymentData = await paymentResponse.json();
+              const rentalFeePayment = paymentData.find((payment: any) =>
+                payment.item === 'Rental Fee'
+              );
+
+              if (rentalFeePayment && rentalFeePayment.paidAmount) {
+                amount = rentalFeePayment.paidAmount;
+                // console.log(' useVehicleReturn: found Rental Fee amount:', amount);
+              }
+            }
+          } catch (error) {
+            // console.warn(' useVehicleReturn: failed to fetch payment data:', error);
+          }
+        }
+
         setBooking({
           id: bookingData.id,
+          bookingNumber: bookingData.bookingNumber, // Add booking number
+          userId: bookingData.userId, // Include customer userId for GPS tracking
           carName,
           carModel,
           carLicensePlate,
@@ -100,13 +170,13 @@ export function useVehicleReturn(bookingId: string) {
           pickupTime: bookingData.startDate,
           dropoffPlace: bookingData.dropoffLocation,
           dropoffTime: bookingData.endDate,
-          amount: bookingData.totalPrice,
+          amount: amount,
           status: bookingData.status,
         });
 
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching data:', err);
+        // console.error('Error fetching data:', err);
         setError('An error occurred');
         setLoading(false);
       }

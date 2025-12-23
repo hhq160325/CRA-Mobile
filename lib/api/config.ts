@@ -1,22 +1,28 @@
-// Get base URL from environment variable
-// For React Native, we need to use a different approach than process.env
+
 const getBaseUrl = () => {
-  // In development, you can set this in .env file
-  // In production, this should be configured through your build process
+
   if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL
   }
 
-  // Fallback for production - should be set via build configuration
-  // Never hardcode production URLs here
+
+  if (__DEV__) {
+    console.log(" Development mode: Using Azure URL directly for stable connection")
+    console.log(" This avoids ER_NGROK_3200 and tunnel expiration issues")
+  }
+
+  // Production Azure URL - stable and fast for both dev and prod
   return "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api"
 }
 
 export const API_CONFIG = {
   BASE_URL: getBaseUrl(),
-  TIMEOUT: 60000,
-  RETRY_ATTEMPTS: 2,
+  TIMEOUT: __DEV__ ? 20000 : 15000,
+  RETRY_ATTEMPTS: __DEV__ ? 1 : 2,
   RETRY_DELAY: 1000,
+  // Development flags
+  ENABLE_LOGGING: __DEV__,
+  ENABLE_DEBUG: __DEV__,
 }
 
 // Helper to get base URL without /api suffix for direct API calls
@@ -30,13 +36,20 @@ export const API_ENDPOINTS = {
   LOGIN: "/Authen/authenticate",
   REGISTER: "/Authen/SignUp",
   LOGOUT: "/Authen/Logout",
-  VERIFY_OTP: "/Authen/verify-otp",
+  SEND_OTP: "/Authen/otp/send",
+  VERIFY_OTP: "/Authen/SignUp/verify",
 
   // Alternative paths to try: /Authen/forgotPassword, /Authen/request-reset, /User/forgot-password
   FORGOT_PASSWORD: "/Authen/ForgotPassword",
   RESET_PASSWORD: "/Authen/ResetPassword",
+  RESET_PASSWORD_BY_PHONE: "/Authen/ResetPasswordByPhone",
   VERIFY_RESET_CODE: "/Authen/VerifyResetCode",
+
+  // User password change endpoints
+  CHANGE_PASSWORD: "/User/reset-password",
+  VERIFY_PASSWORD_CHANGE: (email: string, otpCode: string) => `/User/reset-password/verify?email=${encodeURIComponent(email)}&OTPCode=${otpCode}`,
   LOGIN_GOOGLE: "/Authen/login/google",
+  LOGIN_GOOGLE_MOBILE: (token: string) => `/Authen/google-mobile/${token}`,
   REFRESH_TOKEN: "/Authen/refresh-token",
 
   // Cars
@@ -49,6 +62,7 @@ export const API_ENDPOINTS = {
   // Bookings
   BOOKINGS: "/Booking/GetAllBookings",
   BOOKING_DETAILS: (id: string) => `/Booking/GetBookingById/${id}`,
+  BOOKING_BY_NUMBER: (bookingNumber: string) => `/Booking/GetBookingsByBookNum/${bookingNumber}`,
   BOOKINGS_BY_CUSTOMER: (customerId: string) => `/Booking/GetBookingsFromCustomer/${customerId}`,
   BOOKINGS_BY_CAR: (carId: string) => `/Booking/GetBookingsForCar/${carId}`,
   CREATE_BOOKING: "/Booking/CreateBooking",
@@ -73,7 +87,9 @@ export const API_ENDPOINTS = {
   UPDATE_USER_INFO: "/User/UpdateUserInfo",
   UPLOAD_AVATAR: (userId: string) => `/User/upload-avatar/${userId}`,
   UPLOAD_DRIVER_LICENSE: (userId: string) => `/User/driverLicense/${userId}`,
+  UPLOAD_DRIVER_LICENSE_AUTO_SCAN: "/User/driverLicense/upload",
   GET_DRIVER_LICENSE: (userId: string, email: string) => `/User/driverLicense?UserId=${userId}&Email=${encodeURIComponent(email)}`,
+  GET_ALL_DRIVER_LICENSES: "/User/driverLicense/all",
 
   // Payments & Invoices
   GET_USER: (userId: string) => `/User/GetUserById?userId=${userId}`,
@@ -122,8 +138,8 @@ export const API_ENDPOINTS = {
   PARK_LOTS: "/ParkLot",
 
   // Notifications
-  GET_NOTIFICATIONS: (userId: string) => `/Notification/GetNotificationsForUser/${userId}`,
-  MARK_NOTIFICATION_READ: (notificationId: string) => `/Notification/MarkAsRead/${notificationId}`,
+  GET_NOTIFICATIONS: (userId: string) => `/UserNotif/${userId}`,
+  MARK_NOTIFICATION_READ: (notificationId: string) => `/MarkAsRead/${notificationId}`,
   DELETE_NOTIFICATION: (notificationId: string) => `/Notification/DeleteNotification/${notificationId}`,
 
   // Schedules
@@ -131,6 +147,18 @@ export const API_ENDPOINTS = {
   GET_SCHEDULES_BY_BOOKING: (bookingId: string) => `/Schedule/booking?bookingId=${bookingId}`,
   CHECK_IN: "/Schedule/checkIn",
   CHECK_OUT: "/Schedule/checkOut",
+  CHECK_IN_OUT_INFO: (bookingId: string, isCheckIn: boolean) => `/Schedule/checkInOut/info?BookingId=${bookingId}&isCheckIn=${isCheckIn}`,
   UPLOAD_SCHEDULE_IMAGE: (scheduleId: string) => `/Schedule/UploadImage/${scheduleId}`,
   UPLOAD_CHECKIN_IMAGES: "/Schedule/checkIn/images",
+
+  // Inquiry
+  CREATE_INQUIRY: "/Inquiry/initial",
+  CHAT_LOG: (senderId: string, receiverId: string) => `/Inquiry/chatLog?senderId=${senderId}&receiverId=${receiverId}`,
+
+  // Reports
+  CREATE_REPORT: "/Report/reportedCar",
+  GET_REPORTS: "/Report/all",
+  GET_REPORT: (reportId: string) => `/Report/${reportId}`,
+  UPDATE_REPORT: (reportId: string) => `/Report/${reportId}`,
+  DELETE_REPORT: (reportId: string) => `/Report/${reportId}`,
 }

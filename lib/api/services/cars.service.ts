@@ -1,6 +1,7 @@
 
 import { API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
+import { apiCache, cacheKeys } from "../cache"
 
 // API Response from backend
 interface ApiCarResponse {
@@ -57,7 +58,7 @@ export interface Car {
   price: number
   image: string
   images?: string[]
-  imageUrls?: string[] // API returns this field
+  imageUrls?: string[]
   rating: number
   reviews: number
   seats: number
@@ -73,7 +74,7 @@ export interface Car {
   preferredLot?: any
 }
 
-// Map API response to app Car model
+
 function mapApiCarToCar(apiCar: ApiCarResponse): Car {
   // Determine category based on car type/seats
   let category = "sedan"
@@ -85,13 +86,6 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
 
   // Get price from rentalRate if available
   const price = apiCar.rentalRate?.dailyRate || 0
-
-  // Debug logging
-  if (apiCar.rentalRate) {
-    console.log(`🚗 ${apiCar.manufacturer} ${apiCar.model}: rentalRate found, dailyRate = ${apiCar.rentalRate.dailyRate}, status = ${apiCar.status}`)
-  } else {
-    console.log(`🚗 ${apiCar.manufacturer} ${apiCar.model}: NO rentalRate, status = ${apiCar.status}`)
-  }
 
   return {
     id: apiCar.id,
@@ -108,13 +102,13 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
     images: apiCar.imageUrls || [],
     imageUrls: apiCar.imageUrls || [],
     rating: apiCar.rating || 0,
-    reviews: 0, // API doesn't provide this
+    reviews: 0,
     seats: apiCar.seats,
     transmission: apiCar.transmission,
     fuelType: apiCar.fuelType,
     fuelConsumption: apiCar.fuelConsumption,
     mileage: `${apiCar.fuelConsumption} L/100km`,
-    features: [], // API doesn't provide this
+    features: [],
     description: apiCar.description || "",
     available: apiCar.status?.toLowerCase() === "available" || apiCar.status?.toLowerCase() === "active",
     status: apiCar.status,
@@ -131,7 +125,15 @@ export const carsService = {
     maxPrice?: number
     search?: string
   }): Promise<{ data: Car[] | null; error: Error | null }> {
-    console.log("carsService.getCars: fetching cars with filters", filters)
+
+    // Check cache first (only for unfiltered requests)
+    const cacheKey = cacheKeys.cars();
+    if (!filters || Object.keys(filters).length === 0) {
+      const cachedData = apiCache.get<Car[]>(cacheKey);
+      if (cachedData) {
+        return { data: cachedData, error: null };
+      }
+    }
 
     const params = new URLSearchParams()
     if (filters?.category && filters.category !== "all") params.append("category", filters.category)
@@ -142,74 +144,110 @@ export const carsService = {
     const endpoint = params.toString() ? `${API_ENDPOINTS.CARS}?${params}` : API_ENDPOINTS.CARS
     const result = await apiClient<ApiCarResponse[]>(endpoint, { method: "GET" })
 
-    console.log("carsService.getCars: result", {
-      hasError: !!result.error,
-      dataLength: result.data?.length
-    })
-
     if (result.error) {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model
-    let mappedData = result.data?.map(mapApiCarToCar) || []
+    if (!result.data) {
+      return { data: null, error: null }
+    }
+
+    // Fetch rental rates for each car
+    const carsWithRates = await Promise.all(
+      result.data.map(async (apiCar) => {
+        // Try to get rental rate for this car
+        const rateResult = await this.getCarRentalRate(apiCar.id)
+
+        // Add rental rate to the car data if available
+        const carWithRate = {
+          ...apiCar,
+          rentalRate: rateResult.data || null
+        }
+
+        return mapApiCarToCar(carWithRate)
+      })
+    )
+
+    // Cache unfiltered results
+    if (!filters || Object.keys(filters).length === 0) {
+      apiCache.set(cacheKey, carsWithRates, 3 * 60 * 1000); // 3 minutes
+    }
 
     // Apply client-side filters if needed
+    let filteredData = carsWithRates
     if (filters?.category && filters.category !== "all") {
-      mappedData = mappedData.filter(car => car.category === filters.category)
+      filteredData = filteredData.filter(car => car.category === filters.category)
     }
     if (filters?.minPrice !== undefined) {
-      mappedData = mappedData.filter(car => car.price >= filters.minPrice!)
+      filteredData = filteredData.filter(car => car.price >= filters.minPrice!)
     }
     if (filters?.maxPrice !== undefined) {
-      mappedData = mappedData.filter(car => car.price <= filters.maxPrice!)
+      filteredData = filteredData.filter(car => car.price <= filters.maxPrice!)
     }
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase()
-      mappedData = mappedData.filter(car =>
+      filteredData = filteredData.filter(car =>
         car.name.toLowerCase().includes(searchLower) ||
         car.brand.toLowerCase().includes(searchLower) ||
         car.model.toLowerCase().includes(searchLower)
       )
     }
 
-    return { data: mappedData, error: null }
+    return { data: filteredData, error: null }
   },
 
 
   async getAllCars(): Promise<{ data: Car[] | null; error: Error | null }> {
-    console.log("carsService.getAllCars: fetching all cars")
     const result = await apiClient<ApiCarResponse[]>(API_ENDPOINTS.CARS, { method: "GET" })
-
-    console.log("carsService.getAllCars: result", {
-      hasError: !!result.error,
-      dataLength: result.data?.length
-    })
 
     if (result.error) {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model (rentalRate.dailyRate is already included)
-    const mappedData = result.data?.map(mapApiCarToCar) || null
-    return { data: mappedData, error: null }
+    if (!result.data) {
+      return { data: null, error: null }
+    }
+
+    // Fetch rental rates for each car
+    const carsWithRates = await Promise.all(
+      result.data.map(async (apiCar) => {
+        // Try to get rental rate for this car
+        const rateResult = await this.getCarRentalRate(apiCar.id)
+
+        // Add rental rate to the car data if available
+        const carWithRate = {
+          ...apiCar,
+          rentalRate: rateResult.data || null
+        }
+
+        return mapApiCarToCar(carWithRate)
+      })
+    )
+
+    return { data: carsWithRates, error: null }
   },
 
   async getCarById(id: string): Promise<{ data: Car | null; error: Error | null }> {
-    console.log("carsService.getCarById: fetching car", id)
     const result = await apiClient<ApiCarResponse>(API_ENDPOINTS.CAR_DETAILS(id), { method: "GET" })
-
-    console.log("carsService.getCarById: result", {
-      hasError: !!result.error,
-      hasData: !!result.data
-    })
 
     if (result.error) {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model (rentalRate.dailyRate is already included)
-    const mappedData = result.data ? mapApiCarToCar(result.data) : null
+    if (!result.data) {
+      return { data: null, error: null }
+    }
+
+    // Fetch rental rate for this car
+    const rateResult = await this.getCarRentalRate(id)
+
+    // Add rental rate to the car data if available
+    const carWithRate = {
+      ...result.data,
+      rentalRate: rateResult.data || null
+    }
+
+    const mappedData = mapApiCarToCar(carWithRate)
     return { data: mappedData, error: null }
   },
 
@@ -226,6 +264,13 @@ export const carsService = {
   },
 
   async getCarRentalRate(carId: string): Promise<{ data: RentalRate | null; error: Error | null }> {
+    // Check cache first
+    const cacheKey = cacheKeys.carRate(carId);
+    const cachedData = apiCache.get<RentalRate>(cacheKey);
+    if (cachedData) {
+      return { data: cachedData, error: null };
+    }
+
     const result = await apiClient<RentalRate>(API_ENDPOINTS.CAR_RENTAL_RATE(carId), { method: "GET" })
 
     if (result.error) {
@@ -236,10 +281,10 @@ export const carsService = {
       return { data: null, error: result.error }
     }
 
-    console.log("carsService.getCarRentalRate: found rate for car", carId, {
-      dailyRate: result.data?.dailyRate,
-      status: result.data?.status
-    })
+    // Cache successful results
+    if (result.data) {
+      apiCache.set(cacheKey, result.data, 5 * 60 * 1000); // 5 minutes
+    }
 
     return { data: result.data, error: null }
   },

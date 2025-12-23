@@ -1,28 +1,34 @@
-import React, {useState} from 'react';
-import {View, ScrollView, Alert, ActivityIndicator, Text} from 'react-native';
-import {colors} from '../../theme/colors';
-import {scale, verticalScale} from '../../theme/scale';
-import {useAuth} from '../../../lib/auth-context';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, Alert, ActivityIndicator, Text } from 'react-native';
+import { colors } from '../../theme/colors';
+import { useAuth } from '../../../lib/auth-context';
 import Header from '../../components/Header/Header';
-import {userService} from '../../../lib/api/services/user.service';
+import { userService } from '../../../lib/api/services/user.service';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileField from './components/ProfileField';
 import DriverLicenseSection from './components/DriverLicenseSection';
 import PasswordVerificationModal from './components/PasswordVerificationModal';
 import EditFieldModal from './components/EditFieldModal';
-import {useProfileData} from './hooks/useProfileData';
-import {useFieldEditor} from './hooks/useFieldEditor';
-import {useProfileActions} from './hooks/useProfileActions';
-import {useImagePicker} from './hooks/useImagePicker';
+import ChangePasswordModal from './components/ChangePasswordModal';
+import StaffLoadingState from '../staff/components/StaffLoadingState';
+import { useProfileData } from './hooks/useProfileData';
+import { useFieldEditor } from './hooks/useFieldEditor';
+import { useProfileActions } from './hooks/useProfileActions';
+import { useImagePicker } from './hooks/useImagePicker';
 import {
   buildSafeUpdateData,
   getAvatarSource,
   getStatusColor,
+  getBehaviorScoreColor,
+  getBehaviorScoreLabel,
 } from './utils/profileHelpers';
-import {locationService} from '../../../lib/api';
+import { locationService } from '../../../lib/api';
+import { ocrService, DriverLicenseOCRResult } from '../../../lib/api/services/ocr.service';
+import OCRResultModal from './components/OCRResultModal';
+import { styles } from './profile.screen.styles';
 
 export default function ProfileScreen() {
-  const {user, refreshUser} = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const {
     userData,
     setUserData,
@@ -32,8 +38,21 @@ export default function ProfileScreen() {
     fieldValues,
     setFieldValues,
   } = useProfileData(user?.id);
-  const [licenseImages, setLicenseImages] = useState<string[]>([]);
+  const [licenseStatus, setLicenseStatus] = useState<string | null>(null);
+  const [licenseCreateDate, setLicenseCreateDate] = useState<string | null>(null);
+  const [licenseInfo, setLicenseInfo] = useState<any>(null);
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+
+  // OCR states
+  const [showOCRModal, setShowOCRModal] = useState(false);
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [ocrResult, setOcrResult] = useState<DriverLicenseOCRResult | null>(null);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
+
+  // Avatar upload loading animation states
+  const [showAvatarLoading, setShowAvatarLoading] = useState(false);
+  const [avatarLoadingComplete, setAvatarLoadingComplete] = useState(false);
 
   const fieldEditor = useFieldEditor(
     user?.id,
@@ -52,96 +71,265 @@ export default function ProfileScreen() {
     setUserData,
     setFieldValues,
     setLicenseImage,
-    setLicenseImages,
     refreshUser,
     buildSafeUpdateData,
   );
 
   const imagePicker = useImagePicker();
 
-  React.useEffect(() => {
-    const fetchDriverLicense = async () => {
-      if (!user?.id || !user?.email) return;
+  const fetchDriverLicense = async (forceRefresh = false) => {
+    if (!user?.id || !user?.email) return;
 
-      try {
-        const {data, error} = await userService.getDriverLicense(
-          user.id,
-          user.email,
-        );
-        if (error) {
-          console.error('Failed to fetch driver license:', error);
-          return;
-        }
-        if (data && data.urls && data.urls.length > 0) {
-          setLicenseImages(data.urls);
-          setLicenseImage(data.urls[0]);
-        }
-      } catch (err) {
-        console.error('Exception fetching driver license:', err);
+    try {
+      const { data, error } = await userService.getDriverLicense(
+        user.id,
+        user.email,
+      );
+      if (error) {
+        console.error('Failed to fetch driver license:', error);
+        return;
       }
-    };
 
+      if (data && data.urls && data.urls.length > 0) {
+        // Use the first (most recent) image for simplified single photo upload
+        setLicenseImage(data.urls[0]);
+
+        // Store the extracted license information
+        if (data.licenseInfo) {
+          setLicenseInfo(data.licenseInfo);
+          setLicenseStatus(data.licenseInfo.status);
+          setLicenseCreateDate(data.licenseInfo.createDate);
+
+          console.log('License info extracted:', {
+            number: data.licenseInfo.licenseNumber,
+            name: data.licenseInfo.licenseName,
+            class: data.licenseInfo.licenseClass,
+            status: data.licenseInfo.status
+          });
+        }
+      } else {
+        setLicenseImage(null);
+        setLicenseInfo(null);
+      }
+    } catch (err) {
+      console.error('Exception fetching driver license:', err);
+    }
+  };
+
+  const fetchDriverLicenseStatus = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await userService.getDriverLicenseStatus(user.id);
+      if (error) {
+        console.error('Failed to fetch driver license status:', error);
+        return;
+      }
+      if (data) {
+        setLicenseStatus(data.status);
+        setLicenseCreateDate(data.createDate);
+      }
+    } catch (err) {
+      console.error('Exception fetching driver license status:', err);
+    }
+  };
+
+  React.useEffect(() => {
     fetchDriverLicense();
+    fetchDriverLicenseStatus();
   }, [user?.id, user?.email]);
+
+  // Handle avatar upload loading animation
+  useEffect(() => {
+    if (profileActions.isSaving && !showAvatarLoading) {
+      // Avatar upload started, show loading animation
+      setShowAvatarLoading(true);
+      setAvatarLoadingComplete(false);
+    } else if (!profileActions.isSaving && showAvatarLoading && !avatarLoadingComplete) {
+      // Avatar upload finished, trigger completion animation
+      setAvatarLoadingComplete(true);
+    }
+  }, [profileActions.isSaving, showAvatarLoading, avatarLoadingComplete]);
+
+  const handleAvatarAnimationComplete = () => {
+    // Hide loading animation completely after exit animation
+    setShowAvatarLoading(false);
+    setAvatarLoadingComplete(false);
+  };
 
   const handleUploadAvatar = () => {
     Alert.alert('Change Profile Picture', 'Choose an option', [
       {
         text: 'Take Photo',
         onPress: () =>
-          imagePicker.openCamera(profileActions.uploadAvatar, [1, 1]),
+          imagePicker.openCamera(profileActions.uploadAvatar),
       },
       {
         text: 'Choose from Gallery',
         onPress: () =>
-          imagePicker.openGallery(profileActions.uploadAvatar, [1, 1]),
+          imagePicker.openGallery(profileActions.uploadAvatar),
       },
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
   const handleEditGender = () => {
     Alert.alert('Select Gender', 'Choose your gender', [
-      {text: 'Male', onPress: () => profileActions.updateGender('Male')},
-      {text: 'Female', onPress: () => profileActions.updateGender('Female')},
-      {text: 'Other', onPress: () => profileActions.updateGender('Other')},
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Male', onPress: () => profileActions.updateGender('Male') },
+      { text: 'Female', onPress: () => profileActions.updateGender('Female') },
+      { text: 'Other', onPress: () => profileActions.updateGender('Other') },
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
   const handleUploadLicense = () => {
-    Alert.alert("Upload Driver's License", 'Choose an option', [
+    Alert.alert("Upload Driver's License", 'Choose upload method', [
+      {
+        text: 'Smart Upload (OCR)',
+        onPress: () => handleSmartUpload(),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleSmartUpload = () => {
+    Alert.alert('Smart Upload with OCR', 'This will extract information from your license automatically', [
       {
         text: 'Take Photo',
-        onPress: () =>
-          imagePicker.openCamera(profileActions.uploadDriverLicense, [16, 9]),
+        onPress: () => imagePicker.openCamera(handleOCRUpload),
       },
       {
         text: 'Choose from Gallery',
-        onPress: () =>
-          imagePicker.openGallery(profileActions.uploadDriverLicense, [16, 9]),
+        onPress: () => imagePicker.openGallery(handleOCRUpload),
       },
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+
+
+  const handleOCRUpload = async (uri: string) => {
+    try {
+      setPendingImageUri(uri);
+      setShowOCRModal(true);
+      setIsProcessingOCR(true);
+      setOcrResult(null);
+
+      console.log('🔍 Starting OCR processing for:', uri);
+
+      const { data, error } = await ocrService.extractDriverLicenseInfo(uri);
+
+      if (error) {
+        console.error('❌ OCR failed:', error);
+        setShowOCRModal(false);
+        Alert.alert(
+          'OCR Failed',
+          `Failed to extract license information: ${error.message}. Please try again with a clearer photo.`,
+          [
+            { text: 'OK', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
+      if (data) {
+        console.log('✅ OCR successful:', data);
+        setOcrResult(data);
+
+        // Validate OCR quality
+        const validation = ocrService.validateOCRQuality(data);
+        console.log('📊 OCR validation:', validation);
+      }
+
+    } catch (error: any) {
+      console.error('💥 OCR exception:', error);
+      setShowOCRModal(false);
+      Alert.alert('Error', 'Failed to process image. Please try again.');
+    } finally {
+      setIsProcessingOCR(false);
+    }
+  };
+
+  const handleAcceptOCR = async () => {
+    if (!pendingImageUri || !ocrResult) return;
+
+    try {
+      setShowOCRModal(false);
+
+      // Upload the image first
+      const uploadResult = await uploadSingleLicenseImage(pendingImageUri);
+
+      // Clear OCR state
+      setPendingImageUri(null);
+      setOcrResult(null);
+
+    } catch (error) {
+      console.error('Error accepting OCR result:', error);
+      Alert.alert('Error', 'Failed to process the license. Please try again.');
+    }
+  };
+
+  const handleRetryOCR = () => {
+    setShowOCRModal(false);
+    setPendingImageUri(null);
+    setOcrResult(null);
+
+    // Restart the smart upload process
+    setTimeout(() => {
+      handleSmartUpload();
+    }, 100);
+  };
+
+  const handleCloseOCR = () => {
+    setShowOCRModal(false);
+    setPendingImageUri(null);
+    setOcrResult(null);
+    setIsProcessingOCR(false);
+  };
+
+  const uploadSingleLicenseImage = async (uri: string) => {
+    try {
+      // Update local state immediately for better UX
+      setLicenseImage(uri);
+
+      // Upload to server with auto-scan
+      const result = await profileActions.uploadDriverLicense(uri);
+
+      Alert.alert('Success', 'License photo uploaded and processed successfully');
+
+      // Refresh license data after upload to get the extracted information
+      setTimeout(() => {
+        fetchDriverLicense();
+      }, 1000);
+
+      return result;
+
+    } catch (error) {
+      console.error('Error uploading license image:', error);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+      // Revert local state on error
+      await fetchDriverLicense();
+      throw error;
+    }
   };
 
   const handleAutoFillAddress = async () => {
     setIsAutoFillingAddress(true);
     try {
-      const {data: location, error: locationError} =
+      const { data: location, error: locationError } =
         await locationService.getCurrentLocation();
 
       if (locationError || !location) {
         Alert.alert(
           'Location Error',
           locationError?.message ||
-            'Unable to get your current location. Please enable location services in your device settings.',
-          [{text: 'OK'}],
+          'Unable to get your current location. Please enable location services in your device settings.',
+          [{ text: 'OK' }],
         );
         return;
       }
 
-      const {data: addressData, error: addressError} =
+      const { data: addressData, error: addressError } =
         await locationService.reverseGeocode(
           location.latitude,
           location.longitude,
@@ -183,20 +371,20 @@ export default function ProfileScreen() {
         Alert.alert(
           'Location Saved',
           'Could not determine address, but coordinates have been saved. You can edit this manually.',
-          [{text: 'OK'}],
+          [{ text: 'OK' }],
         );
       }
 
-      setFieldValues(prev => ({...prev, address: fullAddress}));
+      setFieldValues(prev => ({ ...prev, address: fullAddress }));
 
       if (user?.id) {
-        const {data: currentUserData} = await userService.getUserById(user.id);
+        const { data: currentUserData } = await userService.getUserById(user.id);
         const latestData = currentUserData || userData;
         const updateData = buildSafeUpdateData(latestData, {
           address: fullAddress,
         });
 
-        const {error: updateError} = await userService.updateUserInfo(
+        const { error: updateError } = await userService.updateUserInfo(
           user.id,
           updateData,
         );
@@ -220,25 +408,35 @@ export default function ProfileScreen() {
 
   const avatarSource = getAvatarSource(userData, user?.avatar);
 
-  if (isLoading) {
-    return (
-      <View style={{flex: 1, backgroundColor: colors.background}}>
-        <Header />
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-          <ActivityIndicator size="large" color={colors.morentBlue} />
-          <Text
-            style={{marginTop: verticalScale(16), color: colors.placeholder}}>
-            Loading profile...
-          </Text>
-        </View>
+  const renderLoadingState = () => (
+    <View style={styles.container}>
+      <Header />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.morentBlue} />
+        <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
-    );
+    </View>
+  );
+
+  if (isLoading) {
+    return renderLoadingState();
   }
 
   return (
-    <View style={{flex: 1, backgroundColor: colors.background}}>
+    <View style={styles.container}>
       <Header />
-      <ScrollView style={{flex: 1}} showsVerticalScrollIndicator={false}>
+
+      {/* Avatar Upload Loading Overlay */}
+      {showAvatarLoading && (
+        <View style={styles.loadingOverlay}>
+          <StaffLoadingState
+            isComplete={avatarLoadingComplete}
+            onAnimationComplete={handleAvatarAnimationComplete}
+          />
+        </View>
+      )}
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <ProfileHeader
           avatarSource={avatarSource}
           fullname={fieldValues.fullname}
@@ -249,15 +447,27 @@ export default function ProfileScreen() {
           onEditGender={handleEditGender}
         />
 
-        {/* Account Details */}
-        <View
-          style={{
-            marginHorizontal: scale(16),
-            marginVertical: verticalScale(12),
-            backgroundColor: colors.white,
-            borderRadius: scale(12),
-            padding: scale(16),
-          }}>
+        <View style={styles.accountDetailsCard}>
+          {/* Behavior Score Field */}
+          <View style={styles.behaviorScoreField}>
+            <Text style={styles.behaviorScoreLabel}>Behavior Score</Text>
+            <View style={styles.behaviorScoreContainer}>
+              <Text style={styles.behaviorScoreValue}>
+                {userData?.behaviourScore ?? 0}
+              </Text>
+              <View style={[
+                styles.behaviorScoreBadge,
+                {
+                  backgroundColor: getBehaviorScoreColor(userData?.behaviourScore ?? 0)
+                }
+              ]}>
+                <Text style={styles.behaviorScoreBadgeText}>
+                  {getBehaviorScoreLabel(userData?.behaviourScore ?? 0)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
           <ProfileField
             label="Phone Number"
             value={fieldValues.phone}
@@ -271,10 +481,9 @@ export default function ProfileScreen() {
           <ProfileField
             label="Email"
             value={fieldValues.email}
-            onEdit={() => fieldEditor.handleEditField('email')}
             showStatusDot
             statusColor={colors.green}
-            isSecure
+            hideEditButton
           />
 
           <ProfileField
@@ -294,14 +503,23 @@ export default function ProfileScreen() {
             placeholder="Not set"
             onEdit={() => fieldEditor.handleEditField('username')}
           />
+
+          <ProfileField
+            label="Password"
+            value="••••••••"
+            onEdit={() => setShowChangePasswordModal(true)}
+          />
         </View>
 
         <DriverLicenseSection
           licenseImage={licenseImage}
+          licenseStatus={licenseStatus}
+          licenseCreateDate={licenseCreateDate}
+          licenseInfo={licenseInfo}
           onUploadLicense={handleUploadLicense}
         />
 
-        <View style={{height: verticalScale(20)}} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       <PasswordVerificationModal
@@ -333,6 +551,22 @@ export default function ProfileScreen() {
           fieldEditor.setEditingField(null);
           fieldEditor.setEditValue('');
         }}
+      />
+
+      <ChangePasswordModal
+        visible={showChangePasswordModal}
+        userEmail={user?.email || ''}
+        onClose={() => setShowChangePasswordModal(false)}
+        onLogout={logout}
+      />
+
+      <OCRResultModal
+        visible={showOCRModal}
+        isProcessing={isProcessingOCR}
+        ocrResult={ocrResult}
+        onClose={handleCloseOCR}
+        onAccept={handleAcceptOCR}
+        onRetry={handleRetryOCR}
       />
     </View>
   );

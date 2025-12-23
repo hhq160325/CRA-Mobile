@@ -46,18 +46,6 @@ export default function CarSpecifications({ car }: CarSpecificationsProps) {
                 </View>
             </View>
 
-            {/* Additional Specs */}
-            {car.fuelConsumption && (
-                <View style={styles.fuelConsumptionContainer}>
-                    <View style={styles.fuelConsumptionRow}>
-                        <Text style={styles.fuelConsumptionLabel}>Fuel Consumption</Text>
-                        <Text style={styles.fuelConsumptionValue}>
-                            {car.fuelConsumption} L/100km
-                        </Text>
-                    </View>
-                </View>
-            )}
-
             {/* Parking Lot Information */}
             {car.preferredLot && (
                 <View style={styles.parkingContainer}>

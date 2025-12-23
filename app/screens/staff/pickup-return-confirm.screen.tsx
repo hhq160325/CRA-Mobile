@@ -40,7 +40,9 @@ export default function PickupReturnConfirmScreen() {
     loading,
     error,
     isAlreadyCheckedIn,
+    isAlreadyCheckedOut,
     existingCheckInData,
+    existingCheckOutData,
     initialDescription,
   } = usePickupConfirm(bookingId);
   const { selectedImages, showImagePickerOptions, removeImage } =
@@ -56,8 +58,9 @@ export default function PickupReturnConfirmScreen() {
 
 
   useEffect(() => {
-    if (!loading && isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0) {
-      // console.log(' Pickup already completed, auto-navigating to return screen...');
+    // Only auto-navigate to return screen if pickup is done but return is NOT done
+    if (!loading && isAlreadyCheckedIn && !isAlreadyCheckedOut && existingCheckInData && existingCheckInData.images.length > 0) {
+      // console.log(' Pickup completed, return not done - auto-navigating to return screen...');
 
       const timer = setTimeout(() => {
         navigation.navigate('VehicleReturn' as any, { bookingId });
@@ -65,7 +68,7 @@ export default function PickupReturnConfirmScreen() {
 
       return () => clearTimeout(timer);
     }
-  }, [loading, isAlreadyCheckedIn, existingCheckInData, bookingId, navigation]);
+  }, [loading, isAlreadyCheckedIn, isAlreadyCheckedOut, existingCheckInData, bookingId, navigation]);
 
   useEffect(() => { }, [user]);
 
@@ -161,8 +164,137 @@ export default function PickupReturnConfirmScreen() {
     );
   };
 
+  const handleReportUser = () => {
+    // Navigate to report user screen or show report modal
+    Alert.alert(
+      'Report User',
+      'This feature allows you to report issues with the customer or vehicle condition.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Create Report',
+          onPress: () => {
+            // TODO: Navigate to report creation screen
+            // navigation.navigate('CreateReport', { bookingId, customerId: booking?.userId });
+            console.log('Navigate to report creation for booking:', bookingId);
+          },
+        },
+      ],
+    );
+  };
 
-  if (!loading && isAlreadyCheckedIn && existingCheckInData && existingCheckInData.images.length > 0) {
+  // Show full return view if both pickup and return are done
+  if (!loading && isAlreadyCheckedIn && isAlreadyCheckedOut && existingCheckInData && existingCheckOutData && booking) {
+    const pickupDateTime = formatDateTime(booking.pickupTime);
+    const dropoffDateTime = formatDateTime(booking.dropoffTime);
+
+    return (
+      <View style={styles.container}>
+        <Header />
+
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
+            <MaterialIcons name="arrow-back" size={24} color={colors.primary} />
+            <Text style={styles.backText}>Back to Staff</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}>
+
+          {/* Completion Status Badge */}
+          <View style={[styles.loadingContainer, { marginBottom: 20 }]}>
+            <MaterialIcons name="check-circle" size={48} color="#10b981" />
+            <Text style={[styles.loadingText, { color: '#10b981', marginTop: 8, fontSize: 18 }]}>
+              Return Completed!
+            </Text>
+          </View>
+
+          {/* Booking Card */}
+          <BookingCard
+            carImage={booking.carImage}
+            carName={booking.carName}
+            carLicensePlate={booking.carLicensePlate}
+            bookingId={booking.id}
+            bookingNumber={booking.bookingNumber}
+            customerName={booking.customerName}
+            amount={booking.amount}
+            statusText="Completed"
+            statusColor="#d1fae5"
+          />
+
+          {/* Location Information */}
+          <LocationInfoSection
+            title="Pickup Information"
+            iconName="location-on"
+            iconColor={colors.morentBlue}
+            location={booking.pickupPlace}
+            dateTime={pickupDateTime}
+          />
+
+          <LocationInfoSection
+            title="Dropoff Information"
+            iconName="location-off"
+            iconColor="#ef4444"
+            location={booking.dropoffPlace}
+            dateTime={dropoffDateTime}
+          />
+
+          {/* Pickup Section */}
+          <NotesSection
+            title="Pickup Notes"
+            value={existingCheckInData.description}
+            onChangeText={() => { }} // Read-only
+            placeholder=""
+            editable={false}
+          />
+
+          <ImageGallerySection
+            title={`Pickup Photos (${existingCheckInData.images.length})`}
+            images={existingCheckInData.images}
+            iconName="photo-camera"
+            iconColor={colors.primary}
+            onAddPhoto={undefined}
+            onRemoveImage={undefined}
+            isReadOnly={true}
+          />
+
+          {/* Return Section */}
+          <NotesSection
+            title="Return Notes"
+            value={existingCheckOutData.description}
+            onChangeText={() => { }} // Read-only
+            placeholder=""
+            editable={false}
+          />
+
+          <ImageGallerySection
+            title={`Return Photos (${existingCheckOutData.images.length})`}
+            images={existingCheckOutData.images}
+            iconName="photo-camera"
+            iconColor="#ef4444"
+            onAddPhoto={undefined}
+            onRemoveImage={undefined}
+            isReadOnly={true}
+          />
+
+          <View style={styles.actionButtons}>
+            <Pressable
+              onPress={handleReportUser}
+              style={[styles.confirmButton, { backgroundColor: '#ef4444' }]}>
+              <MaterialIcons name="report-problem" size={20} color={colors.white} />
+              <Text style={styles.confirmButtonText}>Report User</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  if (!loading && isAlreadyCheckedIn && !isAlreadyCheckedOut && existingCheckInData && existingCheckInData.images.length > 0) {
     return (
       <View style={styles.container}>
         <Header />
@@ -286,7 +418,20 @@ export default function PickupReturnConfirmScreen() {
 
 
         <View style={styles.actionButtons}>
-          {isAlreadyCheckedIn ? (
+          {isAlreadyCheckedIn && isAlreadyCheckedOut ? (
+            // Both pickup and return completed - show report button
+            <Pressable
+              onPress={handleReportUser}
+              style={[styles.confirmButton, { backgroundColor: '#ef4444' }]}>
+              <MaterialIcons
+                name="report-problem"
+                size={20}
+                color={colors.white}
+              />
+              <Text style={styles.confirmButtonText}>Report User</Text>
+            </Pressable>
+          ) : isAlreadyCheckedIn && !isAlreadyCheckedOut ? (
+            // Pickup completed, return not completed - proceed to return
             <Pressable
               onPress={handleProceedToReturn}
               style={styles.confirmButton}>
@@ -298,6 +443,7 @@ export default function PickupReturnConfirmScreen() {
               <Text style={styles.confirmButtonText}>Proceed to Return</Text>
             </Pressable>
           ) : (
+            // Pickup not completed yet
             <Pressable
               onPress={handleConfirmPickup}
               disabled={submitting || selectedImages.length === 0}

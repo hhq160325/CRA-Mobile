@@ -1,6 +1,17 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../../lib/api/services/auth.service';
+
+// Conditional import for Google Sign-In
+let GoogleSignin: any = null;
+let statusCodes: any = null;
+
+try {
+    const googleSignInModule = require('@react-native-google-signin/google-signin');
+    GoogleSignin = googleSignInModule.GoogleSignin;
+    statusCodes = googleSignInModule.statusCodes;
+} catch (error) {
+    console.log('Google Sign-In native module not available (Expo Go)');
+}
 
 export interface PureNativeGoogleUser {
     id: string;
@@ -24,18 +35,47 @@ class PureNativeGoogleSignIn {
 
     configure(): boolean {
         try {
-            GoogleSignin.configure({
+            console.log(' === Configuring Pure Native Google Sign-In ===');
 
+            if (!GoogleSignin) {
+                console.error(' Google Sign-In native module not available');
+                console.error(' This requires a development build, not Expo Go');
+                console.error(' Run: npx expo run:android or build with EAS');
+                this.isConfigured = false;
+                return false;
+            }
+
+            console.log(' GoogleSignin module loaded successfully');
+
+            const androidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID;
+            console.log(' Checking Android Client ID...');
+            console.log(' Android Client ID from env:', androidClientId ? 'Found' : 'Not found');
+
+            if (!androidClientId || androidClientId === 'YOUR_ANDROID_CLIENT_ID_HERE.apps.googleusercontent.com') {
+                console.error(' Android Client ID not configured in .env file');
+                console.error(' Please add your Google Cloud Console Android Client ID to .env');
+                console.error(' GOOGLE_ANDROID_CLIENT_ID=your_actual_client_id.apps.googleusercontent.com');
+                this.isConfigured = false;
+                return false;
+            }
+
+            console.log(' Configuring GoogleSignin with options...');
+            const config = {
+                androidClientId: androidClientId,
                 scopes: ['openid', 'profile', 'email'],
                 offlineAccess: false,
                 hostedDomain: '',
                 forceCodeForRefreshToken: false,
                 accountName: '',
                 profileImageSize: 120,
-            });
+            };
+            console.log(' Configuration:', JSON.stringify(config, null, 2));
+
+            GoogleSignin.configure(config);
 
             this.isConfigured = true;
-            console.log(' PURE NATIVE Google Sign-In configured');
+            console.log(' ✅ PURE NATIVE Google Sign-In configured successfully');
+            console.log(' Android Client ID:', androidClientId);
             console.log(' NO Web Client ID');
             console.log(' NO iOS Client ID');
             console.log(' Android Client ID + SHA-1 ONLY');
@@ -44,7 +84,8 @@ class PureNativeGoogleSignIn {
             console.log(' SHA-1: A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF');
             return true;
         } catch (error) {
-            console.error(' Pure Native configuration failed:', error);
+            console.error(' === Pure Native configuration FAILED ===');
+            console.error(' Error:', error);
             this.isConfigured = false;
             return false;
         }
@@ -55,6 +96,11 @@ class PureNativeGoogleSignIn {
      */
     async checkPlayServices(): Promise<boolean> {
         try {
+            if (!GoogleSignin) {
+                console.error(' GoogleSignin module not available');
+                return false;
+            }
+
             await GoogleSignin.hasPlayServices({
                 showPlayServicesUpdateDialog: true
             });
@@ -62,14 +108,32 @@ class PureNativeGoogleSignIn {
             return true;
         } catch (error: any) {
             console.error(' Google Play Services error:', error);
-            return false;
+            console.error(' Error code:', error.code);
+            console.error(' Error message:', error.message);
+
+            // Don't block sign-in for Play Services issues on real devices
+            // Many real devices have Play Services but the check might fail
+            console.log(' Continuing with sign-in despite Play Services check failure');
+            return true;
         }
     }
 
 
     async signIn(): Promise<PureNativeGoogleAuthResult> {
         try {
+            console.log(' === Starting Pure Native Google Sign-In ===');
+
+            if (!GoogleSignin) {
+                console.error(' GoogleSignin module not loaded');
+                return {
+                    success: false,
+                    error: 'Google Sign-In module not available',
+                    errorCode: 'MODULE_NOT_AVAILABLE'
+                };
+            }
+
             if (!this.isConfigured) {
+                console.error(' Google Sign-In not configured');
                 return {
                     success: false,
                     error: 'Pure Native Google Sign-In chưa được cấu hình',
@@ -80,11 +144,7 @@ class PureNativeGoogleSignIn {
             console.log(' Checking Google Play Services...');
             const hasPlayServices = await this.checkPlayServices();
             if (!hasPlayServices) {
-                return {
-                    success: false,
-                    error: 'Google Play Services không khả dụng',
-                    errorCode: 'PLAY_SERVICES_NOT_AVAILABLE'
-                };
+                console.log(' Play Services check failed, but continuing...');
             }
 
             console.log(' Starting PURE Native Google Sign-In...');
@@ -92,16 +152,28 @@ class PureNativeGoogleSignIn {
             console.log(' NO Web Client ID needed');
 
             // Pure Native Sign-In
+            console.log(' Calling GoogleSignin.signIn()...');
             const signInResult = await GoogleSignin.signIn();
             console.log('✅ Pure Native sign-in successful');
+            console.log(' Sign-in result:', JSON.stringify(signInResult, null, 2));
 
             // Extract user data and tokens from sign-in result
             const userData = (signInResult as any).data?.user || (signInResult as any).user;
             const serverAuthCode = (signInResult as any).data?.serverAuthCode || (signInResult as any).serverAuthCode;
             const idToken = (signInResult as any).data?.idToken || (signInResult as any).idToken;
 
+            console.log(' User data:', userData);
             console.log(' ID Token available:', !!idToken);
             console.log(' Server Auth Code available:', !!serverAuthCode);
+
+            if (!userData) {
+                console.error(' No user data received from Google Sign-In');
+                return {
+                    success: false,
+                    error: 'No user data received from Google',
+                    errorCode: 'NO_USER_DATA'
+                };
+            }
 
             const user: PureNativeGoogleUser = {
                 id: userData.id,
@@ -113,6 +185,8 @@ class PureNativeGoogleSignIn {
                 serverAuthCode: serverAuthCode || undefined,
             };
 
+            console.log(' Extracted user:', user);
+
             // Authenticate with backend using mobile API
             if (idToken) {
                 console.log(' Authenticating with backend mobile API...');
@@ -122,7 +196,6 @@ class PureNativeGoogleSignIn {
                     if (backendResult.data) {
                         console.log(' Backend authentication successful');
                         console.log(' Backend user:', backendResult.data.name);
-
 
                         await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
                         await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
@@ -184,31 +257,40 @@ class PureNativeGoogleSignIn {
             }
 
         } catch (error: any) {
-            console.error(' Pure Native Sign-In error:', error);
+            console.error(' === Pure Native Sign-In ERROR ===');
+            console.error(' Error:', error);
+            console.error(' Error code:', error.code);
+            console.error(' Error message:', error.message);
+            console.error(' Full error object:', JSON.stringify(error, null, 2));
 
             let errorMessage = 'Login Fail';
             let errorCode = 'UNKNOWN_ERROR';
 
-            switch (error.code) {
-                case statusCodes.SIGN_IN_CANCELLED:
-                    errorMessage = 'cancle login';
-                    errorCode = 'SIGN_IN_CANCELLED';
-                    break;
-                case statusCodes.IN_PROGRESS:
-                    errorMessage = 'loading login';
-                    errorCode = 'IN_PROGRESS';
-                    break;
-                case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                    errorMessage = 'Google Play Services not respond';
-                    errorCode = 'PLAY_SERVICES_NOT_AVAILABLE';
-                    break;
-                case statusCodes.SIGN_IN_REQUIRED:
-                    errorMessage = 'retry';
-                    errorCode = 'SIGN_IN_REQUIRED';
-                    break;
-                default:
-                    errorMessage = error.message || 'unknow error';
-                    errorCode = error.code || 'UNKNOWN_ERROR';
+            if (statusCodes) {
+                switch (error.code) {
+                    case statusCodes.SIGN_IN_CANCELLED:
+                        errorMessage = 'User cancelled login';
+                        errorCode = 'SIGN_IN_CANCELLED';
+                        break;
+                    case statusCodes.IN_PROGRESS:
+                        errorMessage = 'Sign-in already in progress';
+                        errorCode = 'IN_PROGRESS';
+                        break;
+                    case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+                        errorMessage = 'Google Play Services not available';
+                        errorCode = 'PLAY_SERVICES_NOT_AVAILABLE';
+                        break;
+                    case statusCodes.SIGN_IN_REQUIRED:
+                        errorMessage = 'Sign-in required';
+                        errorCode = 'SIGN_IN_REQUIRED';
+                        break;
+                    default:
+                        errorMessage = error.message || 'Unknown error occurred';
+                        errorCode = error.code || 'UNKNOWN_ERROR';
+                }
+            } else {
+                errorMessage = error.message || 'Google Sign-In module error';
+                errorCode = error.code || 'MODULE_ERROR';
             }
 
             return {

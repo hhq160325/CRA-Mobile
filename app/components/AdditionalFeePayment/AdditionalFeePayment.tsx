@@ -191,11 +191,21 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
                     <View style={styles.statusContainer}>
                         <View style={[
                             styles.statusDot,
-                            { backgroundColor: directIsPending ? colors.orange : colors.green }
+                            {
+                                backgroundColor:
+                                    additionalFeePayment.status.toLowerCase() === 'cancelled' ||
+                                        additionalFeePayment.status.toLowerCase() === 'canceled' ? colors.red :
+                                        directIsPending ? colors.orange : colors.green
+                            }
                         ]} />
                         <Text style={[
                             styles.statusText,
-                            { color: directIsPending ? colors.orange : colors.green }
+                            {
+                                color:
+                                    additionalFeePayment.status.toLowerCase() === 'cancelled' ||
+                                        additionalFeePayment.status.toLowerCase() === 'canceled' ? colors.red :
+                                        directIsPending ? colors.orange : colors.green
+                            }
                         ]}>
                             {additionalFeePayment.status}
                         </Text>

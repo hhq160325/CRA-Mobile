@@ -186,11 +186,21 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
                     <View style={styles.statusContainer}>
                         <View style={[
                             styles.statusDot,
-                            { backgroundColor: directIsPending ? colors.orange : colors.green }
+                            {
+                                backgroundColor:
+                                    extensionPayment.status.toLowerCase() === 'cancelled' ||
+                                        extensionPayment.status.toLowerCase() === 'canceled' ? colors.red :
+                                        directIsPending ? colors.orange : colors.green
+                            }
                         ]} />
                         <Text style={[
                             styles.statusText,
-                            { color: directIsPending ? colors.orange : colors.green }
+                            {
+                                color:
+                                    extensionPayment.status.toLowerCase() === 'cancelled' ||
+                                        extensionPayment.status.toLowerCase() === 'canceled' ? colors.red :
+                                        directIsPending ? colors.orange : colors.green
+                            }
                         ]}>
                             {extensionPayment.status}
                         </Text>

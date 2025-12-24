@@ -495,8 +495,50 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
 
         // console.log(` fetchBookingExtensionInfo: Step 1 completed - Got invoiceId: ${invoiceId} for booking ${bookingId}`);
 
-        // Step 2: Check invoice items first (using the /api/ endpoint)
-        // console.log(` fetchBookingExtensionInfo: Step 2a - Checking invoice items for ${invoiceId}`);
+        // Step 2: Try direct invoice endpoint first (the one you provided in the example)
+        try {
+            const directInvoiceUrl = `${API_CONFIG.BASE_URL.replace('/api', '')}/${invoiceId}`;
+            console.log(` fetchBookingExtensionInfo: Step 2 - Trying direct invoice endpoint: ${directInvoiceUrl}`);
+
+            const directInvoiceResponse = await fetch(directInvoiceUrl, {
+                method: 'GET',
+                headers: {
+                    Authorization: token ? `Bearer ${token}` : '',
+                    'accept': '*/*'
+                },
+            });
+
+            if (directInvoiceResponse.ok) {
+                const directInvoiceData = await directInvoiceResponse.json();
+                console.log(` fetchBookingExtensionInfo: Direct invoice data:`, JSON.stringify(directInvoiceData, null, 2));
+
+                // Check if invoice has invoiceItems array with Booking Extension
+                if (directInvoiceData.invoiceItems && Array.isArray(directInvoiceData.invoiceItems)) {
+                    const extensionItem = directInvoiceData.invoiceItems.find((item: any) =>
+                        item.item === 'Booking Extension'
+                    );
+
+                    if (extensionItem) {
+                        console.log(` fetchBookingExtensionInfo: Found extension in direct invoice items:`, extensionItem);
+                        return {
+                            hasExtension: true,
+                            extensionDescription: `Booking Extension - ${extensionItem.description || 'Extended rental period'}`,
+                            extensionDays: extensionItem.quantity || 1,
+                            extensionAmount: extensionItem.total || extensionItem.unitPrice || 0,
+                            extensionPaymentStatus: 'Paid', // If found in invoice, it's typically paid
+                            isExtensionPaymentCompleted: true
+                        };
+                    }
+                }
+            } else {
+                console.log(` fetchBookingExtensionInfo: Direct invoice endpoint failed: ${directInvoiceResponse.status}`);
+            }
+        } catch (directError) {
+            console.log(` fetchBookingExtensionInfo: Direct invoice endpoint error:`, directError);
+        }
+
+        // Step 3: Check invoice items (using the /api/ endpoint) - fallback
+        // console.log(` fetchBookingExtensionInfo: Step 3 - Checking invoice items for ${invoiceId}`);
 
         const invoiceResponse = await fetch(`${baseUrl}/Invoice/${invoiceId}`, {
             method: 'GET',
@@ -529,14 +571,13 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             }
         }
 
-        // Step 3: Check payment details (using the non-/api/ endpoint)
+        // Step 4: Check payment details (using the non-/api/ endpoint)
         const invoiceBaseUrl = API_CONFIG.BASE_URL.replace('/api', '');
         const timestamp = new Date().getTime();
         const paymentUrl = `${invoiceBaseUrl}/Invoice/${invoiceId}?_t=${timestamp}`;
 
-        // console.log(` fetchBookingExtensionInfo: Step 2b - Getting payment details for ${invoiceId}`);
+        // console.log(` fetchBookingExtensionInfo: Step 4 - Getting payment details for ${invoiceId}`);
         // console.log(` fetchBookingExtensionInfo: Full payment URL: ${paymentUrl}`);
-
         const paymentResponse = await fetch(paymentUrl, {
             method: 'GET',
             headers: {
@@ -562,10 +603,29 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         }
 
         const paymentData = await paymentResponse.json();
-        // console.log(` fetchBookingExtensionInfo: Step 2b completed - Got payment data for ${invoiceId}`);
+        // console.log(` fetchBookingExtensionInfo: Step 4 completed - Got payment data for ${invoiceId}`);
         // console.log(` fetchBookingExtensionInfo: Payment data:`, JSON.stringify(paymentData, null, 2));
 
-        // Handle different response formats
+        // First, try to get extension info from invoiceItems if available
+        if (paymentData.invoiceItems && Array.isArray(paymentData.invoiceItems)) {
+            const extensionItem = paymentData.invoiceItems.find((item: any) =>
+                item.item === 'Booking Extension'
+            );
+
+            if (extensionItem) {
+                // console.log(` fetchBookingExtensionInfo: Found extension in invoice items from payment endpoint:`, extensionItem);
+                return {
+                    hasExtension: true,
+                    extensionDescription: `Booking Extension - ${extensionItem.description || 'Extended rental period'}`,
+                    extensionDays: extensionItem.quantity || 1,
+                    extensionAmount: extensionItem.total || extensionItem.unitPrice || 0,
+                    extensionPaymentStatus: 'Paid', // If found in invoice, it's typically paid
+                    isExtensionPaymentCompleted: true
+                };
+            }
+        }
+
+        // Handle different response formats - check if it's an array of payments
         if (!Array.isArray(paymentData)) {
             // console.log(` fetchBookingExtensionInfo: Payment data is not an array:`, typeof paymentData);
             return {
@@ -618,7 +678,27 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
 
         // Create extension description and extract details
         const extensionDescription = `${extensionPayment.item} (${extensionPayment.paidAmount?.toLocaleString()} VND)`;
-        const extensionDays = 1; // Default to 1 day, could be extracted from description if available
+
+        // Try to extract extension days from description
+        let extensionDays = 1; // Default to 1 day
+
+        // Look for patterns like "Extension for 1 days", "Extended for 2 days", etc.
+        const description = extensionPayment.item || '';
+        const dayMatch = description.match(/(\d+)\s*days?/i);
+        if (dayMatch) {
+            extensionDays = parseInt(dayMatch[1], 10) || 1;
+        }
+
+        // Also check in any description field if available
+        if (extensionPayment.description) {
+            const descDayMatch = extensionPayment.description.match(/(\d+)\s*days?/i);
+            if (descDayMatch) {
+                extensionDays = parseInt(descDayMatch[1], 10) || extensionDays;
+            }
+        }
+
+        console.log(` fetchBookingExtensionInfo: Extracted extension days: ${extensionDays} from description: "${description}"`);
+
         const extensionAmount = extensionPayment.paidAmount || 0;
 
         // Check payment status - handle both 'Success' and 'Paid'

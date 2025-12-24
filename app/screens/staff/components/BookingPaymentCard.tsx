@@ -184,22 +184,11 @@ export default function BookingPaymentCard({
                             {!item.hasCheckIn
                                 ? '→ Tap to confirm pickup (Rental Fee Paid)'
                                 : item.hasCheckIn && !item.hasCheckOut
-                                    ? item.paymentDetails?.hasExtension && !item.paymentDetails?.isExtensionPaid
-                                        ? '→ Extension payment required for return'
-                                        : '→ Tap to confirm return'
+                                    ? '→ Tap to confirm return'
                                     : '→ View booking details'}
                         </Text>
                         <Text style={confirmPickupArrowStyle}>→</Text>
                     </Pressable>
-                )}
-
-                {/* Show extension payment requirement if needed */}
-                {item.paymentDetails?.hasExtension && !item.paymentDetails?.isExtensionPaid && item.hasCheckIn && (
-                    <View style={styles.extensionRequirement}>
-                        <Text style={styles.extensionRequirementText}>
-                            ⚠️ Extension payment required before return
-                        </Text>
-                    </View>
                 )}
             </View>
         </Pressable>

@@ -487,22 +487,6 @@ export const styles = StyleSheet.create({
         color: 'white',
     },
 
-    // Extension Requirement Styles
-    extensionRequirement: {
-        backgroundColor: '#fef2f2',
-        borderRadius: scale(8),
-        padding: scale(8),
-        marginTop: verticalScale(8),
-        borderLeftWidth: scale(3),
-        borderLeftColor: '#ef4444',
-    },
-    extensionRequirementText: {
-        fontSize: scale(11),
-        color: '#dc2626',
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-
     // Background Animation Styles
     backgroundContainer: {
         position: 'absolute',

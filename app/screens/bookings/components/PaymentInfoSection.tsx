@@ -53,7 +53,9 @@ export default function PaymentInfoSection({ invoice, totalPrice, bookingDate, p
                     <Text style={{
                         fontSize: 12,
                         fontWeight: '600',
-                        color: (bookingFeePayment?.status === 'Success' || invoice?.status?.toLowerCase() === 'paid') ? '#00B050' : colors.placeholder
+                        color: (bookingFeePayment?.status === 'Success' ||
+                            bookingFeePayment?.status === 'Paid' ||
+                            invoice?.status?.toLowerCase() === 'paid') ? '#00B050' : colors.placeholder
                     }}>
                         {bookingFeePayment?.status || invoice?.status || 'Pending'}
                     </Text>

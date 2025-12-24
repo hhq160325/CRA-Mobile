@@ -125,37 +125,118 @@ export const fetchPaymentDetails = async (bookingId: string) => {
             console.log(`🔍 fetchPaymentDetails: Payments data for ${bookingId}:`, JSON.stringify(paymentsData, null, 2));
 
             if (Array.isArray(paymentsData) && paymentsData.length > 0) {
-                const rentalFeePayment = paymentsData.find(
-                    p => p.item === 'Rental Fee',
-                );
+                // Staff screen checks ALL payments but has different requirements for different actions
+                const bookingFeePayment = paymentsData.find(p => p.item === 'Booking Fee');
+                const rentalFeePayment = paymentsData.find(p => p.item === 'Rental Fee');
+                const extensionPayment = paymentsData.find(p => p.item === 'Booking Extension');
+                const additionalFeePayment = paymentsData.find(p => p.item === 'Additional Fee');
 
-                console.log(`🔍 fetchPaymentDetails: Rental Fee payment for ${bookingId}:`, rentalFeePayment);
+                console.log(`🔍 fetchPaymentDetails: All payments for ${bookingId}:`);
+                console.log(`🔍 - Booking Fee:`, bookingFeePayment);
+                console.log(`🔍 - Rental Fee:`, rentalFeePayment);
+                console.log(`🔍 - Booking Extension:`, extensionPayment);
+                console.log(`🔍 - Additional Fee:`, additionalFeePayment);
 
-                if (rentalFeePayment) {
-                    const result = {
-                        amount: Number(rentalFeePayment.paidAmount) || 0,
-                        status: rentalFeePayment.status?.toLowerCase() || 'pending',
-                        hasPaymentRecord: true,
-                    };
-                    console.log(`🔍 fetchPaymentDetails: Returning for ${bookingId}:`, result);
-                    return result;
+                // Calculate total amount from all payments
+                let totalAmount = 0;
+                [bookingFeePayment, rentalFeePayment, extensionPayment, additionalFeePayment].forEach(payment => {
+                    if (payment) {
+                        totalAmount += Number(payment.paidAmount) || 0;
+                    }
+                });
+
+                // Check payment statuses
+                const isBookingFeePaid = bookingFeePayment &&
+                    (bookingFeePayment.status?.toLowerCase() === 'success' ||
+                        bookingFeePayment.status?.toLowerCase() === 'paid' ||
+                        bookingFeePayment.status?.toLowerCase() === 'completed');
+
+                const isRentalFeePaid = rentalFeePayment &&
+                    (rentalFeePayment.status?.toLowerCase() === 'success' ||
+                        rentalFeePayment.status?.toLowerCase() === 'paid' ||
+                        rentalFeePayment.status?.toLowerCase() === 'completed');
+
+                const isExtensionPaid = !extensionPayment || // No extension = considered paid
+                    (extensionPayment.status?.toLowerCase() === 'success' ||
+                        extensionPayment.status?.toLowerCase() === 'paid' ||
+                        extensionPayment.status?.toLowerCase() === 'completed');
+
+                const isAdditionalFeePaid = !additionalFeePayment || // No additional fee = considered paid
+                    (additionalFeePayment.status?.toLowerCase() === 'success' ||
+                        additionalFeePayment.status?.toLowerCase() === 'paid' ||
+                        additionalFeePayment.status?.toLowerCase() === 'completed');
+
+                // Determine overall status based on rental fee (main requirement for pickup)
+                let overallStatus = 'pending';
+
+                if (!rentalFeePayment) {
+                    // No rental fee payment created yet
+                    overallStatus = 'no_payment';
+                    console.log(`🔍 fetchPaymentDetails: No rental fee payment found for ${bookingId} - status: no_payment`);
+                } else if (isRentalFeePaid) {
+                    // Rental fee is paid - ready for pickup
+                    overallStatus = 'paid';
+                    console.log(`🔍 fetchPaymentDetails: Rental fee is paid for ${bookingId} - ready for pickup`);
+                } else {
+                    // Rental fee is pending - need payment before pickup
+                    overallStatus = 'pending';
+                    console.log(`🔍 fetchPaymentDetails: Rental fee is pending for ${bookingId} - payment required for pickup`);
                 }
-            }
 
-            // If we get a successful response but no Rental Fee payment found,
-            // it means no payment has been created for this booking yet
-            console.log(`🔍 fetchPaymentDetails: No Rental Fee payment found for ${bookingId} - returning no_payment`);
-            return { amount: 0, status: 'no_payment', hasPaymentRecord: false };
+                const result = {
+                    amount: totalAmount,
+                    status: overallStatus,
+                    hasPaymentRecord: !!(bookingFeePayment || rentalFeePayment || extensionPayment || additionalFeePayment),
+                    // Individual payment statuses for different screen requirements
+                    isBookingFeePaid,
+                    isRentalFeePaid,
+                    isExtensionPaid,
+                    isAdditionalFeePaid,
+                    hasExtension: !!extensionPayment,
+                    // Payment details for reference
+                    rentalFeePayment,
+                    extensionPayment,
+                };
+                console.log(`🔍 fetchPaymentDetails: Returning for ${bookingId}:`, result);
+                return result;
+            }
         } else {
             console.log(`🔍 fetchPaymentDetails: API call failed for ${bookingId} with status ${response.status}`);
         }
+
+        // If we get here, either API failed or no payments found
+        console.log(`🔍 fetchPaymentDetails: No payments found for ${bookingId} - returning no_payment`);
+        return {
+            amount: 0,
+            status: 'no_payment',
+            hasPaymentRecord: false,
+            isBookingFeePaid: false,
+            isRentalFeePaid: false,
+            isExtensionPaid: true, // No extension = considered paid
+            isAdditionalFeePaid: true, // No additional fee = considered paid
+            hasExtension: false,
+            rentalFeePayment: null,
+            extensionPayment: null,
+        };
+
     } catch (err) {
         console.error(`🔍 fetchPaymentDetails: Error for ${bookingId}:`, err);
-    }
 
-    // If API call fails, assume no payment record exists
-    console.log(`🔍 fetchPaymentDetails: Returning no_payment for ${bookingId} due to error/failure`);
-    return { amount: 0, status: 'no_payment', hasPaymentRecord: false };
+        // If API call fails, assume no payment record exists
+        console.log(`🔍 fetchPaymentDetails: Returning no_payment for ${bookingId} due to error/failure`);
+        return {
+            amount: 0,
+            status: 'no_payment',
+            hasPaymentRecord: false,
+            isBookingFeePaid: false,
+            isRentalFeePaid: false,
+            isExtensionPaid: true, // No extension = considered paid
+            isAdditionalFeePaid: true, // No additional fee = considered paid
+            hasExtension: false,
+            rentalFeePayment: null,
+            extensionPayment: null,
+        };
+    }
 };
 
 export const fetchCheckInOutStatus = async (bookingId: string) => {

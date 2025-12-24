@@ -206,8 +206,8 @@ export default function PayOSWebViewScreen() {
     console.log('🎯 Booking ID:', bookingId);
     console.log('🎯 Payment URL:', paymentUrl);
 
-    if (!bookingId) {
-      console.error('❌ No booking ID provided for additional fee payment');
+    if (!bookingId || bookingId === 'undefined' || bookingId === 'null' || bookingId === 'pending') {
+      console.log('⚠️ Invalid booking ID for additional fee payment:', bookingId);
       return false;
     }
 

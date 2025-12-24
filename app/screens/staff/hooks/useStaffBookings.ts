@@ -38,7 +38,7 @@ export function useStaffBookings() {
     }): Promise<BookingItem> => {
         // console.log(` mapSingleBooking: processing booking ${booking.id} with cached data`);
 
-        const mappedStatus = mapBookingStatus(booking.status);
+        let mappedStatus = mapBookingStatus(booking.status);
         const formattedDate = formatBookingDate(booking.bookingDate);
 
         // Get car details from cache
@@ -66,15 +66,33 @@ export function useStaffBookings() {
             invoiceAmount = booking.totalPrice;
         }
 
-        // If there's no payment record for the booking fee, consider the booking as cancelled
+        // Determine booking status based on payment requirements
+        // Staff screen logic: Check ALL payments but enforce different requirements for different actions
         if (!paymentDetails.hasPaymentRecord || invoiceStatus === 'no_payment') {
-            console.log(`🔍 mapSingleBooking: No payment record found for ${booking.id} - setting to cancelled`);
-            invoiceStatus = 'cancelled';
-            mappedStatus = 'cancelled';
-        } else if (mappedStatus === 'successfully' && invoiceStatus === 'pending') {
-            console.log(`🔍 mapSingleBooking: Booking ${booking.id} is successful but payment pending - setting payment to paid`);
+            console.log(`🔍 mapSingleBooking: No payment record found for ${booking.id} - setting to pending (need to create rental payment)`);
+            invoiceStatus = 'pending';
+            mappedStatus = 'pending';
+        } else if (paymentDetails.isRentalFeePaid) {
+            // If rental fee is paid, booking is ready for pickup/return (depending on extension requirements)
+            console.log(`🔍 mapSingleBooking: Rental fee is paid for ${booking.id} - ready for pickup`);
             invoiceStatus = 'paid';
+            mappedStatus = 'successfully';
+        } else if (paymentDetails.rentalFeePayment && !paymentDetails.isRentalFeePaid) {
+            // If rental fee payment exists but not paid, need payment before pickup
+            console.log(`🔍 mapSingleBooking: Rental fee is pending for ${booking.id} - payment required for pickup`);
+            invoiceStatus = 'pending';
+            mappedStatus = 'pending';
+        } else {
+            // No rental fee payment created yet - need to create payment
+            console.log(`🔍 mapSingleBooking: No rental fee payment found for ${booking.id} - need to create payment`);
+            invoiceStatus = 'pending';
+            mappedStatus = 'pending';
         }
+
+        // Additional status checks for return requirements
+        const canPickup = paymentDetails.isRentalFeePaid;
+        const canReturn = paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid;
+        console.log(`🔍 mapSingleBooking: Action requirements for ${booking.id}: canPickup=${canPickup}, canReturn=${canReturn} (rental paid=${paymentDetails.isRentalFeePaid}, extension paid=${paymentDetails.isExtensionPaid})`);
 
         console.log(`🔍 mapSingleBooking: Final status for ${booking.id}: ${mappedStatus}, invoice status: ${invoiceStatus}`);
 
@@ -110,6 +128,16 @@ export function useStaffBookings() {
             extensionAmount: extensionInfo.extensionAmount,
             extensionPaymentStatus: extensionInfo.extensionPaymentStatus,
             isExtensionPaymentCompleted: extensionInfo.isExtensionPaymentCompleted,
+            // Add payment details for UI logic
+            paymentDetails: {
+                isBookingFeePaid: paymentDetails.isBookingFeePaid,
+                isRentalFeePaid: paymentDetails.isRentalFeePaid,
+                isExtensionPaid: paymentDetails.isExtensionPaid,
+                isAdditionalFeePaid: paymentDetails.isAdditionalFeePaid,
+                hasExtension: paymentDetails.hasExtension,
+                canPickup: paymentDetails.isRentalFeePaid, // Pickup requires rental fee
+                canReturn: paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid, // Return requires rental + extension (if exists)
+            },
         };
     };
 
@@ -222,7 +250,12 @@ export function useStaffBookings() {
             const result = await paymentService.createRentalPayment(bookingId);
 
             if (result.error) {
-                alert(`Failed to create payment: ${result.error.message}`);
+                // Handle duplicate payment error more gracefully
+                if (result.error.message.includes('Payment already exists')) {
+                    alert('A payment for this booking already exists. Please complete the existing payment or contact support if you need assistance.');
+                } else {
+                    alert(`Failed to create payment: ${result.error.message}`);
+                }
                 setProcessingPayment(null);
                 return;
             }

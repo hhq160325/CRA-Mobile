@@ -1,6 +1,7 @@
 import { API_CONFIG, API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Platform } from 'react-native'
 
 interface UserData {
     id: string
@@ -113,6 +114,26 @@ export const userService = {
 
     async getUserById(userId: string): Promise<{ data: UserData | null; error: Error | null }> {
         console.log("userService.getUserById: fetching user", userId)
+
+        // Add connection test for iOS to prevent timeouts
+        if (Platform.OS === 'ios') {
+            console.log("🔍 iOS detected: Testing connection before user fetch...");
+            try {
+                const { testConnection } = await import('../client');
+                const connectionTest = await testConnection();
+                if (!connectionTest.success) {
+                    console.log("⚠️ Connection test failed:", connectionTest.message);
+                    return {
+                        data: null,
+                        error: new Error(`Connection issue: ${connectionTest.message}`)
+                    };
+                }
+                console.log("✅ Connection test passed:", connectionTest.message);
+            } catch (testError) {
+                console.log("⚠️ Connection test error:", testError);
+                // Continue with request even if test fails
+            }
+        }
 
         const result = await apiClient<UserData>(API_ENDPOINTS.GET_USER(userId), {
             method: "GET",
@@ -390,14 +411,24 @@ export const userService = {
     async getDriverLicense(userId: string, email: string): Promise<{ data: { urls: string[]; licenseInfo?: DriverLicenseUploadResponse } | null; error: Error | null }> {
         console.log("userService.getDriverLicense: fetching driver license for user", userId)
 
-        const result = await apiClient<DriverLicenseViewResponse>(API_ENDPOINTS.GET_DRIVER_LICENSE(userId, email), {
+        // Add cache-busting parameter to ensure fresh data
+        const timestamp = Date.now()
+        const endpoint = `${API_ENDPOINTS.GET_DRIVER_LICENSE(userId, email)}&_t=${timestamp}`
+
+        const result = await apiClient<DriverLicenseViewResponse>(endpoint, {
             method: "GET",
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
         })
 
         console.log("userService.getDriverLicense: received response", {
             hasError: !!result.error,
             hasData: !!result.data,
             viewCount: result.data?.view?.length || 0,
+            timestamp: new Date().toISOString(),
             rawData: result.data
         })
 
@@ -411,8 +442,45 @@ export const userService = {
             return { data: { urls: [] }, error: null }
         }
 
-        // Get the most recent license (first in array)
-        const latestLicense = result.data.view[0]
+        // Always prioritize side: 1 (front of license) over side: 0 (back of license)
+        let latestLicense = result.data.view[0]; // Default to first
+
+        // Look for side: 1 first (front of license)
+        const frontSideLicense = result.data.view.find(license => license.side === 1);
+
+        if (frontSideLicense) {
+            latestLicense = frontSideLicense;
+            console.log("userService.getDriverLicense: Using side 1 (front) license", {
+                side: frontSideLicense.side,
+                status: frontSideLicense.status,
+                createDate: frontSideLicense.createDate
+            });
+        } else {
+            // If no side 1, look for approved status
+            const approvedLicense = result.data.view.find(license =>
+                license.status === 'AutoApproved' || license.status === 'Approved'
+            );
+
+            if (approvedLicense) {
+                latestLicense = approvedLicense;
+                console.log("userService.getDriverLicense: Using approved license", {
+                    side: approvedLicense.side,
+                    status: approvedLicense.status,
+                    createDate: approvedLicense.createDate
+                });
+            } else {
+                // Fallback to most recent by date
+                const sortedByDate = result.data.view.sort((a, b) =>
+                    new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
+                );
+                latestLicense = sortedByDate[0];
+                console.log("userService.getDriverLicense: Using most recent license", {
+                    side: latestLicense.side,
+                    status: latestLicense.status,
+                    createDate: latestLicense.createDate
+                });
+            }
+        }
 
         console.log("userService.getDriverLicense: License info found", {
             licenseNumber: latestLicense.licenseNumber,

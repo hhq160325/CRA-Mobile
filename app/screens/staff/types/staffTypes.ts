@@ -1,5 +1,17 @@
 export type PaymentStatus = 'all' | 'successfully' | 'pending' | 'cancelled';
 
+export interface PaymentDetails {
+    isBookingFeePaid: boolean;
+    isRentalFeePaid: boolean;
+    isExtensionPaid: boolean;
+    isAdditionalFeePaid: boolean;
+    hasExtension: boolean;
+    canPickup: boolean;
+    canReturn: boolean;
+    rentalFeePayment?: any;
+    extensionPayment?: any;
+}
+
 export interface BookingItem {
     id: string;
     bookingNumber?: string;
@@ -24,4 +36,5 @@ export interface BookingItem {
     extensionAmount?: number;
     extensionPaymentStatus?: string;
     isExtensionPaymentCompleted?: boolean;
+    paymentDetails?: PaymentDetails;
 }

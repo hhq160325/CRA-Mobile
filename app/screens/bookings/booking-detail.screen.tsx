@@ -35,11 +35,18 @@ export default function BookingDetailScreen() {
   useEffect(() => {
     if (!user) {
       console.log(' BookingDetailScreen: No authenticated user, navigating to login');
-      navigation.navigate('SignIn' as any);
+      navigation.navigate('SignInScreen' as any);
     }
   }, [user, navigation]);
 
-  const { booking, invoice, payments, bookingFee, loading } = useBookingDetail(id || bookingNumber, navigation);
+  // Don't call useBookingDetail if we don't have proper parameters
+  const bookingIdentifier = id || bookingNumber;
+  const shouldLoadBooking = !!bookingIdentifier && !!user;
+
+  const { booking, invoice, payments, bookingFee, loading } = useBookingDetail(
+    shouldLoadBooking ? bookingIdentifier : '',
+    navigation
+  );
 
   console.log(' BookingDetailScreen: Hook results:', {
     hasBooking: !!booking,

@@ -155,7 +155,9 @@ export default function BookingPaymentCard({
             )}
 
             <View style={styles.cardFooter}>
-                {item.status === 'pending' ? (
+                {/* Show different buttons based on payment status and requirements */}
+                {!item.paymentDetails?.isRentalFeePaid ? (
+                    // Rental fee not paid - show request payment button
                     <Pressable
                         onPress={() => onRequestPayment(item.id)}
                         disabled={processingPayment === item.id}
@@ -168,22 +170,36 @@ export default function BookingPaymentCard({
                         {processingPayment === item.id ? (
                             <ActivityIndicator size="small" color={colors.white} />
                         ) : (
-                            <Text style={styles.requestPaymentText}>Request Payment</Text>
+                            <Text style={styles.requestPaymentText}>
+                                {item.paymentDetails?.rentalFeePayment ? 'Complete Rental Payment' : 'Request Rental Payment'}
+                            </Text>
                         )}
                     </Pressable>
                 ) : (
+                    // Rental fee is paid - show pickup/return button
                     <Pressable
                         onPress={() => onNavigateToPickup(item.id)}
                         style={styles.confirmPickupButton}>
                         <Text style={confirmPickupTextStyle}>
                             {!item.hasCheckIn
-                                ? '→ Tap to confirm pickup'
+                                ? '→ Tap to confirm pickup (Rental Fee Paid)'
                                 : item.hasCheckIn && !item.hasCheckOut
-                                    ? '→ Tap to confirm return'
+                                    ? item.paymentDetails?.hasExtension && !item.paymentDetails?.isExtensionPaid
+                                        ? '→ Extension payment required for return'
+                                        : '→ Tap to confirm return'
                                     : '→ View booking details'}
                         </Text>
                         <Text style={confirmPickupArrowStyle}>→</Text>
                     </Pressable>
+                )}
+
+                {/* Show extension payment requirement if needed */}
+                {item.paymentDetails?.hasExtension && !item.paymentDetails?.isExtensionPaid && item.hasCheckIn && (
+                    <View style={styles.extensionRequirement}>
+                        <Text style={styles.extensionRequirementText}>
+                            ⚠️ Extension payment required before return
+                        </Text>
+                    </View>
                 )}
             </View>
         </Pressable>

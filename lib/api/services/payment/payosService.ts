@@ -7,11 +7,71 @@ export const getPayOSPayment = async (
     orderCode: string
 ): Promise<{ data: PayOSPayment | null; error: Error | null }> => {
     console.log("payosService.getPayOSPayment: fetching payment", orderCode);
-    const result = await apiClient<PayOSPayment>(API_ENDPOINTS.GET_PAYOS_PAYMENT(orderCode), {
-        method: "GET",
-    });
-    console.log("payosService.getPayOSPayment: result", { hasError: !!result.error });
-    return result.error ? { data: null, error: result.error } : { data: result.data, error: null };
+
+    // PayOS endpoints don't use /api prefix, so we need to call them directly
+    const baseUrl = API_CONFIG.BASE_URL.replace('/api', ''); // Remove /api from base URL
+    const fullUrl = `${baseUrl}/PayOSPayment/${orderCode}`;
+
+    console.log("payosService.getPayOSPayment: calling", fullUrl);
+
+    try {
+        let token: string | null = null;
+        try {
+            token = await AsyncStorage.getItem("token");
+        } catch (e) {
+            console.error("Failed to get token:", e);
+        }
+
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            "accept": "*/*",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(fullUrl, {
+            method: "GET",
+            headers,
+        });
+
+        console.log("payosService.getPayOSPayment: response status", response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+
+            if (response.status === 404) {
+                console.log(`payosService.getPayOSPayment: Order ${orderCode} not found in PayOS system`);
+                return {
+                    data: null,
+                    error: new Error(`PayOS order not found: ${orderCode}`),
+                };
+            } else if (response.status === 500) {
+                console.log(`payosService.getPayOSPayment: Order ${orderCode} may not exist in PayOS yet (server error)`);
+                return {
+                    data: null,
+                    error: new Error(`PayOS server error for order ${orderCode} - order may not exist`),
+                };
+            } else {
+                console.error("payosService.getPayOSPayment: unexpected error", errorText);
+                return {
+                    data: null,
+                    error: new Error(`Failed to get PayOS payment: ${response.status} - ${errorText}`),
+                };
+            }
+        }
+
+        const data = await response.json();
+        console.log("payosService.getPayOSPayment: success", data);
+        return { data, error: null };
+    } catch (error: any) {
+        console.error("payosService.getPayOSPayment: exception", error);
+        return {
+            data: null,
+            error: new Error(error?.message || "Failed to get PayOS payment"),
+        };
+    }
 };
 
 export const createPayOSPayment = async (
@@ -63,11 +123,22 @@ export const createRentalPayment = async (
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("payosService.createRentalPayment: error", errorText);
-            return {
-                data: null,
-                error: new Error(`Failed to create rental payment: ${response.status}`),
-            };
+
+            if (response.status === 500) {
+                // 500 error likely means payment already exists for this booking
+                console.log(`payosService.createRentalPayment: Payment may already exist for booking ${bookingId} (status 500)`);
+                return {
+                    data: null,
+                    error: new Error(`Payment already exists for booking ${bookingId}`),
+                };
+            } else {
+                // Log other errors normally
+                console.error("payosService.createRentalPayment: unexpected error", errorText);
+                return {
+                    data: null,
+                    error: new Error(`Failed to create rental payment: ${response.status}`),
+                };
+            }
         }
 
         const data = await response.json();

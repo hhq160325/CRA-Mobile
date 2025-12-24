@@ -48,16 +48,16 @@ const SignInScreen = () => {
         });
 
         if (userRole === 'staff' || user.roleId === 1002) {
-          console.log(' Navigating to staffStack for staff user');
+          console.log('🚀 Navigating to auth (will show staffStack) for staff user');
           navigationRef.reset({
             index: 0,
-            routes: [{ name: 'staffStack' }],
+            routes: [{ name: 'auth' }],
           });
         } else {
-          console.log('Navigating to tabStack for', user.role, 'user');
+          console.log('🚀 Navigating to auth (will show tabStack) for', user.role, 'user');
           navigationRef.reset({
             index: 0,
-            routes: [{ name: 'tabStack' }],
+            routes: [{ name: 'auth' }],
           });
         }
       } else {
@@ -113,22 +113,18 @@ const SignInScreen = () => {
           const {
             navigationRef,
           } = require('../../navigators/navigation-utilities');
-          if (
-            navigationRef &&
-            navigationRef.isReady &&
-            navigationRef.isReady()
-          ) {
+          if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
             if (isStaff) {
-              console.log(' IMMEDIATE NAVIGATION to staffStack');
+              console.log('🚀 IMMEDIATE NAVIGATION to auth (will show staffStack)');
               navigationRef.reset({
                 index: 0,
-                routes: [{ name: 'staffStack' }],
+                routes: [{ name: 'auth' }],
               });
             } else {
-              console.log(' IMMEDIATE NAVIGATION to tabStack');
+              console.log('🚀 IMMEDIATE NAVIGATION to auth (will show tabStack)');
               navigationRef.reset({
                 index: 0,
-                routes: [{ name: 'tabStack' }],
+                routes: [{ name: 'auth' }],
               });
             }
           } else {

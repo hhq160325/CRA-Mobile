@@ -42,6 +42,18 @@ export const additionalFeePaymentService = {
         try {
             console.log('🔍 Checking additional fee payment for:', bookingId);
 
+            // Validate bookingId
+            if (!bookingId || bookingId === 'undefined' || bookingId === 'null') {
+                console.log('⚠️ Invalid booking ID provided:', bookingId);
+                return {
+                    data: {
+                        hasAdditionalFee: false,
+                        isPending: false
+                    },
+                    error: null
+                };
+            }
+
             // Get authentication token
             const token = await getAuthToken();
             console.log('🔐 Auth token available for check:', !!token);

@@ -55,11 +55,56 @@ export const getPaymentByOrderCode = async (
     orderCode: string
 ): Promise<{ data: Payment | null; error: Error | null }> => {
     console.log("paymentService.getPaymentByOrderCode: fetching payment", orderCode);
-    const result = await apiClient<Payment>(API_ENDPOINTS.GET_PAYMENT(orderCode), {
-        method: "GET",
-    });
-    console.log("paymentService.getPaymentByOrderCode: result", { hasError: !!result.error });
-    return result.error ? { data: null, error: result.error } : { data: result.data, error: null };
+
+    // Try the Payment endpoint without /api prefix first (matching PayOS pattern)
+    const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
+    const fullUrl = `${baseUrl}/Payment/${orderCode}`;
+
+    console.log("paymentService.getPaymentByOrderCode: calling", fullUrl);
+
+    try {
+        let token: string | null = null;
+        try {
+            token = await AsyncStorage.getItem("token");
+        } catch (e) {
+            console.error("Failed to get token:", e);
+        }
+
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            "accept": "*/*",
+        };
+
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(fullUrl, {
+            method: "GET",
+            headers,
+        });
+
+        console.log("paymentService.getPaymentByOrderCode: response status", response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("paymentService.getPaymentByOrderCode: error", errorText);
+            return {
+                data: null,
+                error: new Error(`Failed to get payment: ${response.status}`),
+            };
+        }
+
+        const data = await response.json();
+        console.log("paymentService.getPaymentByOrderCode: success", data);
+        return { data, error: null };
+    } catch (error: any) {
+        console.error("paymentService.getPaymentByOrderCode: exception", error);
+        return {
+            data: null,
+            error: new Error(error?.message || "Failed to get payment"),
+        };
+    }
 };
 
 export const getPaymentByBookingId = async (

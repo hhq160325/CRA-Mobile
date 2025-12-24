@@ -7,16 +7,22 @@ import { FavoritesProvider } from './lib/favorites-context';
 import { GPSTrackingProvider } from './lib/providers/GPSTrackingProvider';
 
 
-LogBox.ignoreAllLogs(true);
+
+LogBox.ignoreAllLogs(false);
 
 
-if (!__DEV__) {
-  console.error = () => { };
-  console.warn = () => { };
+if (__DEV__) {
+  console.log(' App starting in development mode');
 }
 
+
 const App = () => {
+
+  console.log('🚀 App component rendered');
+
   useEffect(() => {
+    console.log('🎯 App useEffect triggered');
+
     const checkForUpdates = async () => {
       try {
         if (!__DEV__) {
@@ -30,7 +36,7 @@ const App = () => {
             await Updates.reloadAsync();
           } else {
             console.log('No updates available');
-            // Show current update info for debugging
+
             const manifest = Updates.manifest;
             console.log('Current update ID:', Updates.updateId);
             console.log('Current runtime version:', Updates.runtimeVersion);

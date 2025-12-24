@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Alert, ActivityIndicator, Text } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../../theme/colors';
 import { useAuth } from '../../../lib/auth-context';
 import Header from '../../components/Header/Header';
@@ -64,6 +65,69 @@ export default function ProfileScreen() {
     buildSafeUpdateData,
   );
 
+  // Define fetchDriverLicense function first
+  const fetchDriverLicense = async (forceRefresh = false) => {
+    if (!user?.id || !user?.email) return;
+
+    try {
+      console.log('🔄 Fetching driver license data...', { forceRefresh });
+
+      const { data, error } = await userService.getDriverLicense(
+        user.id,
+        user.email,
+      );
+
+      if (error) {
+        console.error('Failed to fetch driver license:', error);
+        return;
+      }
+
+      console.log('📄 Driver license data received:', data);
+
+      if (data && data.licenseInfo) {
+        // Use the license info from the selected (approved/latest) record
+        const licenseInfo = data.licenseInfo;
+
+        console.log('✅ Setting license info:', {
+          number: licenseInfo.licenseNumber,
+          name: licenseInfo.licenseName,
+          class: licenseInfo.licenseClass,
+          status: licenseInfo.status,
+          urls: data.urls?.length || 0
+        });
+
+        // Set the image from URLs
+        if (data.urls && data.urls.length > 0) {
+          setLicenseImage(data.urls[0]);
+        } else {
+          setLicenseImage(null);
+        }
+
+        // Set license information
+        setLicenseInfo({
+          licenseNumber: licenseInfo.licenseNumber,
+          licenseName: licenseInfo.licenseName,
+          licenseClass: licenseInfo.licenseClass,
+          licenseDoB: licenseInfo.licenseDoB,
+          licenseIssue: licenseInfo.licenseIssue,
+          licenseExpiry: licenseInfo.licenseExpiry,
+        });
+
+        setLicenseStatus(licenseInfo.status);
+        setLicenseCreateDate(licenseInfo.createDate);
+
+      } else {
+        console.log('❌ No license data found');
+        setLicenseImage(null);
+        setLicenseInfo(null);
+        setLicenseStatus(null);
+        setLicenseCreateDate(null);
+      }
+    } catch (err) {
+      console.error('Exception fetching driver license:', err);
+    }
+  };
+
   const profileActions = useProfileActions(
     user?.id,
     user?.email,
@@ -73,48 +137,10 @@ export default function ProfileScreen() {
     setLicenseImage,
     refreshUser,
     buildSafeUpdateData,
+    fetchDriverLicense, // Now we can pass it
   );
 
   const imagePicker = useImagePicker();
-
-  const fetchDriverLicense = async (forceRefresh = false) => {
-    if (!user?.id || !user?.email) return;
-
-    try {
-      const { data, error } = await userService.getDriverLicense(
-        user.id,
-        user.email,
-      );
-      if (error) {
-        console.error('Failed to fetch driver license:', error);
-        return;
-      }
-
-      if (data && data.urls && data.urls.length > 0) {
-        // Use the first (most recent) image for simplified single photo upload
-        setLicenseImage(data.urls[0]);
-
-        // Store the extracted license information
-        if (data.licenseInfo) {
-          setLicenseInfo(data.licenseInfo);
-          setLicenseStatus(data.licenseInfo.status);
-          setLicenseCreateDate(data.licenseInfo.createDate);
-
-          console.log('License info extracted:', {
-            number: data.licenseInfo.licenseNumber,
-            name: data.licenseInfo.licenseName,
-            class: data.licenseInfo.licenseClass,
-            status: data.licenseInfo.status
-          });
-        }
-      } else {
-        setLicenseImage(null);
-        setLicenseInfo(null);
-      }
-    } catch (err) {
-      console.error('Exception fetching driver license:', err);
-    }
-  };
 
   const fetchDriverLicenseStatus = async () => {
     if (!user?.id) return;
@@ -138,6 +164,14 @@ export default function ProfileScreen() {
     fetchDriverLicense();
     fetchDriverLicenseStatus();
   }, [user?.id, user?.email]);
+
+  // Refresh data when screen comes into focus (e.g., after upload)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('📱 Profile screen focused - refreshing license data');
+      fetchDriverLicense(true);
+    }, [user?.id, user?.email])
+  );
 
   // Handle avatar upload loading animation
   useEffect(() => {
@@ -297,10 +331,11 @@ export default function ProfileScreen() {
 
       Alert.alert('Success', 'License photo uploaded and processed successfully');
 
-      // Refresh license data after upload to get the extracted information
+      // Force refresh license data after upload to get the latest information
+      console.log('🔄 Force refreshing license data after upload...');
       setTimeout(() => {
-        fetchDriverLicense();
-      }, 1000);
+        fetchDriverLicense(true);
+      }, 1500); // Give server a bit more time to process
 
       return result;
 

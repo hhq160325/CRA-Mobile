@@ -89,20 +89,44 @@ export function logExpoDevInfo() {
 export function getOptimalExpoConfig() {
     const info = getExpoDevInfo();
 
+    // Platform-specific timeout configuration
+    const getOptimalTimeout = () => {
+        if (Platform.OS === 'ios') {
+            return info.isExpoGo ? 35000 : 30000; // Longer timeout for iOS
+        }
+        return info.isExpoGo ? 25000 : 20000; // Standard timeout for Android
+    };
+
+    // iOS-specific headers for better network performance
+    const iosHeaders = Platform.OS === 'ios' ? {
+        'Connection': 'keep-alive',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept': 'application/json, text/plain, */*',
+    } : {};
+
     // Optimal settings for Expo development
     const config = {
-        timeout: info.isExpoGo ? 25000 : 20000,
-        retries: 1,
+        timeout: getOptimalTimeout(),
+        retries: Platform.OS === 'ios' ? 2 : 1, // More retries for iOS
         headers: {
             'User-Agent': `ExpoApp/${Constants.expoVersion} (${Platform.OS})`,
             'X-Expo-Platform': Platform.OS,
             'Cache-Control': 'no-cache',
+            ...iosHeaders,
         },
         enableLogging: true,
     };
 
     if (__DEV__) {
-        console.log(' Using optimal Expo config:', config);
+        console.log("🔧 Using optimal Expo config:", config);
+
+        // Add iOS-specific recommendations
+        if (Platform.OS === 'ios') {
+            console.log("📱 iOS-specific optimizations applied:");
+            console.log("   • Extended timeout:", config.timeout + "ms");
+            console.log("   • Additional retry attempts:", config.retries);
+            console.log("   • iOS-optimized headers");
+        }
     }
 
     return config;

@@ -12,6 +12,7 @@ export const useProfileActions = (
   setLicenseImage: (uri: string) => void,
   refreshUser: () => void,
   buildSafeUpdateData: (latestData: any, overrides?: any) => any,
+  fetchDriverLicense?: () => Promise<void>, // Add fetchDriverLicense function
 ) => {
   const [isSaving, setIsSaving] = useState(false);
 
@@ -70,15 +71,41 @@ export const useProfileActions = (
 
       if (error) {
         console.error('uploadDriverLicense: upload failed', error);
-        Alert.alert(
-          'Upload Failed',
-          error.message || "Failed to upload driver's license",
-        );
+
+        // Handle specific error cases
+        if (error.message.includes('429') || error.message.includes('rate limit')) {
+          Alert.alert(
+            'Rate Limit Exceeded',
+            'The OCR service has reached its rate limit. Please wait a few minutes before trying again.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Retry in 30s',
+                onPress: () => {
+                  setTimeout(() => {
+                    console.log('🔄 Retrying driver license upload after rate limit');
+                    uploadDriverLicense(uri);
+                  }, 30000); // Wait 30 seconds before retry
+                }
+              }
+            ]
+          );
+        } else if (error.message.includes('already exists')) {
+          Alert.alert(
+            'License Already Exists',
+            'A driver license for this user already exists. Please contact support if you need to update it.',
+          );
+        } else {
+          Alert.alert(
+            'Upload Failed',
+            error.message || "Failed to upload driver's license",
+          );
+        }
         return;
       }
 
       if (data && data.urls && data.urls.length > 0) {
-        console.log('Driver license uploaded successfully:', {
+        console.log('✅ Driver license uploaded successfully:', {
           urlCount: data.urls.length,
           licenseNumber: data.licenseNumber,
           licenseName: data.licenseName,
@@ -89,47 +116,84 @@ export const useProfileActions = (
 
         setLicenseImage(data.urls[0]);
 
-        // Show extracted license information to user
+        // Show extracted license information to user in a clean format
         const extractedInfo = [
-          data.licenseNumber && `License Number: ${data.licenseNumber}`,
           data.licenseName && `Name: ${data.licenseName}`,
-          data.licenseClass && `Class: ${data.licenseClass}`,
-          data.status && `Status: ${data.status}`
+          data.licenseNumber && `License #: ${data.licenseNumber}`,
+          data.licenseClass && `Class: ${data.licenseClass}`
         ].filter(Boolean).join('\n');
 
         const statusMessage = data.status === 'AutoApproved'
-          ? `Driver's license uploaded and auto-approved successfully!\n\nExtracted Information:\n${extractedInfo}`
+          ? `✅ Driver's license uploaded and approved!\n\n${extractedInfo}`
           : data.status === 'Pending'
-            ? `Driver's license uploaded successfully! It's currently pending review.\n\nExtracted Information:\n${extractedInfo}`
-            : `Driver's license uploaded successfully!\n\nExtracted Information:\n${extractedInfo}`;
+            ? `✅ Driver's license uploaded successfully!\nStatus: Pending Review\n\n${extractedInfo}`
+            : `✅ Driver's license uploaded successfully!\n\n${extractedInfo}`;
 
-        Alert.alert('Success', statusMessage);
+        Alert.alert('Upload Complete', statusMessage);
+
+        // Refresh driver license data specifically instead of just user data
+        console.log('🔄 Refreshing driver license data after upload');
+        const retryRefresh = async (attempt = 1, maxAttempts = 3) => {
+          try {
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000)); // Progressive delay
+
+            // First refresh the main user data
+            refreshUser();
+
+            // Then refresh the driver license data specifically
+            if (fetchDriverLicense) {
+              await fetchDriverLicense();
+              console.log(`✅ Driver license refresh attempt ${attempt} completed`);
+            } else {
+              console.log(`✅ User refresh attempt ${attempt} completed (no fetchDriverLicense available)`);
+            }
+          } catch (error) {
+            console.log(`❌ Refresh attempt ${attempt} failed:`, error);
+            if (attempt < maxAttempts) {
+              console.log(`🔄 Retrying refresh (attempt ${attempt + 1}/${maxAttempts})`);
+              retryRefresh(attempt + 1, maxAttempts);
+            }
+          }
+        };
+        retryRefresh();
 
         return data;
-      } else {
-        console.warn('Driver license upload succeeded but response missing URLs');
+      }
 
+      // Fallback case: upload succeeded but response missing URLs
+      console.warn('Driver license upload succeeded but response missing URLs');
 
-        try {
-          const { data: licenseData, error: licenseError } =
-            await userService.getDriverLicense(userId, userEmail);
-          if (
-            !licenseError &&
-            licenseData &&
-            licenseData.urls &&
-            licenseData.urls.length > 0
-          ) {
-            setLicenseImage(licenseData.urls[0]);
-          } else {
-            setLicenseImage(uri);
-          }
-        } catch (refreshError) {
-          console.warn('Failed to refresh license images:', refreshError);
+      try {
+        const { data: licenseData, error: licenseError } =
+          await userService.getDriverLicense(userId, userEmail);
+        if (
+          !licenseError &&
+          licenseData &&
+          licenseData.urls &&
+          licenseData.urls.length > 0
+        ) {
+          setLicenseImage(licenseData.urls[0]);
+        } else {
           setLicenseImage(uri);
         }
-
-        Alert.alert('Success', "Driver's license uploaded successfully!");
+      } catch (refreshError) {
+        console.warn('Failed to refresh license images:', refreshError);
+        setLicenseImage(uri);
       }
+
+      // Refresh driver license data even in fallback case
+      console.log('🔄 Refreshing driver license data after upload (fallback)');
+      setTimeout(async () => {
+        refreshUser();
+        if (fetchDriverLicense) {
+          await fetchDriverLicense();
+          console.log('✅ Driver license refresh completed (fallback)');
+        }
+      }, 2000);
+
+      // Show single success message for fallback case
+      Alert.alert('Success', "Driver's license uploaded successfully!");
+      return;
     } catch (err: any) {
       Alert.alert('Error', err?.message || "Failed to upload driver's license");
     } finally {

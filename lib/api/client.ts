@@ -2,6 +2,7 @@
 import { API_CONFIG } from "./config"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getOptimalExpoConfig } from './expo-dev-helper'
+import { Platform } from 'react-native'
 
 export class APIError extends Error {
   constructor(
@@ -75,6 +76,7 @@ async function makeRequest<T>(
   url: string,
   options: RequestInit,
   timeout: number,
+  endpoint?: string, // Add endpoint parameter for better error logging
 ): Promise<T> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => {
@@ -95,8 +97,23 @@ async function makeRequest<T>(
     if (!response.ok) {
       const errorText = await response.text()
 
+      // Special handling for 404 errors to help debug iOS issues
+      if (response.status === 404) {
+        console.error("❌ 404 Error Details:")
+        console.error("   URL:", url)
+        console.error("   Endpoint:", endpoint || 'unknown')
+        console.error("   Platform:", Platform.OS)
+        console.error("   Method:", options?.method || 'GET')
+        console.error("   Response:", errorText)
 
-      if (response.status !== 404) {
+        // Add stack trace to help identify where the call is coming from
+        console.error("   Call stack:", new Error().stack)
+
+        // Check if this is an expected 404 (like invoice not found)
+        if (endpoint?.includes('/Invoice/') && options?.method === 'GET') {
+          console.log("ℹ️ This appears to be an invoice lookup that returned 404 - invoice may not exist")
+        }
+      } else {
         console.error("apiClient: error response status:", response.status)
         console.error("apiClient: error response body:", errorText)
       }
@@ -161,6 +178,9 @@ export async function apiClient<T>(
   try {
     const url = `${API_CONFIG.BASE_URL}${endpoint}`
     console.log("apiClient: making request to", url)
+    console.log("apiClient: endpoint:", endpoint)
+    console.log("apiClient: base URL:", API_CONFIG.BASE_URL)
+    console.log("apiClient: platform:", Platform.OS)
     console.log("apiClient: request body", options?.body)
 
 
@@ -208,7 +228,7 @@ export async function apiClient<T>(
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
         }
 
-        const data = await makeRequest<T>(url, fetchOptions, API_CONFIG.TIMEOUT)
+        const data = await makeRequest<T>(url, fetchOptions, API_CONFIG.TIMEOUT, endpoint)
         return { data, error: null }
       } catch (error) {
         lastError = error as Error
@@ -237,9 +257,19 @@ export async function apiClient<T>(
 
 
     if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutMessage = Platform.OS === 'ios'
+        ? "Request timeout on iOS - This may be due to network conditions. Please check your connection and try again."
+        : "Request timeout - The server took too long to respond. Please check your internet connection or try again later.";
+
+      console.error("❌ Timeout error details:", {
+        platform: Platform.OS,
+        timeout: API_CONFIG.TIMEOUT,
+        endpoint: lastError?.message || 'unknown'
+      });
+
       return {
         data: null,
-        error: new APIError("Request timeout - The server took too long to respond. Please check your internet connection or try again later."),
+        error: new APIError(timeoutMessage),
       }
     }
 

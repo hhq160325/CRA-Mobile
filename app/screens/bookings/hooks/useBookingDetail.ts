@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { bookingsService } from '../../../../lib/api';
-import { invoiceService } from '../../../../lib/api/services/invoice.service';
 import { paymentService } from '../../../../lib/api/services/payment.service';
 import { useAuth } from '../../../../lib/auth-context';
 
@@ -156,7 +155,37 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
               );
               setPayments(paymentsRes.data);
 
+              // Check and update payment statuses to ensure they're current
+              console.log('BookingDetail: Checking and updating payment statuses...');
+              try {
+                const { checkAndUpdatePaymentStatuses } = await import('../../../../lib/api/services/payment-status-checker');
+                const statusUpdateResult = await checkAndUpdatePaymentStatuses(actualBookingId);
 
+                if (statusUpdateResult.results.some(r => r.updated)) {
+                  console.log('BookingDetail: Payment statuses were updated, refetching payments...');
+                  // Refetch payments after status update
+                  const updatedPaymentsRes = await paymentService.getBookingPayments(actualBookingId);
+                  if (updatedPaymentsRes.data) {
+                    console.log('BookingDetail: Updated payments loaded:', updatedPaymentsRes.data);
+                    setPayments(updatedPaymentsRes.data);
+
+                    // Update booking fee with latest data
+                    const updatedBookingFeePayment = updatedPaymentsRes.data.find(
+                      (payment: any) => payment.item === 'Booking Fee'
+                    );
+                    if (updatedBookingFeePayment) {
+                      console.log('BookingDetail: Updated booking fee found:', updatedBookingFeePayment.paidAmount, 'Status:', updatedBookingFeePayment.status);
+                      setBookingFee(updatedBookingFeePayment.paidAmount);
+                    }
+                  }
+                } else {
+                  console.log('BookingDetail: No payment status updates needed');
+                }
+              } catch (statusError) {
+                console.log('BookingDetail: Error updating payment statuses:', statusError);
+              }
+
+              // Set booking fee from current data (fallback if status update fails)
               const bookingFeePayment = paymentsRes.data.find(
                 (payment: any) => payment.item === 'Booking Fee'
               );
@@ -164,6 +193,8 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
                 console.log(
                   'BookingDetail: Booking fee found:',
                   bookingFeePayment.paidAmount,
+                  'Status:',
+                  bookingFeePayment.status
                 );
                 setBookingFee(bookingFeePayment.paidAmount);
               }
@@ -172,19 +203,10 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
             console.log('BookingDetail: Error fetching payments:', err);
           }
 
+          // Note: The invoiceId field in booking data is a reference, not for direct invoice lookup
+          // Payments are already fetched above using the correct /Booking/{id}/Payments endpoint
           if (res.data.invoiceId) {
-            console.log('BookingDetail: Fetching invoice:', res.data.invoiceId);
-            try {
-              const invoiceRes = await invoiceService.getInvoiceById(
-                res.data.invoiceId,
-              );
-              if (mounted && invoiceRes.data) {
-                console.log('BookingDetail: Invoice loaded successfully');
-                setInvoice(invoiceRes.data);
-              }
-            } catch (err) {
-              console.log('BookingDetail: Error fetching invoice:', err);
-            }
+            console.log('BookingDetail: Invoice ID found in booking data:', res.data.invoiceId, '(reference only)');
           }
         }
       } catch (err) {
@@ -202,10 +224,14 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
       }
     }
 
-    if (bookingIdOrNumber && user) {
+    if (bookingIdOrNumber && bookingIdOrNumber.trim() && user) {
       load();
     } else {
-      console.error('BookingDetail: No booking identifier provided or no authenticated user');
+      console.error('BookingDetail: No booking identifier provided or no authenticated user', {
+        hasBookingId: !!bookingIdOrNumber,
+        bookingIdValue: bookingIdOrNumber,
+        hasUser: !!user
+      });
       setLoading(false);
     }
 

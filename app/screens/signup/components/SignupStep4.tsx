@@ -96,11 +96,11 @@ export default function SignupStep4({
 
     const maskPhone = (phone: string) => {
         if (!phone) return '****';
-        // Remove any non-digit characters
+
         const cleanPhone = phone.replace(/\D/g, '');
         if (cleanPhone.length < 4) return '****';
 
-        // Show first 2 and last 2 digits, mask the middle
+
         const firstTwo = cleanPhone.substring(0, 2);
         const lastTwo = cleanPhone.substring(cleanPhone.length - 2);
         const middleLength = cleanPhone.length - 4;
@@ -129,10 +129,10 @@ export default function SignupStep4({
 
             <View style={styles.infoContainer}>
                 <Text style={styles.infoText}>
-                    📱 Check your phone messages
+                    Check your phone messages
                 </Text>
                 <Text style={styles.infoText}>
-                    🔢 Enter the 6-digit code to complete registration
+                    Enter the 6-digit code to complete registration
                 </Text>
             </View>
 

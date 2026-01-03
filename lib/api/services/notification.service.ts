@@ -18,7 +18,7 @@ async function fetchWithAuth<T>(url: string): Promise<{ data: T | null; error: E
 
         // Get authentication token
         const token = await getAuthToken()
-        console.log('🔐 Notification: Auth token available:', !!token)
+        console.log(' Notification: Auth token available:', !!token)
 
         const headers: Record<string, string> = {
             "accept": "*/*",
@@ -114,7 +114,7 @@ export const notificationService = {
 
             // Get authentication token
             const token = await getAuthToken()
-            console.log('🔐 MarkAsRead: Auth token available:', !!token)
+            console.log(' MarkAsRead: Auth token available:', !!token)
 
             const headers: Record<string, string> = {
                 'accept': '*/*',

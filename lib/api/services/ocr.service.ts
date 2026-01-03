@@ -42,7 +42,7 @@ class OCRService {
 
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 OCR: Auth token available:', !!token);
+            console.log(' OCR: Auth token available:', !!token);
 
             // Create FormData for multipart/form-data request
             const formData = new FormData();

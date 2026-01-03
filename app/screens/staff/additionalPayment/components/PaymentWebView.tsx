@@ -35,11 +35,11 @@ export default function PaymentWebView({
 
         // Check for PayOS success URL pattern
         if (navState.url.includes('pay.payos.vn') && navState.url.includes('/success')) {
-            console.log(`🎉 PayOS ${paymentType} payment success detected`);
+            console.log(` PayOS ${paymentType} payment success detected`);
 
             // Update payment status using the correct additional fee payment service
             if (bookingId && paymentResponse?.orderCode) {
-                console.log('🔄 Updating additional fee payment status with orderCode:', paymentResponse.orderCode);
+                console.log(' Updating additional fee payment status with orderCode:', paymentResponse.orderCode);
 
                 try {
                     const result = await additionalFeePaymentService.updateAdditionalFeePaymentStatus(
@@ -49,17 +49,17 @@ export default function PaymentWebView({
                     );
 
                     if (result.data) {
-                        console.log('✅ Additional fee payment status updated successfully');
+                        console.log(' Additional fee payment status updated successfully');
                     } else {
-                        console.error('❌ Failed to update additional fee payment status:', result.error);
+                        console.error(' Failed to update additional fee payment status:', result.error);
                     }
                 } catch (error) {
-                    console.error('💥 Exception updating additional fee payment status:', error);
+                    console.error(' Exception updating additional fee payment status:', error);
                 }
             } else {
-                console.log('⚠️ Missing bookingId or orderCode for payment status update');
-                console.log('📋 BookingId:', bookingId);
-                console.log('📋 OrderCode:', paymentResponse?.orderCode);
+                console.log(' Missing bookingId or orderCode for payment status update');
+                console.log(' BookingId:', bookingId);
+                console.log('OrderCode:', paymentResponse?.orderCode);
             }
         }
 

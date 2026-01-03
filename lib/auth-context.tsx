@@ -36,10 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser()
 
     const handleDeepLink = async (event: { url: string }) => {
-      console.log("🔗 Deep link received:", event.url)
+      console.log(" Deep link received:", event.url)
 
       if (event.url.includes("carapp://auth/callback")) {
-        console.log("✅ Google OAuth callback detected")
+        console.log("Google OAuth callback detected")
 
         try {
           const url = new URL(event.url)
@@ -53,20 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           if (jwtToken) {
-            console.log("✅ JWT token found in callback, auto-logging in...")
+            console.log(" JWT token found in callback, auto-logging in...")
 
             const currentUser = await authService.getCurrentUser()
             if (currentUser) {
-              console.log("✅ Auto-login successful:", currentUser.email)
+              console.log("Auto-login successful:", currentUser.email)
               setUser(currentUser)
             } else {
-              console.log("⚠️ Token found but no user in AsyncStorage")
+              console.log(" Token found but no user in AsyncStorage")
             }
           } else {
-            console.log("❌ No token found in callback URL")
+            console.log(" No token found in callback URL")
           }
         } catch (error) {
-          console.error("❌ Error handling deep link:", error)
+          console.error(" Error handling deep link:", error)
         }
       }
     }
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     Linking.getInitialURL().then((url) => {
       if (url) {
-        console.log("🔗 App opened with URL:", url)
+        console.log(" App opened with URL:", url)
         handleDeepLink({ url })
       }
     })

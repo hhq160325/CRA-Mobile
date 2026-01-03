@@ -52,16 +52,16 @@ export default function HomeScreen() {
   const popularCars = filteredCars.slice(0, 3);
   const recommendedCars = filteredCars.slice(3, 8);
 
-  // Handle loading state changes for car animation
+
   useEffect(() => {
     if (!loading && showLoadingAnimation) {
-      // Loading just finished, trigger completion animation
+
       setLoadingComplete(true);
     }
   }, [loading, showLoadingAnimation]);
 
   const handleAnimationComplete = () => {
-    // Hide loading animation completely after exit animation
+
     setShowLoadingAnimation(false);
     setLoadingComplete(false);
   };

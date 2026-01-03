@@ -9,8 +9,8 @@ const getBaseUrl = () => {
 
 
   if (__DEV__) {
-    console.log("🚀 Development mode: Using Azure URL directly for stable connection")
-    console.log("🚀 This avoids ER_NGROK_3200 and tunnel expiration issues")
+    console.log(" Development mode: Using Azure URL directly for stable connection")
+    console.log(" This avoids ER_NGROK_3200 and tunnel expiration issues")
   }
 
   // Production Azure URL - stable and fast for both dev and prod
@@ -20,9 +20,9 @@ const getBaseUrl = () => {
 // Platform-specific timeout configuration
 const getTimeout = () => {
   if (Platform.OS === 'ios') {
-    return __DEV__ ? 30000 : 25000; // Longer timeout for iOS
+    return __DEV__ ? 30000 : 25000;
   }
-  return __DEV__ ? 20000 : 15000; // Standard timeout for Android
+  return __DEV__ ? 20000 : 15000;
 }
 
 export const API_CONFIG = {

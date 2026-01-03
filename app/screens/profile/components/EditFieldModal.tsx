@@ -26,9 +26,9 @@ export default function EditFieldModal({
             } else if (cleanPhone.length === 10 && !cleanPhone.startsWith('0')) {
                 setValidationError("Must start with 0");
             } else if (cleanPhone.length === 10 && cleanPhone.startsWith('0')) {
-                setValidationError(null); // Valid
+                setValidationError(null);
             } else if (cleanPhone.length === 0) {
-                setValidationError(null); // Empty is okay while typing
+                setValidationError(null);
             }
         } else {
             setValidationError(null);

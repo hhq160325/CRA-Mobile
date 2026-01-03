@@ -146,7 +146,7 @@ class LocationService {
             const position: LocationPosition = {
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
-                speed: normalizeSpeed(location.coords.speed), // Use utility function for speed normalization
+                speed: normalizeSpeed(location.coords.speed),
             };
 
             console.log(' Current location:', position);
@@ -165,7 +165,7 @@ class LocationService {
             const locationData = {
                 latitude: location.latitude,
                 longitude: location.longitude,
-                speed: normalizeSpeed(location.speed), // Use utility function for speed normalization
+                speed: normalizeSpeed(location.speed),
                 userId,
                 deviceId,
             };

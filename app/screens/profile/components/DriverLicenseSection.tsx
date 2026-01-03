@@ -149,7 +149,7 @@ export default function DriverLicenseSection({
                         backgroundColor: licenseStatus === 'AutoApproved' || licenseStatus === 'Approved' ? colors.green :
                             licenseStatus === 'Active' ? colors.morentBlue :
                                 licenseStatus === 'Rejected' ? colors.red :
-                                    '#F59E0B', // Orange for pending/unknown
+                                    '#F59E0B',
                     }} />
                 </View>
                 <Text style={{

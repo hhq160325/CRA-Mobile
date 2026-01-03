@@ -483,11 +483,11 @@ export default function VehicleReturnScreen() {
             <Pressable
               style={styles.gpsButton}
               onPress={() => {
-                // console.log('🔍 VehicleReturn: Opening GPS card for CUSTOMER');
-                // console.log('🔍 VehicleReturn: Full booking object:', booking);
-                // console.log('🔍 VehicleReturn: booking.userId:', booking?.userId);
-                // console.log('🔍 VehicleReturn: booking.customerName:', booking?.customerName);
-                // console.log('🔍 VehicleReturn: All booking keys:', booking ? Object.keys(booking) : 'booking is null');
+                // console.log(' VehicleReturn: Opening GPS card for CUSTOMER');
+                // console.log(' VehicleReturn: Full booking object:', booking);
+                // console.log(' VehicleReturn: booking.userId:', booking?.userId);
+                // console.log(' VehicleReturn: booking.customerName:', booking?.customerName);
+                // console.log(' VehicleReturn: All booking keys:', booking ? Object.keys(booking) : 'booking is null');
                 setShowGPSCard(true);
               }}
             >
@@ -746,9 +746,9 @@ export default function VehicleReturnScreen() {
           userId={booking.userId}
           visible={showGPSCard}
           onClose={() => {
-            // console.log('🔍 VehicleReturn: Closing GPS card');
-            // console.log('🔍 VehicleReturn: Customer userId (correct):', booking.userId);
-            // console.log('🔍 VehicleReturn: Staff userId (wrong for GPS):', user?.id);
+            // console.log(' VehicleReturn: Closing GPS card');
+            // console.log(' VehicleReturn: Customer userId (correct):', booking.userId);
+            // console.log(' VehicleReturn: Staff userId (wrong for GPS):', user?.id);
             setShowGPSCard(false);
           }}
         />

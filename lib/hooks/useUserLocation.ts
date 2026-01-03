@@ -33,10 +33,10 @@ export function useUserLocation(userId: string) {
             isRecent = true;
         } else if (diffMinutes < 60) {
             timeAgo = `${diffMinutes}m ago`;
-            isRecent = diffMinutes <= 30; // Recent if within 30 minutes
+            isRecent = diffMinutes <= 30;
         } else if (diffHours < 24) {
             timeAgo = `${diffHours}h ago`;
-            isRecent = diffHours <= 2; // Recent if within 2 hours
+            isRecent = diffHours <= 2;
         } else {
             const diffDays = Math.floor(diffHours / 24);
             timeAgo = `${diffDays}d ago`;

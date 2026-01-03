@@ -117,7 +117,7 @@ export default function OCRResultModal({
 
                 {avgConfidence < 85 && (
                     <View style={styles.warningContainer}>
-                        <Text style={styles.warningTitle}>⚠️ Low Confidence Detected</Text>
+                        <Text style={styles.warningTitle}> Low Confidence Detected</Text>
                         <Text style={styles.warningText}>
                             Some information may not be accurate. Please review carefully or retake the photo.
                         </Text>

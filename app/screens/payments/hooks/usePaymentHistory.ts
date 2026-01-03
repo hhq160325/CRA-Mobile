@@ -27,8 +27,8 @@ export function usePaymentHistory() {
             const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`;
             const token = await getAuthToken(); // Make this async
 
-            console.log('💰 Fetching payments for booking:', booking.id);
-            console.log('🔐 Auth token available:', !!token);
+            console.log(' Fetching payments for booking:', booking.id);
+            console.log(' Auth token available:', !!token);
 
             const response = await fetch(paymentsUrl, {
                 method: 'GET',
@@ -39,16 +39,15 @@ export function usePaymentHistory() {
                 },
             });
 
-            console.log('📥 Payment fetch response status:', response.status);
+            console.log(' Payment fetch response status:', response.status);
 
             if (response.ok) {
                 const paymentsData = await response.json();
-                console.log('📋 Payment data received:', paymentsData);
+                console.log('Payment data received:', paymentsData);
 
                 if (Array.isArray(paymentsData) && paymentsData.length > 0) {
-                    // Don't filter by userId on individual payments since additional fees and extensions
-                    // might not have userId set correctly. Instead, we already know this booking belongs to the user.
-                    console.log('📋 All payments for user booking:', paymentsData.length);
+
+                    console.log(' All payments for user booking:', paymentsData.length);
 
                     if (paymentsData.length > 0) {
                         // Sort payments by creation date (newest first)
@@ -56,7 +55,7 @@ export function usePaymentHistory() {
                             new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
                         );
 
-                        console.log('📋 Payment items found:', sortedPayments.map(p => ({
+                        console.log(' Payment items found:', sortedPayments.map(p => ({
                             item: p.item,
                             amount: p.paidAmount,
                             status: p.status,
@@ -71,14 +70,14 @@ export function usePaymentHistory() {
                         };
                     }
                 } else {
-                    console.log('📋 No payment data found for booking:', booking.id);
+                    console.log(' No payment data found for booking:', booking.id);
                 }
             } else {
                 const errorText = await response.text();
-                console.error('❌ Payment fetch failed:', response.status, errorText);
+                console.error(' Payment fetch failed:', response.status, errorText);
             }
         } catch (err) {
-            console.error('💥 Error fetching booking payments:', err);
+            console.error(' Error fetching booking payments:', err);
         }
 
         return null;
@@ -103,19 +102,19 @@ export function usePaymentHistory() {
             }
 
             // Update payment statuses for all bookings before fetching payment data
-            console.log('🔄 Updating payment statuses for all bookings...');
+            console.log(' Updating payment statuses for all bookings...');
             const statusUpdatePromises = bookingsResult.data.map(async (booking) => {
                 try {
                     await checkAndUpdatePaymentStatuses(booking.id);
-                    console.log(`✅ Updated payment statuses for booking ${booking.bookingNumber}`);
+                    console.log(` Updated payment statuses for booking ${booking.bookingNumber}`);
                 } catch (error) {
-                    console.warn(`⚠️ Failed to update payment statuses for booking ${booking.bookingNumber}:`, error);
+                    console.warn(` Failed to update payment statuses for booking ${booking.bookingNumber}:`, error);
                 }
             });
 
             // Wait for all status updates to complete
             await Promise.allSettled(statusUpdatePromises);
-            console.log('✅ Payment status updates completed');
+            console.log(' Payment status updates completed');
 
             const paymentsPromises = bookingsResult.data.map(fetchBookingPayments);
             const results = await Promise.all(paymentsPromises);
@@ -195,7 +194,7 @@ export function usePaymentHistory() {
             })
             .filter(booking => booking !== null) as BookingPayments[];
 
-        console.log('💰 Payment Search: Filtered results:', {
+        console.log(' Payment Search: Filtered results:', {
             query: searchQuery,
             originalCount: bookingPayments.length,
             filteredCount: filtered.length
@@ -218,7 +217,7 @@ export function usePaymentHistory() {
 
         try {
             setRefreshing(true);
-            console.log('🔄 Manual payment status refresh triggered...');
+            console.log(' Manual payment status refresh triggered...');
 
             const bookingsResult = await bookingsService.getBookings(user.id);
             if (bookingsResult.data) {
@@ -229,13 +228,13 @@ export function usePaymentHistory() {
                         const result = await checkAndUpdatePaymentStatuses(booking.id);
                         const updatedCount = result.results.filter(r => r.updated).length;
                         totalUpdated += updatedCount;
-                        console.log(`✅ Refreshed payment statuses for booking ${booking.bookingNumber}:`, {
+                        console.log(` Refreshed payment statuses for booking ${booking.bookingNumber}:`, {
                             allPaid: result.allPaid,
                             updatedCount
                         });
                         return result;
                     } catch (error) {
-                        console.warn(`⚠️ Failed to refresh payment statuses for booking ${booking.bookingNumber}:`, error);
+                        console.warn(` Failed to refresh payment statuses for booking ${booking.bookingNumber}:`, error);
                         return null;
                     }
                 });
@@ -261,7 +260,7 @@ export function usePaymentHistory() {
                 }
             }
         } catch (error) {
-            console.error('❌ Error refreshing payment statuses:', error);
+            console.error(' Error refreshing payment statuses:', error);
             Alert.alert(
                 'Refresh Failed',
                 'Failed to refresh payment statuses. Please try again.',

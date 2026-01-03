@@ -43,7 +43,7 @@ export interface UserLocationHistory {
 }
 
 class GPSTrackingService {
-    private baseUrl = API_CONFIG.BASE_URL.replace('/api', ''); // Remove /api suffix for GPS endpoints
+    private baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
 
 
     async sendLocationData(locationData: LocationData): Promise<{
@@ -57,7 +57,7 @@ class GPSTrackingService {
 
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 GPS: Auth token available:', !!token);
+            console.log(' GPS: Auth token available:', !!token);
 
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ class GPSTrackingService {
 
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 GPS: Auth token available:', !!token);
+            console.log(' GPS: Auth token available:', !!token);
 
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',

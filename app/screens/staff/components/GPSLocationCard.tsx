@@ -21,17 +21,17 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
     // Debug logging
     useEffect(() => {
         if (visible) {
-            // console.log('🔍 GPSLocationCard: Modal opened for userId:', userId);
-            // console.log('🔍 GPSLocationCard: Location data:', location);
-            // console.log('🔍 GPSLocationCard: Loading:', loading);
-            // console.log('🔍 GPSLocationCard: Error:', error);
+            // console.log(' GPSLocationCard: Modal opened for userId:', userId);
+            // console.log(' GPSLocationCard: Location data:', location);
+            // console.log(' GPSLocationCard: Loading:', loading);
+            // console.log(' GPSLocationCard: Error:', error);
         }
     }, [visible, userId, location, loading, error]);
 
     // Fetch old formatted address when location is available
     useEffect(() => {
         if (location && visible) {
-            // console.log('📍 GPSLocationCard: Location updated, fetching address');
+            // console.log(' GPSLocationCard: Location updated, fetching address');
             fetchOldAddress();
         }
     }, [location, visible]);
@@ -39,7 +39,7 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
     // Re-fetch address when refresh is completed and location is available
     useEffect(() => {
         if (location && !refreshing && !addressLoading) {
-            // console.log('📍 GPSLocationCard: Refresh completed, updating address');
+            // console.log(' GPSLocationCard: Refresh completed, updating address');
             fetchOldAddress();
         }
     }, [location, refreshing]);
@@ -55,7 +55,7 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
             );
             setOldAddress(address);
         } catch (error) {
-            // console.error('📍 Error fetching old address:', error);
+            // console.error(' Error fetching old address:', error);
             setOldAddress(null);
         } finally {
             setAddressLoading(false);
@@ -63,9 +63,9 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
     };
 
     const handleRefresh = async () => {
-        // console.log('🔄 GPSLocationCard: Refresh button clicked');
-        // console.log('🔄 GPSLocationCard: Current location:', location);
-        // console.log('🔄 GPSLocationCard: Current error:', error);
+        // console.log(' GPSLocationCard: Refresh button clicked');
+        // console.log(' GPSLocationCard: Current location:', location);
+        // console.log(' GPSLocationCard: Current error:', error);
 
         setRefreshing(true);
 
@@ -76,17 +76,17 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
             // Call refetch from useUserLocation hook
             await refetch();
 
-            // console.log('🔄 GPSLocationCard: Refetch completed');
+            // console.log(' GPSLocationCard: Refetch completed');
         } catch (error) {
-            // console.error('🔄 GPSLocationCard: Refresh error:', error);
+            // console.error(' GPSLocationCard: Refresh error:', error);
         } finally {
             setRefreshing(false);
         }
     };
 
     const handleRetry = async () => {
-        // console.log('🔄 GPSLocationCard: Retry button clicked');
-        // console.log('🔄 GPSLocationCard: Current error:', error);
+        // console.log(' GPSLocationCard: Retry button clicked');
+        // console.log(' GPSLocationCard: Current error:', error);
 
         setRefreshing(true);
 
@@ -97,9 +97,9 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
             // Call refetch from useUserLocation hook
             await refetch();
 
-            // console.log('🔄 GPSLocationCard: Retry completed');
+            // console.log(' GPSLocationCard: Retry completed');
         } catch (error) {
-            // console.error('🔄 GPSLocationCard: Retry error:', error);
+            // console.error(' GPSLocationCard: Retry error:', error);
         } finally {
             setRefreshing(false);
         }
@@ -107,39 +107,39 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
 
     const handleOpenMap = async () => {
         if (!location) {
-            // console.log('📍 GPSLocationCard: No location data for map');
+            // console.log(' GPSLocationCard: No location data for map');
             Alert.alert('Error', 'No location data available to show on map');
             return;
         }
 
-        // console.log('🗺️ GPSLocationCard: Opening map for location:', location.latitude, location.longitude);
+        // console.log(' GPSLocationCard: Opening map for location:', location.latitude, location.longitude);
 
         // Create map URL with the customer's location
         const mapUrl = `https://www.google.com/maps?q=${location.latitude},${location.longitude}&z=15`;
-        // console.log('🗺️ Map URL:', mapUrl);
+        // console.log(' Map URL:', mapUrl);
 
         try {
-            // console.log('🗺️ Attempting to open URL with Linking...');
+            // console.log(' Attempting to open URL with Linking...');
 
             // Check if we can open URLs
             const canOpen = await Linking.canOpenURL(mapUrl);
-            // console.log('🗺️ Can open URL:', canOpen);
+            // console.log(' Can open URL:', canOpen);
 
             if (canOpen) {
-                // console.log('🗺️ Opening URL now...');
+                // console.log(' Opening URL now...');
                 await Linking.openURL(mapUrl);
-                // console.log('🗺️ URL opened successfully');
+                // console.log(' URL opened successfully');
             } else {
-                // console.log('🗺️ Cannot open URL, trying alternative...');
+                // console.log(' Cannot open URL, trying alternative...');
                 // Try a simpler Google Maps URL
                 const simpleUrl = `https://maps.google.com/?q=${location.latitude},${location.longitude}`;
-                // console.log('🗺️ Trying simple URL:', simpleUrl);
+                // console.log(' Trying simple URL:', simpleUrl);
                 await Linking.openURL(simpleUrl);
-                // console.log('🗺️ Simple URL opened successfully');
+                // console.log(' Simple URL opened successfully');
             }
         } catch (error) {
-            // console.error('🗺️ Error opening map:', error);
-            // console.error('🗺️ Error details:', JSON.stringify(error, null, 2));
+            // console.error(' Error opening map:', error);
+            // console.error(' Error details:', JSON.stringify(error, null, 2));
 
             Alert.alert(
                 'Map Error',
@@ -147,8 +147,8 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
                 [
                     {
                         text: 'Copy URL', onPress: () => {
-                            // In a real app, you might want to copy to clipboard
-                            // console.log('🗺️ URL to copy:', mapUrl);
+                          
+                            // console.log(' URL to copy:', mapUrl);
                         }
                     },
                     { text: 'OK' }

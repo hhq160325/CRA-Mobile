@@ -48,13 +48,13 @@ const SignInScreen = () => {
         });
 
         if (userRole === 'staff' || user.roleId === 1002) {
-          console.log('🚀 Navigating to auth (will show staffStack) for staff user');
+          console.log(' Navigating to auth (will show staffStack) for staff user');
           navigationRef.reset({
             index: 0,
             routes: [{ name: 'auth' }],
           });
         } else {
-          console.log('🚀 Navigating to auth (will show tabStack) for', user.role, 'user');
+          console.log(' Navigating to auth (will show tabStack) for', user.role, 'user');
           navigationRef.reset({
             index: 0,
             routes: [{ name: 'auth' }],
@@ -115,13 +115,13 @@ const SignInScreen = () => {
           } = require('../../navigators/navigation-utilities');
           if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
             if (isStaff) {
-              console.log('🚀 IMMEDIATE NAVIGATION to auth (will show staffStack)');
+              console.log(' IMMEDIATE NAVIGATION to auth (will show staffStack)');
               navigationRef.reset({
                 index: 0,
                 routes: [{ name: 'auth' }],
               });
             } else {
-              console.log('🚀 IMMEDIATE NAVIGATION to auth (will show tabStack)');
+              console.log(' IMMEDIATE NAVIGATION to auth (will show tabStack)');
               navigationRef.reset({
                 index: 0,
                 routes: [{ name: 'auth' }],

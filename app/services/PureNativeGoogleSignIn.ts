@@ -74,7 +74,7 @@ class PureNativeGoogleSignIn {
             GoogleSignin.configure(config);
 
             this.isConfigured = true;
-            console.log(' ✅ PURE NATIVE Google Sign-In configured successfully');
+            console.log('  PURE NATIVE Google Sign-In configured successfully');
             console.log(' Android Client ID:', androidClientId);
             console.log(' NO Web Client ID');
             console.log(' NO iOS Client ID');
@@ -91,9 +91,7 @@ class PureNativeGoogleSignIn {
         }
     }
 
-    /**
-     * Kiểm tra Google Play Services
-     */
+
     async checkPlayServices(): Promise<boolean> {
         try {
             if (!GoogleSignin) {
@@ -110,9 +108,6 @@ class PureNativeGoogleSignIn {
             console.error(' Google Play Services error:', error);
             console.error(' Error code:', error.code);
             console.error(' Error message:', error.message);
-
-            // Don't block sign-in for Play Services issues on real devices
-            // Many real devices have Play Services but the check might fail
             console.log(' Continuing with sign-in despite Play Services check failure');
             return true;
         }
@@ -154,7 +149,7 @@ class PureNativeGoogleSignIn {
             // Pure Native Sign-In
             console.log(' Calling GoogleSignin.signIn()...');
             const signInResult = await GoogleSignin.signIn();
-            console.log('✅ Pure Native sign-in successful');
+            console.log(' Pure Native sign-in successful');
             console.log(' Sign-in result:', JSON.stringify(signInResult, null, 2));
 
             // Extract user data and tokens from sign-in result
@@ -410,10 +405,10 @@ class PureNativeGoogleSignIn {
                 return user;
             }
 
-            console.log('👤 No Pure Native user found');
+            console.log(' No Pure Native user found');
             return null;
         } catch (error) {
-            console.error('❌ Get Pure Native user error:', error);
+            console.error(' Get Pure Native user error:', error);
             return null;
         }
     }

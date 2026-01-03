@@ -52,14 +52,13 @@ export function useAdditionalPayment(
             const description = buildPaymentDescription(selectedFees, overtimeHours);
             const totalAmount = calculateTotal(selectedFees, overtimeHours);
 
-            console.log('🚀 Starting additional payment creation...');
-            console.log('📋 Booking ID:', bookingId);
-            console.log('📝 Description:', description);
-            console.log('💰 Total Amount:', totalAmount);
-
+            console.log(' Starting additional payment creation...');
+            console.log(' Booking ID:', bookingId);
+            console.log(' Description:', description);
+            console.log(' Total Amount:', totalAmount);
             const response = await createAdditionalPayment(bookingId, description, totalAmount);
 
-            console.log('✅ Payment response received:', response);
+            console.log(' Payment response received:', response);
 
             setPaymentResponse(response);
             setModalVisible(false);
@@ -67,7 +66,7 @@ export function useAdditionalPayment(
 
             onPaymentAdded?.();
         } catch (error) {
-            console.error('💥 Error creating additional payment:', error);
+            console.error(' Error creating additional payment:', error);
 
             // Show more specific error message
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

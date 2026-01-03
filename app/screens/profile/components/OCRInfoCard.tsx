@@ -28,7 +28,7 @@ export default function OCRInfoCard({ ocrResult, onEdit, onClear }: OCRInfoCardP
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>📄 Extracted License Information</Text>
+                <Text style={styles.title}> Extracted License Information</Text>
                 <View style={styles.confidenceContainer}>
                     <Text style={styles.confidenceLabel}>Confidence: </Text>
                     <Text style={[

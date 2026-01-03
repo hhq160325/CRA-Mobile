@@ -62,16 +62,16 @@ export default function BookingCard({
                     <Text style={styles.infoValue}>
                         {(() => {
                             // console.log('BookingCard amount:', amount, typeof amount);
-                            // Handle different amount data types
+
                             if (amount === null || amount === undefined || amount === '') {
                                 return 'N/A';
                             }
                             const numAmount = Number(amount);
-                            // Check if conversion resulted in a valid number
+
                             if (isNaN(numAmount)) {
                                 return 'N/A';
                             }
-                            // Display the amount (including 0) with proper VND formatting
+
                             return numAmount.toLocaleString('vi-VN', {
                                 style: 'currency',
                                 currency: 'VND',

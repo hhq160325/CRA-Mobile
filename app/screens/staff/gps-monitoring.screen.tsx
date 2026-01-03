@@ -83,13 +83,13 @@ export default function GPSMonitoringScreen() {
             if (bookingsResult.data && bookingsResult.data.length > 0) {
                 // Extract unique user IDs from bookings
                 knownUserIds = [...new Set(bookingsResult.data.map(booking => booking.userId).filter(Boolean))];
-                // console.log('📍 Found user IDs from bookings:', knownUserIds.length);
+                // console.log(' Found user IDs from bookings:', knownUserIds.length);
             } else {
                 // Fallback to demo user IDs if no bookings found
                 knownUserIds = [
                     '019a9f03-d063-79a6-937c-0611d4f49f12', // Demo user
                 ];
-                // console.log('📍 Using fallback user IDs');
+                // console.log(' Using fallback user IDs');
             }
 
             const locationPromises = knownUserIds.map(async (userId) => {
@@ -98,11 +98,11 @@ export default function GPSMonitoringScreen() {
                     if (result.data) {
                         return result.data;
                     } else {
-                        // console.log('📍 No GPS data for user:', userId);
+                        // console.log(' No GPS data for user:', userId);
                         return null;
                     }
                 } catch (error) {
-                    // console.error('📍 Error fetching GPS for user:', userId, error);
+                    // console.error(' Error fetching GPS for user:', userId, error);
                     return null;
                 }
             });
@@ -125,7 +125,7 @@ export default function GPSMonitoringScreen() {
                             location.longitude
                         );
                     } catch (error) {
-                        // console.log('📍 Failed to get address for location:', error);
+                        // console.log(' Failed to get address for location:', error);
                         address = undefined;
                     }
 
@@ -145,9 +145,9 @@ export default function GPSMonitoringScreen() {
             );
 
             setUserLocations(formattedLocations);
-            // console.log('📍 Loaded locations for', formattedLocations.length, 'users');
+            // console.log(' Loaded locations for', formattedLocations.length, 'users');
         } catch (error) {
-            // console.error('📍 Error fetching user locations:', error);
+            // console.error(' Error fetching user locations:', error);
             setError(error instanceof Error ? error.message : 'Failed to fetch locations');
         }
 

@@ -12,7 +12,7 @@ export const useProfileActions = (
   setLicenseImage: (uri: string) => void,
   refreshUser: () => void,
   buildSafeUpdateData: (latestData: any, overrides?: any) => any,
-  fetchDriverLicense?: () => Promise<void>, // Add fetchDriverLicense function
+  fetchDriverLicense?: () => Promise<void>,
 ) => {
   const [isSaving, setIsSaving] = useState(false);
 
@@ -83,7 +83,7 @@ export const useProfileActions = (
                 text: 'Retry in 30s',
                 onPress: () => {
                   setTimeout(() => {
-                    console.log('🔄 Retrying driver license upload after rate limit');
+                    console.log(' Retrying driver license upload after rate limit');
                     uploadDriverLicense(uri);
                   }, 30000); // Wait 30 seconds before retry
                 }
@@ -105,7 +105,7 @@ export const useProfileActions = (
       }
 
       if (data && data.urls && data.urls.length > 0) {
-        console.log('✅ Driver license uploaded successfully:', {
+        console.log(' Driver license uploaded successfully:', {
           urlCount: data.urls.length,
           licenseNumber: data.licenseNumber,
           licenseName: data.licenseName,
@@ -124,15 +124,15 @@ export const useProfileActions = (
         ].filter(Boolean).join('\n');
 
         const statusMessage = data.status === 'AutoApproved'
-          ? `✅ Driver's license uploaded and approved!\n\n${extractedInfo}`
+          ? ` Driver's license uploaded and approved!\n\n${extractedInfo}`
           : data.status === 'Pending'
-            ? `✅ Driver's license uploaded successfully!\nStatus: Pending Review\n\n${extractedInfo}`
-            : `✅ Driver's license uploaded successfully!\n\n${extractedInfo}`;
+            ? ` Driver's license uploaded successfully!\nStatus: Pending Review\n\n${extractedInfo}`
+            : ` Driver's license uploaded successfully!\n\n${extractedInfo}`;
 
         Alert.alert('Upload Complete', statusMessage);
 
         // Refresh driver license data specifically instead of just user data
-        console.log('🔄 Refreshing driver license data after upload');
+        console.log(' Refreshing driver license data after upload');
         const retryRefresh = async (attempt = 1, maxAttempts = 3) => {
           try {
             await new Promise(resolve => setTimeout(resolve, attempt * 1000)); // Progressive delay
@@ -143,14 +143,14 @@ export const useProfileActions = (
             // Then refresh the driver license data specifically
             if (fetchDriverLicense) {
               await fetchDriverLicense();
-              console.log(`✅ Driver license refresh attempt ${attempt} completed`);
+              console.log(` Driver license refresh attempt ${attempt} completed`);
             } else {
-              console.log(`✅ User refresh attempt ${attempt} completed (no fetchDriverLicense available)`);
+              console.log(` User refresh attempt ${attempt} completed (no fetchDriverLicense available)`);
             }
           } catch (error) {
-            console.log(`❌ Refresh attempt ${attempt} failed:`, error);
+            console.log(`Refresh attempt ${attempt} failed:`, error);
             if (attempt < maxAttempts) {
-              console.log(`🔄 Retrying refresh (attempt ${attempt + 1}/${maxAttempts})`);
+              console.log(` Retrying refresh (attempt ${attempt + 1}/${maxAttempts})`);
               retryRefresh(attempt + 1, maxAttempts);
             }
           }
@@ -182,12 +182,12 @@ export const useProfileActions = (
       }
 
       // Refresh driver license data even in fallback case
-      console.log('🔄 Refreshing driver license data after upload (fallback)');
+      console.log(' Refreshing driver license data after upload (fallback)');
       setTimeout(async () => {
         refreshUser();
         if (fetchDriverLicense) {
           await fetchDriverLicense();
-          console.log('✅ Driver license refresh completed (fallback)');
+          console.log(' Driver license refresh completed (fallback)');
         }
       }, 2000);
 

@@ -58,9 +58,9 @@ export function useStaffBookings() {
         let invoiceAmount = paymentDetails.amount;
         let invoiceStatus = paymentDetails.status;
 
-        console.log(`🔍 mapSingleBooking: Processing booking ${booking.id} (${booking.bookingNumber})`);
-        console.log(`🔍 mapSingleBooking: Payment details:`, paymentDetails);
-        console.log(`🔍 mapSingleBooking: Original booking status: ${booking.status}, mapped: ${mappedStatus}`);
+        console.log(` mapSingleBooking: Processing booking ${booking.id} (${booking.bookingNumber})`);
+        console.log(` mapSingleBooking: Payment details:`, paymentDetails);
+        console.log(` mapSingleBooking: Original booking status: ${booking.status}, mapped: ${mappedStatus}`);
 
         if (invoiceAmount === 0 && booking.totalPrice > 0) {
             invoiceAmount = booking.totalPrice;
@@ -69,22 +69,22 @@ export function useStaffBookings() {
         // Determine booking status based on payment requirements
         // Staff screen logic: Check ALL payments but enforce different requirements for different actions
         if (!paymentDetails.hasPaymentRecord || invoiceStatus === 'no_payment') {
-            console.log(`🔍 mapSingleBooking: No payment record found for ${booking.id} - setting to pending (need to create rental payment)`);
+            console.log(` mapSingleBooking: No payment record found for ${booking.id} - setting to pending (need to create rental payment)`);
             invoiceStatus = 'pending';
             mappedStatus = 'pending';
         } else if (paymentDetails.isRentalFeePaid) {
             // If rental fee is paid, booking is ready for pickup/return (depending on extension requirements)
-            console.log(`🔍 mapSingleBooking: Rental fee is paid for ${booking.id} - ready for pickup`);
+            console.log(` mapSingleBooking: Rental fee is paid for ${booking.id} - ready for pickup`);
             invoiceStatus = 'paid';
             mappedStatus = 'successfully';
         } else if (paymentDetails.rentalFeePayment && !paymentDetails.isRentalFeePaid) {
             // If rental fee payment exists but not paid, need payment before pickup
-            console.log(`🔍 mapSingleBooking: Rental fee is pending for ${booking.id} - payment required for pickup`);
+            console.log(` mapSingleBooking: Rental fee is pending for ${booking.id} - payment required for pickup`);
             invoiceStatus = 'pending';
             mappedStatus = 'pending';
         } else {
             // No rental fee payment created yet - need to create payment
-            console.log(`🔍 mapSingleBooking: No rental fee payment found for ${booking.id} - need to create payment`);
+            console.log(` mapSingleBooking: No rental fee payment found for ${booking.id} - need to create payment`);
             invoiceStatus = 'pending';
             mappedStatus = 'pending';
         }
@@ -92,9 +92,9 @@ export function useStaffBookings() {
         // Additional status checks for return requirements
         const canPickup = paymentDetails.isRentalFeePaid;
         const canReturn = paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid;
-        console.log(`🔍 mapSingleBooking: Action requirements for ${booking.id}: canPickup=${canPickup}, canReturn=${canReturn} (rental paid=${paymentDetails.isRentalFeePaid}, extension paid=${paymentDetails.isExtensionPaid})`);
+        console.log(` mapSingleBooking: Action requirements for ${booking.id}: canPickup=${canPickup}, canReturn=${canReturn} (rental paid=${paymentDetails.isRentalFeePaid}, extension paid=${paymentDetails.isExtensionPaid})`);
 
-        console.log(`🔍 mapSingleBooking: Final status for ${booking.id}: ${mappedStatus}, invoice status: ${invoiceStatus}`);
+        console.log(` mapSingleBooking: Final status for ${booking.id}: ${mappedStatus}, invoice status: ${invoiceStatus}`);
 
         // Get check-in/out status from cache
         const checkInOutStatus = batchData.checkInOutMap.get(booking.id) || { hasCheckIn: false, hasCheckOut: false };
@@ -141,20 +141,61 @@ export function useStaffBookings() {
         };
     };
 
-    const fetchBookings = async (forceRefresh = false) => {
-        // Implement simple cache - avoid refetching within 30 seconds unless forced
+    const fetchBookings = async (forceRefresh = false, page = 1, pageSize = 20) => {
+        // Implement improved cache - avoid refetching within 5 minutes unless forced
         const now = Date.now();
-        const cacheTimeout = 30000; // 30 seconds
+        const cacheTimeout = 300000; // 5 minutes instead of 30 seconds
 
-        if (!forceRefresh && bookings.length > 0 && (now - lastFetchTime) < cacheTimeout) {
+        if (!forceRefresh && bookings.length > 0 && (now - lastFetchTime) < cacheTimeout && page === 1) {
             // console.log(` fetchBookings: using cached data (${Math.round((now - lastFetchTime) / 1000)}s old)`);
             setLoading(false);
             setRefreshing(false);
             return;
         }
         setLoading(true);
+
+        // Show skeleton UI immediately for better UX
+        if (page === 1) {
+            const skeletonBookings = Array.from({ length: 10 }, (_, index) => ({
+                id: `skeleton-${index}`,
+                bookingNumber: 'Loading...',
+                carId: '',
+                carName: 'Loading...',
+                carBrand: '',
+                carModel: '',
+                carLicensePlate: 'Loading...',
+                carImage: '',
+                customerName: 'Loading...',
+                userId: '',
+                invoiceId: '',
+                amount: 0,
+                invoiceStatus: 'pending' as const,
+                status: 'pending' as const,
+                date: 'Loading...',
+                hasCheckIn: false,
+                hasCheckOut: false,
+                hasExtension: false,
+                extensionDescription: undefined,
+                extensionDays: undefined,
+                extensionAmount: undefined,
+                extensionPaymentStatus: undefined,
+                isExtensionPaymentCompleted: false,
+                paymentDetails: {
+                    isBookingFeePaid: false,
+                    isRentalFeePaid: false,
+                    isExtensionPaid: false,
+                    isAdditionalFeePaid: false,
+                    hasExtension: false,
+                    canPickup: false,
+                    canReturn: false,
+                },
+                isLoading: true, // Flag to identify skeleton items
+            }));
+            setBookings(skeletonBookings);
+        }
+
         setError(null);
-        setLoadingProgress('Loading bookings...');
+        setLoadingProgress(`Loading bookings (page ${page})...`);
 
         try {
             const startTime = Date.now();
@@ -167,18 +208,27 @@ export function useStaffBookings() {
             }
 
             if (result.data) {
-                // console.log(` fetchBookings: received ${result.data.length} bookings - starting batch processing`);
+                // Sort by most recent first and paginate
+                const sortedBookings = result.data.sort((a, b) =>
+                    new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
+                );
+
+                // For initial load, only process first 10 bookings to improve performance
+                const pageSize = 10;
+                const startIndex = (page - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
+                const paginatedBookings = page === 1 ? sortedBookings.slice(0, pageSize) : sortedBookings.slice(startIndex, endIndex);
+
+                console.log(` FAST LOAD: processing ${paginatedBookings.length} of ${result.data.length} bookings (page ${page})`);
 
                 // Extract unique IDs for batch fetching
-                const uniqueCarIds = [...new Set(result.data.map(b => b.carId).filter(Boolean))];
-                const uniqueUserIds = [...new Set(result.data.map(b => b.userId).filter(Boolean))];
-                const bookingIds = result.data.map(b => b.id);
+                const uniqueCarIds = [...new Set(paginatedBookings.map(b => b.carId).filter(Boolean))];
+                const uniqueUserIds = [...new Set(paginatedBookings.map(b => b.userId).filter(Boolean))];
+                const bookingIds = paginatedBookings.map(b => b.id);
 
-                // console.log(` fetchBookings: batch sizes - cars: ${uniqueCarIds.length}, users: ${uniqueUserIds.length}, bookings: ${bookingIds.length}`);
+                console.log(` BATCH SIZES: cars=${uniqueCarIds.length}, users=${uniqueUserIds.length}, bookings=${bookingIds.length}`);
 
-
-
-                // Batch fetch all data in parallel
+                // Batch fetch all data in parallel with increased concurrency
                 const [
                     carDetailsMap,
                     userDetailsMap,
@@ -206,13 +256,17 @@ export function useStaffBookings() {
                 };
 
                 // Map bookings using cached data
-                const mappedBookingsPromises = result.data.map(booking => mapSingleBooking(booking, batchData));
+                const mappedBookingsPromises = paginatedBookings.map(booking => mapSingleBooking(booking, batchData));
                 const mappedBookings = await Promise.all(mappedBookingsPromises);
 
                 const endTime = Date.now();
-                // console.log(` fetchBookings: completed processing ${mappedBookings.length} bookings in ${endTime - startTime}ms`);
+                console.log(` fetchBookings: completed processing ${mappedBookings.length} bookings in ${endTime - startTime}ms`);
 
-                setBookings(mappedBookings);
+                if (page === 1) {
+                    setBookings(mappedBookings);
+                } else {
+                    setBookings(prev => [...prev, ...mappedBookings]);
+                }
                 setLastFetchTime(now);
             }
         } catch (error) {
@@ -227,12 +281,23 @@ export function useStaffBookings() {
 
     useEffect(() => {
         fetchBookings();
+
+        // Background prefetch after initial load
+        const prefetchTimer = setTimeout(() => {
+            if (bookings.length > 0) {
+                console.log(' Background prefetching additional data...');
+                // Prefetch next page in background
+                fetchBookings(false, 2, 10);
+            }
+        }, 3000);
+
+        return () => clearTimeout(prefetchTimer);
     }, []);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             // console.log('StaffScreen focused - checking if refresh needed...');
-            fetchBookings(); // Will use cache if recent
+            fetchBookings();
         });
 
         return unsubscribe;
@@ -240,7 +305,7 @@ export function useStaffBookings() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchBookings(true); // Force refresh on manual pull-to-refresh
+        fetchBookings(true);
     };
 
     const handleRequestPayment = async (bookingId: string) => {

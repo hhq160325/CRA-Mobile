@@ -203,8 +203,7 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
             console.log('BookingDetail: Error fetching payments:', err);
           }
 
-          // Note: The invoiceId field in booking data is a reference, not for direct invoice lookup
-          // Payments are already fetched above using the correct /Booking/{id}/Payments endpoint
+
           if (res.data.invoiceId) {
             console.log('BookingDetail: Invoice ID found in booking data:', res.data.invoiceId, '(reference only)');
           }

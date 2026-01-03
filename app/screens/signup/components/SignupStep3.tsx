@@ -119,10 +119,10 @@ export default function SignupStep3({ onNext, onBack, styles, initialData }: Sig
 
             <View style={styles.infoContainer}>
                 <Text style={styles.infoText}>
-                    📱 Phone number is required for account verification
+                    Phone number is required for account verification
                 </Text>
                 <Text style={styles.infoText}>
-                    📍 Address can be used for faster car delivery
+                    Address can be used for faster car delivery
                 </Text>
                 {/* <Text style={[styles.infoText, styles.optionalText]}>
                     Address is optional and can be added later

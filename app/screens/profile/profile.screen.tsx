@@ -70,7 +70,7 @@ export default function ProfileScreen() {
     if (!user?.id || !user?.email) return;
 
     try {
-      console.log('🔄 Fetching driver license data...', { forceRefresh });
+      console.log(' Fetching driver license data...', { forceRefresh });
 
       const { data, error } = await userService.getDriverLicense(
         user.id,
@@ -82,13 +82,13 @@ export default function ProfileScreen() {
         return;
       }
 
-      console.log('📄 Driver license data received:', data);
+      console.log(' Driver license data received:', data);
 
       if (data && data.licenseInfo) {
         // Use the license info from the selected (approved/latest) record
         const licenseInfo = data.licenseInfo;
 
-        console.log('✅ Setting license info:', {
+        console.log(' Setting license info:', {
           number: licenseInfo.licenseNumber,
           name: licenseInfo.licenseName,
           class: licenseInfo.licenseClass,
@@ -117,7 +117,7 @@ export default function ProfileScreen() {
         setLicenseCreateDate(licenseInfo.createDate);
 
       } else {
-        console.log('❌ No license data found');
+        console.log(' No license data found');
         setLicenseImage(null);
         setLicenseInfo(null);
         setLicenseStatus(null);
@@ -137,7 +137,7 @@ export default function ProfileScreen() {
     setLicenseImage,
     refreshUser,
     buildSafeUpdateData,
-    fetchDriverLicense, // Now we can pass it
+    fetchDriverLicense, 
   );
 
   const imagePicker = useImagePicker();
@@ -168,7 +168,7 @@ export default function ProfileScreen() {
   // Refresh data when screen comes into focus (e.g., after upload)
   useFocusEffect(
     React.useCallback(() => {
-      console.log('📱 Profile screen focused - refreshing license data');
+      console.log(' Profile screen focused - refreshing license data');
       fetchDriverLicense(true);
     }, [user?.id, user?.email])
   );
@@ -249,12 +249,12 @@ export default function ProfileScreen() {
       setIsProcessingOCR(true);
       setOcrResult(null);
 
-      console.log('🔍 Starting OCR processing for:', uri);
+      console.log(' Starting OCR processing for:', uri);
 
       const { data, error } = await ocrService.extractDriverLicenseInfo(uri);
 
       if (error) {
-        console.error('❌ OCR failed:', error);
+        console.error(' OCR failed:', error);
         setShowOCRModal(false);
         Alert.alert(
           'OCR Failed',
@@ -267,16 +267,16 @@ export default function ProfileScreen() {
       }
 
       if (data) {
-        console.log('✅ OCR successful:', data);
+        console.log(' OCR successful:', data);
         setOcrResult(data);
 
         // Validate OCR quality
         const validation = ocrService.validateOCRQuality(data);
-        console.log('📊 OCR validation:', validation);
+        console.log(' OCR validation:', validation);
       }
 
     } catch (error: any) {
-      console.error('💥 OCR exception:', error);
+      console.error(' OCR exception:', error);
       setShowOCRModal(false);
       Alert.alert('Error', 'Failed to process image. Please try again.');
     } finally {
@@ -332,7 +332,7 @@ export default function ProfileScreen() {
       Alert.alert('Success', 'License photo uploaded and processed successfully');
 
       // Force refresh license data after upload to get the latest information
-      console.log('🔄 Force refreshing license data after upload...');
+      console.log(' Force refreshing license data after upload...');
       setTimeout(() => {
         fetchDriverLicense(true);
       }, 1500); // Give server a bit more time to process

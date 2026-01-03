@@ -15,7 +15,7 @@ export interface CreateReportData {
     content: string;
     carId: string;
     userId: string;
-    images: string[]; // Add images field
+    images: string[];
 }
 
 export interface CreateUserReportData {
@@ -24,7 +24,7 @@ export interface CreateUserReportData {
     deductedPoints: number;
     reporterId: string;
     reportedUserId: string;
-    images: string[]; // Add images field
+    images: string[];
 }
 
 export interface ReportResponse {
@@ -63,7 +63,7 @@ export const reportService = {
         try {
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 Report: Auth token available:', !!token);
+            console.log(' Report: Auth token available:', !!token);
 
             const formData = new FormData();
             formData.append('Title', data.title);
@@ -148,7 +148,7 @@ export const reportService = {
         try {
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 UserReport: Auth token available:', !!token);
+            console.log(' UserReport: Auth token available:', !!token);
 
             const formData = new FormData();
             formData.append('Title', data.title);

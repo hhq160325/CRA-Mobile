@@ -17,7 +17,7 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
     const checkGPSStatus = async () => {
         setChecking(true);
         try {
-            // console.log('🔍 Checking GPS status for user:', userId);
+            // console.log(' Checking GPS status for user:', userId);
 
             // Check if user has any location data
             const result = await gpsTrackingService.getUserLocationHistory(userId);
@@ -25,7 +25,7 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
             if (result.error) {
                 Alert.alert(
                     'GPS Status Check',
-                    `❌ No GPS data found\n\nReason: ${result.error.message}\n\nSuggestions:\n• User needs to log in and allow GPS permissions\n• GPS tracking may not have started yet\n• Check if user is using the app actively`,
+                    ` No GPS data found\n\nReason: ${result.error.message}\n\nSuggestions:\n• User needs to log in and allow GPS permissions\n• GPS tracking may not have started yet\n• Check if user is using the app actively`,
                     [{ text: 'OK' }]
                 );
             } else if (result.data && result.data.length > 0) {
@@ -35,14 +35,14 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
 
                 Alert.alert(
                     'GPS Status Check',
-                    `✅ GPS data found!\n\n📊 Total records: ${result.data.length}\n📍 Latest location: ${latest.latitude.toFixed(4)}, ${latest.longitude.toFixed(4)}\n🚗 Speed: ${latest.speed} km/h\n📱 Device: ${latest.deviceId}\n⏰ Last update: ${minutesAgo < 1 ? 'Just now' : `${minutesAgo} minutes ago`}`,
+                    ` GPS data found!\n\n Total records: ${result.data.length}\n📍 Latest location: ${latest.latitude.toFixed(4)}, ${latest.longitude.toFixed(4)}\n🚗 Speed: ${latest.speed} km/h\n📱 Device: ${latest.deviceId}\n⏰ Last update: ${minutesAgo < 1 ? 'Just now' : `${minutesAgo} minutes ago`}`,
                     [{ text: 'OK' }]
                 );
             }
         } catch (error) {
             Alert.alert(
                 'GPS Status Check',
-                `❌ Error checking GPS status\n\n${error instanceof Error ? error.message : 'Unknown error'}`,
+                ` Error checking GPS status\n\n${error instanceof Error ? error.message : 'Unknown error'}`,
                 [{ text: 'OK' }]
             );
         }
@@ -71,13 +71,13 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
             if (result.error) {
                 Alert.alert(
                     'Test Location',
-                    `❌ Failed to send test location\n\n${result.error.message}`,
+                    ` Failed to send test location\n\n${result.error.message}`,
                     [{ text: 'OK' }]
                 );
             } else {
                 Alert.alert(
                     'Test Location',
-                    `✅ Test location sent successfully!\n\n📍 Coordinates: ${testLocationData.latitude}, ${testLocationData.longitude}\n🚗 Speed: ${testLocationData.speed} km/h\n📱 Device: ${deviceId}\n⏰ Timestamp: ${result.data?.timestamp}`,
+                    `Test location sent successfully!\n\n📍 Coordinates: ${testLocationData.latitude}, ${testLocationData.longitude}\n🚗 Speed: ${testLocationData.speed} km/h\n📱 Device: ${deviceId}\n⏰ Timestamp: ${result.data?.timestamp}`,
                     [
                         { text: 'Check Status', onPress: checkGPSStatus },
                         { text: 'OK' }
@@ -87,7 +87,7 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
         } catch (error) {
             Alert.alert(
                 'Test Location',
-                `❌ Error sending test location\n\n${error instanceof Error ? error.message : 'Unknown error'}`,
+                ` Error sending test location\n\n${error instanceof Error ? error.message : 'Unknown error'}`,
                 [{ text: 'OK' }]
             );
         }

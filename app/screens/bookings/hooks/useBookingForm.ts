@@ -80,7 +80,7 @@ export function useBookingForm() {
       return 'Phone number is required';
     }
 
-    // Remove any non-digit characters for validation
+
     const cleanPhone = phoneNumber.replace(/\D/g, '');
 
     if (cleanPhone.length !== 10) {
@@ -119,7 +119,7 @@ export function useBookingForm() {
   };
 
   const handlePhoneChange = (text: string) => {
-    // Remove any non-digit characters and limit to 10 digits
+
     const cleanText = text.replace(/\D/g, '');
     if (cleanText.length <= 10) {
       setPhone(cleanText);

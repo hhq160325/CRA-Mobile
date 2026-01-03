@@ -124,7 +124,7 @@ export const bookingExtensionService = {
         try {
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 Auth token available:', !!token);
+            console.log(' Auth token available:', !!token);
 
             const authHeaders: Record<string, string> = {
                 'Content-Type': 'application/json',
@@ -241,7 +241,7 @@ export const bookingExtensionService = {
         try {
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 Auth token available:', !!token);
+            console.log(' Auth token available:', !!token);
 
             const authHeaders: Record<string, string> = {
                 'Content-Type': 'application/json',
@@ -277,7 +277,7 @@ export const bookingExtensionService = {
             return { data: result, error: null };
 
         } catch (error) {
-            console.error('🔗 createPayOSPaymentRequest: fetch error', error);
+            console.error(' createPayOSPaymentRequest: fetch error', error);
             return { data: null, error: error as Error };
         }
     },

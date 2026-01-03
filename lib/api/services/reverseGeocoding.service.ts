@@ -36,7 +36,7 @@ class ReverseGeocodingService {
 
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 ReverseGeocoding: Auth token available:', !!token);
+            console.log(' ReverseGeocoding: Auth token available:', !!token);
 
             const requestData: ReverseGeocodingRequest = {
                 latitude: latitude.toString(),

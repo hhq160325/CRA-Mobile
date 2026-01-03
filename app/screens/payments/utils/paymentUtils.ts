@@ -16,7 +16,7 @@ export function getStatusColor(status: string): string {
     if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled' || normalizedStatus === 'failed') {
         return '#dc2626';
     }
-    return '#d97706'; // pending, processing, etc.
+    return '#d97706';
 }
 
 export function getStatusBgColor(status: string): string {
@@ -27,7 +27,7 @@ export function getStatusBgColor(status: string): string {
     if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled' || normalizedStatus === 'failed') {
         return '#fee2e2';
     }
-    return '#fef3c7'; // pending, processing, etc.
+    return '#fef3c7';
 }
 
 export function calculateTotal(payments: PaymentItem[]): number {

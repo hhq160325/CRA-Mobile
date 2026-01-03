@@ -44,7 +44,7 @@ export const bookingExtensionPaymentService = {
 
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 Auth token available:', !!token);
+            console.log(' Auth token available:', !!token);
 
             const authHeaders: Record<string, string> = {
                 'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ export const bookingExtensionPaymentService = {
 
             // Get authentication token
             const token = await getAuthToken();
-            console.log('🔐 Auth token available:', !!token);
+            console.log(' Auth token available:', !!token);
 
             const authHeaders: Record<string, string> = {
                 'accept': '*/*',

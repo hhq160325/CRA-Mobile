@@ -30,7 +30,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
     try {
         // Validate booking ID format
         if (!bookingId || bookingId === 'pending' || bookingId.length < 10) {
-            console.log(`⚠️ Invalid booking ID provided: "${bookingId}" - skipping payment check`);
+            console.log(` Invalid booking ID provided: "${bookingId}" - skipping payment check`);
             return {
                 results: [],
                 allPaid: false,
@@ -38,14 +38,14 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             };
         }
 
-        console.log("\n === Payment Status Checker ===")
+
         console.log(` Booking: ${bookingId}`)
         console.log(` Base URL: ${API_CONFIG.BASE_URL}`)
         console.log(` PayOS Base URL: ${API_CONFIG.BASE_URL.replace('/api', '')}`)
 
         // Get authentication token
         const token = await getAuthToken()
-        console.log('🔐 Auth token available:', !!token)
+        console.log(' Auth token available:', !!token)
 
         const authHeaders: Record<string, string> = {
             'Content-Type': 'application/json',
@@ -56,10 +56,10 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             authHeaders['Authorization'] = `Bearer ${token}`
         }
 
-        // Fetch booking details - use full API URL with /api prefix
-        const baseUrl = API_CONFIG.BASE_URL; // Keep /api prefix
+
+        const baseUrl = API_CONFIG.BASE_URL;
         const bookingUrl = `${baseUrl}/Booking/GetBookingById/${bookingId}`
-        console.log('📡 Fetching booking:', bookingUrl)
+        console.log(' Fetching booking:', bookingUrl)
 
         const bookingResponse = await fetch(bookingUrl, {
             method: 'GET',
@@ -68,7 +68,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
         if (!bookingResponse.ok) {
             const errorText = await bookingResponse.text()
-            console.error('❌ Booking fetch failed:', bookingResponse.status, errorText)
+            console.error(' Booking fetch failed:', bookingResponse.status, errorText)
             throw new Error(`Failed to fetch booking: ${bookingResponse.status}`)
         }
 
@@ -84,7 +84,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
         // Fetch payments for booking - use base URL without /api prefix (consistent with other services)
         const paymentsBaseUrl = API_CONFIG.BASE_URL.replace('/api', '');
         const paymentsUrl = `${paymentsBaseUrl}/Booking/${bookingId}/Payments`
-        console.log('📡 Fetching payments:', paymentsUrl)
+        console.log(' Fetching payments:', paymentsUrl)
 
         const paymentsResponse = await fetch(paymentsUrl, {
             method: 'GET',
@@ -93,7 +93,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
         if (!paymentsResponse.ok) {
             const errorText = await paymentsResponse.text()
-            console.error('❌ Payments fetch failed:', paymentsResponse.status, errorText)
+            console.error(' Payments fetch failed:', paymentsResponse.status, errorText)
             throw new Error(`Failed to fetch payments: ${paymentsResponse.status}`)
         }
 
@@ -121,7 +121,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
             // Skip payments that don't have valid order codes
             if (!orderCode || orderCode === 0 || orderCode === null) {
-                console.log(`   ⚠️ Skipping payment with invalid order code: ${orderCode}`)
+                console.log(`    Skipping payment with invalid order code: ${orderCode}`)
                 results.push({
                     orderCode: orderCode || 0,
                     item,
@@ -132,15 +132,14 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                 continue
             }
 
-            // Skip PayOS status check for Rental Fee payments that are still Pending
-            // These are paid separately after booking creation, so PayOS order may not exist yet
+
             if (item.toLowerCase().includes("rental") && originalStatus === "Pending") {
-                console.log(`   ⏭️ Skipping PayOS check for pending Rental Fee - payment not made yet`)
+                console.log(`    Skipping PayOS check for pending Rental Fee - payment not made yet`)
                 results.push({
                     orderCode,
                     item,
                     originalStatus,
-                    payosStatus: "PENDING", // Keep as pending until actually paid
+                    payosStatus: "PENDING",
                     updated: false
                 })
                 continue
@@ -148,7 +147,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
 
             // Try to get PayOS payment status - try multiple endpoints
-            console.log(`🔍 Checking PayOS status for order ${orderCode}`)
+            console.log(` Checking PayOS status for order ${orderCode}`)
 
             let payosData = null;
             let payosError = null;
@@ -161,27 +160,27 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
             for (const endpoint of endpoints) {
                 try {
-                    console.log(`🔍 Trying ${endpoint.name} endpoint for order ${orderCode}`);
+                    console.log(` Trying ${endpoint.name} endpoint for order ${orderCode}`);
                     const result = await endpoint.method();
 
                     if (result.data && !result.error) {
                         payosData = result.data;
                         payosError = null;
-                        console.log(`✅ ${endpoint.name} endpoint succeeded for order ${orderCode}`);
+                        console.log(`${endpoint.name} endpoint succeeded for order ${orderCode}`);
                         break;
                     } else if (result.error) {
-                        console.log(`⚠️ ${endpoint.name} endpoint failed:`, result.error.message);
+                        console.log(` ${endpoint.name} endpoint failed:`, result.error.message);
                         payosError = result.error;
                     }
                 } catch (error) {
-                    console.log(`⚠️ ${endpoint.name} endpoint exception:`, error);
+                    console.log(` ${endpoint.name} endpoint exception:`, error);
                     payosError = error as Error;
                 }
             }
 
             // If all endpoints fail, try a direct API call to PayOS status endpoint
             if (!payosData && payosError) {
-                console.log(`🔍 Trying additional PayOS status endpoints for order ${orderCode}`);
+                console.log(` Trying additional PayOS status endpoints for order ${orderCode}`);
 
                 // Try different PayOS endpoint variations
                 const additionalEndpoints = [
@@ -197,7 +196,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                 for (const endpoint of additionalEndpoints) {
                     try {
                         const directUrl = `${API_CONFIG.BASE_URL.replace('/api', '')}${endpoint}`;
-                        console.log(`📡 Trying PayOS endpoint: ${directUrl}`);
+                        console.log(` Trying PayOS endpoint: ${directUrl}`);
 
                         const directResponse = await fetch(directUrl, {
                             method: 'GET',
@@ -208,13 +207,13 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                             const directData = await directResponse.json();
                             payosData = directData;
                             payosError = null;
-                            console.log(`✅ PayOS endpoint ${endpoint} succeeded for order ${orderCode}`);
+                            console.log(` PayOS endpoint ${endpoint} succeeded for order ${orderCode}`);
                             break;
                         } else {
-                            console.log(`⚠️ PayOS endpoint ${endpoint} failed: ${directResponse.status}`);
+                            console.log(` PayOS endpoint ${endpoint} failed: ${directResponse.status}`);
                         }
                     } catch (directError) {
-                        console.log(`⚠️ PayOS endpoint ${endpoint} exception:`, directError);
+                        console.log(` PayOS endpoint ${endpoint} exception:`, directError);
                     }
                 }
             }
@@ -326,8 +325,8 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                         };
                     }
 
-                    console.log('📡 Updating payment status:', updateUrl);
-                    console.log('📡 Payload:', JSON.stringify(payload, null, 2));
+                    console.log(' Updating payment status:', updateUrl);
+                    console.log(' Payload:', JSON.stringify(payload, null, 2));
 
                     const updateResponse = await fetch(updateUrl, {
                         method: "PATCH",
@@ -336,14 +335,14 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                     })
 
                     if (updateResponse.ok) {
-                        console.log(`   ✅ Updated ${item} to ${newStatus}`)
+                        console.log(` Updated ${item} to ${newStatus}`)
                         updated = true
                     } else {
                         const errorText = await updateResponse.text()
-                        console.log(`   ❌ Update failed (${updateResponse.status}):`, errorText)
+                        console.log(` Update failed (${updateResponse.status}):`, errorText)
                     }
                 } catch (updateError) {
-                    console.error(`   💥 Update error:`, updateError)
+                    console.error(` Update error:`, updateError)
                 }
             }
 
@@ -390,7 +389,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             console.log("Updating booking status to Confirmed...")
             try {
                 const updateUrl = `${baseUrl}/Booking/UpdateBooking`
-                console.log('📡 Updating booking status:', updateUrl)
+                console.log(' Updating booking status:', updateUrl)
 
                 const updateResponse = await fetch(updateUrl, {
                     method: "PATCH",
@@ -414,7 +413,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             console.log(" Updating booking status to Canceled...")
             try {
                 const updateUrl = `${baseUrl}/Booking/UpdateBooking`
-                console.log('📡 Updating booking status to Canceled:', updateUrl)
+                console.log(' Updating booking status to Canceled:', updateUrl)
 
                 const updateResponse = await fetch(updateUrl, {
                     method: "PATCH",

@@ -56,7 +56,7 @@ export default function BookingFormScreen({ route }: any) {
     discount: formState.discount
   });
 
-  // Handle step navigation
+
   const { handleNextStep } = useStepNavigation({
     currentStep,
     setCurrentStep,
@@ -69,7 +69,7 @@ export default function BookingFormScreen({ route }: any) {
     navigation
   });
 
-  // Debug logging for step 3
+
   if (currentStep === 3) {
     console.log('Step 3 - Rental Summary Debug:', {
       pickupMode: formState.pickupMode,

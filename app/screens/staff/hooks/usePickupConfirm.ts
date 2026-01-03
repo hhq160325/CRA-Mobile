@@ -180,8 +180,8 @@ export function usePickupConfirm(bookingId: string) {
 
         setBooking({
           id: bookingData.id,
-          bookingNumber: bookingData.bookingNumber, // Add booking number
-          userId: bookingData.userId, // Add userId for user reporting
+          bookingNumber: bookingData.bookingNumber,
+          userId: bookingData.userId,
           carName,
           carModel,
           carLicensePlate,

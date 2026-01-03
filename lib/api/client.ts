@@ -36,7 +36,7 @@ export async function testConnection(): Promise<{ success: boolean; message: str
     clearTimeout(timeoutId)
     const latency = Date.now() - startTime
 
-    // Determine connection quality based on latency
+
     let connectionQuality = "excellent"
     if (latency > 2000) connectionQuality = "poor"
     else if (latency > 1000) connectionQuality = "fair"
@@ -76,7 +76,7 @@ async function makeRequest<T>(
   url: string,
   options: RequestInit,
   timeout: number,
-  endpoint?: string, // Add endpoint parameter for better error logging
+  endpoint?: string,
 ): Promise<T> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => {
@@ -97,21 +97,20 @@ async function makeRequest<T>(
     if (!response.ok) {
       const errorText = await response.text()
 
-      // Special handling for 404 errors to help debug iOS issues
       if (response.status === 404) {
-        console.error("❌ 404 Error Details:")
+        console.error(" 404 Error Details:")
         console.error("   URL:", url)
         console.error("   Endpoint:", endpoint || 'unknown')
         console.error("   Platform:", Platform.OS)
         console.error("   Method:", options?.method || 'GET')
         console.error("   Response:", errorText)
 
-        // Add stack trace to help identify where the call is coming from
+
         console.error("   Call stack:", new Error().stack)
 
-        // Check if this is an expected 404 (like invoice not found)
+
         if (endpoint?.includes('/Invoice/') && options?.method === 'GET') {
-          console.log("ℹ️ This appears to be an invoice lookup that returned 404 - invoice may not exist")
+          console.log(" This appears to be an invoice lookup that returned 404 - invoice may not exist")
         }
       } else {
         console.error("apiClient: error response status:", response.status)
@@ -128,7 +127,7 @@ async function makeRequest<T>(
         errorData = { message: errorText }
       }
 
-      // Provide more helpful error messages for common status codes
+
       let errorMessage = errorData.message || errorData.title || "Request failed"
       if (!errorMessage || errorMessage === "Request failed") {
         if (response.status === 500) {
@@ -191,17 +190,18 @@ export async function apiClient<T>(
       console.error("Failed to get token from AsyncStorage:", e)
     }
 
-    // Get Expo-optimized configuration in development
+
     const expoConfig = __DEV__ ? getOptimalExpoConfig() : null;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      // Mobile-specific optimizations
       "Cache-Control": "no-cache",
       "Connection": "keep-alive",
       "Accept-Encoding": "gzip, deflate",
-      // Add Expo-specific headers in development
-      ...(expoConfig?.headers || {}),
+      // Filter out undefined values from expo config headers
+      ...(expoConfig?.headers ? Object.fromEntries(
+        Object.entries(expoConfig.headers).filter(([_, value]) => value !== undefined)
+      ) : {}),
       ...(options?.headers as Record<string, string>),
     }
 
@@ -261,10 +261,10 @@ export async function apiClient<T>(
         ? "Request timeout on iOS - This may be due to network conditions. Please check your connection and try again."
         : "Request timeout - The server took too long to respond. Please check your internet connection or try again later.";
 
-      console.error("❌ Timeout error details:", {
+      console.error(" Timeout error details:", {
         platform: Platform.OS,
         timeout: API_CONFIG.TIMEOUT,
-        endpoint: lastError?.message || 'unknown'
+        endpoint: endpoint || 'unknown'
       });
 
       return {
@@ -274,7 +274,7 @@ export async function apiClient<T>(
     }
 
 
-    // Handle specific tunnel/ngrok errors
+
     if (error instanceof Error && (
       error.message.includes("ER_NGROK_3200") ||
       error.message.includes("tunnel not found") ||

@@ -104,18 +104,18 @@ const SignUpScreen = () => {
   // Check if email already exists
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
-      // console.log('🔍 Checking if email exists:', email);
+      // console.log(' Checking if email exists:', email);
       const result = await userService.findUserByEmail(email);
 
       if (result.data) {
-        // console.log('❌ Email already exists:', email);
+        // console.log('Email already exists:', email);
         return true;
       }
 
-      // console.log('✅ Email is available:', email);
+      // console.log(' Email is available:', email);
       return false;
     } catch (error) {
-      // console.log('✅ Email is available (not found):', email);
+      // console.log(' Email is available (not found):', email);
       return false;
     }
   };
@@ -123,11 +123,11 @@ const SignUpScreen = () => {
   // Check if username already exists
   const checkUsernameExists = async (username: string): Promise<boolean> => {
     try {
-      // console.log('🔍 Checking if username exists:', username);
+      // console.log(' Checking if username exists:', username);
       const result = await userService.getAllUsers();
 
       if (result.error || !result.data) {
-        // console.log('⚠️ Could not check username, allowing signup');
+        // console.log(' Could not check username, allowing signup');
         return false;
       }
 
@@ -136,14 +136,14 @@ const SignUpScreen = () => {
       );
 
       if (existingUser) {
-        // console.log('❌ Username already exists:', username);
+        // console.log(' Username already exists:', username);
         return true;
       }
 
-      // console.log('✅ Username is available:', username);
+      // console.log(' Username is available:', username);
       return false;
     } catch (error) {
-      // console.log('⚠️ Error checking username, allowing signup:', error);
+      // console.log(' Error checking username, allowing signup:', error);
       return false;
     }
   };
@@ -198,7 +198,7 @@ const SignUpScreen = () => {
               lowerErrorMessage.includes('already') ||
               lowerErrorData.includes('email') && lowerErrorData.includes('exist'))) {
 
-            console.error('❌ EMAIL ALREADY EXISTS ERROR:', {
+            console.error(' EMAIL ALREADY EXISTS ERROR:', {
               email: data.email,
               errorMessage,
               statusCode,
@@ -215,7 +215,7 @@ const SignUpScreen = () => {
               lowerErrorMessage.includes('already') ||
               lowerErrorData.includes('username') && lowerErrorData.includes('exist'))) {
 
-            console.error('❌ USERNAME ALREADY EXISTS ERROR:', {
+            console.error(' USERNAME ALREADY EXISTS ERROR:', {
               username: data.username,
               errorMessage,
               statusCode,
@@ -228,7 +228,7 @@ const SignUpScreen = () => {
         }
         // Server error (500)
         else if (statusCode === 500) {
-          console.error('❌ SERVER ERROR:', {
+          console.error(' SERVER ERROR:', {
             errorMessage,
             statusCode,
             errorData
@@ -239,7 +239,7 @@ const SignUpScreen = () => {
         }
         // Network or other errors
         else {
-          console.error('❌ SIGNUP ERROR:', {
+          console.error(' SIGNUP ERROR:', {
             errorMessage,
             statusCode,
             errorData
@@ -251,7 +251,7 @@ const SignUpScreen = () => {
           Alert.alert(alertTitle, alertMessage, [
             {
               text: 'Change Email',
-              onPress: () => setCurrentStep(2), // Go back to Step 2 (email input)
+              onPress: () => setCurrentStep(2),
             },
             {
               text: 'Sign In Instead',
@@ -262,7 +262,7 @@ const SignUpScreen = () => {
           Alert.alert(alertTitle, alertMessage, [
             {
               text: 'Change Username',
-              onPress: () => setCurrentStep(1), // Go back to Step 1 (username input)
+              onPress: () => setCurrentStep(1),
             },
             {
               text: 'Cancel',
@@ -273,7 +273,7 @@ const SignUpScreen = () => {
           Alert.alert(alertTitle, alertMessage);
         }
       } else {
-        console.log('✅ Signup API called successfully, OTP sent to email');
+        console.log(' Signup API called successfully, OTP sent to email');
         setCurrentStep(4);
         Alert.alert(
           'Check Your Phone',
@@ -303,7 +303,7 @@ const SignUpScreen = () => {
           verifyResult.error.message || 'Invalid verification code',
         );
       } else {
-        console.log('✅ OTP verified successfully, account created');
+        console.log(' OTP verified successfully, account created');
         Alert.alert(
           'Success',
           'Account created successfully! Please sign in.',
@@ -341,7 +341,7 @@ const SignUpScreen = () => {
       const result = await authService.register(userData);
 
       if (result.error) {
-        console.error('❌ Resend OTP error:', {
+        console.error(' Resend OTP error:', {
           message: result.error.message,
           status: (result.error as any).status,
           data: (result.error as any).data,
@@ -350,7 +350,7 @@ const SignUpScreen = () => {
         const errorMessage = result.error.message || 'Failed to resend verification code';
         Alert.alert('Resend Failed', errorMessage);
       } else {
-        console.log('✅ OTP resent successfully');
+        console.log(' OTP resent successfully');
       }
     } catch (error: any) {
       console.error('Resend OTP exception:', error);

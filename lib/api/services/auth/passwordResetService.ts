@@ -61,7 +61,7 @@ export const resetPassword = async (
 ): Promise<{ data: { message: string } | null; error: Error | null }> => {
     console.log("passwordResetService.resetPassword: resetting password for", email);
 
-    // If code is 'PHONE_VERIFIED', use phone-based reset endpoint
+
     if (code === 'PHONE_VERIFIED') {
         return resetPasswordByPhone(email, newPassword);
     }

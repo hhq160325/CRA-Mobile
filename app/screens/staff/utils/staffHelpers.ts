@@ -3,6 +3,10 @@ import { userService } from '../../../../lib/api/services/user.service';
 import { scheduleService } from '../../../../lib/api/services/schedule.service';
 import { API_CONFIG } from '../../../../lib/api/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiCache, cacheKeys } from '../../../../lib/api/cache';
+
+// Request deduplication to prevent duplicate API calls
+const pendingRequests = new Map<string, Promise<any>>();
 
 export const getAuthToken = async (): Promise<string | null> => {
     try {
@@ -47,6 +51,13 @@ export const fetchBookingWithCarDetails = async (bookingNumber: string) => {
 };
 
 export const fetchCarDetails = async (carId: string) => {
+    // Check cache first with 30-minute TTL
+    const cacheKey = cacheKeys.car(carId);
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
     try {
         // console.log(` fetchCarDetails: fetching car details for ID: ${carId}`);
         const carResult = await carsService.getCarById(carId);
@@ -68,6 +79,10 @@ export const fetchCarDetails = async (carId: string) => {
                 carLicensePlate: carResult.data.licensePlate || '',
                 carImage: carResult.data.image || '',
             };
+
+            // Cache for 30 minutes
+            apiCache.set(cacheKey, details, 30 * 60 * 1000);
+
             // console.log(` fetchCarDetails: returning details for ${carId}:`, details);
             return details;
         }
@@ -79,29 +94,55 @@ export const fetchCarDetails = async (carId: string) => {
         // console.error(` fetchCarDetails: Exception for ${carId}:`, err);
     }
 
-    // console.log(` fetchCarDetails: returning default "Unknown Car" for ${carId}`);
-    return {
+    const defaultDetails = {
         carName: 'Unknown Car',
         carBrand: '',
         carModel: '',
         carLicensePlate: '',
         carImage: '',
     };
+
+    // Cache default details for 5 minutes to avoid repeated failures
+    apiCache.set(cacheKey, defaultDetails, 5 * 60 * 1000);
+
+    // console.log(` fetchCarDetails: returning default "Unknown Car" for ${carId}`);
+    return defaultDetails;
 };
 
 export const fetchCustomerName = async (userId: string) => {
+    // Check cache first with 30-minute TTL
+    const cacheKey = cacheKeys.user(userId);
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
     try {
         const userResult = await userService.getUserById(userId);
         if (userResult.data) {
-            return userResult.data.fullname || userResult.data.username || 'Customer';
+            const name = userResult.data.fullname || userResult.data.username || 'Customer';
+            // Cache for 30 minutes
+            apiCache.set(cacheKey, name, 30 * 60 * 1000);
+            return name;
         }
     } catch (err) {
         // console.error('Error fetching customer name:', err);
     }
-    return 'Customer';
+
+    const defaultName = 'Customer';
+    // Cache default name for 5 minutes to avoid repeated failures
+    apiCache.set(cacheKey, defaultName, 5 * 60 * 1000);
+    return defaultName;
 };
 
 export const fetchPaymentDetails = async (bookingId: string) => {
+    // Check cache first with 10-minute TTL (shorter for payment data)
+    const cacheKey = cacheKeys.staffPaymentDetails(bookingId);
+    const cached = apiCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
     try {
         const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
         const paymentsUrl = `${baseUrl}/Booking/${bookingId}/Payments`;
@@ -198,6 +239,9 @@ export const fetchPaymentDetails = async (bookingId: string) => {
                     extensionPayment,
                 };
                 console.log(`🔍 fetchPaymentDetails: Returning for ${bookingId}:`, result);
+
+                // Cache for 10 minutes
+                apiCache.set(cacheKey, result, 10 * 60 * 1000);
                 return result;
             }
         } else {
@@ -206,7 +250,7 @@ export const fetchPaymentDetails = async (bookingId: string) => {
 
         // If we get here, either API failed or no payments found
         console.log(`🔍 fetchPaymentDetails: No payments found for ${bookingId} - returning no_payment`);
-        return {
+        const noPaymentResult = {
             amount: 0,
             status: 'no_payment',
             hasPaymentRecord: false,
@@ -218,13 +262,17 @@ export const fetchPaymentDetails = async (bookingId: string) => {
             rentalFeePayment: null,
             extensionPayment: null,
         };
+
+        // Cache for 5 minutes (shorter for no-payment cases)
+        apiCache.set(cacheKey, noPaymentResult, 5 * 60 * 1000);
+        return noPaymentResult;
 
     } catch (err) {
         console.error(`🔍 fetchPaymentDetails: Error for ${bookingId}:`, err);
 
         // If API call fails, assume no payment record exists
         console.log(`🔍 fetchPaymentDetails: Returning no_payment for ${bookingId} due to error/failure`);
-        return {
+        const errorResult = {
             amount: 0,
             status: 'no_payment',
             hasPaymentRecord: false,
@@ -236,6 +284,10 @@ export const fetchPaymentDetails = async (bookingId: string) => {
             rentalFeePayment: null,
             extensionPayment: null,
         };
+
+        // Cache error result for 2 minutes to avoid repeated failures
+        apiCache.set(cacheKey, errorResult, 2 * 60 * 1000);
+        return errorResult;
     }
 };
 
@@ -291,8 +343,8 @@ export const batchFetchCarDetails = async (carIds: string[]): Promise<Map<string
 
     // console.log(` batchFetchCarDetails: fetching ${carIds.length} cars`);
 
-    // Fetch all cars in parallel with limited concurrency
-    const batchSize = 5; // Limit concurrent requests
+    // Fetch all cars in parallel with increased concurrency
+    const batchSize = 10; // Increased from 5 to 10 for better performance
     for (let i = 0; i < carIds.length; i += batchSize) {
         const batch = carIds.slice(i, i + batchSize);
         const promises = batch.map(async (carId) => {
@@ -331,7 +383,7 @@ export const batchFetchUserDetails = async (userIds: string[]): Promise<Map<stri
 
     // console.log(` batchFetchUserDetails: fetching ${userIds.length} users`);
 
-    const batchSize = 5;
+    const batchSize = 10; // Increased from 5 to 10
     for (let i = 0; i < userIds.length; i += batchSize) {
         const batch = userIds.slice(i, i + batchSize);
         const promises = batch.map(async (userId) => {
@@ -361,7 +413,7 @@ export const batchFetchPaymentDetails = async (bookingIds: string[]): Promise<Ma
 
     // console.log(` batchFetchPaymentDetails: fetching ${bookingIds.length} payments`);
 
-    const batchSize = 5;
+    const batchSize = 8; // Slightly lower due to payment complexity
     for (let i = 0; i < bookingIds.length; i += batchSize) {
         const batch = bookingIds.slice(i, i + batchSize);
         const promises = batch.map(async (bookingId) => {
@@ -391,7 +443,7 @@ export const batchFetchCheckInOutStatus = async (bookingIds: string[]): Promise<
 
     // console.log(` batchFetchCheckInOutStatus: fetching ${bookingIds.length} check-in/out statuses`);
 
-    const batchSize = 5;
+    const batchSize = 10; // Increased from 5 to 10
     for (let i = 0; i < bookingIds.length; i += batchSize) {
         const batch = bookingIds.slice(i, i + batchSize);
         const promises = batch.map(async (bookingId) => {

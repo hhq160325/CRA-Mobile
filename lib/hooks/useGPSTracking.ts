@@ -32,22 +32,22 @@ export function useGPSTracking() {
             setTrackingError(null);
             console.log(' Starting GPS tracking for user:', user.id);
 
-            const success = await locationService.startTracking(user.id, 60000); // 60 seconds (1 minute) interval
+            const success = await locationService.startTracking(user.id, 60000);
 
             if (success) {
                 setIsTracking(true);
                 setLastLocationSent(new Date());
-                console.log('🎯 GPS tracking started successfully for user:', user.id);
+                console.log(' GPS tracking started successfully for user:', user.id);
             } else {
                 setTrackingError('Failed to start GPS tracking');
-                console.log('🎯 Failed to start GPS tracking');
+                console.log(' Failed to start GPS tracking');
             }
 
             return success;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             setTrackingError(errorMessage);
-            console.error('🎯 Error starting GPS tracking:', error);
+            console.error(' Error starting GPS tracking:', error);
             return false;
         } finally {
             startingRef.current = false;
@@ -63,14 +63,14 @@ export function useGPSTracking() {
         console.log(' GPS tracking stopped');
     }, []);
 
-    // Handle app state changes
+
     useEffect(() => {
         const handleAppStateChange = (nextAppState: AppStateStatus) => {
             if (nextAppState === 'background' || nextAppState === 'inactive') {
-                // Keep tracking in background for now
+
                 console.log(' App went to background, continuing GPS tracking');
             } else if (nextAppState === 'active' && user?.id && !isTracking && !startingRef.current) {
-                // Check if tracking should be active when app becomes active
+
                 console.log(' App became active, checking GPS tracking status');
                 if (locationService.isTrackingActive()) {
                     setIsTracking(true);

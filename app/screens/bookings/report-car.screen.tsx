@@ -143,7 +143,7 @@ export default function ReportCarScreen() {
                 content: content.trim(),
                 carId,
                 userId: user.id,
-                images: selectedImages, // Add images to the request
+                images: selectedImages, 
             });
 
             if (result.error) {

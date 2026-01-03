@@ -117,20 +117,20 @@ export const userService = {
 
         // Add connection test for iOS to prevent timeouts
         if (Platform.OS === 'ios') {
-            console.log("🔍 iOS detected: Testing connection before user fetch...");
+            console.log(" iOS detected: Testing connection before user fetch...");
             try {
                 const { testConnection } = await import('../client');
                 const connectionTest = await testConnection();
                 if (!connectionTest.success) {
-                    console.log("⚠️ Connection test failed:", connectionTest.message);
+                    console.log(" Connection test failed:", connectionTest.message);
                     return {
                         data: null,
                         error: new Error(`Connection issue: ${connectionTest.message}`)
                     };
                 }
-                console.log("✅ Connection test passed:", connectionTest.message);
+                console.log(" Connection test passed:", connectionTest.message);
             } catch (testError) {
-                console.log("⚠️ Connection test error:", testError);
+                console.log(" Connection test error:", testError);
                 // Continue with request even if test fails
             }
         }
@@ -442,10 +442,10 @@ export const userService = {
             return { data: { urls: [] }, error: null }
         }
 
-        // Always prioritize side: 1 (front of license) over side: 0 (back of license)
-        let latestLicense = result.data.view[0]; // Default to first
 
-        // Look for side: 1 first (front of license)
+        let latestLicense = result.data.view[0];
+
+
         const frontSideLicense = result.data.view.find(license => license.side === 1);
 
         if (frontSideLicense) {
@@ -456,7 +456,7 @@ export const userService = {
                 createDate: frontSideLicense.createDate
             });
         } else {
-            // If no side 1, look for approved status
+
             const approvedLicense = result.data.view.find(license =>
                 license.status === 'AutoApproved' || license.status === 'Approved'
             );
@@ -490,7 +490,7 @@ export const userService = {
             urlCount: latestLicense.urls?.length || 0
         })
 
-        // Log the actual URLs for debugging
+
         if (latestLicense.urls) {
             console.log("userService.getDriverLicense: URLs found:", latestLicense.urls)
         }

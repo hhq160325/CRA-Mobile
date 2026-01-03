@@ -50,24 +50,24 @@ export const createAdditionalPayment = async (
     // Divide the amount by 10 before sending to PayOS as requested
     const payosAmount = Math.round(amount / 10);
 
-    console.log('🔄 Creating additional payment...');
-    console.log('📋 Booking ID:', bookingId);
-    console.log('📝 Description:', description);
-    console.log('💰 Original amount:', amount, 'VND');
-    console.log('💰 PayOS amount (divided by 10):', payosAmount, 'VND');
+    console.log(' Creating additional payment...');
+    console.log(' Booking ID:', bookingId);
+    console.log(' Description:', description);
+    console.log(' Original amount:', amount, 'VND');
+    console.log(' PayOS amount (divided by 10):', payosAmount, 'VND');
 
     const requestBody = {
         bookingId: bookingId,
         description: description,
-        amount: payosAmount, // Send the divided amount to PayOS
+        amount: payosAmount,
     };
 
-    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
+    console.log(' Request body:', JSON.stringify(requestBody, null, 2));
 
     try {
         // Get authentication token
         const token = await getAuthToken();
-        console.log('🔐 Auth token available:', !!token);
+        console.log(' Auth token available:', !!token);
 
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export const createAdditionalPayment = async (
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        console.log('📤 Request headers:', JSON.stringify(headers, null, 2));
+        console.log(' Request headers:', JSON.stringify(headers, null, 2));
 
         const response = await fetch(
             'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/CreateAdditionalPayment',
@@ -89,20 +89,20 @@ export const createAdditionalPayment = async (
             },
         );
 
-        console.log('📥 Response status:', response.status);
-        console.log('📥 Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
+        console.log(' Response status:', response.status);
+        console.log(' Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ API Error Response:', errorText);
+            console.error(' API Error Response:', errorText);
             throw new Error(`Failed to create additional payment: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('✅ Success response:', JSON.stringify(data, null, 2));
+        console.log(' Success response:', JSON.stringify(data, null, 2));
         return data;
     } catch (error) {
-        console.error('💥 Exception in createAdditionalPayment:', error);
+        console.error(' Exception in createAdditionalPayment:', error);
         throw error;
     }
 };
@@ -220,14 +220,14 @@ export const updateGenericPaymentStatus = async (
         console.log(`Generic payment update response body: ${responseText}`);
 
         if (!response.ok) {
-            console.error(`❌ Generic payment update failed with status: ${response.status}`);
+            console.error(` Generic payment update failed with status: ${response.status}`);
             return false;
         }
 
-        console.log(`✅ Generic payment status updated to ${status}`);
+        console.log(` Generic payment status updated to ${status}`);
         return true;
     } catch (err) {
-        console.error('❌ Failed to update generic payment status:', err);
+        console.error(' Failed to update generic payment status:', err);
         return false;
     }
 };

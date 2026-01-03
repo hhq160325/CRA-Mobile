@@ -47,7 +47,7 @@ export const buildSafeUpdateData = (latestData: any, overrides: any = {}) => {
     // Only remove password-related fields if they're not explicitly being updated
     Object.keys(mergedData).forEach(key => {
         if (key.toLowerCase().includes('password') || key.toLowerCase().includes('pass')) {
-            // Don't delete the password field - we want to preserve it
+
             if (key !== 'password' && !overrides.hasOwnProperty(key)) {
                 delete mergedData[key];
             }
@@ -92,10 +92,10 @@ export const getStatusColor = (field: string, fieldValues: any, colors: any) => 
 };
 
 export const getBehaviorScoreColor = (score: number) => {
-    if (score >= 80) return '#10b981'; // Green for excellent behavior
-    if (score >= 60) return '#f59e0b'; // Orange for good behavior
-    if (score >= 40) return '#ef4444'; // Red for poor behavior
-    return '#6b7280'; // Gray for very poor behavior or no score
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#f59e0b';
+    if (score >= 40) return '#ef4444';
+    return '#6b7280';
 };
 
 export const getBehaviorScoreLabel = (score: number) => {

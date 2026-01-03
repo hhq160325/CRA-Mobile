@@ -57,7 +57,7 @@ class MobilePerformanceService {
         switch (type) {
             case 'wifi':
                 connectionStrength = 'excellent';
-                recommendedTimeout = 10000; // 10s for WiFi
+                recommendedTimeout = 10000;
                 recommendedRetries = 1;
                 break;
 

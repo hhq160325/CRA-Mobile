@@ -15,6 +15,7 @@ export interface CreateReportData {
     content: string;
     carId: string;
     userId: string;
+    images: string[]; // Add images field
 }
 
 export interface CreateUserReportData {
@@ -23,6 +24,7 @@ export interface CreateUserReportData {
     deductedPoints: number;
     reporterId: string;
     reportedUserId: string;
+    images: string[]; // Add images field
 }
 
 export interface ReportResponse {
@@ -54,7 +56,8 @@ export const reportService = {
             title: data.title,
             carId: data.carId,
             userId: data.userId,
-            contentLength: data.content.length
+            contentLength: data.content.length,
+            imageCount: data.images?.length || 0
         });
 
         try {
@@ -68,12 +71,27 @@ export const reportService = {
             formData.append('ReporterId', data.userId);
             formData.append('ReportedCarId', data.carId);
 
+            // Add images to form data
+            if (data.images && data.images.length > 0) {
+                data.images.forEach((imageUri, index) => {
+                    const filename = `car_report_image_${index}_${Date.now()}.jpg`;
+                    const type = 'image/jpeg';
+
+                    formData.append('images', {
+                        uri: imageUri,
+                        name: filename,
+                        type: type,
+                    } as any);
+                });
+            }
+
             console.log("reportService.createReport: using correct endpoint /Report/reportedCar");
             console.log("reportService.createReport: FormData fields", {
                 Title: data.title,
                 Content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
                 ReporterId: data.userId,
-                ReportedCarId: data.carId
+                ReportedCarId: data.carId,
+                imageCount: data.images?.length || 0
             });
 
             const headers: Record<string, string> = {
@@ -123,7 +141,8 @@ export const reportService = {
             reporterId: data.reporterId,
             reportedUserId: data.reportedUserId,
             deductedPoints: data.deductedPoints,
-            contentLength: data.content.length
+            contentLength: data.content.length,
+            imageCount: data.images?.length || 0
         });
 
         try {
@@ -138,13 +157,28 @@ export const reportService = {
             formData.append('ReporterId', data.reporterId);
             formData.append('ReportedUserId', data.reportedUserId);
 
+            // Add images to form data
+            if (data.images && data.images.length > 0) {
+                data.images.forEach((imageUri, index) => {
+                    const filename = `report_image_${index}_${Date.now()}.jpg`;
+                    const type = 'image/jpeg';
+
+                    formData.append('images', {
+                        uri: imageUri,
+                        name: filename,
+                        type: type,
+                    } as any);
+                });
+            }
+
             console.log("reportService.createUserReport: using endpoint /Report/reportedUser");
             console.log("reportService.createUserReport: FormData fields", {
                 Title: data.title,
                 Content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
                 deductedPoints: data.deductedPoints,
                 ReporterId: data.reporterId,
-                ReportedUserId: data.reportedUserId
+                ReportedUserId: data.reportedUserId,
+                imageCount: data.images?.length || 0
             });
 
             const headers: Record<string, string> = {

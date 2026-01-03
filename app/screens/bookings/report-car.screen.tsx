@@ -19,6 +19,8 @@ import Header from '../../components/Header/Header';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../../lib/auth-context';
 import { reportService } from '../../../lib/api';
+import { useImagePicker } from '../staff/hooks/useImagePicker';
+import ImageGallerySection from '../staff/components/ImageGallerySection';
 
 type ReportCarRouteProp = RouteProp<NavigatorParamList, 'ReportCar'>;
 type ReportCarNavigationProp = StackNavigationProp<NavigatorParamList, 'ReportCar'>;
@@ -52,6 +54,9 @@ export default function ReportCarScreen() {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Add image picker functionality
+    const { selectedImages, showImagePickerOptions, removeImage } = useImagePicker(5);
 
     // Initialize title with same format as Messages screen
     React.useEffect(() => {
@@ -130,6 +135,7 @@ export default function ReportCarScreen() {
                 carId,
                 userId: user.id,
                 contentLength: content.trim().length,
+                imageCount: selectedImages.length,
             });
 
             const result = await reportService.createReport({
@@ -137,6 +143,7 @@ export default function ReportCarScreen() {
                 content: content.trim(),
                 carId,
                 userId: user.id,
+                images: selectedImages, // Add images to the request
             });
 
             if (result.error) {
@@ -227,12 +234,15 @@ export default function ReportCarScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Report Title *</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, styles.titleTextArea]}
                         placeholder="Brief description of the issue"
                         placeholderTextColor={colors.placeholder}
                         value={title}
                         onChangeText={setTitle}
                         maxLength={100}
+                        multiline={true}
+                        numberOfLines={4}
+                        textAlignVertical="top"
                     />
                     <Text style={styles.charCount}>{title.length}/100</Text>
                 </View>
@@ -253,6 +263,18 @@ export default function ReportCarScreen() {
                     />
                     <Text style={styles.charCount}>{content.length}/500</Text>
                 </View>
+
+                {/* Evidence Photos Section */}
+                <ImageGallerySection
+                    title="Evidence Photos"
+                    description="Add photos to help us understand the issue better (optional)"
+                    iconName="photo-camera"
+                    iconColor="#ef4444"
+                    images={selectedImages}
+                    onAddPhoto={showImagePickerOptions}
+                    onRemoveImage={removeImage}
+                    isReadOnly={false}
+                />
 
                 {/* Info Box */}
                 <View style={styles.infoBox}>
@@ -385,6 +407,10 @@ const styles = StyleSheet.create({
     },
     textArea: {
         minHeight: verticalScale(120),
+        paddingTop: scale(12),
+    },
+    titleTextArea: {
+        minHeight: verticalScale(80),
         paddingTop: scale(12),
     },
     charCount: {

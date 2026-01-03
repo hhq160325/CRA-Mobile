@@ -22,6 +22,8 @@ import Header from '../../components/Header/Header';
 import { useAuth } from '../../../lib/auth-context';
 import { reportService } from '../../../lib/api/services/report.service';
 import { userReportStyles as styles } from './styles';
+import { useImagePicker } from './hooks/useImagePicker';
+import ImageGallerySection from './components/ImageGallerySection';
 
 interface UserReportRouteParams {
     bookingId: string;
@@ -42,8 +44,11 @@ export default function UserReportScreen() {
     const [deductedPoints, setDeductedPoints] = useState('0');
     const [submitting, setSubmitting] = useState(false);
 
+
+    const { selectedImages, showImagePickerOptions, removeImage } = useImagePicker(5);
+
     const handleSubmit = async () => {
-        // Validation
+
         if (!title.trim()) {
             Alert.alert('Validation Error', 'Please enter a report title.');
             return;
@@ -73,13 +78,14 @@ export default function UserReportScreen() {
         setSubmitting(true);
 
         try {
-            // console.log('🚨 Creating user report:', {
-            //     title: title.trim(),
-            //     reporterId: user.id,
-            //     reportedUserId: params.userId,
-            //     deductedPoints: points,
-            //     bookingId: params.bookingId
-            // });
+            console.log(' Creating user report:', {
+                title: title.trim(),
+                reporterId: user.id,
+                reportedUserId: params.userId,
+                deductedPoints: points,
+                bookingId: params.bookingId,
+                imageCount: selectedImages.length
+            });
 
             const result = await reportService.createUserReport({
                 title: title.trim(),
@@ -87,19 +93,20 @@ export default function UserReportScreen() {
                 deductedPoints: points,
                 reporterId: user.id,
                 reportedUserId: params.userId,
+                images: selectedImages,
             });
 
             if (result.error) {
-                // console.error('❌ User report creation failed:', result.error);
-                // Alert.alert(
-                //     'Report Failed',
-                //     `Failed to submit user report: ${result.error.message}`,
-                //     [{ text: 'OK' }]
-                // );
+
+                Alert.alert(
+                    'Report Failed',
+                    `Failed to submit user report: ${result.error.message}`,
+                    [{ text: 'OK' }]
+                );
                 return;
             }
 
-            // console.log(' User report created successfully:', result.data);
+
 
             Alert.alert(
                 'Report Submitted',
@@ -108,7 +115,7 @@ export default function UserReportScreen() {
                     {
                         text: 'OK',
                         onPress: () => {
-                            // Navigate back to staff dashboard or previous screen
+
                             navigation.goBack();
                         }
                     }
@@ -116,7 +123,7 @@ export default function UserReportScreen() {
             );
 
         } catch (error) {
-            // console.error('Unexpected error creating user report:', error);
+            console.error('Unexpected error creating user report:', error);
             Alert.alert(
                 'Unexpected Error',
                 'An unexpected error occurred while submitting the report. Please try again.',
@@ -330,6 +337,18 @@ export default function UserReportScreen() {
                             </Text>
                         </View>
                     </View>
+
+                    {/* Evidence Photos Section */}
+                    <ImageGallerySection
+                        title="Evidence Photos"
+                        description="Add photos as evidence for this report (optional)"
+                        iconName="photo-camera"
+                        iconColor={colors.primary}
+                        images={selectedImages}
+                        onAddPhoto={showImagePickerOptions}
+                        onRemoveImage={removeImage}
+                        isReadOnly={false}
+                    />
 
                     {/* Submit Button */}
                     <View style={styles.buttonContainer}>

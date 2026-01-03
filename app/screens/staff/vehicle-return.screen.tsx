@@ -348,6 +348,7 @@ export default function VehicleReturnScreen() {
         deductedPoints: points,
         reporterId: user.id,
         reportedUserId: booking?.userId || '',
+        images: [], // Add empty images array for now
       });
 
       if (result.error) {

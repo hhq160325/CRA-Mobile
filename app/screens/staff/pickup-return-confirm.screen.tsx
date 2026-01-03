@@ -174,9 +174,18 @@ export default function PickupReturnConfirmScreen() {
         {
           text: 'Create Report',
           onPress: () => {
-            // TODO: Navigate to report creation screen
-            // navigation.navigate('CreateReport', { bookingId, customerId: booking?.userId });
-            console.log('Navigate to report creation for booking:', bookingId);
+            if (!booking) {
+              Alert.alert('Error', 'Booking information not available');
+              return;
+            }
+
+            navigation.navigate('UserReport', {
+              bookingId: booking.id,
+              userId: booking.userId,
+              userName: booking.customerName,
+              carName: booking.carName,
+              bookingNumber: booking.bookingNumber || booking.id,
+            });
           },
         },
       ],

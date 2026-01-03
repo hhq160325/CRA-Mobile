@@ -6,7 +6,8 @@ import { scheduleService } from '../../../../lib/api/services/schedule.service';
 
 interface BookingDetails {
   id: string;
-  bookingNumber?: string; // Add bookingNumber field
+  bookingNumber?: string;
+  userId: string;
   carName: string;
   carModel: string;
   carLicensePlate: string;
@@ -40,12 +41,10 @@ export function usePickupConfirm(bookingId: string) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // console.log('Fetching booking details for:', bookingId);
 
-        // Check both pickup (check-in) and return (check-out) status
         const [checkInResult, checkOutResult] = await Promise.all([
-          scheduleService.getCheckInOutInfo(bookingId, true),  // Check pickup status
-          scheduleService.getCheckInOutInfo(bookingId, false)  // Check return status
+          scheduleService.getCheckInOutInfo(bookingId, true),
+          scheduleService.getCheckInOutInfo(bookingId, false)
         ]);
 
         // console.log(' Check-in result:', {
@@ -93,9 +92,9 @@ export function usePickupConfirm(bookingId: string) {
         const bookingData = bookingResult.data;
 
         // Debug logging for bookingNumber
-        // console.log('🔍 usePickupConfirm: Raw booking data:', JSON.stringify(bookingData, null, 2));
-        // console.log('🔍 usePickupConfirm: bookingNumber field:', bookingData.bookingNumber);
-        // console.log('🔍 usePickupConfirm: All booking keys:', Object.keys(bookingData));
+        // console.log(' usePickupConfirm: Raw booking data:', JSON.stringify(bookingData, null, 2));
+        // console.log(' usePickupConfirm: bookingNumber field:', bookingData.bookingNumber);
+        // console.log(' usePickupConfirm: All booking keys:', Object.keys(bookingData));
 
         // Check for alternative field names that might contain booking number
         const possibleBookingNumberFields = [
@@ -103,7 +102,7 @@ export function usePickupConfirm(bookingId: string) {
         ];
         possibleBookingNumberFields.forEach(field => {
           if ((bookingData as any)[field]) {
-            // console.log(`🔍 usePickupConfirm: Found ${field}:`, (bookingData as any)[field]);
+            // console.log(` usePickupConfirm: Found ${field}:`, (bookingData as any)[field]);
           }
         });
 
@@ -182,6 +181,7 @@ export function usePickupConfirm(bookingId: string) {
         setBooking({
           id: bookingData.id,
           bookingNumber: bookingData.bookingNumber, // Add booking number
+          userId: bookingData.userId, // Add userId for user reporting
           carName,
           carModel,
           carLicensePlate,

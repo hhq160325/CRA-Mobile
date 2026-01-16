@@ -66,6 +66,7 @@ export const API_ENDPOINTS = {
   CARS: "/Car/AllCars",
   CAR_DETAILS: (id: string) => `/Car/${id}`,
   CAR_RENTAL_RATE: (carId: string) => `/Car/rentalRate/${carId}`,
+  CAR_WALLET: (carId: string) => `/Car/${carId}`,
   CAR_SEARCH: "/cars/search",
   CAR_FILTER: "/cars/filter",
 

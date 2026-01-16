@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { bookingsService } from '../../../../lib/api';
+import { bookingsService, carWalletService } from '../../../../lib/api';
 import { paymentService } from '../../../../lib/api/services/payment.service';
 import { useAuth } from '../../../../lib/auth-context';
 
@@ -10,6 +10,7 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
   const [invoice, setInvoice] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [bookingFee, setBookingFee] = useState<number>(0);
+  const [carWalletBalance, setCarWalletBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -135,10 +136,36 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
           }
 
           console.log(' BookingDetail: Permission granted, setting booking data');
+          console.log(' BookingDetail: Complete booking carId:', completeBooking.carId);
           setBooking(completeBooking);
 
           // Use the actual booking ID from the response data
           const actualBookingId = completeBooking.id;
+
+          // Fetch car wallet balance - ALWAYS try to fetch for debugging
+          const carIdToFetch = completeBooking.carId;
+          console.log('BookingDetail: About to fetch car wallet for carId:', carIdToFetch, 'Type:', typeof carIdToFetch);
+
+          if (carIdToFetch) {
+            console.log('BookingDetail: Fetching car wallet balance for car:', carIdToFetch);
+            try {
+              const walletRes = await carWalletService.getCarWallet(carIdToFetch);
+              console.log('BookingDetail: Car wallet API response:', walletRes);
+              if (mounted && walletRes.data) {
+                console.log('BookingDetail: Car wallet balance loaded:', walletRes.data.balance);
+                setCarWalletBalance(walletRes.data.balance);
+              } else if (walletRes.error) {
+                console.log('BookingDetail: Could not fetch car wallet balance:', walletRes.error.message);
+                console.error('BookingDetail: Full error:', walletRes.error);
+              }
+            } catch (err) {
+              console.log('BookingDetail: Error fetching car wallet balance:', err);
+              console.error('BookingDetail: Full error object:', err);
+            }
+          } else {
+            console.log('BookingDetail: No carId found in booking, skipping wallet fetch');
+            console.log('BookingDetail: Booking object keys:', Object.keys(completeBooking));
+          }
 
           console.log(
             'BookingDetail: Fetching payments for booking:',
@@ -239,5 +266,5 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
     };
   }, [bookingIdOrNumber, user?.id]);
 
-  return { booking, invoice, payments, bookingFee, loading };
+  return { booking, invoice, payments, bookingFee, carWalletBalance, loading };
 }

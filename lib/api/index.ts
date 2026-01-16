@@ -58,3 +58,5 @@ export { reportService, type CreateReportData, type ReportResponse, type CreateU
 export { bookingExtensionPaymentService, type BookingPayment, type UpdatePaymentStatusRequest } from "./services/booking-extension-payment.service"
 
 export { additionalFeePaymentService, type AdditionalFeePayment, type UpdateAdditionalFeePaymentStatusRequest } from "./services/additional-fee-payment.service"
+
+export { carWalletService, type CarWallet } from "./services/carWallet.service"

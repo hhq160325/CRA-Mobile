@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
+import type { CarTravelLog } from '../../../../lib/api/services/carTravelLog.service';
 import {
     calculateTotal,
     buildPaymentDescription,
@@ -9,19 +10,49 @@ import type { PaymentResponse } from '../types/additionalPaymentTypes';
 
 export function useAdditionalPayment(
     bookingId: string,
-    onPaymentAdded?: () => void
+    onPaymentAdded?: () => void,
+    travelLogs?: CarTravelLog[]
 ) {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedFees, setSelectedFees] = useState<string[]>([]);
     const [overtimeHours, setOvertimeHours] = useState(1);
+    const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({});
     const [submitting, setSubmitting] = useState(false);
     const [paymentResponse, setPaymentResponse] = useState<PaymentResponse | null>(null);
     const [showWebView, setShowWebView] = useState(false);
+
+    // Calculate total from travel logs
+    const getTravelLogsTotal = () => {
+        if (!travelLogs || travelLogs.length === 0) return 0;
+        return travelLogs.reduce((total, log) => total + log.chargeAmount, 0);
+    };
+
+    // Auto-populate total charges when travel logs are available
+    useEffect(() => {
+        const travelLogsTotal = getTravelLogsTotal();
+        if (travelLogsTotal > 0) {
+            setCustomAmounts(prev => ({
+                ...prev,
+                total_charges: travelLogsTotal,
+            }));
+            // Auto-select total charges if there are travel logs
+            if (!selectedFees.includes('total_charges')) {
+                setSelectedFees(prev => [...prev, 'total_charges']);
+            }
+        }
+    }, [travelLogs]);
 
     const toggleFee = (feeId: string) => {
         setSelectedFees(prev =>
             prev.includes(feeId) ? prev.filter(id => id !== feeId) : [...prev, feeId],
         );
+    };
+
+    const setCustomAmount = (feeId: string, amount: number) => {
+        setCustomAmounts(prev => ({
+            ...prev,
+            [feeId]: amount,
+        }));
     };
 
     const adjustOvertimeHours = (increment: boolean) => {
@@ -36,6 +67,7 @@ export function useAdditionalPayment(
         setModalVisible(false);
         setSelectedFees([]);
         setOvertimeHours(1);
+        setCustomAmounts({});
         setPaymentResponse(null);
         setShowWebView(false);
     };
@@ -49,8 +81,8 @@ export function useAdditionalPayment(
         setSubmitting(true);
 
         try {
-            const description = buildPaymentDescription(selectedFees, overtimeHours);
-            const totalAmount = calculateTotal(selectedFees, overtimeHours);
+            const description = buildPaymentDescription(selectedFees, overtimeHours, customAmounts);
+            const totalAmount = calculateTotal(selectedFees, overtimeHours, customAmounts);
 
             console.log(' Starting additional payment creation...');
             console.log(' Booking ID:', bookingId);
@@ -79,7 +111,7 @@ export function useAdditionalPayment(
         }
     };
 
-    const getTotalAmount = () => calculateTotal(selectedFees, overtimeHours);
+    const getTotalAmount = () => calculateTotal(selectedFees, overtimeHours, customAmounts);
 
     return {
 
@@ -87,6 +119,7 @@ export function useAdditionalPayment(
         setModalVisible,
         selectedFees,
         overtimeHours,
+        customAmounts,
         submitting,
         paymentResponse,
         showWebView,
@@ -94,6 +127,7 @@ export function useAdditionalPayment(
 
 
         toggleFee,
+        setCustomAmount,
         adjustOvertimeHours,
         resetForm,
         handleSubmit,

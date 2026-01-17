@@ -172,4 +172,7 @@ export const API_ENDPOINTS = {
   GET_REPORT: (reportId: string) => `/Report/${reportId}`,
   UPDATE_REPORT: (reportId: string) => `/Report/${reportId}`,
   DELETE_REPORT: (reportId: string) => `/Report/${reportId}`,
+
+  // Car Travel Log
+  CAR_TRAVEL_LOG_BY_CAR_AND_BOOKING: (carId: string, bookingId: string) => `/CarTravelLog/ByCarAndBooking?carId=${carId}&bookingId=${bookingId}`,
 }

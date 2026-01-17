@@ -4,11 +4,13 @@ import { bookingsService } from '../../../../lib/api/services/bookings.service';
 import { carsService } from '../../../../lib/api/services/cars.service';
 import { userService } from '../../../../lib/api/services/user.service';
 import { scheduleService } from '../../../../lib/api/services/schedule.service';
+import { carTravelLogService, type CarTravelLog } from '../../../../lib/api/services/carTravelLog.service';
 
 interface BookingDetails {
   id: string;
   bookingNumber?: string; // Add bookingNumber field
   userId: string; // Add userId field for customer ID
+  carId: string; // Add carId field for travel logs
   carName: string;
   carModel: string;
   carLicensePlate: string;
@@ -29,6 +31,8 @@ export function useVehicleReturn(bookingId: string) {
   const [pickupImages, setPickupImages] = useState<string[]>([]);
   const [pickupDescription, setPickupDescription] = useState('');
   const [isAlreadyCheckedOut, setIsAlreadyCheckedOut] = useState(false);
+  const [travelLogs, setTravelLogs] = useState<CarTravelLog[]>([]);
+  const [travelLogsLoading, setTravelLogsLoading] = useState(false);
   const [existingCheckOutData, setExistingCheckOutData] = useState<{
     images: string[];
     description: string;
@@ -161,6 +165,7 @@ export function useVehicleReturn(bookingId: string) {
           id: bookingData.id,
           bookingNumber: bookingData.bookingNumber, // Add booking number
           userId: bookingData.userId, // Include customer userId for GPS tracking
+          carId: bookingData.carId, // Include carId for travel logs
           carName,
           carModel,
           carLicensePlate,
@@ -173,6 +178,29 @@ export function useVehicleReturn(bookingId: string) {
           amount: amount,
           status: bookingData.status,
         });
+
+        // Fetch travel logs after booking data is set
+        if (bookingData.carId && bookingData.id) {
+          console.log(' useVehicleReturn: Fetching travel logs for car:', bookingData.carId, 'booking:', bookingData.id);
+          setTravelLogsLoading(true);
+          try {
+            const travelLogsResult = await carTravelLogService.getCarTravelLogsByCarAndBooking(
+              bookingData.carId,
+              bookingData.id
+            );
+
+            if (travelLogsResult.data) {
+              console.log(' useVehicleReturn: Travel logs loaded:', travelLogsResult.data.length, 'entries');
+              setTravelLogs(travelLogsResult.data);
+            } else if (travelLogsResult.error) {
+              console.log(' useVehicleReturn: Error loading travel logs:', travelLogsResult.error.message);
+            }
+          } catch (err) {
+            console.log(' useVehicleReturn: Exception loading travel logs:', err);
+          } finally {
+            setTravelLogsLoading(false);
+          }
+        }
 
         setLoading(false);
       } catch (err) {
@@ -196,5 +224,7 @@ export function useVehicleReturn(bookingId: string) {
     isAlreadyCheckedOut,
     existingCheckOutData,
     initialDescription: existingCheckOutData?.description || '',
+    travelLogs,
+    travelLogsLoading,
   };
 }

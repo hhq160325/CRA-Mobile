@@ -31,6 +31,7 @@ import ActionButton from './components/ActionButton';
 import AdditionalPaymentSection from './components/AdditionalPaymentSection';
 import BookingExtensionSection from './components/BookingExtensionSection';
 import GPSLocationCard from './components/GPSLocationCard';
+import TravelLogsSection from './components/TravelLogsSection';
 import { vehicleReturnStyles as styles } from './styles/vehicleReturn.styles';
 import { fetchBookingExtensionInfo } from './utils/staffHelpers';
 import { bookingExtensionService } from '../../../lib/api/services/bookingExtension.service';
@@ -74,6 +75,8 @@ export default function VehicleReturnScreen() {
     isAlreadyCheckedOut,
     existingCheckOutData,
     initialDescription,
+    travelLogs,
+    travelLogsLoading,
   } = useVehicleReturn(bookingId);
 
   const [description, setDescription] = useState(initialDescription);
@@ -518,6 +521,12 @@ export default function VehicleReturnScreen() {
             dateTime={dropoffDateTime}
           />
 
+          {/* Travel Logs Section */}
+          <TravelLogsSection
+            travelLogs={travelLogs}
+            loading={travelLogsLoading}
+          />
+
           {/* Description Input */}
           <NotesSection
             title={
@@ -562,7 +571,10 @@ export default function VehicleReturnScreen() {
 
           {/* Additional Payment Section */}
           {!isAlreadyCheckedOut && !returnCompleted && (
-            <AdditionalPaymentSection bookingId={bookingId} />
+            <AdditionalPaymentSection
+              bookingId={bookingId}
+              travelLogs={travelLogs}
+            />
           )}
 
           {/* Action Button - Only show if return not completed */}

@@ -2,6 +2,19 @@ import type { AdditionalFee } from '../types/additionalPaymentTypes';
 
 export const ADDITIONAL_FEES: AdditionalFee[] = [
     {
+        id: 'total_charges',
+        name: 'Total Charges',
+        amount: 0,
+        description: 'Travel charges - Automatically calculated from toll booths, parking, fuel, and other expenses.',
+        icon: 'receipt',
+        isEditable: true,
+        isAmountEditable: true,
+        unit: 'VND',
+        minAmount: 1000,
+        maxAmount: 10000000,
+        placeholder: 'Enter total charges amount',
+    },
+    {
         id: 'overtime',
         name: 'Overtime Fee',
         amount: 500000,

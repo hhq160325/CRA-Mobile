@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, TextInput } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../../../../theme/colors';
 import { formatCurrency } from '../utils/paymentUtils';
@@ -10,17 +10,57 @@ interface FeeItemProps {
     fee: AdditionalFee;
     isSelected: boolean;
     overtimeHours: number;
+    customAmount?: number;
     onToggle: (feeId: string) => void;
     onAdjustHours: (increment: boolean) => void;
+    onSetCustomAmount?: (feeId: string, amount: number) => void;
 }
 
 export default function FeeItem({
     fee,
     isSelected,
     overtimeHours,
+    customAmount,
     onToggle,
-    onAdjustHours
+    onAdjustHours,
+    onSetCustomAmount
 }: FeeItemProps) {
+    const [inputAmount, setInputAmount] = useState(customAmount?.toString() || '');
+
+    // Update input when customAmount changes (from travel logs auto-population)
+    useEffect(() => {
+        if (customAmount !== undefined) {
+            setInputAmount(customAmount.toString());
+        }
+    }, [customAmount]);
+    const renderCustomAmountInput = () => {
+        const handleAmountChange = (text: string) => {
+            setInputAmount(text);
+            const numericValue = parseInt(text.replace(/[^0-9]/g, ''), 10);
+            if (!isNaN(numericValue) && numericValue >= (fee.minAmount || 0) && numericValue <= (fee.maxAmount || 10000000)) {
+                onSetCustomAmount?.(fee.id, numericValue);
+            }
+        };
+
+        return (
+            <View style={styles.customAmountContainer}>
+                <Text style={styles.customAmountLabel}>Amount (VND):</Text>
+                <TextInput
+                    style={[
+                        styles.customAmountInput,
+                        fee.id === 'total_charges' && customAmount && customAmount > 0 && styles.customAmountInputDisabled
+                    ]}
+                    value={inputAmount}
+                    onChangeText={handleAmountChange}
+                    placeholder={fee.placeholder || 'Enter amount'}
+                    keyboardType="numeric"
+                    maxLength={10}
+                    editable={!(fee.id === 'total_charges' && customAmount && customAmount > 0)}
+                />
+            </View>
+        );
+    };
+
     const renderOvertimeSelector = () => {
         const canDecrease = overtimeHours > (fee.minQuantity || 1);
         const canIncrease = overtimeHours < (fee.maxQuantity || 24);
@@ -69,8 +109,11 @@ export default function FeeItem({
                 <View style={styles.feeInfo}>
                     <Text style={styles.feeName}>{fee.name}</Text>
                     <Text style={styles.feeAmount}>
-                        {formatCurrency(fee.amount)}
-                        {fee.unit && `/${fee.unit}`}
+                        {fee.isAmountEditable && customAmount !== undefined
+                            ? formatCurrency(customAmount)
+                            : formatCurrency(fee.amount)
+                        }
+                        {fee.unit && !fee.isAmountEditable && `/${fee.unit}`}
                     </Text>
                 </View>
                 <MaterialIcons
@@ -81,7 +124,8 @@ export default function FeeItem({
             </View>
             <Text style={styles.feeDescription}>{fee.description}</Text>
 
-            {fee.isEditable && isSelected && renderOvertimeSelector()}
+            {fee.isAmountEditable && isSelected && renderCustomAmountInput()}
+            {fee.isEditable && !fee.isAmountEditable && isSelected && renderOvertimeSelector()}
         </Pressable>
     );
 }

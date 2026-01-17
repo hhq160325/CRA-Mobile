@@ -304,4 +304,38 @@ export const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
+    // Custom Amount Input Styles
+    customAmountContainer: {
+        marginTop: verticalScale(8),
+        paddingTop: verticalScale(8),
+        borderTopWidth: 1,
+        borderTopColor: '#e5e7eb',
+    },
+    customAmountLabel: {
+        fontSize: scale(13),
+        color: '#374151',
+        marginBottom: verticalScale(4),
+        fontWeight: '500',
+    },
+    customAmountInput: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: scale(6),
+        paddingHorizontal: scale(12),
+        paddingVertical: verticalScale(8),
+        fontSize: scale(14),
+        color: '#1f2937',
+        backgroundColor: colors.white,
+    },
+    customAmountInputDisabled: {
+        backgroundColor: '#f3f4f6',
+        color: '#6b7280',
+    },
+    amountHint: {
+        fontSize: scale(11),
+        color: '#6b7280',
+        marginTop: verticalScale(4),
+        fontStyle: 'italic',
+    },
+
 });

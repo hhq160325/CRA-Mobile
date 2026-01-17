@@ -20,11 +20,13 @@ interface PaymentModalProps {
     visible: boolean;
     selectedFees: string[];
     overtimeHours: number;
+    customAmounts: Record<string, number>;
     submitting: boolean;
     totalAmount: number;
     onClose: () => void;
     onToggleFee: (feeId: string) => void;
     onAdjustHours: (increment: boolean) => void;
+    onSetCustomAmount: (feeId: string, amount: number) => void;
     onSubmit: () => void;
 }
 
@@ -32,11 +34,13 @@ export default function PaymentModal({
     visible,
     selectedFees,
     overtimeHours,
+    customAmounts,
     submitting,
     totalAmount,
     onClose,
     onToggleFee,
     onAdjustHours,
+    onSetCustomAmount,
     onSubmit
 }: PaymentModalProps) {
     const renderModalHeader = () => (
@@ -98,8 +102,10 @@ export default function PaymentModal({
                                 fee={fee}
                                 isSelected={selectedFees.includes(fee.id)}
                                 overtimeHours={overtimeHours}
+                                customAmount={customAmounts[fee.id]}
                                 onToggle={onToggleFee}
                                 onAdjustHours={onAdjustHours}
+                                onSetCustomAmount={onSetCustomAmount}
                             />
                         ))}
                     </ScrollView>

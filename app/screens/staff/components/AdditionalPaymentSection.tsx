@@ -7,27 +7,31 @@ import PaymentModal from '../additionalPayment/components/PaymentModal';
 import PaymentWebView from '../additionalPayment/components/PaymentWebView';
 import { styles } from '../styles/additionalPaymentSection.styles';
 import type { AdditionalPaymentSectionProps } from '../additionalPayment/types/additionalPaymentTypes';
+import type { CarTravelLog } from '../../../lib/api/services/carTravelLog.service';
 
 export default function AdditionalPaymentSection({
     bookingId,
     onPaymentAdded,
     onNavigateToReturn,
-}: AdditionalPaymentSectionProps) {
+    travelLogs,
+}: AdditionalPaymentSectionProps & { travelLogs?: CarTravelLog[] }) {
     const {
         modalVisible,
         setModalVisible,
         selectedFees,
         overtimeHours,
+        customAmounts,
         submitting,
         paymentResponse,
         showWebView,
         setShowWebView,
         toggleFee,
+        setCustomAmount,
         adjustOvertimeHours,
         resetForm,
         handleSubmit,
         getTotalAmount,
-    } = useAdditionalPayment(bookingId, onPaymentAdded);
+    } = useAdditionalPayment(bookingId, onPaymentAdded, travelLogs);
 
     return (
         <View style={styles.container}>
@@ -40,11 +44,13 @@ export default function AdditionalPaymentSection({
                 visible={modalVisible}
                 selectedFees={selectedFees}
                 overtimeHours={overtimeHours}
+                customAmounts={customAmounts}
                 submitting={submitting}
                 totalAmount={getTotalAmount()}
                 onClose={() => setModalVisible(false)}
                 onToggleFee={toggleFee}
                 onAdjustHours={adjustOvertimeHours}
+                onSetCustomAmount={setCustomAmount}
                 onSubmit={handleSubmit}
             />
 

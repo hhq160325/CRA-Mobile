@@ -156,7 +156,7 @@ export function useStaffBookings() {
 
         // Show skeleton UI immediately for better UX
         if (page === 1) {
-            const skeletonBookings = Array.from({ length: 10 }, (_, index) => ({
+            const skeletonBookings = Array.from({ length: 46 }, (_, index) => ({
                 id: `skeleton-${index}`,
                 bookingNumber: 'Loading...',
                 carId: '',
@@ -213,13 +213,17 @@ export function useStaffBookings() {
                     new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
                 );
 
-                // For initial load, only process first 10 bookings to improve performance
-                const pageSize = 10;
-                const startIndex = (page - 1) * pageSize;
-                const endIndex = startIndex + pageSize;
-                const paginatedBookings = page === 1 ? sortedBookings.slice(0, pageSize) : sortedBookings.slice(startIndex, endIndex);
+                // Load all bookings for staff - dataset is small enough (46 bookings)
+                const paginatedBookings = sortedBookings; // Load all bookings
 
-                console.log(` FAST LOAD: processing ${paginatedBookings.length} of ${result.data.length} bookings (page ${page})`);
+                console.log(` LOAD ALL: processing all ${paginatedBookings.length} bookings`);
+
+                // Debug: Log booking numbers being processed
+                console.log(` BOOKINGS LOADED:`, paginatedBookings.map(b => ({
+                    id: b.id.substring(0, 8),
+                    number: b.bookingNumber,
+                    createDate: b.createDate
+                })));
 
                 // Extract unique IDs for batch fetching
                 const uniqueCarIds = [...new Set(paginatedBookings.map(b => b.carId).filter(Boolean))];
@@ -264,8 +268,6 @@ export function useStaffBookings() {
 
                 if (page === 1) {
                     setBookings(mappedBookings);
-                } else {
-                    setBookings(prev => [...prev, ...mappedBookings]);
                 }
                 setLastFetchTime(now);
             }
@@ -281,17 +283,6 @@ export function useStaffBookings() {
 
     useEffect(() => {
         fetchBookings();
-
-        // Background prefetch after initial load
-        const prefetchTimer = setTimeout(() => {
-            if (bookings.length > 0) {
-                console.log(' Background prefetching additional data...');
-                // Prefetch next page in background
-                fetchBookings(false, 2, 10);
-            }
-        }, 3000);
-
-        return () => clearTimeout(prefetchTimer);
     }, []);
 
     useEffect(() => {
@@ -390,6 +381,7 @@ export function useStaffBookings() {
             payment.carName.toLowerCase().includes(normalizedQuery) ||
             payment.customerName.toLowerCase().includes(normalizedQuery) ||
             payment.id.toLowerCase().includes(normalizedQuery) ||
+            payment.id.substring(0, 8).toLowerCase().includes(normalizedQuery) || // Short ID search
             (payment.bookingNumber && payment.bookingNumber.toLowerCase().includes(normalizedQuery));
 
         return matchesStatus && matchesSearch;

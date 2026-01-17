@@ -19,10 +19,16 @@ export const formatCurrency = (amount: number): string => {
     }).format(amount);
 };
 
-export const calculateTotal = (selectedFees: string[], overtimeHours: number): number => {
+export const calculateTotal = (selectedFees: string[], overtimeHours: number, customAmounts: Record<string, number> = {}): number => {
     return selectedFees.reduce((total, feeId) => {
         const fee = ADDITIONAL_FEES.find(f => f.id === feeId);
         if (!fee) return total;
+
+        // Use custom amount if available and fee supports it
+        if (fee.isAmountEditable && customAmounts[feeId] !== undefined) {
+            return total + customAmounts[feeId];
+        }
+
         if (feeId === 'overtime') {
             return total + fee.amount * overtimeHours;
         }
@@ -30,15 +36,23 @@ export const calculateTotal = (selectedFees: string[], overtimeHours: number): n
     }, 0);
 };
 
-export const buildPaymentDescription = (selectedFees: string[], overtimeHours: number): string => {
+export const buildPaymentDescription = (selectedFees: string[], overtimeHours: number, customAmounts: Record<string, number> = {}): string => {
     return selectedFees
         .map(feeId => {
             const fee = ADDITIONAL_FEES.find(f => f.id === feeId);
+            if (!fee) return '';
+
             if (feeId === 'overtime') {
-                return `${fee?.name} (${overtimeHours}h)`;
+                return `${fee.name} (${overtimeHours}h)`;
             }
-            return fee?.name;
+
+            if (fee.isAmountEditable && customAmounts[feeId] !== undefined) {
+                return `${fee.name} (${formatCurrency(customAmounts[feeId])})`;
+            }
+
+            return fee.name;
         })
+        .filter(Boolean)
         .join(', ');
 };
 
@@ -47,14 +61,14 @@ export const createAdditionalPayment = async (
     description: string,
     amount: number
 ): Promise<PaymentResponse> => {
-    // Divide the amount by 10 before sending to PayOS as requested
-    const payosAmount = Math.round(amount / 10);
+    // Send amount directly without division (changed from /100 to no division as requested)
+    const payosAmount = Math.round(amount);
 
     console.log(' Creating additional payment...');
     console.log(' Booking ID:', bookingId);
     console.log(' Description:', description);
     console.log(' Original amount:', amount, 'VND');
-    console.log(' PayOS amount (divided by 10):', payosAmount, 'VND');
+    console.log(' PayOS amount (no division):', payosAmount, 'VND');
 
     const requestBody = {
         bookingId: bookingId,

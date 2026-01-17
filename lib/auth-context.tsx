@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         imageAvatar: (currentUser as any).imageAvatar
       })
 
-      // Update user with spread to trigger re-renders and maintain object reference changes
+
       setUser({ ...currentUser })
     }
   }

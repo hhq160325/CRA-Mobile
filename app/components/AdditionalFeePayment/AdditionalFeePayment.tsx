@@ -35,24 +35,19 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
         handlePayOSCompletion,
     } = useAdditionalFeePayment(bookingId);
 
-    // Check payment status on mount
+
     useEffect(() => {
         console.log(' AdditionalFeePayment: Checking payment status on mount for booking:', bookingId);
         checkPaymentStatus();
     }, [checkPaymentStatus]);
 
-    // Refresh payment status when screen comes into focus
+
     useFocusEffect(
         React.useCallback(() => {
             console.log(' AdditionalFeePayment: Screen focused, refreshing payment status');
             checkPaymentStatus();
         }, [checkPaymentStatus])
     );
-
-    // Removed periodic refresh - WebView handles status updates directly
-    // Manual refresh is available via the refresh button if needed
-
-    // Add debugging for state changes
     useEffect(() => {
         console.log(' AdditionalFeePayment state:', {
             bookingId,
@@ -63,7 +58,7 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
             error
         });
 
-        // Force re-render when isPending changes - similar to BookingExtensionPayment
+
         if (additionalFeePayment?.status === 'Paid' && isPending === true) {
             console.log(' DETECTED STALE STATE: Status is Paid but isPending is true, forcing refresh...');
             setTimeout(() => {
@@ -79,7 +74,7 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
         }
 
         try {
-            // Use the specific additional fee payment URL service
+
             const result = await additionalFeePaymentService.getAdditionalFeePaymentUrl(bookingId);
 
             if (result.error || !result.data) {
@@ -87,9 +82,9 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
                 return;
             }
 
-            console.log('🎯 Additional fee payment URL created:', result.data);
+            console.log(' Additional fee payment URL created:', result.data);
 
-            // Navigate to PayOS WebView
+
             navigation.navigate('PayOSWebView' as any, {
                 paymentUrl: result.data.checkoutUrl,
                 bookingId: bookingId,
@@ -101,7 +96,7 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
         }
     };
 
-    // Handle PayOS success URL (called from WebView)
+
     const handlePayOSSuccess = async (paymentUrl: string) => {
         const result = await handlePayOSCompletion(paymentUrl);
 
@@ -146,17 +141,17 @@ export const AdditionalFeePayment: React.FC<AdditionalFeePaymentProps> = ({
         return null;
     }
 
-    // Direct status check to bypass any hook issues - same as BookingExtensionPayment
+
     const directIsPending = additionalFeePayment.status.toLowerCase() === 'pending';
     const shouldShowButton = directIsPending;
     const shouldShowCompleted = !directIsPending;
 
-    // Extra safety check - explicitly check for "Paid" status
+
     const isPaidStatus = additionalFeePayment.status.toLowerCase() === 'paid';
     const finalShowButton = directIsPending && !isPaidStatus;
     const finalShowCompleted = !directIsPending || isPaidStatus;
 
-    console.log('🔍 AdditionalFee Direct status check:', {
+    console.log(' AdditionalFee Direct status check:', {
         status: additionalFeePayment.status,
         statusLower: additionalFeePayment.status.toLowerCase(),
         hookIsPending: isPending,

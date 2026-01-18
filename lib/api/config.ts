@@ -9,15 +9,15 @@ const getBaseUrl = () => {
 
 
   if (__DEV__) {
-    console.log(" Development mode: Using Azure URL directly for stable connection")
-    console.log(" This avoids ER_NGROK_3200 and tunnel expiration issues")
+    // console.log(" Development mode: Using Azure URL directly for stable connection")
+    // console.log(" This avoids tunnel expiration issues")
   }
 
-  // Production Azure URL - stable and fast for both dev and prod
+
   return "https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api"
 }
 
-// Platform-specific timeout configuration
+
 const getTimeout = () => {
   if (Platform.OS === 'ios') {
     return __DEV__ ? 30000 : 25000;
@@ -30,17 +30,16 @@ export const API_CONFIG = {
   TIMEOUT: getTimeout(),
   RETRY_ATTEMPTS: __DEV__ ? 1 : 2,
   RETRY_DELAY: 1000,
-  // Development flags
   ENABLE_LOGGING: __DEV__,
   ENABLE_DEBUG: __DEV__,
 }
 
-// Helper to get base URL without /api suffix for direct API calls
+
 export const getApiBaseUrl = () => {
   return API_CONFIG.BASE_URL.replace('/api', '')
 }
 
-// API endpoints
+
 export const API_ENDPOINTS = {
   // Auth
   LOGIN: "/Authen/authenticate",

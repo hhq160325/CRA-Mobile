@@ -18,7 +18,7 @@ export const useBookingExtensionPayment = (bookingId: string) => {
         error: null,
     });
 
-    // Step 1: Check payment status
+
     const checkPaymentStatus = useCallback(async () => {
         if (!bookingId) return;
 
@@ -57,7 +57,7 @@ export const useBookingExtensionPayment = (bookingId: string) => {
         }
     }, [bookingId]);
 
-    // Step 2: Handle PayOS completion
+
     const handlePayOSCompletion = useCallback(async (paymentUrl: string) => {
         if (!bookingId) return null;
 
@@ -75,7 +75,7 @@ export const useBookingExtensionPayment = (bookingId: string) => {
                 return null;
             }
 
-            // Refresh payment status after successful update
+
             if (result.data?.wasUpdated) {
                 await checkPaymentStatus();
             }
@@ -92,7 +92,7 @@ export const useBookingExtensionPayment = (bookingId: string) => {
         }
     }, [bookingId, checkPaymentStatus]);
 
-    // Step 3: Update payment status manually (for testing or manual updates)
+
     const updatePaymentStatus = useCallback(async (orderCode: number, status: string = 'Paid') => {
         setState(prev => ({ ...prev, loading: true, error: null }));
 
@@ -108,7 +108,7 @@ export const useBookingExtensionPayment = (bookingId: string) => {
                 return false;
             }
 
-            // Refresh payment status after successful update
+
             await checkPaymentStatus();
 
             setState(prev => ({ ...prev, loading: false }));

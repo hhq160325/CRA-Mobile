@@ -8,9 +8,9 @@ import { carTravelLogService, type CarTravelLog } from '../../../../lib/api/serv
 
 interface BookingDetails {
   id: string;
-  bookingNumber?: string; // Add bookingNumber field
-  userId: string; // Add userId field for customer ID
-  carId: string; // Add carId field for travel logs
+  bookingNumber?: string;
+  userId: string;
+  carId: string;
   carName: string;
   carModel: string;
   carLicensePlate: string;
@@ -163,9 +163,9 @@ export function useVehicleReturn(bookingId: string) {
 
         setBooking({
           id: bookingData.id,
-          bookingNumber: bookingData.bookingNumber, // Add booking number
-          userId: bookingData.userId, // Include customer userId for GPS tracking
-          carId: bookingData.carId, // Include carId for travel logs
+          bookingNumber: bookingData.bookingNumber,
+          userId: bookingData.userId,
+          carId: bookingData.carId,
           carName,
           carModel,
           carLicensePlate,
@@ -179,9 +179,9 @@ export function useVehicleReturn(bookingId: string) {
           status: bookingData.status,
         });
 
-        // Fetch travel logs after booking data is set
+
         if (bookingData.carId && bookingData.id) {
-          console.log(' useVehicleReturn: Fetching travel logs for car:', bookingData.carId, 'booking:', bookingData.id);
+          // console.log(' useVehicleReturn: Fetching travel logs for car:', bookingData.carId, 'booking:', bookingData.id);
           setTravelLogsLoading(true);
           try {
             const travelLogsResult = await carTravelLogService.getCarTravelLogsByCarAndBooking(
@@ -190,13 +190,13 @@ export function useVehicleReturn(bookingId: string) {
             );
 
             if (travelLogsResult.data) {
-              console.log(' useVehicleReturn: Travel logs loaded:', travelLogsResult.data.length, 'entries');
+              // console.log(' useVehicleReturn: Travel logs loaded:', travelLogsResult.data.length, 'entries');
               setTravelLogs(travelLogsResult.data);
             } else if (travelLogsResult.error) {
-              console.log(' useVehicleReturn: Error loading travel logs:', travelLogsResult.error.message);
+              // console.log(' useVehicleReturn: Error loading travel logs:', travelLogsResult.error.message);
             }
           } catch (err) {
-            console.log(' useVehicleReturn: Exception loading travel logs:', err);
+            // console.log(' useVehicleReturn: Exception loading travel logs:', err);
           } finally {
             setTravelLogsLoading(false);
           }

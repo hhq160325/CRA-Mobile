@@ -52,10 +52,10 @@ import {
 
 // Main payment service object
 export const paymentService = {
-    // User methods
+
     getUserById,
 
-    // Invoice methods
+
     getAllInvoices,
     getInvoicesByCustomer,
     getInvoicesByVendor,

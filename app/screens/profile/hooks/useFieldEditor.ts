@@ -50,7 +50,7 @@ export const useFieldEditor = (
         try {
 
 
-            // Use a dedicated password verification method that doesn't affect current session
+
             const { userService } = require("../../../../lib/api");
             const isPasswordValid = await userService.verifyCurrentPassword(userEmail, password);
 
@@ -84,7 +84,7 @@ export const useFieldEditor = (
 
         const value = editValue;
 
-        // Validate phone number if editing phone field
+
         if (editingField === "phone") {
             if (!value.trim()) {
                 Alert.alert("Error", "Please enter your phone number");

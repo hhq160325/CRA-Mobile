@@ -1,6 +1,6 @@
 import { SUPABASE_CONFIG } from "../supabase.config"
 
-// Supported image formats
+
 const SUPPORTED_IMAGE_FORMATS = {
     'jpg': 'image/jpeg',
     'jpeg': 'image/jpeg',
@@ -42,18 +42,18 @@ export const storageService = {
 
     async uploadAvatar(userId: string, imageUri: string): Promise<{ url: string | null; error: Error | null }> {
         try {
-            console.log("=== Storage Service: Upload Avatar ===")
-            console.log("User ID:", userId)
-            console.log("Image URI:", imageUri)
+            // console.log("=== Storage Service: Upload Avatar ===")
+            // console.log("User ID:", userId)
+            // console.log("Image URI:", imageUri)
 
             const fileExt = getFileExtension(imageUri)
             const mimeType = getMimeType(fileExt)
             const fileName = `${userId}_${Date.now()}.${fileExt}`
 
-            console.log("File details:")
-            console.log("  - Extension:", fileExt)
-            console.log("  - MIME type:", mimeType)
-            console.log("  - File name:", fileName)
+            // console.log("File details:")
+            // console.log("  - Extension:", fileExt)
+            // console.log("  - MIME type:", mimeType)
+            // console.log("  - File name:", fileName)
 
 
             const formData = new FormData()
@@ -67,10 +67,10 @@ export const storageService = {
 
             // Upload to Supabase Storage
             const uploadUrl = `${SUPABASE_CONFIG.URL}/storage/v1/object/${SUPABASE_CONFIG.BUCKETS.USER_AVATARS}/${fileName}`
-            console.log("Upload URL:", uploadUrl)
-            console.log("Bucket:", SUPABASE_CONFIG.BUCKETS.USER_AVATARS)
+            // console.log("Upload URL:", uploadUrl)
+            // console.log("Bucket:", SUPABASE_CONFIG.BUCKETS.USER_AVATARS)
 
-            console.log("Sending upload request...")
+            // console.log("Sending upload request...")
             const response = await fetch(uploadUrl, {
                 method: 'POST',
                 headers: {
@@ -80,9 +80,9 @@ export const storageService = {
                 body: formData,
             })
 
-            console.log("Response received:")
-            console.log("  - Status:", response.status)
-            console.log("  - Status Text:", response.statusText)
+            // console.log("Response received:")
+            // console.log("  - Status:", response.status)
+            // console.log("  - Status Text:", response.statusText)
 
             if (!response.ok) {
                 const errorText = await response.text()
@@ -95,9 +95,9 @@ export const storageService = {
             // Generate public URL
             const publicUrl = `${SUPABASE_CONFIG.URL}/storage/v1/object/public/${SUPABASE_CONFIG.BUCKETS.USER_AVATARS}/${fileName}`
 
-            console.log(" Upload successful!")
-            console.log(" Public URL:", publicUrl)
-            console.log("=== Storage Service: Complete ===")
+            // console.log(" Upload successful!")
+            // console.log(" Public URL:", publicUrl)
+            // console.log("=== Storage Service: Complete ===")
 
             return { url: publicUrl, error: null }
         } catch (error) {

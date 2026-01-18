@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
 
-// Invoice Response from API
+
 interface ApiInvoiceResponse {
     id: string
     amount: number
@@ -30,7 +30,7 @@ export interface Invoice {
     paidDate?: string
 }
 
-// Map API response to app Invoice model
+
 function mapApiInvoiceToInvoice(apiInvoice: ApiInvoiceResponse): Invoice {
     return {
         id: apiInvoice.id,

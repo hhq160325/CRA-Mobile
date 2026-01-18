@@ -24,7 +24,7 @@ class MobilePerformanceService {
 
     async initialize() {
         try {
-            // Get current network information
+
             const netInfo = await NetInfo.fetch();
             this.networkInfo = {
                 type: netInfo.type,
@@ -53,7 +53,7 @@ class MobilePerformanceService {
         let recommendedRetries = API_CONFIG.RETRY_ATTEMPTS;
         let shouldUseCache = false;
 
-        // Adjust based on network type
+
         switch (type) {
             case 'wifi':
                 connectionStrength = 'excellent';
@@ -62,7 +62,7 @@ class MobilePerformanceService {
                 break;
 
             case 'cellular':
-                // Further categorize cellular connections
+
                 const effectiveType = this.networkInfo.effectiveType;
                 if (effectiveType === '4g' || effectiveType === '5g') {
                     connectionStrength = 'good';
@@ -94,7 +94,7 @@ class MobilePerformanceService {
                 shouldUseCache = true;
         }
 
-        // Adjust if not connected or no internet
+
         if (!isConnected || isInternetReachable === false) {
             connectionStrength = 'poor';
             recommendedTimeout = 5000;
@@ -118,7 +118,7 @@ class MobilePerformanceService {
         shouldUseCache: boolean;
     } {
         if (!this.performanceMetrics) {
-            // Return default config if not initialized
+
             return {
                 timeout: API_CONFIG.TIMEOUT,
                 retries: API_CONFIG.RETRY_ATTEMPTS,

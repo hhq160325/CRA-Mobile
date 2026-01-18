@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { View, FlatList, RefreshControl } from 'react-native';
+import { View, FlatList, RefreshControl, Pressable, Text, ActivityIndicator } from 'react-native';
 import { colors } from '../../theme/colors';
 import Header from '../../components/Header/Header';
 import { useStaffBookings } from './hooks/useStaffBookings';
@@ -26,44 +26,75 @@ export default function StaffScreen() {
     processingExtensionPayment,
     filteredPayments,
     loadingProgress,
+    showingRecentOnly,
+    totalBookingsCount,
+    loadingMore,
     onRefresh,
     handleRequestPayment,
     handlePayExtension,
+    loadAllBookings,
     navigation,
   } = useStaffBookings();
 
   const [showLoadingAnimation, setShowLoadingAnimation] = React.useState(true);
   const [loadingComplete, setLoadingComplete] = React.useState(false);
 
-  // Handle loading state changes
+
   React.useEffect(() => {
     if (!loading && showLoadingAnimation) {
-      // Loading just finished, trigger completion animation
+
       setLoadingComplete(true);
     }
   }, [loading, showLoadingAnimation]);
 
   const handleAnimationComplete = () => {
-    // Hide loading animation completely after exit animation
+
     setShowLoadingAnimation(false);
     setLoadingComplete(false);
   };
 
   const handleNavigateToPickup = (bookingId: string) => {
-    // Find the booking item to check its status
+
     const bookingItem = filteredPayments.find(item => item.id === bookingId);
 
     if (bookingItem?.hasCheckIn && !bookingItem?.hasCheckOut) {
-      // Pickup is done, go directly to return screen
+
       navigation.navigate('VehicleReturn' as any, {
         bookingId: bookingId,
       });
     } else {
-      // Pickup not done yet, go to pickup screen
+
       navigation.navigate('PickupReturnConfirm' as any, {
         bookingId: bookingId,
       });
     }
+  };
+
+  const renderLoadMoreFooter = () => {
+    if (!showingRecentOnly) return null;
+
+    return (
+      <View style={styles.loadMoreContainer}>
+        <Text style={styles.loadMoreInfo}>
+          Showing {filteredPayments.length} most recent bookings out of {totalBookingsCount} total
+        </Text>
+        <Pressable
+          onPress={loadAllBookings}
+          disabled={loadingMore}
+          style={[
+            styles.loadMoreButton,
+            loadingMore && styles.loadMoreButtonDisabled
+          ]}>
+          {loadingMore ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Text style={styles.loadMoreButtonText}>
+              Load All Bookings ({totalBookingsCount - filteredPayments.length} more)
+            </Text>
+          )}
+        </Pressable>
+      </View>
+    );
   };
 
   const renderPaymentCard = ({ item }: { item: BookingItem }) => (
@@ -113,6 +144,7 @@ export default function StaffScreen() {
             />
           }
           ListEmptyComponent={<StaffEmptyState />}
+          ListFooterComponent={renderLoadMoreFooter}
         />
       )}
     </View>

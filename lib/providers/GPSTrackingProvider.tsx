@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { AppState, AppStateStatus } from 'react-native';
 import { useGPSTracking } from '../hooks/useGPSTracking';
 import { useAuth } from '../auth-context';
+import { logger } from '../utils/logger';
 
 interface GPSTrackingContextType {
     isTracking: boolean;
@@ -38,15 +39,15 @@ export function GPSTrackingProvider({ children }: GPSTrackingProviderProps) {
     const [appState, setAppState] = useState(AppState.currentState);
     const trackingStartedRef = useRef(false);
 
-    // Handle app state changes for background tracking
+
     useEffect(() => {
         const handleAppStateChange = (nextAppState: AppStateStatus) => {
-            console.log(' App state changed:', appState, '->', nextAppState);
+            logger.log(' App state changed:', appState, '->', nextAppState);
             setAppState(nextAppState);
 
-            // Only restart tracking if it was previously active and app becomes active
+
             if (nextAppState === 'active' && user?.id && !isTracking && trackingStartedRef.current) {
-                console.log(' App became active, resuming GPS tracking');
+                logger.log(' App became active, resuming GPS tracking');
                 startTracking();
             }
         };
@@ -55,14 +56,14 @@ export function GPSTrackingProvider({ children }: GPSTrackingProviderProps) {
         return () => subscription?.remove();
     }, [appState, user?.id, isTracking, startTracking]);
 
-    // Auto-start tracking when user logs in (only once)
+
     useEffect(() => {
         if (user?.id && !isTracking && !trackingStartedRef.current && appState === 'active') {
-            console.log(' User logged in, starting GPS tracking (first time)');
+            logger.log(' User logged in, starting GPS tracking (first time)');
             trackingStartedRef.current = true;
             startTracking();
         } else if (!user?.id && isTracking) {
-            console.log(' User logged out, stopping GPS tracking');
+            logger.log(' User logged out, stopping GPS tracking');
             trackingStartedRef.current = false;
             stopTracking();
         }

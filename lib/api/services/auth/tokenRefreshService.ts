@@ -8,7 +8,7 @@ export const refreshToken = async (
 ): Promise<{ data: TokenResponse | null; error: Error | null }> => {
     console.log("tokenRefreshService.refreshToken: sending request");
 
-    // Get refresh token from parameter or storage
+
     let token = refreshToken;
     if (!token) {
         token = (await getRefreshTokenFromStorage()) || undefined;
@@ -23,11 +23,11 @@ export const refreshToken = async (
         body: JSON.stringify({ refreshToken: token }),
     });
 
-    console.log("tokenRefreshService.refreshToken: received response", {
-        hasError: !!result.error,
-        hasData: !!result.data,
-        error: result.error?.message,
-    });
+    // console.log("tokenRefreshService.refreshToken: received response", {
+    //     hasError: !!result.error,
+    //     hasData: !!result.data,
+    //     error: result.error?.message,
+    // });
 
     if (result.error) {
         console.error("tokenRefreshService.refreshToken: error details", result.error);
@@ -35,7 +35,7 @@ export const refreshToken = async (
     }
 
     try {
-        // Save new tokens to storage
+
         await saveTokensToStorage(result.data.token, result.data.refreshToken);
         return { data: result.data, error: null };
     } catch (e) {

@@ -20,11 +20,11 @@ const OnBoardingScreen = () => {
         console.log(' Onboarding: Navigating to staffStack for staff user');
         navigate('staffStack' as any);
       } else {
-        console.log(
-          ' Onboarding: Navigating to tabStack for',
-          user.role,
-          'user',
-        );
+        // console.log(
+        //   ' Onboarding: Navigating to tabStack for',
+        //   user.role,
+        //   'user',
+        // );
         navigate('tabStack' as any);
       }
     } else {

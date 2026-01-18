@@ -58,7 +58,7 @@ export default function PickupReturnConfirmScreen() {
 
 
   useEffect(() => {
-    // Only auto-navigate to return screen if pickup is done but return is NOT done
+
     if (!loading && isAlreadyCheckedIn && !isAlreadyCheckedOut && existingCheckInData && existingCheckInData.images.length > 0) {
       // console.log(' Pickup completed, return not done - auto-navigating to return screen...');
 

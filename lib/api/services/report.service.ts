@@ -85,14 +85,14 @@ export const reportService = {
                 });
             }
 
-            console.log("reportService.createReport: using correct endpoint /Report/reportedCar");
-            console.log("reportService.createReport: FormData fields", {
-                Title: data.title,
-                Content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
-                ReporterId: data.userId,
-                ReportedCarId: data.carId,
-                imageCount: data.images?.length || 0
-            });
+            // console.log("reportService.createReport: using correct endpoint /Report/reportedCar");
+            // console.log("reportService.createReport: FormData fields", {
+            //     Title: data.title,
+            //     Content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
+            //     ReporterId: data.userId,
+            //     ReportedCarId: data.carId,
+            //     imageCount: data.images?.length || 0
+            // });
 
             const headers: Record<string, string> = {
                 'accept': '*/*',
@@ -171,15 +171,15 @@ export const reportService = {
                 });
             }
 
-            console.log("reportService.createUserReport: using endpoint /Report/reportedUser");
-            console.log("reportService.createUserReport: FormData fields", {
-                Title: data.title,
-                Content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
-                deductedPoints: data.deductedPoints,
-                ReporterId: data.reporterId,
-                ReportedUserId: data.reportedUserId,
-                imageCount: data.images?.length || 0
-            });
+            // console.log("reportService.createUserReport: using endpoint /Report/reportedUser");
+            // console.log("reportService.createUserReport: FormData fields", {
+            //     Title: data.title,
+            //     Content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
+            //     deductedPoints: data.deductedPoints,
+            //     ReporterId: data.reporterId,
+            //     ReportedUserId: data.reportedUserId,
+            //     imageCount: data.images?.length || 0
+            // });
 
             const headers: Record<string, string> = {
                 'accept': '*/*',
@@ -208,13 +208,13 @@ export const reportService = {
 
             const result = await response.json() as UserReportResponse;
 
-            console.log("reportService.createUserReport: success", {
-                reportId: result.id,
-                reportNo: result.reportNo,
-                status: result.status,
-                createDate: result.createDate,
-                deductedPoints: result.deductedPoints
-            });
+            // console.log("reportService.createUserReport: success", {
+            //     reportId: result.id,
+            //     reportNo: result.reportNo,
+            //     status: result.status,
+            //     createDate: result.createDate,
+            //     deductedPoints: result.deductedPoints
+            // });
 
             return { data: result, error: null };
         } catch (error) {

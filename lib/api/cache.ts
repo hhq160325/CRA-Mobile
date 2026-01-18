@@ -15,10 +15,10 @@ interface PersistentCacheEntry<T> extends CacheEntry<T> {
 class APICache {
     private cache: Map<string, CacheEntry<any>> = new Map();
     private defaultTTL = 5 * 60 * 1000;
-    private persistentTTL = 30 * 60 * 1000; // 30 minutes for persistent cache
+    private persistentTTL = 30 * 60 * 1000;
     private cacheVersion = 1;
 
-    // Load persistent cache on initialization
+
     async initialize(): Promise<void> {
         try {
             const persistentData = await AsyncStorage.getItem('api_cache_persistent');
@@ -28,22 +28,22 @@ class APICache {
 
                 for (const [key, entry] of Object.entries(parsed)) {
                     const cacheEntry = entry as PersistentCacheEntry<any>;
-                    // Only load if not expired and version matches
+
                     if (now <= cacheEntry.expiresAt && cacheEntry.version === this.cacheVersion) {
                         this.cache.set(key, cacheEntry);
                     }
                 }
-                console.log(`📦 Persistent cache loaded: ${this.cache.size} entries`);
+                console.log(` Persistent cache loaded: ${this.cache.size} entries`);
             }
         } catch (error) {
             console.warn('Failed to load persistent cache:', error);
         }
     }
 
-    // Save critical data to persistent storage
+
     private async saveToPersistent(key: string, entry: CacheEntry<any>): Promise<void> {
         try {
-            // Only persist staff-related data for performance
+
             if (key.includes('staff') || key.includes('booking') || key.includes('car:') || key.includes('user:')) {
                 const persistentEntry: PersistentCacheEntry<any> = {
                     ...entry,
@@ -68,13 +68,13 @@ class APICache {
             return null;
         }
 
-        // Check if expired
+
         if (Date.now() > entry.expiresAt) {
             this.cache.delete(key);
             return null;
         }
 
-        console.log(`⚡ Cache HIT: ${key} (age: ${Math.round((Date.now() - entry.timestamp) / 1000)}s)`);
+        // console.log(` Cache HIT: ${key} (age: ${Math.round((Date.now() - entry.timestamp) / 1000)}s)`);
         return entry.data;
     }
 
@@ -95,7 +95,7 @@ class APICache {
             this.saveToPersistent(key, entry);
         }
 
-        console.log(`💾 Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s)`);
+        // console.log(` Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s)`);
     }
 
     // Batch set for better performance
@@ -118,13 +118,13 @@ class APICache {
             }
         }
 
-        console.log(`🚀 Cache BATCH SET: ${entries.length} entries`);
+        // console.log(` Cache BATCH SET: ${entries.length} entries`);
     }
 
     invalidate(key: string): void {
         if (this.cache.has(key)) {
             this.cache.delete(key);
-            console.log(`🗑️ Cache INVALIDATED: ${key}`);
+            // console.log(`Cache INVALIDATED: ${key}`);
         }
     }
 
@@ -137,7 +137,7 @@ class APICache {
             }
         }
         if (count > 0) {
-            console.log(`🧹 Cache INVALIDATED: ${count} entries matching "${pattern}"`);
+            // console.log(` Cache INVALIDATED: ${count} entries matching "${pattern}"`);
         }
     }
 
@@ -145,7 +145,7 @@ class APICache {
         const size = this.cache.size;
         this.cache.clear();
         AsyncStorage.removeItem('api_cache_persistent');
-        console.log(`💥 Cache CLEARED: ${size} entries removed`);
+        // console.log(` Cache CLEARED: ${size} entries removed`);
     }
 
     getStats() {
@@ -174,25 +174,25 @@ class APICache {
         }
 
         if (removed > 0) {
-            console.log(`🧹 Cache CLEANUP: ${removed} expired entries removed`);
+            // console.log(` Cache CLEANUP: ${removed} expired entries removed`);
         }
     }
 }
 
-// Export singleton instance
+
 export const apiCache = new APICache();
 
-// Initialize persistent cache
+
 apiCache.initialize();
 
-// Auto-cleanup every 5 minutes
+
 if (__DEV__) {
     setInterval(() => {
         apiCache.cleanup();
     }, 5 * 60 * 1000);
 }
 
-// Cache key generators for consistency
+
 export const cacheKeys = {
     cars: () => 'cars:all',
     car: (id: string) => `car:${id}`,
@@ -201,7 +201,7 @@ export const cacheKeys = {
     booking: (id: string) => `booking:${id}`,
     user: (id: string) => `user:${id}`,
     userLicense: (userId: string) => `user:${userId}:license`,
-    // Staff-specific cache keys
+
     staffBookings: () => 'staff:bookings:all',
     staffBookingDetails: (id: string) => `staff:booking:${id}:details`,
     staffPaymentDetails: (id: string) => `staff:payment:${id}`,

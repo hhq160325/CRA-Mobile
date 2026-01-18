@@ -21,7 +21,7 @@ const ResetScreen = () => {
       return;
     }
 
-    // Phone validation
+
     const cleanPhone = phone.replace(/[\s-]/g, '');
 
     if (cleanPhone.length !== 10) {

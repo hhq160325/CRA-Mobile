@@ -1,4 +1,5 @@
 import { useNavigation } from "@react-navigation/native"
+import { Alert } from "react-native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { NavigatorParamList } from "../../../navigators/navigation-route"
 import { useAuth } from "../../../../lib/auth-context"
@@ -8,12 +9,26 @@ export function useHeaderNavigation() {
     const { user, logout } = useAuth()
 
     const handleLogout = async () => {
-        await logout()
-
-        navigation.reset({
-            index: 0,
-            routes: [{ name: "auth" as any }],
-        })
+        Alert.alert(
+            "Logout",
+            "You want to continue logging out?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Next",
+                    onPress: async () => {
+                        await logout(true)
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: "auth" as any }],
+                        })
+                    }
+                }
+            ]
+        )
     }
 
     const handleMenuNavigation = async (screen: string) => {
@@ -22,14 +37,14 @@ export function useHeaderNavigation() {
         console.log("Header navigation:", { screen, isStaff, userRole: user?.role, roleId: user?.roleId })
 
         try {
-            // For screens that are in AppStack, use direct navigation
+
             if (screen === "PaymentHistory") {
                 console.log("Navigating to PaymentHistory")
                 navigation.navigate("PaymentHistory" as any)
                 return
             }
 
-            // For all other screens, reset to the auth level with the correct stack and screen
+
             console.log(`Navigating to ${screen}`)
             navigation.reset({
                 index: 0,

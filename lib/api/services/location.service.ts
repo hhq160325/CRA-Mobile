@@ -137,11 +137,11 @@ export const locationService = {
             }
         )
 
-        console.log("locationService.getCoordinatesFromAddress: received response", {
-            hasError: !!result.error,
-            hasData: !!result.data,
-            data: result.data,
-        })
+        // console.log("locationService.getCoordinatesFromAddress: received response", {
+        //     hasError: !!result.error,
+        //     hasData: !!result.data,
+        //     data: result.data,
+        // })
 
         if (result.error) {
             return { data: null, error: result.error }
@@ -154,10 +154,10 @@ export const locationService = {
         sourceAddress: string,
         destinationAddress: string
     ): Promise<{ data: { distanceInMeters: number } | null; error: Error | null }> {
-        console.log("locationService.getDistanceBetweenAddresses: calculating distance", {
-            sourceAddress,
-            destinationAddress
-        })
+        // console.log("locationService.getDistanceBetweenAddresses: calculating distance", {
+        //     sourceAddress,
+        //     destinationAddress
+        // })
 
         const result = await apiClient<{ distanceInMeters: number }>(
             "/TrackAsia/GetDistanceBetweenAddresses",
@@ -170,11 +170,11 @@ export const locationService = {
             }
         )
 
-        console.log("locationService.getDistanceBetweenAddresses: received response", {
-            hasError: !!result.error,
-            hasData: !!result.data,
-            data: result.data,
-        })
+        // console.log("locationService.getDistanceBetweenAddresses: received response", {
+        //     hasError: !!result.error,
+        //     hasData: !!result.data,
+        //     data: result.data,
+        // })
 
         if (result.error) {
             return { data: null, error: result.error }
@@ -200,26 +200,26 @@ export const locationService = {
             }
         )
 
-        console.log("locationService.reverseGeocode: received response", {
-            hasError: !!result.error,
-            hasData: !!result.data,
-            data: result.data,
-        })
+        // console.log("locationService.reverseGeocode: received response", {
+        //     hasError: !!result.error,
+        //     hasData: !!result.data,
+        //     data: result.data,
+        // })
 
         if (result.error) {
             return { data: null, error: result.error }
         }
 
-        // Handle different possible response formats from TrackAsia API
+        
         const responseData = result.data
 
-        // Try to extract address information from various possible formats
+       
         let address = ''
         let city = ''
         let country = ''
 
         if (responseData) {
-            // TrackAsia API returns formattedAddress - only use the main formatted address
+           
             address = responseData.formattedAddress ||
                 responseData.address ||
                 responseData.display_name ||

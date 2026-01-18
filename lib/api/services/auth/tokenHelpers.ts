@@ -42,12 +42,12 @@ export const extractRoleFromToken = (decodedToken: any): "customer" | "staff" | 
     const roleFromToken = decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
     const isCarOwner = decodedToken.IsCarOwner === "True" || decodedToken.IsCarOwner === true;
 
-    console.log("=== DEBUG: Role Detection ===");
-    console.log("roleFromToken:", roleFromToken);
-    console.log("roleFromToken type:", typeof roleFromToken);
-    console.log("isCarOwner:", isCarOwner);
-    console.log("Checking if roleFromToken === '1002':", roleFromToken === "1002");
-    console.log("Checking if parseInt(roleFromToken) === 1002:", parseInt(roleFromToken) === 1002);
+    // console.log("=== DEBUG: Role Detection ===");
+    // console.log("roleFromToken:", roleFromToken);
+    // console.log("roleFromToken type:", typeof roleFromToken);
+    // console.log("isCarOwner:", isCarOwner);
+    // console.log("Checking if roleFromToken === '1002':", roleFromToken === "1002");
+    // console.log("Checking if parseInt(roleFromToken) === 1002:", parseInt(roleFromToken) === 1002);
 
     if (roleFromToken === "1002" || roleFromToken === 1002 || parseInt(roleFromToken) === 1002) {
         console.log(" Detected STAFF role");
@@ -94,7 +94,7 @@ export const enrichUserWithProfile = async (user: User): Promise<User> => {
         if (profileResult.data) {
             console.log("enrichUserWithProfile: got full profile data");
 
-            // Preserve role and roleId from JWT token
+
             const preservedRole = user.role;
             const preservedRoleId = user.roleId;
 
@@ -105,7 +105,7 @@ export const enrichUserWithProfile = async (user: User): Promise<User> => {
                 phone: profileResult.data.phoneNumber || user.phone,
                 address: profileResult.data.address,
                 avatar: profileResult.data.imageAvatar || undefined,
-                // Ensure role is not overwritten
+
                 role: preservedRole,
                 roleId: preservedRoleId,
             };

@@ -1,16 +1,16 @@
 import React from 'react';
-import {Image, Text, View} from 'react-native';
+import { Image, Text, View } from 'react-native';
 import assets from '../../assets';
 import Button from '../../components/button/component';
 import InputComponent from '../../components/input/component';
-import {renderMarginTop} from '../../utils/ui-utils';
-import {createStyles} from './verify.styles';
+import { renderMarginTop } from '../../utils/ui-utils';
+import { createStyles } from './verify.styles';
 import CountryComponent from '../../components/countrypicker/component';
-import {navigate} from '../../navigators/navigation-utilities';
+import { navigate } from '../../navigators/navigation-utilities';
 
 const VerifyScreen = () => {
   const styles = createStyles();
-  const {logo_black} = assets;
+  const { logo_black } = assets;
 
   return (
     <View style={styles.container}>
@@ -30,10 +30,10 @@ const VerifyScreen = () => {
             </Text>
           </View>
           <View style={styles.inputContainer}>
-            <CountryComponent onPress={e => console.log(e)} />
+            <CountryComponent onPress={e => { }} />
             <InputComponent
               keyboardType="numeric"
-              onChangeText={e => console.log(e)}
+              onChangeText={e => { }}
               placeholder={'Phone Number'}
             />
           </View>

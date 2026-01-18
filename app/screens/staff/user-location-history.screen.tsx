@@ -75,7 +75,7 @@ export default function UserLocationHistoryScreen() {
         setError(null);
 
         try {
-            // Get only the latest location instead of full history
+
             const result = await gpsTrackingService.getLatestUserLocation(userId);
 
             if (result.error) {
@@ -84,10 +84,10 @@ export default function UserLocationHistoryScreen() {
             }
 
             if (result.data) {
-                // Set user info from the location record
+
                 setUserInfo(result.data.user);
 
-                // Format the single latest location
+
                 const { timeAgo, formattedTime } = formatTimeAgo(result.data.timestamp);
                 const latestLocation: LocationHistoryItem = {
                     ...result.data,
@@ -95,7 +95,6 @@ export default function UserLocationHistoryScreen() {
                     formattedTime,
                 };
 
-                // Fetch address for the location
                 try {
                     const address = await reverseGeocodingService.getFormattedAddress(
                         result.data.latitude,
@@ -106,7 +105,7 @@ export default function UserLocationHistoryScreen() {
                     // console.log(' Failed to get address for location:', error);
                 }
 
-                setLocationHistory([latestLocation]); // Only show the latest location
+                setLocationHistory([latestLocation]);
             } else {
                 setLocationHistory([]);
             }

@@ -29,7 +29,7 @@ export function useChatHeads() {
             if (response.ok) {
                 const data = await response.json();
 
-                // Group messages by conversation partner
+
                 const conversationsMap = new Map<string, Message[]>();
 
                 data.forEach((msg: Message) => {
@@ -43,7 +43,7 @@ export function useChatHeads() {
                 // Process conversations into chat heads
                 const heads: ChatHead[] = [];
                 conversationsMap.forEach((messages, partnerId) => {
-                    // Sort messages by date (newest first)
+
                     const sortedMessages = messages.sort(
                         (a, b) =>
                             new Date(b.createDate).getTime() - new Date(a.createDate).getTime(),

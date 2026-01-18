@@ -52,7 +52,7 @@ export default function DateComponent({
         ) : null
     }
 
-    // iOS Modal
+
     return (
         <Modal
             visible={visible}

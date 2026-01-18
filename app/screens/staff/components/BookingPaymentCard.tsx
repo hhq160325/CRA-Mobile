@@ -157,7 +157,7 @@ export default function BookingPaymentCard({
             <View style={styles.cardFooter}>
                 {/* Show different buttons based on payment status and requirements */}
                 {!item.paymentDetails?.isRentalFeePaid ? (
-                    // Rental fee not paid - show request payment button
+
                     <Pressable
                         onPress={() => onRequestPayment(item.id)}
                         disabled={processingPayment === item.id}
@@ -176,7 +176,7 @@ export default function BookingPaymentCard({
                         )}
                     </Pressable>
                 ) : (
-                    // Rental fee is paid - show pickup/return button
+
                     <Pressable
                         onPress={() => onNavigateToPickup(item.id)}
                         style={styles.confirmPickupButton}>

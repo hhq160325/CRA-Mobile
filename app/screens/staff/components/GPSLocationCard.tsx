@@ -28,7 +28,7 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
         }
     }, [visible, userId, location, loading, error]);
 
-    // Fetch old formatted address when location is available
+
     useEffect(() => {
         if (location && visible) {
             // console.log(' GPSLocationCard: Location updated, fetching address');
@@ -36,7 +36,7 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
         }
     }, [location, visible]);
 
-    // Re-fetch address when refresh is completed and location is available
+
     useEffect(() => {
         if (location && !refreshing && !addressLoading) {
             // console.log(' GPSLocationCard: Refresh completed, updating address');
@@ -70,10 +70,10 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
         setRefreshing(true);
 
         try {
-            // Clear old address first
+
             setOldAddress(null);
 
-            // Call refetch from useUserLocation hook
+
             await refetch();
 
             // console.log(' GPSLocationCard: Refetch completed');
@@ -91,10 +91,10 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
         setRefreshing(true);
 
         try {
-            // Clear old address and error state
+
             setOldAddress(null);
 
-            // Call refetch from useUserLocation hook
+
             await refetch();
 
             // console.log(' GPSLocationCard: Retry completed');
@@ -147,7 +147,7 @@ export default function GPSLocationCard({ userId, visible, onClose }: GPSLocatio
                 [
                     {
                         text: 'Copy URL', onPress: () => {
-                          
+
                             // console.log(' URL to copy:', mapUrl);
                         }
                     },

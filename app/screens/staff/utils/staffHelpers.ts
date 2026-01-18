@@ -5,7 +5,7 @@ import { API_CONFIG } from '../../../../lib/api/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiCache, cacheKeys } from '../../../../lib/api/cache';
 
-// Request deduplication to prevent duplicate API calls
+
 const pendingRequests = new Map<string, Promise<any>>();
 
 export const getAuthToken = async (): Promise<string | null> => {
@@ -51,7 +51,7 @@ export const fetchBookingWithCarDetails = async (bookingNumber: string) => {
 };
 
 export const fetchCarDetails = async (carId: string) => {
-    // Check cache first with 30-minute TTL
+
     const cacheKey = cacheKeys.car(carId);
     const cached = apiCache.get(cacheKey);
     if (cached) {
@@ -59,17 +59,7 @@ export const fetchCarDetails = async (carId: string) => {
     }
 
     try {
-        // console.log(` fetchCarDetails: fetching car details for ID: ${carId}`);
         const carResult = await carsService.getCarById(carId);
-
-        // console.log(` fetchCarDetails: result for ${carId}:`, {
-        //     hasData: !!carResult.data,
-        //     hasError: !!carResult.error,
-        //     carName: carResult.data?.name,
-        //     carBrand: carResult.data?.brand,
-        //     carModel: carResult.data?.model,
-        //     error: carResult.error?.message
-        // });
 
         if (carResult.data) {
             const details = {
@@ -80,10 +70,9 @@ export const fetchCarDetails = async (carId: string) => {
                 carImage: carResult.data.image || '',
             };
 
-            // Cache for 30 minutes
-            apiCache.set(cacheKey, details, 30 * 60 * 1000);
 
-            // console.log(` fetchCarDetails: returning details for ${carId}:`, details);
+            apiCache.set(cacheKey, details, 60 * 60 * 1000);
+
             return details;
         }
 
@@ -102,15 +91,14 @@ export const fetchCarDetails = async (carId: string) => {
         carImage: '',
     };
 
-    // Cache default details for 5 minutes to avoid repeated failures
-    apiCache.set(cacheKey, defaultDetails, 5 * 60 * 1000);
 
-    // console.log(` fetchCarDetails: returning default "Unknown Car" for ${carId}`);
+    apiCache.set(cacheKey, defaultDetails, 10 * 60 * 1000);
+
     return defaultDetails;
 };
 
 export const fetchCustomerName = async (userId: string) => {
-    // Check cache first with 30-minute TTL
+    // Check cache first with 60-minute TTL for better performance
     const cacheKey = cacheKeys.user(userId);
     const cached = apiCache.get(cacheKey);
     if (cached) {
@@ -121,8 +109,8 @@ export const fetchCustomerName = async (userId: string) => {
         const userResult = await userService.getUserById(userId);
         if (userResult.data) {
             const name = userResult.data.fullname || userResult.data.username || 'Customer';
-            // Cache for 30 minutes
-            apiCache.set(cacheKey, name, 30 * 60 * 1000);
+
+            apiCache.set(cacheKey, name, 60 * 60 * 1000);
             return name;
         }
     } catch (err) {
@@ -130,13 +118,13 @@ export const fetchCustomerName = async (userId: string) => {
     }
 
     const defaultName = 'Customer';
-    // Cache default name for 5 minutes to avoid repeated failures
-    apiCache.set(cacheKey, defaultName, 5 * 60 * 1000);
+
+    apiCache.set(cacheKey, defaultName, 10 * 60 * 1000);
     return defaultName;
 };
 
 export const fetchPaymentDetails = async (bookingId: string) => {
-    // Check cache first with 10-minute TTL (shorter for payment data)
+
     const cacheKey = cacheKeys.staffPaymentDetails(bookingId);
     const cached = apiCache.get(cacheKey);
     if (cached) {
@@ -148,8 +136,14 @@ export const fetchPaymentDetails = async (bookingId: string) => {
         const paymentsUrl = `${baseUrl}/Booking/${bookingId}/Payments`;
         const token = await getAuthToken();
 
-        console.log(`🔍 fetchPaymentDetails: Checking payments for booking ${bookingId}`);
-        console.log(`🔍 fetchPaymentDetails: URL: ${paymentsUrl}`);
+
+        if (__DEV__) {
+            console.log(` fetchPaymentDetails: Checking payments for booking ${bookingId}`);
+        }
+
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         const response = await fetch(paymentsUrl, {
             method: 'GET',
@@ -157,26 +151,40 @@ export const fetchPaymentDetails = async (bookingId: string) => {
                 Authorization: token ? `Bearer ${token}` : '',
                 'Content-Type': 'application/json',
             },
+            signal: controller.signal,
         });
 
-        console.log(`🔍 fetchPaymentDetails: Response status for ${bookingId}: ${response.status}`);
+        clearTimeout(timeoutId);
 
         if (response.ok) {
             const paymentsData = await response.json();
-            console.log(`🔍 fetchPaymentDetails: Payments data for ${bookingId}:`, JSON.stringify(paymentsData, null, 2));
+
+            if (__DEV__) {
+                console.log(` fetchPaymentDetails: Payments data for ${bookingId}:`, JSON.stringify(paymentsData, null, 2));
+            }
 
             if (Array.isArray(paymentsData) && paymentsData.length > 0) {
-                // Staff screen checks ALL payments but has different requirements for different actions
-                const bookingFeePayment = paymentsData.find(p => p.item === 'Booking Fee');
-                const rentalFeePayment = paymentsData.find(p => p.item === 'Rental Fee');
-                const extensionPayment = paymentsData.find(p => p.item === 'Booking Extension');
-                const additionalFeePayment = paymentsData.find(p => p.item === 'Additional Fee');
 
-                console.log(`🔍 fetchPaymentDetails: All payments for ${bookingId}:`);
-                console.log(`🔍 - Booking Fee:`, bookingFeePayment);
-                console.log(`🔍 - Rental Fee:`, rentalFeePayment);
-                console.log(`🔍 - Booking Extension:`, extensionPayment);
-                console.log(`🔍 - Additional Fee:`, additionalFeePayment);
+                const bookingFeePayment = paymentsData.find(p =>
+                    p.item === 'Booking Fee'
+                );
+                const rentalFeePayment = paymentsData.find(p =>
+                    p.item === 'Rental Fee'
+                );
+                const extensionPayment = paymentsData.find(p =>
+                    p.item === 'Booking Extension'
+                );
+                const additionalFeePayment = paymentsData.find(p =>
+                    p.item === 'Additional Fee'
+                );
+
+                console.log(` fetchPaymentDetails: Payment filtering for ${bookingId}:`);
+                if (__DEV__) {
+                    // console.log(`- Booking Fee Payment:`, bookingFeePayment ? `${bookingFeePayment.item} (${bookingFeePayment.status})` : 'None');
+                    // console.log(`- Rental Fee Payment:`, rentalFeePayment ? `${rentalFeePayment.item} (${rentalFeePayment.status})` : 'None');
+                    // console.log(`- Extension Payment:`, extensionPayment ? `${extensionPayment.item} (${extensionPayment.status})` : 'None');
+                    // console.log(`- Additional Fee Payment:`, additionalFeePayment ? `${additionalFeePayment.item} (${additionalFeePayment.status})` : 'None');
+                }
 
                 // Calculate total amount from all payments
                 let totalAmount = 0;
@@ -186,107 +194,132 @@ export const fetchPaymentDetails = async (bookingId: string) => {
                     }
                 });
 
-                // Check payment statuses
+                // Check payment statuses - CRITICAL: Only check exact status values
                 const isBookingFeePaid = bookingFeePayment &&
-                    (bookingFeePayment.status?.toLowerCase() === 'success' ||
-                        bookingFeePayment.status?.toLowerCase() === 'paid' ||
-                        bookingFeePayment.status?.toLowerCase() === 'completed');
+                    (bookingFeePayment.status === 'Success' ||
+                        bookingFeePayment.status === 'Paid' ||
+                        bookingFeePayment.status === 'Completed');
 
                 const isRentalFeePaid = rentalFeePayment &&
-                    (rentalFeePayment.status?.toLowerCase() === 'success' ||
-                        rentalFeePayment.status?.toLowerCase() === 'paid' ||
-                        rentalFeePayment.status?.toLowerCase() === 'completed');
+                    (rentalFeePayment.status === 'Success' ||
+                        rentalFeePayment.status === 'Paid' ||
+                        rentalFeePayment.status === 'Completed');
 
-                const isExtensionPaid = !extensionPayment || // No extension = considered paid
-                    (extensionPayment.status?.toLowerCase() === 'success' ||
-                        extensionPayment.status?.toLowerCase() === 'paid' ||
-                        extensionPayment.status?.toLowerCase() === 'completed');
+                console.log(` fetchPaymentDetails: Payment status analysis for ${bookingId}:`);
+                if (__DEV__) {
+                    // console.log(`- Booking fee payment exists:`, !!bookingFeePayment);
+                    // console.log(`- Booking fee payment status:`, bookingFeePayment?.status);
+                    // console.log(`- Is booking fee paid:`, isBookingFeePaid);
+                    // console.log(`- Rental fee payment exists:`, !!rentalFeePayment);
+                    // console.log(`- Rental fee payment status:`, rentalFeePayment?.status);
+                    // console.log(`- Is rental fee paid:`, isRentalFeePaid);
+                }
 
-                const isAdditionalFeePaid = !additionalFeePayment || // No additional fee = considered paid
-                    (additionalFeePayment.status?.toLowerCase() === 'success' ||
-                        additionalFeePayment.status?.toLowerCase() === 'paid' ||
-                        additionalFeePayment.status?.toLowerCase() === 'completed');
+                const isExtensionPaid = !extensionPayment ||
+                    (extensionPayment.status === 'Success' ||
+                        extensionPayment.status === 'Paid' ||
+                        extensionPayment.status === 'Completed');
 
-                // Determine overall status based on rental fee (main requirement for pickup)
+                const isAdditionalFeePaid = !additionalFeePayment ||
+                    (additionalFeePayment.status === 'Success' ||
+                        additionalFeePayment.status === 'Paid' ||
+                        additionalFeePayment.status === 'Completed');
+
+
                 let overallStatus = 'pending';
 
                 if (!rentalFeePayment) {
-                    // No rental fee payment created yet
-                    overallStatus = 'no_payment';
-                    console.log(`🔍 fetchPaymentDetails: No rental fee payment found for ${bookingId} - status: no_payment`);
+
+                    if (isBookingFeePaid) {
+                        overallStatus = 'booking_paid';
+                        if (__DEV__) console.log(`fetchPaymentDetails: Booking fee paid for ${bookingId} - rental payment needed`);
+                    } else {
+                        overallStatus = 'no_payment';
+                        if (__DEV__) console.log(`fetchPaymentDetails: No payments found for ${bookingId}`);
+                    }
+                } else if (rentalFeePayment && !isRentalFeePaid) {
+
+                    overallStatus = 'rental_pending';
+                    if (__DEV__) console.log(`fetchPaymentDetails: Rental fee payment exists but pending for ${bookingId} - customer needs to pay`);
                 } else if (isRentalFeePaid) {
-                    // Rental fee is paid - ready for pickup
+
                     overallStatus = 'paid';
-                    console.log(`🔍 fetchPaymentDetails: Rental fee is paid for ${bookingId} - ready for pickup`);
+                    if (__DEV__) console.log(`fetchPaymentDetails: Rental fee is paid for ${bookingId} - ready for pickup`);
                 } else {
-                    // Rental fee is pending - need payment before pickup
+
                     overallStatus = 'pending';
-                    console.log(`🔍 fetchPaymentDetails: Rental fee is pending for ${bookingId} - payment required for pickup`);
+                    if (__DEV__) console.log(` fetchPaymentDetails: Fallback status for ${bookingId} - pending`);
                 }
 
                 const result = {
                     amount: totalAmount,
                     status: overallStatus,
                     hasPaymentRecord: !!(bookingFeePayment || rentalFeePayment || extensionPayment || additionalFeePayment),
-                    // Individual payment statuses for different screen requirements
+
                     isBookingFeePaid,
                     isRentalFeePaid,
                     isExtensionPaid,
                     isAdditionalFeePaid,
                     hasExtension: !!extensionPayment,
-                    // Payment details for reference
+
+                    bookingFeePayment,
                     rentalFeePayment,
                     extensionPayment,
+                    additionalFeePayment,
                 };
-                console.log(`🔍 fetchPaymentDetails: Returning for ${bookingId}:`, result);
+                console.log(` fetchPaymentDetails: Returning for ${bookingId}:`, result);
 
-                // Cache for 10 minutes
-                apiCache.set(cacheKey, result, 10 * 60 * 1000);
+                // Cache for 15 minutes for better performance
+                apiCache.set(cacheKey, result, 15 * 60 * 1000);
                 return result;
             }
         } else {
-            console.log(`🔍 fetchPaymentDetails: API call failed for ${bookingId} with status ${response.status}`);
+            console.log(` fetchPaymentDetails: API call failed for ${bookingId} with status ${response.status}`);
         }
 
         // If we get here, either API failed or no payments found
-        console.log(`🔍 fetchPaymentDetails: No payments found for ${bookingId} - returning no_payment`);
+        if (__DEV__) console.log(` fetchPaymentDetails: No payments found for ${bookingId} - returning no_payment`);
         const noPaymentResult = {
             amount: 0,
             status: 'no_payment',
             hasPaymentRecord: false,
             isBookingFeePaid: false,
             isRentalFeePaid: false,
-            isExtensionPaid: true, // No extension = considered paid
-            isAdditionalFeePaid: true, // No additional fee = considered paid
+            isExtensionPaid: true,
+            isAdditionalFeePaid: true,
             hasExtension: false,
             rentalFeePayment: null,
             extensionPayment: null,
         };
 
-        // Cache for 5 minutes (shorter for no-payment cases)
-        apiCache.set(cacheKey, noPaymentResult, 5 * 60 * 1000);
+
+        apiCache.set(cacheKey, noPaymentResult, 10 * 60 * 1000);
         return noPaymentResult;
 
     } catch (err) {
-        console.error(`🔍 fetchPaymentDetails: Error for ${bookingId}:`, err);
+        if (err instanceof Error && err.name === 'AbortError') {
+            console.log(` fetchPaymentDetails: Request timeout for ${bookingId}`);
+        } else {
+            console.error(` fetchPaymentDetails: Error for ${bookingId}:`, err);
+        }
 
-        // If API call fails, assume no payment record exists
-        console.log(`🔍 fetchPaymentDetails: Returning no_payment for ${bookingId} due to error/failure`);
+
+        if (__DEV__) console.log(` fetchPaymentDetails: Returning no_payment for ${bookingId} due to error/failure`);
         const errorResult = {
             amount: 0,
             status: 'no_payment',
             hasPaymentRecord: false,
             isBookingFeePaid: false,
             isRentalFeePaid: false,
-            isExtensionPaid: true, // No extension = considered paid
-            isAdditionalFeePaid: true, // No additional fee = considered paid
+            isExtensionPaid: true,
+            isAdditionalFeePaid: true,
             hasExtension: false,
             rentalFeePayment: null,
             extensionPayment: null,
         };
 
-        // Cache error result for 2 minutes to avoid repeated failures
-        apiCache.set(cacheKey, errorResult, 2 * 60 * 1000);
+
+        apiCache.set(cacheKey, errorResult, 5 * 60 * 1000);
         return errorResult;
     }
 };
@@ -341,38 +374,36 @@ export const batchFetchCarDetails = async (carIds: string[]): Promise<Map<string
 
     if (carIds.length === 0) return carDetailsMap;
 
-    // console.log(` batchFetchCarDetails: fetching ${carIds.length} cars`);
 
-    // Fetch all cars in parallel with increased concurrency
-    const batchSize = 10; // Increased from 5 to 10 for better performance
-    for (let i = 0; i < carIds.length; i += batchSize) {
-        const batch = carIds.slice(i, i + batchSize);
-        const promises = batch.map(async (carId) => {
-            try {
-                const details = await fetchCarDetails(carId);
-                return { carId, details };
-            } catch (error) {
-                // console.error(` batchFetchCarDetails: error for ${carId}:`, error);
-                return {
-                    carId,
-                    details: {
-                        carName: 'Unknown Car',
-                        carBrand: '',
-                        carModel: '',
-                        carLicensePlate: '',
-                        carImage: '',
-                    }
-                };
-            }
-        });
+    const timeout = 3000;
+    const promises = carIds.map(async (carId) => {
+        try {
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timeout')), timeout)
+            );
 
-        const results = await Promise.all(promises);
-        results.forEach(({ carId, details }) => {
-            carDetailsMap.set(carId, details);
-        });
-    }
+            const fetchPromise = fetchCarDetails(carId);
+            const details = await Promise.race([fetchPromise, timeoutPromise]);
+            return { carId, details };
+        } catch (error) {
+            return {
+                carId,
+                details: {
+                    carName: 'Unknown Car',
+                    carBrand: '',
+                    carModel: '',
+                    carLicensePlate: '',
+                    carImage: '',
+                }
+            };
+        }
+    });
 
-    // console.log(` batchFetchCarDetails: completed ${carDetailsMap.size} cars`);
+    const results = await Promise.all(promises);
+    results.forEach(({ carId, details }) => {
+        carDetailsMap.set(carId, details);
+    });
+
     return carDetailsMap;
 };
 
@@ -381,28 +412,27 @@ export const batchFetchUserDetails = async (userIds: string[]): Promise<Map<stri
 
     if (userIds.length === 0) return userDetailsMap;
 
-    // console.log(` batchFetchUserDetails: fetching ${userIds.length} users`);
+    // Process all user details at once with timeout
+    const timeout = 3000;
+    const promises = userIds.map(async (userId) => {
+        try {
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timeout')), timeout)
+            );
 
-    const batchSize = 10; // Increased from 5 to 10
-    for (let i = 0; i < userIds.length; i += batchSize) {
-        const batch = userIds.slice(i, i + batchSize);
-        const promises = batch.map(async (userId) => {
-            try {
-                const name = await fetchCustomerName(userId);
-                return { userId, name };
-            } catch (error) {
-                // console.error(` batchFetchUserDetails: error for ${userId}:`, error);
-                return { userId, name: 'Customer' };
-            }
-        });
+            const fetchPromise = fetchCustomerName(userId);
+            const name = await Promise.race([fetchPromise, timeoutPromise]);
+            return { userId, name };
+        } catch (error) {
+            return { userId, name: 'Customer' };
+        }
+    });
 
-        const results = await Promise.all(promises);
-        results.forEach(({ userId, name }) => {
-            userDetailsMap.set(userId, name);
-        });
-    }
+    const results = await Promise.all(promises);
+    results.forEach(({ userId, name }) => {
+        userDetailsMap.set(userId, name);
+    });
 
-    // console.log(` batchFetchUserDetails: completed ${userDetailsMap.size} users`);
     return userDetailsMap;
 };
 
@@ -411,18 +441,37 @@ export const batchFetchPaymentDetails = async (bookingIds: string[]): Promise<Ma
 
     if (bookingIds.length === 0) return paymentDetailsMap;
 
-    // console.log(` batchFetchPaymentDetails: fetching ${bookingIds.length} payments`);
 
-    const batchSize = 8; // Slightly lower due to payment complexity
+    const batchSize = 20;
+    const timeout = 5000;
+
     for (let i = 0; i < bookingIds.length; i += batchSize) {
         const batch = bookingIds.slice(i, i + batchSize);
         const promises = batch.map(async (bookingId) => {
             try {
-                const details = await fetchPaymentDetails(bookingId);
+
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timeout')), timeout)
+                );
+
+                const fetchPromise = fetchPaymentDetails(bookingId);
+                const details = await Promise.race([fetchPromise, timeoutPromise]);
                 return { bookingId, details };
             } catch (error) {
-                // console.error(` batchFetchPaymentDetails: error for ${bookingId}:`, error);
-                return { bookingId, details: { amount: 0, status: 'no_payment', hasPaymentRecord: false } };
+
+                return {
+                    bookingId,
+                    details: {
+                        amount: 0,
+                        status: 'no_payment',
+                        hasPaymentRecord: false,
+                        isBookingFeePaid: false,
+                        isRentalFeePaid: false,
+                        isExtensionPaid: true,
+                        isAdditionalFeePaid: true,
+                        hasExtension: false,
+                    }
+                };
             }
         });
 
@@ -432,7 +481,6 @@ export const batchFetchPaymentDetails = async (bookingIds: string[]): Promise<Ma
         });
     }
 
-    // console.log(` batchFetchPaymentDetails: completed ${paymentDetailsMap.size} payments`);
     return paymentDetailsMap;
 };
 
@@ -441,28 +489,27 @@ export const batchFetchCheckInOutStatus = async (bookingIds: string[]): Promise<
 
     if (bookingIds.length === 0) return checkInOutMap;
 
-    // console.log(` batchFetchCheckInOutStatus: fetching ${bookingIds.length} check-in/out statuses`);
+    // Process all check-in/out status at once with timeout
+    const timeout = 4000;
+    const promises = bookingIds.map(async (bookingId) => {
+        try {
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timeout')), timeout)
+            );
 
-    const batchSize = 10; // Increased from 5 to 10
-    for (let i = 0; i < bookingIds.length; i += batchSize) {
-        const batch = bookingIds.slice(i, i + batchSize);
-        const promises = batch.map(async (bookingId) => {
-            try {
-                const status = await fetchCheckInOutStatus(bookingId);
-                return { bookingId, status };
-            } catch (error) {
-                // console.error(` batchFetchCheckInOutStatus: error for ${bookingId}:`, error);
-                return { bookingId, status: { hasCheckIn: false, hasCheckOut: false } };
-            }
-        });
+            const fetchPromise = fetchCheckInOutStatus(bookingId);
+            const status = await Promise.race([fetchPromise, timeoutPromise]);
+            return { bookingId, status };
+        } catch (error) {
+            return { bookingId, status: { hasCheckIn: false, hasCheckOut: false } };
+        }
+    });
 
-        const results = await Promise.all(promises);
-        results.forEach(({ bookingId, status }) => {
-            checkInOutMap.set(bookingId, status);
-        });
-    }
+    const results = await Promise.all(promises);
+    results.forEach(({ bookingId, status }) => {
+        checkInOutMap.set(bookingId, status);
+    });
 
-    // console.log(` batchFetchCheckInOutStatus: completed ${checkInOutMap.size} statuses`);
     return checkInOutMap;
 };
 
@@ -471,24 +518,32 @@ export const batchFetchExtensionInfo = async (bookingIds: string[]): Promise<Map
 
     if (bookingIds.length === 0) return extensionInfoMap;
 
-    // console.log(` batchFetchExtensionInfo: fetching ${bookingIds.length} extension infos`);
 
-    const batchSize = 3; // Lower batch size for extension info as it makes 2 API calls per booking
+    const batchSize = 8;
+    const timeout = 6000;
+
     for (let i = 0; i < bookingIds.length; i += batchSize) {
         const batch = bookingIds.slice(i, i + batchSize);
         const promises = batch.map(async (bookingId) => {
             try {
-                const info = await fetchBookingExtensionInfo(bookingId);
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Extension fetch timeout')), timeout)
+                );
+
+                const fetchPromise = fetchBookingExtensionInfo(bookingId);
+                const info = await Promise.race([fetchPromise, timeoutPromise]);
                 return { bookingId, info };
             } catch (error) {
-                // console.error(` batchFetchExtensionInfo: error for ${bookingId}:`, error);
+
                 return {
                     bookingId,
                     info: {
                         hasExtension: false,
                         extensionDescription: undefined,
                         extensionDays: undefined,
-                        extensionAmount: undefined
+                        extensionAmount: undefined,
+                        extensionPaymentStatus: undefined,
+                        isExtensionPaymentCompleted: false
                     }
                 };
             }
@@ -500,7 +555,6 @@ export const batchFetchExtensionInfo = async (bookingIds: string[]): Promise<Map
         });
     }
 
-    // console.log(` batchFetchExtensionInfo: completed ${extensionInfoMap.size} extension infos`);
     return extensionInfoMap;
 };
 
@@ -508,7 +562,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
     try {
         // console.log(` fetchBookingExtensionInfo: Step 1 - Getting booking details for ${bookingId}`);
 
-        // Step 1: Get booking details
+
         const baseUrl = API_CONFIG.BASE_URL;
         const bookingUrl = `${baseUrl}/Booking/GetBookingById/${bookingId}`;
         const token = await getAuthToken();
@@ -547,7 +601,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
 
         // console.log(` fetchBookingExtensionInfo: Step 1 completed - Got invoiceId: ${invoiceId} for booking ${bookingId}`);
 
-        // Step 2: Try direct invoice endpoint first (the one you provided in the example)
+
         try {
             const directInvoiceUrl = `${API_CONFIG.BASE_URL.replace('/api', '')}/${invoiceId}`;
             console.log(` fetchBookingExtensionInfo: Step 2 - Trying direct invoice endpoint: ${directInvoiceUrl}`);
@@ -577,7 +631,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
                             extensionDescription: `Booking Extension - ${extensionItem.description || 'Extended rental period'}`,
                             extensionDays: extensionItem.quantity || 1,
                             extensionAmount: extensionItem.total || extensionItem.unitPrice || 0,
-                            extensionPaymentStatus: 'Paid', // If found in invoice, it's typically paid
+                            extensionPaymentStatus: 'Paid',
                             isExtensionPaymentCompleted: true
                         };
                     }
@@ -589,7 +643,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             console.log(` fetchBookingExtensionInfo: Direct invoice endpoint error:`, directError);
         }
 
-        // Step 3: Check invoice items (using the /api/ endpoint) - fallback
+
         // console.log(` fetchBookingExtensionInfo: Step 3 - Checking invoice items for ${invoiceId}`);
 
         const invoiceResponse = await fetch(`${baseUrl}/Invoice/${invoiceId}`, {
@@ -605,7 +659,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             const invoiceData = await invoiceResponse.json();
             // console.log(` fetchBookingExtensionInfo: Invoice data structure:`, JSON.stringify(invoiceData, null, 2));
 
-            // Check if invoice has invoiceItems array with Booking Extension
+
             if (invoiceData.invoiceItems && Array.isArray(invoiceData.invoiceItems)) {
                 const extensionItem = invoiceData.invoiceItems.find((item: any) =>
                     item.item === 'Booking Extension'
@@ -623,7 +677,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             }
         }
 
-        // Step 4: Check payment details (using the non-/api/ endpoint)
+
         const invoiceBaseUrl = API_CONFIG.BASE_URL.replace('/api', '');
         const timestamp = new Date().getTime();
         const paymentUrl = `${invoiceBaseUrl}/Invoice/${invoiceId}?_t=${timestamp}`;
@@ -658,7 +712,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
         // console.log(` fetchBookingExtensionInfo: Step 4 completed - Got payment data for ${invoiceId}`);
         // console.log(` fetchBookingExtensionInfo: Payment data:`, JSON.stringify(paymentData, null, 2));
 
-        // First, try to get extension info from invoiceItems if available
+
         if (paymentData.invoiceItems && Array.isArray(paymentData.invoiceItems)) {
             const extensionItem = paymentData.invoiceItems.find((item: any) =>
                 item.item === 'Booking Extension'
@@ -677,7 +731,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             }
         }
 
-        // Handle different response formats - check if it's an array of payments
+
         if (!Array.isArray(paymentData)) {
             // console.log(` fetchBookingExtensionInfo: Payment data is not an array:`, typeof paymentData);
             return {
@@ -688,7 +742,7 @@ export const fetchBookingExtensionInfo = async (bookingId: string) => {
             };
         }
 
-        // Look for extension payment with various possible item names
+
         const possibleExtensionNames = [
             'Booking Extension',
             'booking extension',

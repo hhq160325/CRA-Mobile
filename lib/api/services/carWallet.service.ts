@@ -12,7 +12,7 @@ export const carWalletService = {
     async getCarWallet(carId: string): Promise<{ data: CarWallet | null; error: Error | null }> {
         console.log("carWalletService.getCarWallet: fetching wallet for car", carId)
 
-        // Use direct URL without /api prefix
+
         const baseUrl = getApiBaseUrl();
         const directUrl = `${baseUrl}/Car/${carId}`;
         console.log("carWalletService.getCarWallet: using direct URL:", directUrl);

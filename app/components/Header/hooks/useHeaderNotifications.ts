@@ -16,31 +16,31 @@ export function useHeaderNotifications() {
 
   const loadNotifications = async () => {
     if (!user?.id) {
-      console.log("🔔 No user ID available for notifications");
+      console.log(" No user ID available for notifications");
       return;
     }
 
-    console.log("🔔 Loading notifications for user ID:", user.id);
-    console.log("🔔 User role:", user.role);
+    console.log(" Loading notifications for user ID:", user.id);
+    console.log(" User role:", user.role);
     setLoadingNotifications(true);
     try {
       const { data, error } = await notificationService.getNotifications(user.id, user.role);
       if (error) {
         console.log(
-          '🔔 Failed to load notifications (this is normal if no notifications exist)',
+          ' Failed to load notifications (this is normal if no notifications exist)',
         );
         setNotifications([]);
         return;
       }
       if (data) {
-        console.log("🔔 Loaded notifications:", data.length);
+        console.log(" Loaded notifications:", data.length);
         setNotifications(data);
       } else {
         setNotifications([]);
       }
     } catch (err) {
       console.log(
-        '🔔 Failed to load notifications (this is normal if no notifications exist)',
+        ' Failed to load notifications (this is normal if no notifications exist)',
       );
       setNotifications([]);
     } finally {
@@ -53,36 +53,35 @@ export function useHeaderNotifications() {
       await notificationService.markAsRead(notification.id);
     }
 
-    // Since the new API doesn't have type/relatedId, we can try to parse the content
-    // to determine if it's booking-related and extract booking info
+
     const content = notification.content.toLowerCase();
     if (content.includes('booking') && content.includes('bk')) {
-      // Try to extract booking number from content like "BK19-22-12-2025"
+
       const bookingMatch = content.match(/bk\d+-\d+-\d+-\d+/i);
       if (bookingMatch) {
         const bookingNumber = bookingMatch[0].toUpperCase();
-        console.log("🔔 Extracted booking number:", bookingNumber);
+        console.log(" Extracted booking number:", bookingNumber);
 
         try {
-          // First get the booking details by booking number to get the booking ID
+
           const { bookingsService } = await import('../../../../lib/api');
           const bookingResult = await bookingsService.getBookingByNumber(bookingNumber);
 
           if (bookingResult.data && bookingResult.data.id) {
-            console.log("🔔 Found booking ID:", bookingResult.data.id);
+            console.log(" Found booking ID:", bookingResult.data.id);
             navigation.navigate('BookingDetail' as any, {
               id: bookingResult.data.id,
             });
           } else {
-            console.log("🔔 Could not find booking ID for number:", bookingNumber);
-            // Fallback to using booking number
+            console.log(" Could not find booking ID for number:", bookingNumber);
+
             navigation.navigate('BookingDetail' as any, {
               bookingNumber: bookingNumber,
             });
           }
         } catch (error) {
-          console.error("🔔 Error fetching booking by number:", error);
-          // Fallback to using booking number
+          console.error(" Error fetching booking by number:", error);
+
           navigation.navigate('BookingDetail' as any, {
             bookingNumber: bookingNumber,
           });

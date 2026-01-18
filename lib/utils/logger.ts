@@ -1,0 +1,61 @@
+
+
+const isProduction = !__DEV__;
+
+export const logger = {
+    log: (...args: any[]) => {
+        if (!isProduction) {
+            console.log(...args);
+        }
+    },
+
+    info: (...args: any[]) => {
+        if (!isProduction) {
+            console.info(...args);
+        }
+    },
+
+    warn: (...args: any[]) => {
+        if (!isProduction) {
+            console.warn(...args);
+        }
+    },
+
+    error: (...args: any[]) => {
+        if (!isProduction) {
+            console.error(...args);
+        }
+    },
+
+    debug: (...args: any[]) => {
+        if (!isProduction) {
+            console.debug(...args);
+        }
+    }
+};
+
+
+if (isProduction) {
+    console.log = () => { };
+    console.info = () => { };
+    console.warn = () => { };
+    console.error = () => { };
+    console.debug = () => { };
+    console.trace = () => { };
+    console.table = () => { };
+    console.group = () => { };
+    console.groupEnd = () => { };
+    console.time = () => { };
+    console.timeEnd = () => { };
+}
+
+
+if (isProduction && typeof global !== 'undefined') {
+
+    const globalWithErrorUtils = global as any;
+    if (globalWithErrorUtils.ErrorUtils?.setGlobalHandler) {
+        globalWithErrorUtils.ErrorUtils.setGlobalHandler(() => {
+
+        });
+    }
+}

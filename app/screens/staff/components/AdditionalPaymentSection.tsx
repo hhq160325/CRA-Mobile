@@ -7,7 +7,7 @@ import PaymentModal from '../additionalPayment/components/PaymentModal';
 import PaymentWebView from '../additionalPayment/components/PaymentWebView';
 import { styles } from '../styles/additionalPaymentSection.styles';
 import type { AdditionalPaymentSectionProps } from '../additionalPayment/types/additionalPaymentTypes';
-import type { CarTravelLog } from '../../../lib/api/services/carTravelLog.service';
+import type { CarTravelLog } from '../../../../lib/api';
 
 export default function AdditionalPaymentSection({
     bookingId,

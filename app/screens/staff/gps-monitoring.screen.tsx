@@ -57,10 +57,10 @@ export default function GPSMonitoringScreen() {
             isRecent = true;
         } else if (diffMinutes < 60) {
             timeAgo = `${diffMinutes}m ago`;
-            isRecent = diffMinutes <= 30; // Recent if within 30 minutes
+            isRecent = diffMinutes <= 30;
         } else if (diffHours < 24) {
             timeAgo = `${diffHours}h ago`;
-            isRecent = diffHours <= 2; // Recent if within 2 hours
+            isRecent = diffHours <= 2;
         } else {
             timeAgo = `${diffDays}d ago`;
             isRecent = false;
@@ -74,18 +74,18 @@ export default function GPSMonitoringScreen() {
         setError(null);
 
         try {
-            // Get all unique user IDs from staff bookings
+
             const { bookingsService } = await import('../../../lib/api/services/bookings.service');
             const bookingsResult = await bookingsService.getAllBookings();
 
             let knownUserIds: string[] = [];
 
             if (bookingsResult.data && bookingsResult.data.length > 0) {
-                // Extract unique user IDs from bookings
+
                 knownUserIds = [...new Set(bookingsResult.data.map(booking => booking.userId).filter(Boolean))];
                 // console.log(' Found user IDs from bookings:', knownUserIds.length);
             } else {
-                // Fallback to demo user IDs if no bookings found
+
                 knownUserIds = [
                     '019a9f03-d063-79a6-937c-0611d4f49f12', // Demo user
                 ];
@@ -158,7 +158,7 @@ export default function GPSMonitoringScreen() {
     useEffect(() => {
         fetchUserLocations();
 
-        // If focusUserId is provided, set it as search query to highlight the user
+
         if (focusUserId) {
             setSearchQuery(focusUserId);
         }

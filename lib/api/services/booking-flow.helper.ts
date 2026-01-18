@@ -15,7 +15,7 @@ export async function cancelBookingWithPayment(bookingId: string): Promise<Booki
     try {
         console.log(" Starting cancel booking flow for:", bookingId)
 
-        // Step 1: Update booking status to "cancelled"
+    
         console.log(" Step 1: Updating booking status to cancelled...")
         const { data: updatedBooking, error: statusError } = await bookingsService.updateBookingStatus(
             bookingId,
@@ -29,7 +29,7 @@ export async function cancelBookingWithPayment(bookingId: string): Promise<Booki
 
         console.log(" Booking status updated to cancelled")
 
-        // Step 2: Update payment to "cancelled" (lowercase)
+      
         console.log(" Step 2: Updating payment status to cancelled...")
         const { data: paymentUpdate, error: paymentError } = await bookingsService.updateBookingPayment(
             bookingId,
@@ -69,7 +69,7 @@ export async function confirmBookingWithPayment(bookingId: string): Promise<Book
     try {
         console.log(" Starting confirm booking flow for:", bookingId)
 
-        // Step 1: Update booking status to "confirmed"
+       
         console.log(" Step 1: Updating booking status to confirmed...")
         const { data: updatedBooking, error: statusError } = await bookingsService.updateBookingStatus(
             bookingId,
@@ -83,7 +83,7 @@ export async function confirmBookingWithPayment(bookingId: string): Promise<Book
 
         console.log(" Booking status updated to confirmed")
 
-        // Step 2: Update rental payment to "paid" using the working endpoint
+   
         console.log(" Step 2: Updating rental payment status to paid...")
         const { data: paymentUpdate, error: paymentError } = await paymentService.updateRentalPaymentCash(bookingId)
 

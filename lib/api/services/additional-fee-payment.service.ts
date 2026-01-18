@@ -42,7 +42,7 @@ export const additionalFeePaymentService = {
         try {
             console.log(' Checking additional fee payment for:', bookingId);
 
-            // Validate bookingId
+
             if (!bookingId || bookingId === 'undefined' || bookingId === 'null') {
                 console.log(' Invalid booking ID provided:', bookingId);
                 return {
@@ -100,7 +100,7 @@ export const additionalFeePaymentService = {
             if (!pendingAdditionalFeePayment) {
                 console.log(' No PENDING additional fee found');
 
-                // Check if there are any additional fee payments at all (for logging)
+
                 const anyAdditionalFeePayment = payments.find(payment => payment.item === 'Additional Fee');
                 if (anyAdditionalFeePayment) {
                     console.log(' Found additional fee payment but it is already PAID - OrderCode:', anyAdditionalFeePayment.orderCode);
@@ -124,8 +124,8 @@ export const additionalFeePaymentService = {
                 }
             }
 
-            console.log(` Found PENDING additional fee - OrderCode: ${pendingAdditionalFeePayment.orderCode}, Status: "${pendingAdditionalFeePayment.status}"`);
-            console.log(' This payment will be updated via PATCH API');
+            // console.log(` Found PENDING additional fee - OrderCode: ${pendingAdditionalFeePayment.orderCode}, Status: "${pendingAdditionalFeePayment.status}"`);
+            // console.log(' This payment will be updated via PATCH API');
 
             return {
                 data: {
@@ -150,7 +150,7 @@ export const additionalFeePaymentService = {
         try {
             console.log(' Creating additional fee payment URL for booking:', bookingId);
 
-            // First check if there's an additional fee payment
+
             const statusResult = await additionalFeePaymentService.checkAdditionalFeePayment(bookingId);
 
             if (statusResult.error || !statusResult.data) {

@@ -19,7 +19,7 @@ export class APIError extends Error {
 export async function testConnection(): Promise<{ success: boolean; message: string; latency?: number; connectionQuality?: string }> {
   const startTime = Date.now()
   try {
-    console.log("Testing connection to:", API_CONFIG.BASE_URL)
+    // console.log("Testing connection to:", API_CONFIG.BASE_URL)
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 8000)
@@ -42,7 +42,7 @@ export async function testConnection(): Promise<{ success: boolean; message: str
     else if (latency > 1000) connectionQuality = "fair"
     else if (latency > 500) connectionQuality = "good"
 
-    console.log("Connection test result:", response.status, "latency:", latency, "ms", "quality:", connectionQuality)
+    // console.log("Connection test result:", response.status, "latency:", latency, "ms", "quality:", connectionQuality)
 
     return {
       success: response.status < 500,
@@ -98,29 +98,32 @@ async function makeRequest<T>(
       const errorText = await response.text()
 
       if (response.status === 404) {
-        console.error(" 404 Error Details:")
-        console.error("   URL:", url)
-        console.error("   Endpoint:", endpoint || 'unknown')
-        console.error("   Platform:", Platform.OS)
-        console.error("   Method:", options?.method || 'GET')
-        console.error("   Response:", errorText)
-
-
-        console.error("   Call stack:", new Error().stack)
-
+        if (__DEV__) {
+          console.error(" 404 Error Details:")
+          console.error("   URL:", url)
+          console.error("   Endpoint:", endpoint || 'unknown')
+          console.error("   Platform:", Platform.OS)
+          console.error("   Method:", options?.method || 'GET')
+          console.error("   Response:", errorText)
+          console.error("   Call stack:", new Error().stack)
+        }
 
         if (endpoint?.includes('/Invoice/') && options?.method === 'GET') {
-          console.log(" This appears to be an invoice lookup that returned 404 - invoice may not exist")
+          if (__DEV__) {
+            console.log(" This appears to be an invoice lookup that returned 404 - invoice may not exist")
+          }
         }
       } else {
-        console.error("apiClient: error response status:", response.status)
-        console.error("apiClient: error response body:", errorText)
+        if (__DEV__) {
+          console.error("apiClient: error response status:", response.status)
+          console.error("apiClient: error response body:", errorText)
+        }
       }
 
       let errorData: any = {}
       try {
         errorData = JSON.parse(errorText)
-        if (response.status !== 404) {
+        if (response.status !== 404 && __DEV__) {
           console.error("apiClient: parsed error data:", JSON.stringify(errorData, null, 2))
         }
       } catch {
@@ -176,11 +179,11 @@ export async function apiClient<T>(
 ): Promise<{ data: T; error: null } | { data: null; error: APIError }> {
   try {
     const url = `${API_CONFIG.BASE_URL}${endpoint}`
-    console.log("apiClient: making request to", url)
-    console.log("apiClient: endpoint:", endpoint)
-    console.log("apiClient: base URL:", API_CONFIG.BASE_URL)
-    console.log("apiClient: platform:", Platform.OS)
-    console.log("apiClient: request body", options?.body)
+    // console.log("apiClient: making request to", url)
+    // console.log("apiClient: endpoint:", endpoint)
+    // console.log("apiClient: base URL:", API_CONFIG.BASE_URL)
+    // console.log("apiClient: platform:", Platform.OS)
+    // console.log("apiClient: request body", options?.body)
 
 
     let token: string | null = null
@@ -198,7 +201,7 @@ export async function apiClient<T>(
       "Cache-Control": "no-cache",
       "Connection": "keep-alive",
       "Accept-Encoding": "gzip, deflate",
-      // Filter out undefined values from expo config headers
+
       ...(expoConfig?.headers ? Object.fromEntries(
         Object.entries(expoConfig.headers).filter(([_, value]) => value !== undefined)
       ) : {}),

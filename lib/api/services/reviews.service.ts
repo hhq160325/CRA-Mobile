@@ -56,12 +56,12 @@ export const reviewsService = {
       return { data: null, error: result.error }
     }
 
-    // Helper function to enrich user data
+    
     const enrichUserData = async (feedback: any): Promise<Review> => {
       let userName = feedback.userName || "Anonymous";
       let userAvatar = feedback.userAvatar || "";
 
-      // If we don't have user name or it's "Anonymous", try to fetch user details
+    
       if ((!userName || userName === "Anonymous") && feedback.userId) {
         try {
           const { userService } = require('./user.service');
@@ -92,7 +92,7 @@ export const reviewsService = {
       };
     };
 
-    // Map and enrich all reviews with user data
+    
     const enrichedReviews = await Promise.all(
       (result.data || []).map(enrichUserData)
     );
@@ -165,12 +165,12 @@ export const reviewsService = {
       (result.data || []).map(enrichUserData)
     );
 
-    console.log(" reviewsService.getCarReviews: Final result", {
-      hasError: !!result.error,
-      dataLength: mappedReviews.length,
-      sampleUserNames: mappedReviews.slice(0, 3).map(r => r.userName),
-      sampleUserIds: mappedReviews.slice(0, 3).map(r => r.userId)
-    })
+    // console.log(" reviewsService.getCarReviews: Final result", {
+    //   hasError: !!result.error,
+    //   dataLength: mappedReviews.length,
+    //   sampleUserNames: mappedReviews.slice(0, 3).map(r => r.userName),
+    //   sampleUserIds: mappedReviews.slice(0, 3).map(r => r.userId)
+    // })
 
     return { data: mappedReviews, error: null }
   },
@@ -180,7 +180,7 @@ export const reviewsService = {
     console.log("reviewsService.createFeedback: creating feedback", data)
 
     try {
-      // Create FormData for multipart/form-data request
+      
       const formData = new FormData() as any
 
       // Append required fields
@@ -226,15 +226,15 @@ export const reviewsService = {
       const { API_CONFIG } = require("../config")
       const url = `${API_CONFIG.BASE_URL}${API_ENDPOINTS.CREATE_FEEDBACK}`
 
-      console.log("reviewsService.createFeedback: posting to URL", url)
-      console.log("reviewsService.createFeedback: FormData fields", {
-        Rating: data.rating,
-        Title: data.title,
-        Content: data.content,
-        CarId: data.carId,
-        BookingId: data.bookingId,
-        hasMedias: !!(data.medias && data.medias.length > 0)
-      })
+      // console.log("reviewsService.createFeedback: posting to URL", url)
+      // console.log("reviewsService.createFeedback: FormData fields", {
+      //   Rating: data.rating,
+      //   Title: data.title,
+      //   Content: data.content,
+      //   CarId: data.carId,
+      //   BookingId: data.bookingId,
+      //   hasMedias: !!(data.medias && data.medias.length > 0)
+      // })
 
       const response = await fetch(url, {
         method: "POST",

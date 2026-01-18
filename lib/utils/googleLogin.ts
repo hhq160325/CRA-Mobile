@@ -1,4 +1,5 @@
 import { API_CONFIG, API_ENDPOINTS } from "../api/config"
+import { logger } from "../utils/logger"
 
 
 export function useGoogleAuth() {
@@ -22,7 +23,7 @@ export async function processGoogleAuthResponse(
                 return { success: false, error: "No access token received" }
             }
 
-            console.log(" Got Google access token")
+            logger.log(" Got Google access token")
 
 
             const userInfo = await fetchGoogleUserInfo(authentication.accessToken)
@@ -31,7 +32,7 @@ export async function processGoogleAuthResponse(
                 return { success: false, error: "Failed to get user info" }
             }
 
-            console.log(" Got Google user info:", userInfo.email)
+            logger.log(" Got Google user info:", userInfo.email)
 
 
             const result = await exchangeWithBackend(authentication, userInfo)
@@ -46,7 +47,7 @@ export async function processGoogleAuthResponse(
         return { success: false, error: "Authentication failed" }
 
     } catch (error: any) {
-        console.error(" Process auth response error:", error)
+        logger.error(" Process auth response error:", error)
         return { success: false, error: error.message }
     }
 }
@@ -59,7 +60,7 @@ async function fetchGoogleUserInfo(accessToken: string): Promise<any | null> {
         })
 
         if (!response.ok) {
-            console.error("Failed to fetch Google user info:", response.status)
+            logger.error("Failed to fetch Google user info:", response.status)
             return null
         }
 
@@ -67,7 +68,7 @@ async function fetchGoogleUserInfo(accessToken: string): Promise<any | null> {
         return userInfo
 
     } catch (error) {
-        console.error("Error fetching Google user info:", error)
+        logger.error("Error fetching Google user info:", error)
         return null
     }
 }
@@ -89,11 +90,11 @@ async function exchangeWithBackend(
             },
         })
 
-        console.log("Backend response status:", response.status)
+        logger.log("Backend response status:", response.status)
 
         if (response.ok) {
             const data = await response.json()
-            console.log("Backend response:", data)
+            logger.log("Backend response:", data)
 
             const jwtToken = data.jwtToken || data.token
             if (jwtToken) {
@@ -103,11 +104,11 @@ async function exchangeWithBackend(
         }
 
 
-        console.log("Using Google user data directly")
+        logger.log("Using Google user data directly")
         return createUserFromGoogle(googleUser, authentication.accessToken)
 
     } catch (error: any) {
-        console.error("Backend exchange error:", error)
+        logger.error("Backend exchange error:", error)
 
         return createUserFromGoogle(googleUser, authentication.accessToken)
     }
@@ -135,7 +136,7 @@ function processBackendResponse(
             decodedToken = JSON.parse(jsonPayload)
         }
     } catch (e) {
-        console.error("Failed to decode JWT:", e)
+        logger.error("Failed to decode JWT:", e)
     }
 
 
@@ -180,7 +181,7 @@ function createUserFromGoogle(
     }
 
     saveAuthData(accessToken, user)
-    console.log(" User created from Google:", user.email)
+    logger.log(" User created from Google:", user.email)
     return { success: true, user }
 }
 
@@ -193,10 +194,10 @@ function saveAuthData(token: string, user: any, refreshToken?: string) {
             if (refreshToken) {
                 localStorage.setItem("refreshToken", refreshToken)
             }
-            console.log(" Auth data saved")
+            logger.log(" Auth data saved")
         }
     } catch (e) {
-        console.error("Failed to save auth data:", e)
+        logger.error("Failed to save auth data:", e)
     }
 }
 

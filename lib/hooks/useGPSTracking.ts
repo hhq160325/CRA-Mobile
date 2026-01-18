@@ -10,7 +10,7 @@ export function useGPSTracking() {
     const [lastLocationSent, setLastLocationSent] = useState<Date | null>(null);
     const startingRef = useRef(false);
 
-    // Start GPS tracking
+
     const startTracking = useCallback(async () => {
         if (!user?.id) {
             setTrackingError('User not logged in');

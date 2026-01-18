@@ -129,21 +129,21 @@ export default function ReportCarScreen() {
         setIsSubmitting(true);
 
         try {
-            console.log('=== Submitting Car Report ===');
-            console.log('Report data:', {
-                title: title.trim(),
-                carId,
-                userId: user.id,
-                contentLength: content.trim().length,
-                imageCount: selectedImages.length,
-            });
+            // console.log('=== Submitting Car Report ===');
+            // console.log('Report data:', {
+            //     title: title.trim(),
+            //     carId,
+            //     userId: user.id,
+            //     contentLength: content.trim().length,
+            //     imageCount: selectedImages.length,
+            // });
 
             const result = await reportService.createReport({
                 title: title.trim(),
                 content: content.trim(),
                 carId,
                 userId: user.id,
-                images: selectedImages, 
+                images: selectedImages,
             });
 
             if (result.error) {
@@ -153,11 +153,11 @@ export default function ReportCarScreen() {
                     result.error.message || 'Failed to submit report. Please try again.',
                 );
             } else if (result.data) {
-                console.log(' Report submitted successfully:', {
-                    reportNo: result.data.reportNo,
-                    reportId: result.data.id,
-                    status: result.data.status,
-                });
+                // console.log(' Report submitted successfully:', {
+                //     reportNo: result.data.reportNo,
+                //     reportId: result.data.id,
+                //     status: result.data.status,
+                // });
 
                 Alert.alert(
                     'Report Submitted',

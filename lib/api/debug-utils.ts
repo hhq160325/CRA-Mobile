@@ -44,7 +44,7 @@ export async function debugAPIConnection(): Promise<APIDebugInfo> {
         recommendations.push('Verify the API URL and server status');
     }
 
-    // ER_NGROK_3200 specific checks
+
     if (connectionTest.message.includes('timeout') || connectionTest.message.includes('failed')) {
         commonIssues.push('Possible tunnel or network issue');
         recommendations.push('If using ngrok: restart tunnel, check ngrok status, or switch to Azure directly');
@@ -65,8 +65,8 @@ export async function debugAPIConnection(): Promise<APIDebugInfo> {
 export function logAPIError(error: any, context: string) {
     console.group(` API Error in ${context}`);
     console.error('Error:', error);
-    console.log('Current API URL:', API_CONFIG.BASE_URL);
-    console.log('Timestamp:', new Date().toISOString());
+    // console.log('Current API URL:', API_CONFIG.BASE_URL);
+    // console.log('Timestamp:', new Date().toISOString());
 
     // Check for specific error patterns
     if (error?.message?.includes('ER_NGROK_3200')) {

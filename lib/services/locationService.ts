@@ -4,6 +4,7 @@ import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { gpsTrackingService } from '../api/services/gpsTracking.service';
 import { normalizeSpeed } from '../utils/gpsUtils';
+import { logger } from '../utils/logger';
 
 export interface LocationPosition {
     latitude: number;
@@ -34,7 +35,7 @@ class LocationService {
                 return storedDeviceId;
             }
 
-            // Generate new device ID using crypto
+
             const randomBytes = await Crypto.getRandomBytesAsync(6);
             const randomString = Array.from(randomBytes)
                 .map(byte => byte.toString(16).padStart(2, '0'))
@@ -43,15 +44,15 @@ class LocationService {
 
             const generatedId = `DEVICE_${randomString.slice(0, 6)}`;
 
-            // Store for future use
+
             await AsyncStorage.setItem('device_id', generatedId);
             this.deviceId = generatedId;
 
-            console.log(' Generated new device ID:', generatedId);
+            logger.log(' Generated new device ID:', generatedId);
             return generatedId;
         } catch (error) {
-            console.error(' Error generating device ID:', error);
-            // Fallback to timestamp-based ID
+            logger.error(' Error generating device ID:', error);
+
             const fallbackId = `DEVICE_${Date.now().toString().slice(-6)}`;
             this.deviceId = fallbackId;
             return fallbackId;
@@ -66,43 +67,42 @@ class LocationService {
             this.permissionGranted = granted;
             return granted;
         } catch (error) {
-            console.error(' Error checking location permission:', error);
+            logger.error(' Error checking location permission:', error);
             return false;
         }
     }
 
 
     async requestLocationPermission(): Promise<boolean> {
-        // If permission already granted, return immediately
+
         if (this.permissionGranted === true) {
-            console.log(' Location permission already granted');
+            logger.log(' Location permission already granted');
             return true;
         }
 
-        // If permission was already requested in this session, check status instead
+
         if (this.permissionRequested) {
-            console.log(' Permission already requested, checking status');
+            logger.log(' Permission already requested, checking status');
             return await this.checkLocationPermission();
         }
 
         try {
-            // Mark as requested to prevent multiple requests
+
             this.permissionRequested = true;
 
-            // Check if already granted first
+
             const alreadyGranted = await this.checkLocationPermission();
             if (alreadyGranted) {
-                console.log(' Location permission already granted (checked before request)');
+                logger.log(' Location permission already granted (checked before request)');
                 return true;
             }
 
-            console.log(' Requesting location permissions...');
+            logger.log(' Requesting location permissions...');
 
-            // Request foreground permissions first
             const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
 
             if (foregroundStatus !== 'granted') {
-                console.log(' Foreground location permission denied');
+                logger.log(' Foreground location permission denied');
                 this.permissionGranted = false;
                 Alert.alert(
                     'Permission Required',
@@ -112,23 +112,23 @@ class LocationService {
                 return false;
             }
 
-            console.log(' Foreground location permission granted');
+            logger.log(' Foreground location permission granted');
 
-            // Request background permissions for continuous tracking
+
             const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
 
             if (backgroundStatus === 'granted') {
-                console.log(' Background location permission granted');
+                logger.log(' Background location permission granted');
                 this.permissionGranted = true;
                 return true;
             } else {
-                console.log('Background location permission denied, using foreground only');
-                // Still allow foreground tracking
+                logger.log('Background location permission denied, using foreground only');
+
                 this.permissionGranted = true;
                 return true;
             }
         } catch (error) {
-            console.error('Error requesting location permission:', error);
+            logger.error('Error requesting location permission:', error);
             this.permissionGranted = false;
             return false;
         }
@@ -149,10 +149,10 @@ class LocationService {
                 speed: normalizeSpeed(location.coords.speed),
             };
 
-            console.log(' Current location:', position);
+            logger.log(' Current location:', position);
             return position;
         } catch (error) {
-            console.error(' Error getting location:', error);
+            logger.error(' Error getting location:', error);
             return null;
         }
     }
@@ -170,22 +170,22 @@ class LocationService {
                 deviceId,
             };
 
-            console.log(' Preparing to send location data:', locationData);
-            console.log(' User ID:', userId);
-            console.log(' Device ID:', deviceId);
+            logger.log(' Preparing to send location data:', locationData);
+            logger.log(' User ID:', userId);
+            logger.log(' Device ID:', deviceId);
 
             const result = await gpsTrackingService.sendLocationData(locationData);
 
             if (result.error) {
-                console.error(' Failed to send location:', result.error.message);
+                logger.error(' Failed to send location:', result.error.message);
                 return false;
             }
 
-            console.log(' Location sent successfully to server');
-            console.log(' Server response:', result.data);
+            logger.log(' Location sent successfully to server');
+            logger.log(' Server response:', result.data);
             return true;
         } catch (error) {
-            console.error(' Error sending location to server:', error);
+            logger.error(' Error sending location to server:', error);
             return false;
         }
     }
@@ -193,35 +193,35 @@ class LocationService {
 
     async startTracking(userId: string, intervalMs: number = 60000): Promise<boolean> {
         if (this.isTracking) {
-            console.log(' Location tracking already active, skipping start');
+            logger.log(' Location tracking already active, skipping start');
             return true;
         }
 
-        console.log(' Starting location tracking for user:', userId);
+        logger.log(' Starting location tracking for user:', userId);
 
-        // Check permission first (without requesting)
+
         const hasPermission = await this.checkLocationPermission();
 
         if (!hasPermission) {
-            // Only request if not already granted
+
             const granted = await this.requestLocationPermission();
             if (!granted) {
-                console.log(' Location permission not granted, cannot start tracking');
+                logger.log(' Location permission not granted, cannot start tracking');
                 return false;
             }
         }
 
         try {
             this.isTracking = true;
-            console.log(' Starting location tracking...');
+            logger.log(' Starting location tracking...');
 
-            // Send initial location
+
             const initialLocation = await this.getCurrentLocation();
             if (initialLocation) {
                 await this.sendLocationToServer(userId, initialLocation);
             }
 
-            // Set up periodic location updates
+
             this.trackingInterval = setInterval(async () => {
                 if (!this.isTracking) return;
 
@@ -231,10 +231,10 @@ class LocationService {
                 }
             }, intervalMs);
 
-            console.log(' Location tracking started with interval:', intervalMs, 'ms');
+            logger.log(' Location tracking started with interval:', intervalMs, 'ms');
             return true;
         } catch (error) {
-            console.error(' Error starting location tracking:', error);
+            logger.error(' Error starting location tracking:', error);
             this.isTracking = false;
             return false;
         }
@@ -242,7 +242,7 @@ class LocationService {
 
 
     stopTracking(): void {
-        console.log(' Stopping location tracking...');
+        logger.log(' Stopping location tracking...');
 
         this.isTracking = false;
 
@@ -256,7 +256,7 @@ class LocationService {
             this.watchId = null;
         }
 
-        console.log(' Location tracking stopped');
+        logger.log(' Location tracking stopped');
     }
 
 

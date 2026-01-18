@@ -19,7 +19,7 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
         try {
             // console.log(' Checking GPS status for user:', userId);
 
-            // Check if user has any location data
+
             const result = await gpsTrackingService.getUserLocationHistory(userId);
 
             if (result.error) {
@@ -54,10 +54,10 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
         try {
             // console.log(' Sending test GPS location for user:', userId);
 
-            // Get device ID
+
             const deviceId = await locationService.getDeviceId();
 
-            // Send test location (Ho Chi Minh City coordinates)
+
             const testLocationData = {
                 latitude: 10.847092,
                 longitude: 106.800623,
@@ -77,7 +77,7 @@ export default function GPSStatusChecker({ userId }: GPSStatusCheckerProps) {
             } else {
                 Alert.alert(
                     'Test Location',
-                    `Test location sent successfully!\n\n📍 Coordinates: ${testLocationData.latitude}, ${testLocationData.longitude}\n🚗 Speed: ${testLocationData.speed} km/h\n📱 Device: ${deviceId}\n⏰ Timestamp: ${result.data?.timestamp}`,
+                    `Test location sent successfully!\n\n Coordinates: ${testLocationData.latitude}, ${testLocationData.longitude}\n🚗 Speed: ${testLocationData.speed} km/h\n📱 Device: ${deviceId}\n⏰ Timestamp: ${result.data?.timestamp}`,
                     [
                         { text: 'Check Status', onPress: checkGPSStatus },
                         { text: 'OK' }

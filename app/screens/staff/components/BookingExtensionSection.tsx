@@ -32,7 +32,7 @@ export default function BookingExtensionSection({ bookingId, allowPayment = true
         checkForBookingExtension();
     }, [bookingId]);
 
-    // Refresh payment status when screen comes into focus (after returning from payment)
+
     useFocusEffect(
         React.useCallback(() => {
             if (extensionInfo.hasExtension) {

@@ -35,13 +35,13 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
         handlePayOSCompletion,
     } = useBookingExtensionPayment(bookingId);
 
-    // Check payment status on mount
+
     useEffect(() => {
         console.log(' BookingExtensionPayment: Checking payment status on mount for booking:', bookingId);
         checkPaymentStatus();
     }, [checkPaymentStatus]);
 
-    // Refresh payment status when screen comes into focus
+
     useFocusEffect(
         React.useCallback(() => {
             console.log(' BookingExtensionPayment: Screen focused, refreshing payment status');
@@ -49,7 +49,7 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
         }, [checkPaymentStatus])
     );
 
-    // Add debugging for state changes
+
     useEffect(() => {
         console.log(' BookingExtensionPayment state:', {
             bookingId,
@@ -60,7 +60,7 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
             error
         });
 
-        // Force re-render when isPending changes
+
         if (extensionPayment?.status === 'Paid' && isPending === true) {
             console.log(' DETECTED STALE STATE: Status is Paid but isPending is true, forcing refresh...');
             setTimeout(() => {
@@ -76,7 +76,7 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
         }
 
         try {
-            // Get PayOS payment URL
+
             const result = await bookingExtensionService.getBookingExtensionPaymentUrl(bookingId);
 
             if (result.error || !result.data) {
@@ -84,7 +84,7 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
                 return;
             }
 
-            // Navigate to PayOS WebView
+
             navigation.navigate('PayOSWebView' as any, {
                 paymentUrl: result.data.checkoutUrl,
                 bookingId: bookingId,
@@ -96,7 +96,6 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
         }
     };
 
-    // Handle PayOS success URL (called from WebView)
     const handlePayOSSuccess = async (paymentUrl: string) => {
         const result = await handlePayOSCompletion(paymentUrl);
 
@@ -138,20 +137,20 @@ export const BookingExtensionPayment: React.FC<BookingExtensionPaymentProps> = (
     }
 
     if (!hasExtension || !extensionPayment) {
-        return null; // No extension payment needed
+        return null;
     }
 
-    // Direct status check to bypass any hook issues
+
     const directIsPending = extensionPayment.status.toLowerCase() === 'pending';
     const shouldShowButton = directIsPending;
     const shouldShowCompleted = !directIsPending;
 
-    // Extra safety check - explicitly check for "Paid" status
+
     const isPaidStatus = extensionPayment.status.toLowerCase() === 'paid';
     const finalShowButton = directIsPending && !isPaidStatus;
     const finalShowCompleted = !directIsPending || isPaidStatus;
 
-    console.log('🔍 Direct status check:', {
+    console.log(' Direct status check:', {
         status: extensionPayment.status,
         statusLower: extensionPayment.status.toLowerCase(),
         hookIsPending: isPending,

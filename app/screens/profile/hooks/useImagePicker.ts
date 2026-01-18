@@ -3,25 +3,25 @@ import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 export const useImagePicker = () => {
-    // Function to convert image to JPEG format with enhanced error handling
+
     const convertToJPEG = async (uri: string): Promise<string> => {
         try {
-            console.log("convertToJPEG: converting image", uri);
-            console.log("convertToJPEG: platform", Platform.OS);
+            // console.log("convertToJPEG: converting image", uri);
+            // console.log("convertToJPEG: platform", Platform.OS);
 
-            // Check if the image is already in a supported format
+
             const fileExtension = uri.split('.').pop()?.toLowerCase();
-            console.log("convertToJPEG: detected file extension", fileExtension);
+            // console.log("convertToJPEG: detected file extension", fileExtension);
 
             if (fileExtension === 'jpg' || fileExtension === 'jpeg' || fileExtension === 'png') {
-                console.log("convertToJPEG: image already in supported format", fileExtension);
+                // console.log("convertToJPEG: image already in supported format", fileExtension);
                 return uri;
             }
 
             console.log("convertToJPEG: converting from format", fileExtension);
             const result = await manipulateAsync(
                 uri,
-                [], // No transformations, just format conversion
+                [],
                 {
                     compress: 0.8,
                     format: SaveFormat.JPEG,
@@ -29,7 +29,7 @@ export const useImagePicker = () => {
             );
             console.log("convertToJPEG: successfully converted to", result.uri);
 
-            // Verify the converted file extension
+
             const convertedExtension = result.uri.split('.').pop()?.toLowerCase();
             console.log("convertToJPEG: converted file extension", convertedExtension);
 
@@ -42,8 +42,7 @@ export const useImagePicker = () => {
                 originalUri: uri
             });
 
-            // On real devices, if conversion fails, we should show an error
-            // instead of silently returning the original URI
+
             const fileExtension = uri.split('.').pop()?.toLowerCase();
             if (fileExtension === 'webp' || fileExtension === 'heic' || fileExtension === 'heif') {
                 Alert.alert(
@@ -54,7 +53,7 @@ export const useImagePicker = () => {
                 throw new Error(`Unsupported format: ${fileExtension}`);
             }
 
-            // For other formats, return original URI as fallback
+
             console.log("convertToJPEG: returning original URI as fallback");
             return uri;
         }
@@ -97,12 +96,12 @@ export const useImagePicker = () => {
                 console.log("openCamera: captured image URI", imageUri);
 
                 try {
-                    // Convert to JPEG to ensure compatibility
+
                     const convertedUri = await convertToJPEG(imageUri);
                     onImageSelected(convertedUri);
                 } catch (conversionError) {
                     console.error("openCamera: image conversion failed", conversionError);
-                    // Error alert is already shown in convertToJPEG
+
                 }
             } else {
                 console.log("openCamera: user canceled or no assets");
@@ -152,12 +151,12 @@ export const useImagePicker = () => {
                 console.log("openGallery: selected image URI", imageUri);
 
                 try {
-                    // Convert to JPEG to ensure compatibility
+
                     const convertedUri = await convertToJPEG(imageUri);
                     onImageSelected(convertedUri);
                 } catch (conversionError) {
                     console.error("openGallery: image conversion failed", conversionError);
-                    // Error alert is already shown in convertToJPEG
+
                 }
             } else {
                 console.log("openGallery: user canceled or no assets");

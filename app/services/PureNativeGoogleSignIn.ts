@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../../lib/api/services/auth.service';
 
-// Conditional import for Google Sign-In
+
 let GoogleSignin: any = null;
 let statusCodes: any = null;
 
@@ -10,7 +10,7 @@ try {
     GoogleSignin = googleSignInModule.GoogleSignin;
     statusCodes = googleSignInModule.statusCodes;
 } catch (error) {
-    console.log('Google Sign-In native module not available (Expo Go)');
+    // console.log('Google Sign-In native module not available (Expo Go)');
 }
 
 export interface PureNativeGoogleUser {
@@ -35,12 +35,12 @@ class PureNativeGoogleSignIn {
 
     configure(): boolean {
         try {
-            console.log(' === Configuring Pure Native Google Sign-In ===');
+            // console.log(' === Configuring Pure Native Google Sign-In ===');
 
             if (!GoogleSignin) {
-                console.error(' Google Sign-In native module not available');
-                console.error(' This requires a development build, not Expo Go');
-                console.error(' Run: npx expo run:android or build with EAS');
+                // console.error(' Google Sign-In native module not available');
+                // console.error(' This requires a development build, not Expo Go');
+                // console.error(' Run: npx expo run:android or build with EAS');
                 this.isConfigured = false;
                 return false;
             }
@@ -48,13 +48,13 @@ class PureNativeGoogleSignIn {
             console.log(' GoogleSignin module loaded successfully');
 
             const androidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID;
-            console.log(' Checking Android Client ID...');
-            console.log(' Android Client ID from env:', androidClientId ? 'Found' : 'Not found');
+            // console.log(' Checking Android Client ID...');
+            // console.log(' Android Client ID from env:', androidClientId ? 'Found' : 'Not found');
 
             if (!androidClientId || androidClientId === 'YOUR_ANDROID_CLIENT_ID_HERE.apps.googleusercontent.com') {
-                console.error(' Android Client ID not configured in .env file');
-                console.error(' Please add your Google Cloud Console Android Client ID to .env');
-                console.error(' GOOGLE_ANDROID_CLIENT_ID=your_actual_client_id.apps.googleusercontent.com');
+                // console.error(' Android Client ID not configured in .env file');
+                // console.error(' Please add your Google Cloud Console Android Client ID to .env');
+                // console.error(' GOOGLE_ANDROID_CLIENT_ID=your_actual_client_id.apps.googleusercontent.com');
                 this.isConfigured = false;
                 return false;
             }
@@ -74,14 +74,14 @@ class PureNativeGoogleSignIn {
             GoogleSignin.configure(config);
 
             this.isConfigured = true;
-            console.log('  PURE NATIVE Google Sign-In configured successfully');
-            console.log(' Android Client ID:', androidClientId);
-            console.log(' NO Web Client ID');
-            console.log(' NO iOS Client ID');
-            console.log(' Android Client ID + SHA-1 ONLY');
-            console.log(' EAS Build APK');
-            console.log(' Package: com.carapp.app');
-            console.log(' SHA-1: A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF');
+            // console.log('  PURE NATIVE Google Sign-In configured successfully');
+            // console.log(' Android Client ID:', androidClientId);
+            // console.log(' NO Web Client ID');
+            // console.log(' NO iOS Client ID');
+            // console.log(' Android Client ID + SHA-1 ONLY');
+            // console.log(' EAS Build APK');
+            // console.log(' Package: com.carapp.app');
+            // console.log(' SHA-1: A5:65:0E:66:70:7D:82:FD:C6:95:A4:20:7C:E5:6B:B8:B0:4A:99:FF');
             return true;
         } catch (error) {
             console.error(' === Pure Native configuration FAILED ===');
@@ -142,24 +142,24 @@ class PureNativeGoogleSignIn {
                 console.log(' Play Services check failed, but continuing...');
             }
 
-            console.log(' Starting PURE Native Google Sign-In...');
-            console.log(' Method: Android Client ID + SHA-1');
-            console.log(' NO Web Client ID needed');
+            // console.log(' Starting PURE Native Google Sign-In...');
+            // console.log(' Method: Android Client ID + SHA-1');
+            // console.log(' NO Web Client ID needed');
 
-            // Pure Native Sign-In
+
             console.log(' Calling GoogleSignin.signIn()...');
             const signInResult = await GoogleSignin.signIn();
-            console.log(' Pure Native sign-in successful');
-            console.log(' Sign-in result:', JSON.stringify(signInResult, null, 2));
+            // console.log(' Pure Native sign-in successful');
+            // console.log(' Sign-in result:', JSON.stringify(signInResult, null, 2));
 
-            // Extract user data and tokens from sign-in result
+
             const userData = (signInResult as any).data?.user || (signInResult as any).user;
             const serverAuthCode = (signInResult as any).data?.serverAuthCode || (signInResult as any).serverAuthCode;
             const idToken = (signInResult as any).data?.idToken || (signInResult as any).idToken;
 
-            console.log(' User data:', userData);
-            console.log(' ID Token available:', !!idToken);
-            console.log(' Server Auth Code available:', !!serverAuthCode);
+            // console.log(' User data:', userData);
+            // console.log(' ID Token available:', !!idToken);
+            // console.log(' Server Auth Code available:', !!serverAuthCode);
 
             if (!userData) {
                 console.error(' No user data received from Google Sign-In');
@@ -182,24 +182,24 @@ class PureNativeGoogleSignIn {
 
             console.log(' Extracted user:', user);
 
-            // Authenticate with backend using mobile API
+
             if (idToken) {
                 console.log(' Authenticating with backend mobile API...');
                 try {
                     const backendResult = await authService.loginWithGoogleMobile(idToken);
 
                     if (backendResult.data) {
-                        console.log(' Backend authentication successful');
-                        console.log(' Backend user:', backendResult.data.name);
+                        // console.log(' Backend authentication successful');
+                        // console.log(' Backend user:', backendResult.data.name);
 
                         await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
                         await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
                         await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
                         await AsyncStorage.setItem('backendAuthenticated', 'true');
 
-                        console.log(' User:', user.name);
-                        console.log('Email:', user.email);
-                        console.log(' Backend Auth: Success');
+                        // console.log(' User:', user.name);
+                        // console.log('Email:', user.email);
+                        // console.log(' Backend Auth: Success');
 
                         return {
                             success: true,
@@ -223,7 +223,7 @@ class PureNativeGoogleSignIn {
                 } catch (backendError: any) {
                     console.error(' Backend authentication error:', backendError);
 
-                    // Still save Google user data but mark backend auth as failed
+
                     await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
                     await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
                     await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
@@ -238,7 +238,7 @@ class PureNativeGoogleSignIn {
             } else {
                 console.log(' No ID token available, skipping backend authentication');
 
-                // Save Google user data without backend auth
+
                 await AsyncStorage.setItem('pureNativeGoogleUser', JSON.stringify(user));
                 await AsyncStorage.setItem('isPureNativeSignedIn', 'true');
                 await AsyncStorage.setItem('pureNativeSignInTime', Date.now().toString());
@@ -312,7 +312,7 @@ class PureNativeGoogleSignIn {
 
             // Also clear main app auth data
             try {
-                await authService.logout();
+                await authService.logout(false); // Don't keep remember me for Google logout
                 console.log(' Backend logout successful');
             } catch (error) {
                 console.log(' Backend logout error (continuing):', error);
@@ -342,7 +342,7 @@ class PureNativeGoogleSignIn {
 
             // Also clear main app auth data
             try {
-                await authService.logout();
+                await authService.logout(false); // Don't keep remember me for Google revoke
                 console.log(' Backend logout successful');
             } catch (error) {
                 console.log(' Backend logout error (continuing):', error);

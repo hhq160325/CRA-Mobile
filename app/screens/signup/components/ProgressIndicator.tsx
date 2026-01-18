@@ -53,7 +53,7 @@ export default function ProgressIndicator({ currentStep, totalSteps, styles }: P
                 const stepNumber = index + 1;
                 const elements = [renderStep(stepNumber)];
 
-                // Add line after each step except the last one
+
                 if (stepNumber < totalSteps) {
                     elements.push(renderLine(stepNumber));
                 }

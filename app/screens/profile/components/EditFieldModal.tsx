@@ -16,7 +16,7 @@ export default function EditFieldModal({
 }: EditFieldModalProps) {
     const [validationError, setValidationError] = useState<string | null>(null);
 
-    // Validate phone number in real-time
+
     useEffect(() => {
         if (editingField === "phone" && editValue) {
             const cleanPhone = editValue.replace(/\D/g, '');
@@ -104,10 +104,10 @@ export default function EditFieldModal({
                                         value={editValue}
                                         onChangeText={(text) => {
                                             if (editingField === "phone") {
-                                                // Remove any non-digit characters
+
                                                 const cleanText = text.replace(/\D/g, '');
 
-                                                // Limit to 10 digits
+
                                                 if (cleanText.length <= 10) {
                                                     onValueChange(cleanText);
                                                 }

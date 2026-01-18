@@ -593,4 +593,44 @@ export const styles = StyleSheet.create({
         backgroundColor: '#f59e0b',
         transform: [{ translateX: scale(-8) }, { translateY: scale(1) }],
     },
+
+    // Load More Styles
+    loadMoreContainer: {
+        backgroundColor: 'white',
+        borderRadius: scale(12),
+        padding: scale(16),
+        marginHorizontal: scale(16),
+        marginVertical: verticalScale(12),
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    loadMoreInfo: {
+        fontSize: scale(14),
+        color: '#6b7280',
+        textAlign: 'center',
+        marginBottom: verticalScale(12),
+    },
+    loadMoreButton: {
+        backgroundColor: colors.primary,
+        paddingHorizontal: scale(20),
+        paddingVertical: verticalScale(12),
+        borderRadius: scale(8),
+        minWidth: scale(200),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadMoreButtonDisabled: {
+        backgroundColor: '#9ca3af',
+        opacity: 0.6,
+    },
+    loadMoreButtonText: {
+        fontSize: scale(14),
+        fontWeight: '600',
+        color: 'white',
+        textAlign: 'center',
+    },
 });

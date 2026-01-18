@@ -71,14 +71,14 @@ export default function BookingFormScreen({ route }: any) {
 
 
   if (currentStep === 3) {
-    console.log('Step 3 - Rental Summary Debug:', {
-      pickupMode: formState.pickupMode,
-      distanceInKm: formState.distanceInKm,
-      shippingFee: calculations.shippingFee,
-      bookingFee: calculations.bookingFee,
-      total: calculations.total,
-      subtotal: calculations.subtotal
-    });
+    // console.log('Step 3 - Rental Summary Debug:', {
+    //   pickupMode: formState.pickupMode,
+    //   distanceInKm: formState.distanceInKm,
+    //   shippingFee: calculations.shippingFee,
+    //   bookingFee: calculations.bookingFee,
+    //   total: calculations.total,
+    //   subtotal: calculations.subtotal
+    // });
   }
 
   // Handle loading states

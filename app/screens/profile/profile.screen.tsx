@@ -45,13 +45,13 @@ export default function ProfileScreen() {
   const [isAutoFillingAddress, setIsAutoFillingAddress] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
-  // OCR states
+
   const [showOCRModal, setShowOCRModal] = useState(false);
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [ocrResult, setOcrResult] = useState<DriverLicenseOCRResult | null>(null);
   const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
 
-  // Avatar upload loading animation states
+
   const [showAvatarLoading, setShowAvatarLoading] = useState(false);
   const [avatarLoadingComplete, setAvatarLoadingComplete] = useState(false);
 
@@ -65,7 +65,7 @@ export default function ProfileScreen() {
     buildSafeUpdateData,
   );
 
-  // Define fetchDriverLicense function first
+
   const fetchDriverLicense = async (forceRefresh = false) => {
     if (!user?.id || !user?.email) return;
 
@@ -85,7 +85,7 @@ export default function ProfileScreen() {
       console.log(' Driver license data received:', data);
 
       if (data && data.licenseInfo) {
-        // Use the license info from the selected (approved/latest) record
+
         const licenseInfo = data.licenseInfo;
 
         console.log(' Setting license info:', {
@@ -96,14 +96,14 @@ export default function ProfileScreen() {
           urls: data.urls?.length || 0
         });
 
-        // Set the image from URLs
+
         if (data.urls && data.urls.length > 0) {
           setLicenseImage(data.urls[0]);
         } else {
           setLicenseImage(null);
         }
 
-        // Set license information
+
         setLicenseInfo({
           licenseNumber: licenseInfo.licenseNumber,
           licenseName: licenseInfo.licenseName,
@@ -117,11 +117,11 @@ export default function ProfileScreen() {
         setLicenseCreateDate(licenseInfo.createDate);
 
       } else {
-        console.log(' No license data found');
-        setLicenseImage(null);
-        setLicenseInfo(null);
-        setLicenseStatus(null);
-        setLicenseCreateDate(null);
+        // console.log(' No license data found');
+        // setLicenseImage(null);
+        // setLicenseInfo(null);
+        // setLicenseStatus(null);
+        // setLicenseCreateDate(null);
       }
     } catch (err) {
       console.error('Exception fetching driver license:', err);
@@ -137,7 +137,7 @@ export default function ProfileScreen() {
     setLicenseImage,
     refreshUser,
     buildSafeUpdateData,
-    fetchDriverLicense, 
+    fetchDriverLicense,
   );
 
   const imagePicker = useImagePicker();
@@ -165,7 +165,7 @@ export default function ProfileScreen() {
     fetchDriverLicenseStatus();
   }, [user?.id, user?.email]);
 
-  // Refresh data when screen comes into focus (e.g., after upload)
+
   useFocusEffect(
     React.useCallback(() => {
       console.log(' Profile screen focused - refreshing license data');
@@ -173,20 +173,20 @@ export default function ProfileScreen() {
     }, [user?.id, user?.email])
   );
 
-  // Handle avatar upload loading animation
+
   useEffect(() => {
     if (profileActions.isSaving && !showAvatarLoading) {
-      // Avatar upload started, show loading animation
+
       setShowAvatarLoading(true);
       setAvatarLoadingComplete(false);
     } else if (!profileActions.isSaving && showAvatarLoading && !avatarLoadingComplete) {
-      // Avatar upload finished, trigger completion animation
+
       setAvatarLoadingComplete(true);
     }
   }, [profileActions.isSaving, showAvatarLoading, avatarLoadingComplete]);
 
   const handleAvatarAnimationComplete = () => {
-    // Hide loading animation completely after exit animation
+
     setShowAvatarLoading(false);
     setAvatarLoadingComplete(false);
   };
@@ -270,7 +270,7 @@ export default function ProfileScreen() {
         console.log(' OCR successful:', data);
         setOcrResult(data);
 
-        // Validate OCR quality
+
         const validation = ocrService.validateOCRQuality(data);
         console.log(' OCR validation:', validation);
       }
@@ -290,10 +290,10 @@ export default function ProfileScreen() {
     try {
       setShowOCRModal(false);
 
-      // Upload the image first
+
       const uploadResult = await uploadSingleLicenseImage(pendingImageUri);
 
-      // Clear OCR state
+
       setPendingImageUri(null);
       setOcrResult(null);
 
@@ -308,7 +308,7 @@ export default function ProfileScreen() {
     setPendingImageUri(null);
     setOcrResult(null);
 
-    // Restart the smart upload process
+
     setTimeout(() => {
       handleSmartUpload();
     }, 100);
@@ -323,26 +323,26 @@ export default function ProfileScreen() {
 
   const uploadSingleLicenseImage = async (uri: string) => {
     try {
-      // Update local state immediately for better UX
+
       setLicenseImage(uri);
 
-      // Upload to server with auto-scan
+
       const result = await profileActions.uploadDriverLicense(uri);
 
       Alert.alert('Success', 'License photo uploaded and processed successfully');
 
-      // Force refresh license data after upload to get the latest information
+
       console.log(' Force refreshing license data after upload...');
       setTimeout(() => {
         fetchDriverLicense(true);
-      }, 1500); // Give server a bit more time to process
+      }, 1500);
 
       return result;
 
     } catch (error) {
       console.error('Error uploading license image:', error);
       Alert.alert('Error', 'Failed to upload image. Please try again.');
-      // Revert local state on error
+
       await fetchDriverLicense();
       throw error;
     }

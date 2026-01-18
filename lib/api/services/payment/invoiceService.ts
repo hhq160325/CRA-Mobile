@@ -3,14 +3,14 @@ import { API_ENDPOINTS } from "../../config";
 import type { Invoice, CreateInvoiceData, UpdateInvoiceData } from './types';
 
 export const getAllInvoices = async (): Promise<{ data: Invoice[] | null; error: Error | null }> => {
-    console.log("invoiceService.getAllInvoices: fetching all invoices");
+    // console.log("invoiceService.getAllInvoices: fetching all invoices");
     const result = await apiClient<Invoice[]>(API_ENDPOINTS.ALL_INVOICES, {
         method: "GET",
     });
-    console.log("invoiceService.getAllInvoices: result", {
-        hasError: !!result.error,
-        dataLength: result.data?.length,
-    });
+    // console.log("invoiceService.getAllInvoices: result", {
+    //     hasError: !!result.error,
+    //     dataLength: result.data?.length,
+    // });
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null };
 };
 
@@ -31,32 +31,32 @@ export const getInvoicesByCustomer = async (
 export const getInvoicesByVendor = async (
     vendorId: string
 ): Promise<{ data: Invoice[] | null; error: Error | null }> => {
-    console.log("invoiceService.getInvoicesByVendor: fetching invoices for vendor", vendorId);
+    // console.log("invoiceService.getInvoicesByVendor: fetching invoices for vendor", vendorId);
     const result = await apiClient<Invoice[]>(API_ENDPOINTS.INVOICES_BY_VENDOR(vendorId), {
         method: "GET",
     });
-    console.log("invoiceService.getInvoicesByVendor: result", {
-        hasError: !!result.error,
-        dataLength: result.data?.length,
-    });
+    // console.log("invoiceService.getInvoicesByVendor: result", {
+    //     hasError: !!result.error,
+    //     dataLength: result.data?.length,
+    // });
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null };
 };
 
 export const getInvoiceById = async (
     invoiceId: string
 ): Promise<{ data: Invoice | null; error: Error | null }> => {
-    console.log("invoiceService.getInvoiceById: fetching invoice", invoiceId);
+    // console.log("invoiceService.getInvoiceById: fetching invoice", invoiceId);
     const result = await apiClient<Invoice>(API_ENDPOINTS.GET_INVOICE(invoiceId), {
         method: "GET",
     });
-    console.log("invoiceService.getInvoiceById: result", { hasError: !!result.error });
+    // console.log("invoiceService.getInvoiceById: result", { hasError: !!result.error });
     return result.error ? { data: null, error: result.error } : { data: result.data, error: null };
 };
 
 export const createInvoice = async (
     data: CreateInvoiceData
 ): Promise<{ data: Invoice | null; error: Error | null }> => {
-    console.log("invoiceService.createInvoice: creating invoice", data);
+    // console.log("invoiceService.createInvoice: creating invoice", data);
     const result = await apiClient<Invoice>(API_ENDPOINTS.CREATE_INVOICE, {
         method: "POST",
         body: JSON.stringify(data),

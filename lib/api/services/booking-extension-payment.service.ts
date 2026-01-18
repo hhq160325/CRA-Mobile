@@ -30,7 +30,7 @@ export interface UpdatePaymentStatusRequest {
 }
 
 export const bookingExtensionPaymentService = {
-    // Step 1: Check payment status for booking extension
+
     checkBookingExtensionPayment: async (bookingId: string): Promise<{
         data: {
             hasExtension: boolean;
@@ -42,7 +42,7 @@ export const bookingExtensionPaymentService = {
         try {
             console.log(' Checking booking extension payment for:', bookingId);
 
-            // Get authentication token
+
             const token = await getAuthToken();
             console.log(' Auth token available:', !!token);
 
@@ -59,7 +59,7 @@ export const bookingExtensionPaymentService = {
             }
 
             const baseUrl = 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net';
-            // Add timestamp to prevent caching
+
             const timestamp = new Date().getTime();
             const url = `${baseUrl}/Booking/${bookingId}/Payments?_t=${timestamp}`;
 
@@ -78,7 +78,7 @@ export const bookingExtensionPaymentService = {
             const payments: BookingPayment[] = await response.json();
             console.log(' Got payments:', payments);
 
-            // Find "Booking Extension" payment
+
             const extensionPayment = payments.find(payment => payment.item === 'Booking Extension');
 
             if (!extensionPayment) {
@@ -110,7 +110,7 @@ export const bookingExtensionPaymentService = {
         }
     },
 
-    // Step 2: Update payment status after PayOS completion
+
     updatePaymentStatus: async (orderCode: number, status: string = 'Paid', method: string = 'payos'): Promise<{
         data: boolean;
         error: Error | null;
@@ -118,7 +118,7 @@ export const bookingExtensionPaymentService = {
         try {
             console.log(' Updating payment status:', { orderCode, status, method });
 
-            // Get authentication token
+
             const token = await getAuthToken();
             console.log(' Auth token available:', !!token);
 
@@ -165,7 +165,7 @@ export const bookingExtensionPaymentService = {
         }
     },
 
-    // Step 3: Complete flow - check status and update if needed
+
     handlePayOSCompletion: async (bookingId: string, paymentUrl: string): Promise<{
         data: {
             success: boolean;
@@ -181,7 +181,7 @@ export const bookingExtensionPaymentService = {
 
             let orderCode: number | undefined;
 
-            // First check current payment status
+
             const statusResult = await bookingExtensionPaymentService.checkBookingExtensionPayment(bookingId);
 
             if (statusResult.error || !statusResult.data) {
@@ -209,7 +209,7 @@ export const bookingExtensionPaymentService = {
                 };
             }
 
-            // Update payment status to Paid
+
             console.log(' Payment is pending, updating to Paid...');
             const updateResult = await bookingExtensionPaymentService.updatePaymentStatus(orderCode);
 

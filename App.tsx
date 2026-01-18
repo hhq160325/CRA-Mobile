@@ -5,11 +5,21 @@ import { AppNavigator } from './app/navigators/app-navigator';
 import { AuthProvider } from './lib/auth-context';
 import { FavoritesProvider } from './lib/favorites-context';
 import { GPSTrackingProvider } from './lib/providers/GPSTrackingProvider';
+import './lib/utils/logger';
 
 
-
-LogBox.ignoreAllLogs(false);
-
+LogBox.ignoreAllLogs(true);
+LogBox.ignoreLogs([
+  'HTTP error',
+  'Network request failed',
+  'Request failed',
+  'API Error',
+  'Connection timeout',
+  'Server error',
+  'Authentication required',
+  'Invalid request data',
+  'The requested resource was not found'
+]);
 
 if (__DEV__) {
   console.log(' App starting in development mode');
@@ -17,33 +27,30 @@ if (__DEV__) {
 
 
 const App = () => {
-
-  console.log('🚀 App component rendered');
+  if (__DEV__) {
+    console.log(' App component rendered');
+  }
 
   useEffect(() => {
-    console.log('🎯 App useEffect triggered');
+    if (__DEV__) {
+      console.log(' App useEffect triggered');
+    }
 
     const checkForUpdates = async () => {
       try {
         if (!__DEV__) {
-          console.log('Checking for updates...');
           const update = await Updates.checkForUpdateAsync();
 
           if (update.isAvailable) {
-            console.log('Update available, downloading...');
             await Updates.fetchUpdateAsync();
-            console.log('Update downloaded, reloading...');
             await Updates.reloadAsync();
-          } else {
-            console.log('No updates available');
-
-            const manifest = Updates.manifest;
-            console.log('Current update ID:', Updates.updateId);
-            console.log('Current runtime version:', Updates.runtimeVersion);
           }
         }
       } catch (error) {
-        console.error('Update check failed:', error);
+
+        if (__DEV__) {
+          console.error('Update check failed:', error);
+        }
       }
     };
 

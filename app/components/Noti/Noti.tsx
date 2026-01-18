@@ -12,7 +12,7 @@ interface NotiProps {
     notifications: Notification[]
     loading: boolean
     onNotificationClick: (notification: Notification) => void
-    onNotificationsUpdate?: () => void // Add callback to refresh notifications
+    onNotificationsUpdate?: () => void
 }
 
 export default function Noti({
@@ -40,7 +40,7 @@ export default function Noti({
             }
 
             console.log("Notification marked as read successfully")
-            // Refresh notifications to update the UI
+
             onNotificationsUpdate?.()
 
         } catch (error) {
@@ -63,14 +63,14 @@ export default function Noti({
                 return
             }
 
-            // Mark all unread notifications as read
+
             const promises = unreadNotifications.map(notification =>
                 notificationService.markAsRead(notification.id)
             )
 
             const results = await Promise.all(promises)
 
-            // Check if any failed
+
             const failures = results.filter(result => result.error)
 
             if (failures.length > 0) {
@@ -80,7 +80,7 @@ export default function Noti({
                 console.log("All notifications marked as read successfully")
             }
 
-            // Refresh notifications to update the UI
+
             onNotificationsUpdate?.()
 
         } catch (error) {
@@ -92,12 +92,12 @@ export default function Noti({
     }
 
     const handleNotificationClick = async (notification: Notification) => {
-        // Mark as read if not already read
+
         if (!notification.isViewed) {
             await handleMarkAsRead(notification.id)
         }
 
-        // Call the original click handler
+
         onNotificationClick(notification)
     }
 

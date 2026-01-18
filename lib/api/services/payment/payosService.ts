@@ -8,8 +8,8 @@ export const getPayOSPayment = async (
 ): Promise<{ data: PayOSPayment | null; error: Error | null }> => {
     console.log("payosService.getPayOSPayment: fetching payment", orderCode);
 
-    // PayOS endpoints don't use /api prefix, so we need to call them directly
-    const baseUrl = API_CONFIG.BASE_URL.replace('/api', ''); // Remove /api from base URL
+
+    const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
     const fullUrl = `${baseUrl}/PayOSPayment/${orderCode}`;
 
     console.log("payosService.getPayOSPayment: calling", fullUrl);
@@ -91,8 +91,8 @@ export const createRentalPayment = async (
 ): Promise<{ data: any | null; error: Error | null }> => {
     console.log("payosService.createRentalPayment: creating rental payment for booking", bookingId);
 
-    // PayOS endpoint doesn't use /api prefix, so we need to call it directly
-    const baseUrl = API_CONFIG.BASE_URL.replace('/api', ''); // Remove /api from base URL
+
+    const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
     const fullUrl = `${baseUrl}/PayOS/Booking/CreateRentalPayment`;
 
     console.log("payosService.createRentalPayment: calling", fullUrl);
@@ -125,14 +125,14 @@ export const createRentalPayment = async (
             const errorText = await response.text();
 
             if (response.status === 500) {
-                // 500 error likely means payment already exists for this booking
+
                 console.log(`payosService.createRentalPayment: Payment may already exist for booking ${bookingId} (status 500)`);
                 return {
                     data: null,
                     error: new Error(`Payment already exists for booking ${bookingId}`),
                 };
             } else {
-                // Log other errors normally
+
                 console.error("payosService.createRentalPayment: unexpected error", errorText);
                 return {
                     data: null,
@@ -158,7 +158,7 @@ export const updateRentalPaymentCash = async (
 ): Promise<{ data: any | null; error: Error | null }> => {
     console.log("payosService.updateRentalPaymentCash: updating rental payment for booking", bookingId);
 
-    // Use UpdatePayment/Booking/RentalPayment endpoint for rental payments (not BookingPayment)
+
     const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
     const fullUrl = `${baseUrl}/UpdatePayment/Booking/RentalPayment`;
 

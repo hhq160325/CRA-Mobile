@@ -7,7 +7,7 @@ interface ReverseGeocodingState {
     error: string | null;
 }
 
-// Simple cache to avoid repeated API calls for same coordinates
+
 const addressCache = new Map<string, string>();
 
 export function useReverseGeocoding(latitude: number, longitude: number) {
@@ -24,10 +24,10 @@ export function useReverseGeocoding(latitude: number, longitude: number) {
         }
 
         const fetchAddress = async () => {
-            // Create cache key with rounded coordinates (to avoid cache misses for tiny differences)
+           
             const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
 
-            // Check cache first
+         
             if (addressCache.has(cacheKey)) {
                 setState({
                     address: addressCache.get(cacheKey)!,
@@ -42,7 +42,7 @@ export function useReverseGeocoding(latitude: number, longitude: number) {
             try {
                 const address = await reverseGeocodingService.getFormattedAddress(latitude, longitude);
 
-                // Cache the result
+             
                 addressCache.set(cacheKey, address);
 
                 setState({
@@ -66,9 +66,7 @@ export function useReverseGeocoding(latitude: number, longitude: number) {
     return state;
 }
 
-/**
- * Hook for getting address without automatic fetching (manual control)
- */
+
 export function useReverseGeocodingManual() {
     const [state, setState] = useState<ReverseGeocodingState>({
         address: null,
@@ -84,7 +82,7 @@ export function useReverseGeocodingManual() {
 
         const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
 
-        // Check cache first
+       
         if (addressCache.has(cacheKey)) {
             setState({
                 address: addressCache.get(cacheKey)!,
@@ -99,7 +97,7 @@ export function useReverseGeocodingManual() {
         try {
             const address = await reverseGeocodingService.getFormattedAddress(latitude, longitude);
 
-            // Cache the result
+        
             addressCache.set(cacheKey, address);
 
             setState({

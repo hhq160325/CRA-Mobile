@@ -28,20 +28,20 @@ export default function PaymentHistoryScreen() {
     toggleExpanded,
   } = usePaymentHistory();
 
-  // Loading animation states
+
   const [showLoadingAnimation, setShowLoadingAnimation] = useState(true);
   const [loadingComplete, setLoadingComplete] = useState(false);
 
-  // Handle loading animation states
+
   useEffect(() => {
     if (!loading && showLoadingAnimation) {
-      // Loading just finished, trigger completion animation
+
       setLoadingComplete(true);
     }
   }, [loading, showLoadingAnimation]);
 
   const handleAnimationComplete = () => {
-    // Hide loading animation completely after exit animation
+
     setShowLoadingAnimation(false);
     setLoadingComplete(false);
   };

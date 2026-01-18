@@ -26,7 +26,7 @@ export const gpsIndicatorStyles = StyleSheet.create({
         borderRadius: scale(4),
         backgroundColor: '#10b981',
         marginRight: scale(4),
-        // Add pulsing animation if needed
+
     },
     activeText: {
         fontSize: scale(12),

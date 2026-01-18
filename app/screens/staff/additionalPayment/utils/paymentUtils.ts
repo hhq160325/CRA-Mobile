@@ -24,7 +24,7 @@ export const calculateTotal = (selectedFees: string[], overtimeHours: number, cu
         const fee = ADDITIONAL_FEES.find(f => f.id === feeId);
         if (!fee) return total;
 
-        // Use custom amount if available and fee supports it
+
         if (fee.isAmountEditable && customAmounts[feeId] !== undefined) {
             return total + customAmounts[feeId];
         }
@@ -61,14 +61,14 @@ export const createAdditionalPayment = async (
     description: string,
     amount: number
 ): Promise<PaymentResponse> => {
-    // Send amount directly without division (changed from /100 to no division as requested)
+
     const payosAmount = Math.round(amount);
 
-    console.log(' Creating additional payment...');
-    console.log(' Booking ID:', bookingId);
-    console.log(' Description:', description);
-    console.log(' Original amount:', amount, 'VND');
-    console.log(' PayOS amount (no division):', payosAmount, 'VND');
+    // console.log(' Creating additional payment...');
+    // console.log(' Booking ID:', bookingId);
+    // console.log(' Description:', description);
+    // console.log(' Original amount:', amount, 'VND');
+    // console.log(' PayOS amount (no division):', payosAmount, 'VND');
 
     const requestBody = {
         bookingId: bookingId,
@@ -79,7 +79,7 @@ export const createAdditionalPayment = async (
     console.log(' Request body:', JSON.stringify(requestBody, null, 2));
 
     try {
-        // Get authentication token
+
         const token = await getAuthToken();
         console.log(' Auth token available:', !!token);
 
@@ -205,7 +205,7 @@ export const handlePaymentResult = (
     }
 };
 
-// Generic payment update function for additional and extension payments
+
 export const updateGenericPaymentStatus = async (
     bookingId: string,
     paymentId: string,

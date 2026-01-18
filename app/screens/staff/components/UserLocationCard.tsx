@@ -29,7 +29,7 @@ export default function UserLocationCard({ userId, compact = false }: UserLocati
     };
 
     const handleViewOnMap = () => {
-        // Navigate to GPS monitoring with this user pre-selected
+
         navigation.navigate('GPSMonitoring' as any, { focusUserId: userId });
     };
 

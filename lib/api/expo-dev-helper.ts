@@ -75,10 +75,10 @@ export function logExpoDevInfo() {
         return 'Development Build / Bare Workflow';
     };
 
-    console.log('App Type:', getAppType());
-    console.log('Platform:', info.platform);
-    console.log('API URL:', info.apiUrl);
-    console.log('Recommendations:');
+    // console.log('App Type:', getAppType());
+    // console.log('Platform:', info.platform);
+    // console.log('API URL:', info.apiUrl);
+    // console.log('Recommendations:');
     info.recommendations.forEach(rec => console.log(`  ${rec}`));
     console.groupEnd();
 
@@ -120,10 +120,10 @@ export function getOptimalExpoConfig() {
 
 
         if (Platform.OS === 'ios') {
-            console.log(" iOS-specific optimizations applied:");
-            console.log("   • Extended timeout:", config.timeout + "ms");
-            console.log("   • Additional retry attempts:", config.retries);
-            console.log("   • iOS-optimized headers");
+            // console.log(" iOS-specific optimizations applied:");
+            // console.log("   • Extended timeout:", config.timeout + "ms");
+            // console.log("   • Additional retry attempts:", config.retries);
+            // console.log("   • iOS-optimized headers");
         }
     }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { gpsTrackingService, type UserLocationHistory } from '../api/services/gpsTracking.service';
+import { logger } from '../utils/logger';
 
 interface UserLocationState {
     location: UserLocationHistory | null;
@@ -48,20 +49,20 @@ export function useUserLocation(userId: string) {
 
     const fetchUserLocation = async () => {
         if (!userId) {
-            console.log(' useUserLocation: No user ID provided');
+            logger.log(' useUserLocation: No user ID provided');
             setState(prev => ({ ...prev, loading: false, error: 'No user ID provided' }));
             return;
         }
 
         try {
-            console.log(' useUserLocation: Fetching location for user:', userId);
+            logger.log(' useUserLocation: Fetching location for user:', userId);
             setState(prev => ({ ...prev, loading: true, error: null }));
 
             const result = await gpsTrackingService.getLatestUserLocation(userId);
-            console.log(' useUserLocation: Result from service:', result);
+            logger.log(' useUserLocation: Result from service:', result);
 
             if (result.error) {
-                console.log(' useUserLocation: Error from service:', result.error.message);
+                logger.log(' useUserLocation: Error from service:', result.error.message);
                 setState(prev => ({
                     ...prev,
                     loading: false,
@@ -74,7 +75,7 @@ export function useUserLocation(userId: string) {
             }
 
             if (result.data) {
-                console.log(' useUserLocation: Location data received:', result.data);
+                logger.log(' useUserLocation: Location data received:', result.data);
                 const { timeAgo, isRecent } = formatTimeAgo(result.data.timestamp);
                 setState(prev => ({
                     ...prev,
@@ -85,7 +86,7 @@ export function useUserLocation(userId: string) {
                     isRecent,
                 }));
             } else {
-                console.log(' useUserLocation: No location data in result');
+                logger.log(' useUserLocation: No location data in result');
                 setState(prev => ({
                     ...prev,
                     loading: false,
@@ -96,7 +97,7 @@ export function useUserLocation(userId: string) {
                 }));
             }
         } catch (error) {
-            console.error(' useUserLocation: Exception:', error);
+            logger.error(' useUserLocation: Exception:', error);
             setState(prev => ({
                 ...prev,
                 loading: false,
@@ -113,7 +114,7 @@ export function useUserLocation(userId: string) {
     }, [userId]);
 
     const refetch = async () => {
-        console.log(' useUserLocation: Manual refetch triggered');
+        logger.log(' useUserLocation: Manual refetch triggered');
         await fetchUserLocation();
     };
 

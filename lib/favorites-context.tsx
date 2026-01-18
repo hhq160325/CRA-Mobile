@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { logger } from "./utils/logger"
 
 interface FavoritesContextType {
     favorites: string[]
@@ -30,7 +31,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
                 setFavorites(JSON.parse(stored))
             }
         } catch (error) {
-            console.error("Failed to load favorites:", error)
+            logger.error("Failed to load favorites:", error)
         }
     }
 
@@ -39,7 +40,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
             await AsyncStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(newFavorites))
             setFavorites(newFavorites)
         } catch (error) {
-            console.error("Failed to save favorites:", error)
+            logger.error("Failed to save favorites:", error)
         }
     }
 

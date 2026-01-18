@@ -25,10 +25,10 @@ export function usePaymentHistory() {
         try {
             const baseUrl = API_CONFIG.BASE_URL.replace('/api', '');
             const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`;
-            const token = await getAuthToken(); // Make this async
+            const token = await getAuthToken();
 
-            console.log(' Fetching payments for booking:', booking.id);
-            console.log(' Auth token available:', !!token);
+            // console.log(' Fetching payments for booking:', booking.id);
+            // console.log(' Auth token available:', !!token);
 
             const response = await fetch(paymentsUrl, {
                 method: 'GET',
@@ -47,20 +47,20 @@ export function usePaymentHistory() {
 
                 if (Array.isArray(paymentsData) && paymentsData.length > 0) {
 
-                    console.log(' All payments for user booking:', paymentsData.length);
+                    // console.log(' All payments for user booking:', paymentsData.length);
 
                     if (paymentsData.length > 0) {
-                        // Sort payments by creation date (newest first)
+
                         const sortedPayments = paymentsData.sort((a: PaymentItem, b: PaymentItem) =>
                             new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
                         );
 
-                        console.log(' Payment items found:', sortedPayments.map(p => ({
-                            item: p.item,
-                            amount: p.paidAmount,
-                            status: p.status,
-                            hasUserId: !!p.userId
-                        })));
+                        // console.log(' Payment items found:', sortedPayments.map(p => ({
+                        //     item: p.item,
+                        //     amount: p.paidAmount,
+                        //     status: p.status,
+                        //     hasUserId: !!p.userId
+                        // })));
 
                         return {
                             bookingId: booking.id,
@@ -137,14 +137,14 @@ export function usePaymentHistory() {
 
                 .sort((a, b) => (b.mostRecentPaymentDate || 0) - (a.mostRecentPaymentDate || 0));
 
-            console.log(' Payment History: Sorted results:', {
-                totalBookings: sortedResults.length,
-                firstBooking: sortedResults[0] ? {
-                    carName: sortedResults[0].carName,
-                    mostRecentDate: new Date(sortedResults[0].mostRecentPaymentDate || 0).toISOString(),
-                    paymentsCount: sortedResults[0].payments.length
-                } : null
-            });
+            // console.log(' Payment History: Sorted results:', {
+            //     totalBookings: sortedResults.length,
+            //     firstBooking: sortedResults[0] ? {
+            //         carName: sortedResults[0].carName,
+            //         mostRecentDate: new Date(sortedResults[0].mostRecentPaymentDate || 0).toISOString(),
+            //         paymentsCount: sortedResults[0].payments.length
+            //     } : null
+            // });
 
             setBookingPayments(sortedResults);
             setFilteredBookingPayments(sortedResults);
@@ -194,11 +194,11 @@ export function usePaymentHistory() {
             })
             .filter(booking => booking !== null) as BookingPayments[];
 
-        console.log(' Payment Search: Filtered results:', {
-            query: searchQuery,
-            originalCount: bookingPayments.length,
-            filteredCount: filtered.length
-        });
+        // console.log(' Payment Search: Filtered results:', {
+        //     query: searchQuery,
+        //     originalCount: bookingPayments.length,
+        //     filteredCount: filtered.length
+        // });
 
         setFilteredBookingPayments(filtered);
     }, [searchQuery, bookingPayments]);

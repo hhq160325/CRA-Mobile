@@ -146,11 +146,11 @@ export const scheduleService = {
         try {
             const token = await getAuthToken()
 
-            console.log(' checkIn: starting')
-            console.log(' checkIn: bookingId', bookingId)
-            console.log(' checkIn: staffId', responsibleStaffId)
-            console.log(' checkIn: images count', imageUris.length)
-            console.log(' checkIn: token available', !!token)
+            // console.log(' checkIn: starting')
+            // console.log(' checkIn: bookingId', bookingId)
+            // console.log(' checkIn: staffId', responsibleStaffId)
+            // console.log(' checkIn: images count', imageUris.length)
+            // console.log(' checkIn: token available', !!token)
 
             const formData = new FormData()
 
@@ -275,11 +275,11 @@ export const scheduleService = {
         try {
             const token = await getAuthToken()
 
-            console.log(' checkOut: starting')
-            console.log(' checkOut: bookingId', bookingId)
-            console.log(' checkOut: staffId', responsibleStaffId)
-            console.log(' checkOut: images count', imageUris.length)
-            console.log(' checkOut: token available', !!token)
+            // console.log(' checkOut: starting')
+            // console.log(' checkOut: bookingId', bookingId)
+            // console.log(' checkOut: staffId', responsibleStaffId)
+            // console.log(' checkOut: images count', imageUris.length)
+            // console.log(' checkOut: token available', !!token)
 
             const formData = new FormData()
 

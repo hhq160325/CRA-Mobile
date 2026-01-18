@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import type { CarTravelLog } from '../../../../lib/api/services/carTravelLog.service';
+import { type CarTravelLog } from '../../../../../lib/api';
 import {
     calculateTotal,
     buildPaymentDescription,
@@ -21,13 +21,13 @@ export function useAdditionalPayment(
     const [paymentResponse, setPaymentResponse] = useState<PaymentResponse | null>(null);
     const [showWebView, setShowWebView] = useState(false);
 
-    // Calculate total from travel logs
+
     const getTravelLogsTotal = () => {
         if (!travelLogs || travelLogs.length === 0) return 0;
         return travelLogs.reduce((total, log) => total + log.chargeAmount, 0);
     };
 
-    // Auto-populate total charges when travel logs are available
+
     useEffect(() => {
         const travelLogsTotal = getTravelLogsTotal();
         if (travelLogsTotal > 0) {
@@ -35,7 +35,7 @@ export function useAdditionalPayment(
                 ...prev,
                 total_charges: travelLogsTotal,
             }));
-            // Auto-select total charges if there are travel logs
+
             if (!selectedFees.includes('total_charges')) {
                 setSelectedFees(prev => [...prev, 'total_charges']);
             }
@@ -84,10 +84,10 @@ export function useAdditionalPayment(
             const description = buildPaymentDescription(selectedFees, overtimeHours, customAmounts);
             const totalAmount = calculateTotal(selectedFees, overtimeHours, customAmounts);
 
-            console.log(' Starting additional payment creation...');
-            console.log(' Booking ID:', bookingId);
-            console.log(' Description:', description);
-            console.log(' Total Amount:', totalAmount);
+            // console.log(' Starting additional payment creation...');
+            // console.log(' Booking ID:', bookingId);
+            // console.log(' Description:', description);
+            // console.log(' Total Amount:', totalAmount);
             const response = await createAdditionalPayment(bookingId, description, totalAmount);
 
             console.log(' Payment response received:', response);
@@ -124,8 +124,6 @@ export function useAdditionalPayment(
         paymentResponse,
         showWebView,
         setShowWebView,
-
-
         toggleFee,
         setCustomAmount,
         adjustOvertimeHours,

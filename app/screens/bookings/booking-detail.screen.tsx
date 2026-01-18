@@ -27,15 +27,15 @@ export default function BookingDetailScreen() {
   const { user } = useAuth();
   const { id, bookingNumber } = (route.params as any) || {};
 
-  console.log(' BookingDetailScreen: Rendering with ID:', id);
-  console.log(' BookingDetailScreen: Rendering with booking number:', bookingNumber);
-  console.log(' BookingDetailScreen: Route params:', route.params);
-  console.log(' BookingDetailScreen: User auth state:', { hasUser: !!user, userId: user?.id });
+  // console.log(' BookingDetailScreen: Rendering with ID:', id);
+  // console.log(' BookingDetailScreen: Rendering with booking number:', bookingNumber);
+  // console.log(' BookingDetailScreen: Route params:', route.params);
+  // console.log(' BookingDetailScreen: User auth state:', { hasUser: !!user, userId: user?.id });
 
 
   useEffect(() => {
     if (!user) {
-      console.log(' BookingDetailScreen: No authenticated user, navigating to login');
+      // console.log(' BookingDetailScreen: No authenticated user, navigating to login');
       navigation.navigate('SignInScreen' as any);
     }
   }, [user, navigation]);
@@ -49,12 +49,12 @@ export default function BookingDetailScreen() {
     navigation
   );
 
-  console.log(' BookingDetailScreen: Hook results:', {
-    hasBooking: !!booking,
-    loading,
-    bookingId: booking?.id,
-    carName: booking?.carName
-  });
+  // console.log(' BookingDetailScreen: Hook results:', {
+  //   hasBooking: !!booking,
+  //   loading,
+  //   bookingId: booking?.id,
+  //   carName: booking?.carName
+  // });
 
 
   if (!user) {

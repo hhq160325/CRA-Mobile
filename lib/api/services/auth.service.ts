@@ -1,4 +1,4 @@
-// Export types
+
 export type {
   User,
   LoginCredentials,
@@ -9,7 +9,7 @@ export type {
   ApiUserResponse,
 } from './auth/types';
 
-// Import service functions
+
 import { login } from './auth/loginService';
 import { register } from './auth/registerService';
 import { loginWithGoogle, loginWithGoogleMobile, getGoogleLoginUrl } from './auth/googleLoginService';
@@ -20,39 +20,45 @@ import {
   getUserFromStorage,
   getRefreshTokenFromStorage,
   clearAuthFromStorage,
+  getRememberMeCredentials,
+  clearRememberMeCredentials,
 } from './auth/storageHelpers';
 
-// Main auth service object
+
 export const authService = {
-  // Authentication methods
+
   login,
   register,
   loginWithGoogle,
   loginWithGoogleMobile,
   getGoogleLoginUrl,
 
-  // Token management
+
   refreshToken: refreshTokenFn,
   getRefreshToken: getRefreshTokenFromStorage,
 
-  // User management
+
   getCurrentUser: getUserFromStorage,
-  logout: async (): Promise<{ error: Error | null }> => {
+  logout: async (keepRememberMe: boolean = true): Promise<{ error: Error | null }> => {
     try {
-      await clearAuthFromStorage();
+      await clearAuthFromStorage(keepRememberMe);
       return { error: null };
     } catch (e) {
       return { error: e as Error };
     }
   },
 
-  // Password reset
+
+  getRememberMeCredentials,
+  clearRememberMeCredentials,
+
+
   forgotPassword,
   verifyResetCode,
   resetPassword,
   resetPasswordByPhone,
 
-  // Signup OTP
+
   verifySignupOtp,
   verifySignupOtpByPhone,
 };

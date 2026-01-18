@@ -21,11 +21,11 @@ export const carTravelLogService = {
             { method: "GET" }
         )
 
-        console.log("carTravelLogService.getCarTravelLogsByCarAndBooking: result", {
-            hasError: !!result.error,
-            hasData: !!result.data,
-            logsCount: result.data?.length || 0
-        })
+        // console.log("carTravelLogService.getCarTravelLogsByCarAndBooking: result", {
+        //     hasError: !!result.error,
+        //     hasData: !!result.data,
+        //     logsCount: result.data?.length || 0
+        // })
 
         if (result.error) {
             return { data: null, error: result.error }

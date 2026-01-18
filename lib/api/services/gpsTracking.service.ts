@@ -55,7 +55,7 @@ class GPSTrackingService {
             console.log(' Base URL:', this.baseUrl);
             console.log(' Full API URL:', `${this.baseUrl}/FromDevice`);
 
-            // Get authentication token
+
             const token = await getAuthToken();
             console.log(' GPS: Auth token available:', !!token);
 
@@ -98,11 +98,11 @@ class GPSTrackingService {
         error?: { message: string };
     }> {
         try {
-            console.log(' Fetching location history for user:', userId);
-            console.log(' Base URL:', this.baseUrl);
-            console.log(' Full API URL:', `${this.baseUrl}/ByUser/${userId}`);
+            // console.log(' Fetching location history for user:', userId);
+            // console.log(' Base URL:', this.baseUrl);
+            // console.log(' Full API URL:', `${this.baseUrl}/ByUser/${userId}`);
 
-            // Get authentication token
+
             const token = await getAuthToken();
             console.log(' GPS: Auth token available:', !!token);
 
@@ -140,7 +140,7 @@ class GPSTrackingService {
             const data = await response.json();
             console.log(' Location history fetched:', data?.length || 0, 'records');
 
-            // Handle empty array response
+
             if (Array.isArray(data) && data.length === 0) {
                 return {
                     error: {
@@ -160,16 +160,14 @@ class GPSTrackingService {
         }
     }
 
-    /**
-     * Get the latest location for a user
-     */
+
     async getLatestUserLocation(userId: string): Promise<{
         data?: UserLocationHistory;
         error?: { message: string };
     }> {
         try {
-            console.log(' GPS Service: Getting latest location for userId:', userId);
-            console.log(' GPS Service: Expected userId from logs: 019a9f03-d063-79a6-937c-0611d4f49f12');
+            // console.log(' GPS Service: Getting latest location for userId:', userId);
+            // console.log(' GPS Service: Expected userId from logs: 019a9f03-d063-79a6-937c-0611d4f49f12');
 
             const result = await this.getUserLocationHistory(userId);
 
@@ -182,7 +180,7 @@ class GPSTrackingService {
                 };
             }
 
-            // Sort by timestamp to get the latest
+
             const sortedData = result.data.sort((a, b) =>
                 new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
             );

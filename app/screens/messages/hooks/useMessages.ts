@@ -63,14 +63,14 @@ export function useMessages({ bookingId, bookingNumber, licensePlate, navigation
             let carData = null;
 
             if (bookingNumber) {
-                console.log('Fetching booking details using bookingNumber:', bookingNumber);
+                // console.log('Fetching booking details using bookingNumber:', bookingNumber);
                 const bookingRes = await bookingsService.getBookingByNumber(bookingNumber);
 
                 if (bookingRes.data && bookingRes.data.car) {
                     bookingData = bookingRes.data;
                     const carId = bookingRes.data.car.id;
 
-                    console.log('Fetching complete car details for carId:', carId);
+                    // console.log('Fetching complete car details for carId:', carId);
                     const carRes = await apiClient<any>(API_ENDPOINTS.CAR_DETAILS(carId), {
                         method: 'GET',
                     });

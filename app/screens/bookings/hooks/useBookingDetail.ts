@@ -17,17 +17,17 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
     let mounted = true;
 
     async function load() {
-      console.log(' BookingDetail: Starting load process');
-      console.log(' BookingDetail: Booking ID or Number:', bookingIdOrNumber);
-      console.log(' BookingDetail: Current user:', {
-        id: user?.id,
-        role: user?.role,
-        roleId: user?.roleId,
-        hasUser: !!user
-      });
+      // console.log(' BookingDetail: Starting load process');
+      // console.log(' BookingDetail: Booking ID or Number:', bookingIdOrNumber);
+      // console.log(' BookingDetail: Current user:', {
+      //   id: user?.id,
+      //   role: user?.role,
+      //   roleId: user?.roleId,
+      //   hasUser: !!user
+      // });
 
       if (!user || !bookingIdOrNumber) {
-        console.log(' BookingDetail: No authenticated user or booking identifier, skipping load');
+        // console.log(' BookingDetail: No authenticated user or booking identifier, skipping load');
         setLoading(false);
         return;
       }
@@ -37,14 +37,14 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
       try {
         let res;
 
-        // Detect if it's a booking number (starts with BK) or booking ID (UUID format)
+
         const isBookingNumber = bookingIdOrNumber.toUpperCase().startsWith('BK');
 
         if (isBookingNumber) {
-          console.log(' BookingDetail: Calling getBookingByNumber...');
+          // console.log(' BookingDetail: Calling getBookingByNumber...');
           res = await bookingsService.getBookingByNumber(bookingIdOrNumber);
         } else {
-          console.log(' BookingDetail: Calling getBookingById...');
+          // console.log(' BookingDetail: Calling getBookingById...');
           res = await bookingsService.getBookingById(bookingIdOrNumber);
         }
         console.log('BookingDetail: API response:', {
@@ -61,7 +61,7 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
         });
 
         if (!mounted) {
-          console.log(' BookingDetail: Component unmounted, stopping');
+          // console.log(' BookingDetail: Component unmounted, stopping');
           return;
         }
 
@@ -81,15 +81,15 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
 
           if (res.data.bookingNumber) {
             try {
-              console.log(' BookingDetail: Fetching complete booking data for:', res.data.bookingNumber);
+              // console.log(' BookingDetail: Fetching complete booking data for:', res.data.bookingNumber);
               const detailedRes = await bookingsService.getBookingByNumber(res.data.bookingNumber);
-              console.log(' BookingDetail: Detailed booking response:', {
-                hasData: !!detailedRes.data,
-                hasError: !!detailedRes.error,
-                hasCar: !!detailedRes.data?.car,
-                hasUser: !!detailedRes.data?.user,
-                userId: detailedRes.data?.user?.id
-              });
+              // console.log(' BookingDetail: Detailed booking response:', {
+              //   hasData: !!detailedRes.data,
+              //   hasError: !!detailedRes.error,
+              //   hasCar: !!detailedRes.data?.car,
+              //   hasUser: !!detailedRes.data?.user,
+              //   userId: detailedRes.data?.user?.id
+              // });
 
               if (detailedRes.data) {
 
@@ -101,10 +101,10 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
                   carDetails: detailedRes.data.car,
                   userDetails: detailedRes.data.user
                 };
-                console.log(' BookingDetail: Enhanced booking with complete data:', {
-                  userId: completeBooking.userId,
-                  carName: completeBooking.carName
-                });
+                // console.log(' BookingDetail: Enhanced booking with complete data:', {
+                //   userId: completeBooking.userId,
+                //   carName: completeBooking.carName
+                // });
               }
             } catch (err) {
               console.log(' BookingDetail: Could not fetch detailed booking, using basic data:', err);
@@ -115,14 +115,14 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
           const isStaff = user?.role === 'staff' || user?.roleId === 1002;
           const isOwner = completeBooking.userId === user?.id;
 
-          console.log(' BookingDetail: Permission check:', {
-            isStaff,
-            isOwner,
-            bookingUserId: completeBooking.userId,
-            currentUserId: user?.id,
-            userRole: user?.role,
-            userRoleId: user?.roleId
-          });
+          // console.log(' BookingDetail: Permission check:', {
+          //   isStaff,
+          //   isOwner,
+          //   bookingUserId: completeBooking.userId,
+          //   currentUserId: user?.id,
+          //   userRole: user?.role,
+          //   userRoleId: user?.roleId
+          // });
 
           if (!isStaff && !isOwner) {
             console.log(' BookingDetail: Access denied - booking belongs to different user');
@@ -135,14 +135,14 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
             return;
           }
 
-          console.log(' BookingDetail: Permission granted, setting booking data');
-          console.log(' BookingDetail: Complete booking carId:', completeBooking.carId);
+          // console.log(' BookingDetail: Permission granted, setting booking data');
+          // console.log(' BookingDetail: Complete booking carId:', completeBooking.carId);
           setBooking(completeBooking);
 
-          // Use the actual booking ID from the response data
+
           const actualBookingId = completeBooking.id;
 
-          // Fetch car wallet balance - ALWAYS try to fetch for debugging
+
           const carIdToFetch = completeBooking.carId;
           console.log('BookingDetail: About to fetch car wallet for carId:', carIdToFetch, 'Type:', typeof carIdToFetch);
 

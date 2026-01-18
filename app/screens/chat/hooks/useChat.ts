@@ -253,7 +253,7 @@ export function useChat({ carId, navigation }: UseChatProps) {
     };
 
     return {
-        // State
+
         message,
         setMessage,
         loading,
@@ -265,8 +265,6 @@ export function useChat({ carId, navigation }: UseChatProps) {
         refreshing,
         autoRefreshing,
         user,
-
-        // Actions
         handleSendMessage,
         fetchMessages,
     };

@@ -59,11 +59,11 @@ export const userService = {
             method: "GET",
         })
 
-        console.log("userService.getAllUsers: received response", {
-            hasError: !!result.error,
-            hasData: !!result.data,
-            userCount: result.data?.length || 0,
-        })
+        // console.log("userService.getAllUsers: received response", {
+        //     hasError: !!result.error,
+        //     hasData: !!result.data,
+        //     userCount: result.data?.length || 0,
+        // })
 
         if (result.error) {
             console.error("userService.getAllUsers: error details", result.error)

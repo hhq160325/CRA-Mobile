@@ -25,12 +25,11 @@ export const usePureNativeGoogleSignIn = (): UsePureNativeGoogleSignInReturn => 
     const [debugInfo, setDebugInfo] = useState<any>(null);
     const [configStatus, setConfigStatus] = useState<any>(null);
 
-    // Initialize Pure Native Google Sign-In
     useEffect(() => {
         initializePureNative();
     }, []);
 
-    // Check auth status after initialize
+
     useEffect(() => {
         if (isConfigured) {
             checkAuthStatus();
@@ -52,7 +51,7 @@ export const usePureNativeGoogleSignIn = (): UsePureNativeGoogleSignInReturn => 
                 setIsConfigured(true);
                 console.log(' Pure Native configured successfully');
 
-                // Get config status
+
                 const status = pureNativeGoogleSignIn.getConfigurationStatus();
                 setConfigStatus(status);
             } else {
@@ -85,7 +84,7 @@ export const usePureNativeGoogleSignIn = (): UsePureNativeGoogleSignInReturn => 
                 console.log(' No Pure Native user');
             }
 
-            // Get debug info
+
             const debug = await pureNativeGoogleSignIn.getDebugInfo();
             setDebugInfo(debug);
 
@@ -109,9 +108,9 @@ export const usePureNativeGoogleSignIn = (): UsePureNativeGoogleSignInReturn => 
             setIsLoading(true);
             setError(null);
 
-            console.log(' Starting Pure Native Sign-In...');
-            console.log(' NO Web Client ID');
-            console.log(' Android Client ID + SHA-1 ONLY');
+            // console.log(' Starting Pure Native Sign-In...');
+            // console.log(' NO Web Client ID');
+            // console.log(' Android Client ID + SHA-1 ONLY');
 
             const result = await pureNativeGoogleSignIn.signIn();
 
@@ -120,7 +119,7 @@ export const usePureNativeGoogleSignIn = (): UsePureNativeGoogleSignInReturn => 
                 setIsSignedIn(true);
                 console.log(' Pure Native Sign-in successful:', result.user.name);
 
-                // Update debug info
+
                 const debug = await pureNativeGoogleSignIn.getDebugInfo();
                 setDebugInfo(debug);
             } else {
@@ -152,7 +151,7 @@ export const usePureNativeGoogleSignIn = (): UsePureNativeGoogleSignInReturn => 
                 setIsSignedIn(false);
                 console.log(' Pure Native Sign-out successful');
 
-                // Update debug info
+
                 const debug = await pureNativeGoogleSignIn.getDebugInfo();
                 setDebugInfo(debug);
             } else {

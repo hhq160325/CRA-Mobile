@@ -12,11 +12,11 @@ interface ChartDataItem {
 }
 
 const chartColors = [
-  '#1E3A8A', 
-  '#3B82F6', 
-  '#60A5FA', 
-  '#93C5FD', 
-  '#DBEAFE', 
+  '#1E3A8A',
+  '#3B82F6',
+  '#60A5FA',
+  '#93C5FD',
+  '#DBEAFE',
 ];
 
 export default function DonutChart() {
@@ -29,19 +29,19 @@ export default function DonutChart() {
 
   const loadTopRentalCars = async () => {
     try {
-      console.log(' DonutChart: Loading top rental cars...');
-      console.log(' DonutChart: API URL:', 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Booking/GetAllBookings');
+      // console.log(' DonutChart: Loading top rental cars...');
+      // console.log(' DonutChart: API URL:', 'https://selfdrivecarrentalservice-gze5gtc3dkfybtev.southeastasia-01.azurewebsites.net/api/Booking/GetAllBookings');
 
-  
+
       const bookingsResult = await bookingsService.getAllBookings();
 
-      console.log(' DonutChart: Bookings API result:', {
-        hasError: !!bookingsResult.error,
-        hasData: !!bookingsResult.data,
-        dataLength: bookingsResult.data?.length,
-        errorMessage: bookingsResult.error?.message,
-        sampleBooking: bookingsResult.data?.[0]
-      });
+      // console.log(' DonutChart: Bookings API result:', {
+      //   hasError: !!bookingsResult.error,
+      //   hasData: !!bookingsResult.data,
+      //   dataLength: bookingsResult.data?.length,
+      //   errorMessage: bookingsResult.error?.message,
+      //   sampleBooking: bookingsResult.data?.[0]
+      // });
 
       if (bookingsResult.error) {
         console.error(' DonutChart: Bookings API error:', bookingsResult.error);
@@ -55,21 +55,21 @@ export default function DonutChart() {
         return;
       }
 
-      console.log(' DonutChart: Found', bookingsResult.data.length, 'bookings');
-      console.log(' DonutChart: Sample bookings:', bookingsResult.data.slice(0, 3).map(b => ({
-        id: b.id,
-        carId: b.carId,
-        carName: b.carName,
-        status: b.status
-      })));
+      // console.log(' DonutChart: Found', bookingsResult.data.length, 'bookings');
+      // console.log(' DonutChart: Sample bookings:', bookingsResult.data.slice(0, 3).map(b => ({
+      //   id: b.id,
+      //   carId: b.carId,
+      //   carName: b.carName,
+      //   status: b.status
+      // })));
 
-    
+
       const carBookingCounts: Record<string, { count: number; carName?: string }> = {};
 
       bookingsResult.data.forEach(booking => {
         let key = booking.carId;
 
-      
+
         if (!key && booking.carName) {
           key = `name_${booking.carName}`;
         }
@@ -80,7 +80,7 @@ export default function DonutChart() {
           }
           carBookingCounts[key].count += 1;
 
-        
+
           if (booking.carName && !carBookingCounts[key].carName) {
             carBookingCounts[key].carName = booking.carName;
           }
@@ -89,7 +89,7 @@ export default function DonutChart() {
 
       console.log(' DonutChart: Car booking counts:', carBookingCounts);
 
-    
+
       const topCars = Object.entries(carBookingCounts)
         .sort(([, a], [, b]) => b.count - a.count)
         .slice(0, 5)
@@ -102,7 +102,7 @@ export default function DonutChart() {
 
       console.log(' DonutChart: Top cars:', topCars);
 
-  
+
       const chartItems: ChartDataItem[] = [];
 
       for (let i = 0; i < topCars.length; i++) {
@@ -110,7 +110,7 @@ export default function DonutChart() {
 
         let finalCarName = carName || 'Unknown Car';
 
-     
+
         if (isCarId && key) {
           try {
             console.log(' DonutChart: Fetching car details for carId:', key);

@@ -20,45 +20,64 @@ const SignInScreen = () => {
   const { isSecure, setIsSecure } = useSignin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
-  const { login, loginWithGoogle, user, refreshUser, isGoogleReady } = useAuth();
+  const { login, loginWithGoogle, user, refreshUser, isGoogleReady, getRememberMeCredentials } = useAuth();
+
 
   useEffect(() => {
-    console.log('=== Navigation useEffect triggered ===');
-    console.log('justLoggedIn:', justLoggedIn);
-    console.log('user:', user ? `${user.name} (${user.role})` : 'null');
+    const loadRememberedCredentials = async () => {
+      try {
+        const credentials = await getRememberMeCredentials();
+        if (credentials) {
+          setEmail(credentials.email);
+          setPassword(credentials.password);
+          setRememberMe(true);
+        }
+      } catch (error) {
+        console.error('Failed to load remembered credentials:', error);
+      }
+    };
+
+    loadRememberedCredentials();
+  }, [getRememberMeCredentials]);
+
+  useEffect(() => {
+    // console.log('=== Navigation useEffect triggered ===');
+    // console.log('justLoggedIn:', justLoggedIn);
+    // console.log('user:', user ? `${user.name} (${user.role})` : 'null');
 
     if (justLoggedIn && user) {
-      console.log('=== User logged in, navigating based on role ===');
-      console.log('User:', JSON.stringify(user, null, 2));
-      console.log('Role:', user.role);
-      console.log('RoleId:', user.roleId);
+      // console.log('=== User logged in, navigating based on role ===');
+      // console.log('User:', JSON.stringify(user, null, 2));
+      // console.log('Role:', user.role);
+      // console.log('RoleId:', user.roleId);
 
       const { navigationRef } = require('../../navigators/navigation-utilities');
-      console.log('navigationRef exists:', !!navigationRef);
-      console.log('navigationRef.isReady:', navigationRef?.isReady?.());
+      // console.log('navigationRef exists:', !!navigationRef);
+      // console.log('navigationRef.isReady:', navigationRef?.isReady?.());
 
       if (navigationRef && navigationRef.isReady && navigationRef.isReady()) {
         const userRole = user.role?.toLowerCase();
-        console.log('Checking user role:', {
-          original: user.role,
-          lowercase: userRole,
-          roleId: user.roleId,
-        });
+        // console.log('Checking user role:', {
+        //   original: user.role,
+        //   lowercase: userRole,
+        //   roleId: user.roleId,
+        // });
 
         if (userRole === 'staff' || user.roleId === 1002) {
-          console.log(' Navigating to auth (will show staffStack) for staff user');
-          navigationRef.reset({
-            index: 0,
-            routes: [{ name: 'auth' }],
-          });
+          // console.log(' Navigating to auth (will show staffStack) for staff user');
+          // navigationRef.reset({
+          //   index: 0,
+          //   routes: [{ name: 'auth' }],
+          // });
         } else {
-          console.log(' Navigating to auth (will show tabStack) for', user.role, 'user');
-          navigationRef.reset({
-            index: 0,
-            routes: [{ name: 'auth' }],
-          });
+          // console.log(' Navigating to auth (will show tabStack) for', user.role, 'user');
+          // navigationRef.reset({
+          //   index: 0,
+          //   routes: [{ name: 'auth' }],
+          // });
         }
       } else {
         console.log(' navigationRef not ready, cannot navigate');
@@ -88,9 +107,9 @@ const SignInScreen = () => {
 
     setIsLoading(true);
 
-    console.log('mobile sign in attempt', email, password);
+    console.log('mobile sign in attempt', email, password, 'rememberMe:', rememberMe);
     try {
-      const success = await login(email, password);
+      const success = await login(email, password, rememberMe);
 
       console.log('mobile login result success', success);
       if (success) {
@@ -166,8 +185,8 @@ const SignInScreen = () => {
   };
 
   const handleGoogleLogin = async () => {
-    console.log('=== Starting Google Login ===');
-    console.log('isGoogleReady:', isGoogleReady);
+    // console.log('=== Starting Google Login ===');
+    // console.log('isGoogleReady:', isGoogleReady);
 
     if (!isGoogleReady) {
       Alert.alert(
@@ -220,6 +239,7 @@ const SignInScreen = () => {
       <View style={styles.inputContainer}>
         <InputComponent
           onChangeText={e => setEmail(e)}
+          value={email}
           placeholder={'Email/Phone Number'}
         />
 
@@ -227,6 +247,7 @@ const SignInScreen = () => {
           isSecure
           secureTextEntry={isSecure}
           onChangeText={e => setPassword(e)}
+          value={password}
           placeholder={'Password'}
           onSecurePress={() => setIsSecure(!isSecure)}
         />
@@ -234,10 +255,8 @@ const SignInScreen = () => {
       <View style={[styles.colG2]}>
         <View style={styles.flexRow}>
           <CheckBoxComponent
-            onPress={e => {
-              console.log('item', e);
-            }}
-            isChecked={false}
+            onPress={() => setRememberMe(!rememberMe)}
+            isChecked={rememberMe}
           />
           <Text style={styles.textRemember}>Remember Me</Text>
         </View>

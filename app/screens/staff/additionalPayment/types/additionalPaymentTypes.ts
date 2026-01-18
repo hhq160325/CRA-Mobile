@@ -5,13 +5,13 @@ export interface AdditionalFee {
     description: string;
     icon: string;
     isEditable?: boolean;
-    isAmountEditable?: boolean; // New: allows editing the amount itself
+    isAmountEditable?: boolean;
     unit?: string;
     minQuantity?: number;
     maxQuantity?: number;
-    minAmount?: number; // New: minimum amount for custom charges
-    maxAmount?: number; // New: maximum amount for custom charges
-    placeholder?: string; // New: placeholder text for amount input
+    minAmount?: number;
+    maxAmount?: number;
+    placeholder?: string;
 }
 
 export interface PaymentResponse {

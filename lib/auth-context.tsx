@@ -4,15 +4,17 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import { Linking } from "react-native"
 import { authService, type User } from "./api"
 import { useGoogleLogin } from "./hooks/useGoogleLogin"
+import { logger } from "./utils/logger"
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>
   loginWithGoogle: () => Promise<boolean>
-  logout: () => Promise<void>
+  logout: (keepRememberMe?: boolean) => Promise<void>
   isAuthenticated: boolean
   refreshUser: () => Promise<void>
   isGoogleReady: boolean
+  getRememberMeCredentials: () => Promise<{ email: string; password: string } | null>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -36,10 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser()
 
     const handleDeepLink = async (event: { url: string }) => {
-      console.log(" Deep link received:", event.url)
+      logger.log(" Deep link received:", event.url)
 
       if (event.url.includes("carapp://auth/callback")) {
-        console.log("Google OAuth callback detected")
+        logger.log("Google OAuth callback detected")
 
         try {
           const url = new URL(event.url)
@@ -53,20 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           if (jwtToken) {
-            console.log(" JWT token found in callback, auto-logging in...")
+            logger.log(" JWT token found in callback, auto-logging in...")
 
             const currentUser = await authService.getCurrentUser()
             if (currentUser) {
-              console.log("Auto-login successful:", currentUser.email)
+              logger.log("Auto-login successful:", currentUser.email)
               setUser(currentUser)
             } else {
-              console.log(" Token found but no user in AsyncStorage")
+              logger.log(" Token found but no user in AsyncStorage")
             }
           } else {
-            console.log(" No token found in callback URL")
+            logger.log(" No token found in callback URL")
           }
         } catch (error) {
-          console.error(" Error handling deep link:", error)
+          logger.error(" Error handling deep link:", error)
         }
       }
     }
@@ -75,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     Linking.getInitialURL().then((url) => {
       if (url) {
-        console.log(" App opened with URL:", url)
+        logger.log(" App opened with URL:", url)
         handleDeepLink({ url })
       }
     })
@@ -85,15 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<boolean> => {
     try {
-      console.log('auth-context: calling authService.login', { email })
-      const { data, error } = await authService.login({ email, password })
+      logger.log('auth-context: calling authService.login', { email, rememberMe })
+      const { data, error } = await authService.login({ email, password }, rememberMe)
 
-      console.log('auth-context: authService.login result', { data: data ? 'user data received' : null, error: error?.message })
+      logger.log('auth-context: authService.login result', { data: data ? 'user data received' : null, error: error?.message })
 
       if (data && !error) {
-        console.log('auth-context: setting user in state', {
+        logger.log('auth-context: setting user in state', {
           userId: data.id,
           userRole: data.role,
           roleId: data.roleId,
@@ -103,26 +105,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true
       }
 
-      console.log('auth-context: login failed', { hasData: !!data, hasError: !!error })
+      logger.log('auth-context: login failed', { hasData: !!data, hasError: !!error })
       return false
     } catch (err) {
-      console.error('auth-context: login exception', err)
+      logger.error('auth-context: login exception', err)
       return false
     }
   }
 
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
-      console.log('auth-context: Google login initiated')
-      console.log('auth-context: isGoogleReady:', isGoogleReady)
+      logger.log('auth-context: Google login initiated')
+      logger.log('auth-context: isGoogleReady:', isGoogleReady)
 
       const result = await googleLogin()
 
       if (result.success) {
-        console.log('auth-context: Google login successful')
+        logger.log('auth-context: Google login successful')
 
         if (result.user) {
-          console.log('auth-context: setting user from result', { userId: result.user.id, userRole: result.user.role })
+          logger.log('auth-context: setting user from result', { userId: result.user.id, userRole: result.user.role })
           setUser(result.user)
           return true
         }
@@ -130,16 +132,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const currentUser = await authService.getCurrentUser()
         if (currentUser) {
-          console.log('auth-context: setting user from AsyncStorage', { userId: currentUser.id, userRole: currentUser.role })
+          logger.log('auth-context: setting user from AsyncStorage', { userId: currentUser.id, userRole: currentUser.role })
           setUser(currentUser)
           return true
         }
       }
 
-      console.log('auth-context: Google login failed', result.error)
+      logger.log('auth-context: Google login failed', result.error)
       return false
     } catch (err) {
-      console.error('auth-context: Google login exception', err)
+      logger.error('auth-context: Google login exception', err)
       return false
     }
   }
@@ -147,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     const currentUser = await authService.getCurrentUser()
     if (currentUser) {
-      console.log('auth-context: refreshing user', {
+      logger.log('auth-context: refreshing user', {
         userId: currentUser.id,
         avatar: currentUser.avatar,
         imageAvatar: (currentUser as any).imageAvatar
@@ -158,9 +160,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = async () => {
-    await authService.logout()
+  const logout = async (keepRememberMe: boolean = true) => {
+    await authService.logout(keepRememberMe)
     setUser(null)
+  }
+
+  const getRememberMeCredentials = async () => {
+    return await authService.getRememberMeCredentials()
   }
 
   return (
@@ -171,7 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isAuthenticated: !!user,
       refreshUser,
-      isGoogleReady
+      isGoogleReady,
+      getRememberMeCredentials
     }}>
       {children}
     </AuthContext.Provider>

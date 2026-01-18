@@ -27,7 +27,7 @@ export function useHomeData() {
     const startTime = Date.now();
 
     try {
-      console.log('Loading home data...');
+      // console.log('Loading home data...');
 
       // Load cars first for immediate display
       const carsResult = await carsService.getCars({});
@@ -39,16 +39,16 @@ export function useHomeData() {
           availableStatuses.includes(car.status || ''),
         );
 
-        console.log(` Total cars: ${carsResult.data.length}, Available: ${availableCars.length}`);
+        // console.log(` Total cars: ${carsResult.data.length}, Available: ${availableCars.length}`);
 
-        // Show cars immediately with placeholder prices
+
         const carsWithPlaceholderPrices = availableCars.map(car => ({
           ...car,
           price: 0,
         }));
 
         setCars(carsWithPlaceholderPrices);
-        console.log(` Cars displayed in ${Date.now() - startTime}ms`);
+        // console.log(` Cars displayed in ${Date.now() - startTime}ms`);
 
         // Load rental rates in parallel (much faster)
         const ratePromises = availableCars.map(car =>
@@ -84,7 +84,7 @@ export function useHomeData() {
         bookingsService.getBookings(user.id).then(bookingsResult => {
           if (bookingsResult.data) {
             setRecentBookings(bookingsResult.data.slice(0, 4));
-            console.log(` Bookings loaded`);
+            // console.log(` Bookings loaded`);
           }
         }).catch(error => {
           console.warn('Failed to load bookings:', error);

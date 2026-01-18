@@ -55,7 +55,7 @@ export default function VehicleReturnScreen() {
   const [showReportForm, setShowReportForm] = useState(false);
   const [reportSubmitting, setReportSubmitting] = useState(false);
 
-  // Report form state
+
   const [reportTitle, setReportTitle] = useState('');
   const [reportContent, setReportContent] = useState('');
   const [deductedPoints, setDeductedPoints] = useState('0');
@@ -91,13 +91,13 @@ export default function VehicleReturnScreen() {
   }, [initialDescription]);
 
   React.useEffect(() => {
-    // Set returnCompleted to true if the return is already checked out
+
     if (isAlreadyCheckedOut) {
       setReturnCompleted(true);
     }
   }, [isAlreadyCheckedOut]);
 
-  // Debug logging for report section visibility
+
   React.useEffect(() => {
     // console.log(' VehicleReturn: Report section visibility check:', {
     //   returnCompleted,
@@ -268,7 +268,7 @@ export default function VehicleReturnScreen() {
     );
   };
 
-  // Report form functionality
+
   const predefinedTitles = [
     'Traffic Violation',
     'Reckless Driving',
@@ -307,7 +307,7 @@ export default function VehicleReturnScreen() {
   };
 
   const handleSubmitReport = async () => {
-    // Validation
+
     if (!reportTitle.trim()) {
       Alert.alert('Validation Error', 'Please enter a report title.');
       return;
@@ -351,7 +351,7 @@ export default function VehicleReturnScreen() {
         deductedPoints: points,
         reporterId: user.id,
         reportedUserId: booking?.userId || '',
-        images: [], // Add empty images array for now
+        images: [],
       });
 
       if (result.error) {
@@ -366,7 +366,7 @@ export default function VehicleReturnScreen() {
 
       // console.log(' User report created successfully:', result.data);
 
-      // Get report details for success message
+
       const reportId = result.data?.reportNo || result.data?.id || 'N/A';
       const reportPoints = points || 0;
 
@@ -386,7 +386,7 @@ export default function VehicleReturnScreen() {
           {
             text: 'OK',
             onPress: () => {
-              // Reset form and hide report section
+
               setShowReportForm(false);
               setReportTitle('');
               setReportContent('');

@@ -39,9 +39,9 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
         }
 
 
-        console.log(` Booking: ${bookingId}`)
-        console.log(` Base URL: ${API_CONFIG.BASE_URL}`)
-        console.log(` PayOS Base URL: ${API_CONFIG.BASE_URL.replace('/api', '')}`)
+        // console.log(` Booking: ${bookingId}`)
+        // console.log(` Base URL: ${API_CONFIG.BASE_URL}`)
+        // console.log(` PayOS Base URL: ${API_CONFIG.BASE_URL.replace('/api', '')}`)
 
         // Get authentication token
         const token = await getAuthToken()
@@ -116,8 +116,8 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
         for (const payment of payments) {
             const { orderCode, item, status: originalStatus } = payment
 
-            console.log(` ${item}: ${originalStatus} (order: ${orderCode})`)
-            console.log(`   Payment details:`, JSON.stringify(payment, null, 2))
+            // console.log(` ${item}: ${originalStatus} (order: ${orderCode})`)
+            // console.log(`   Payment details:`, JSON.stringify(payment, null, 2))
 
             // Skip payments that don't have valid order codes
             if (!orderCode || orderCode === 0 || orderCode === null) {
@@ -146,13 +146,13 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             }
 
 
-            // Try to get PayOS payment status - try multiple endpoints
+
             console.log(` Checking PayOS status for order ${orderCode}`)
 
             let payosData = null;
             let payosError = null;
 
-            // Try multiple PayOS endpoints in order of preference
+
             const endpoints = [
                 { name: 'PayOSPayment', method: () => paymentService.getPayOSPayment(orderCode.toString()) },
                 { name: 'Payment', method: () => paymentService.getPaymentByOrderCode(orderCode.toString()) },
@@ -178,11 +178,11 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                 }
             }
 
-            // If all endpoints fail, try a direct API call to PayOS status endpoint
+
             if (!payosData && payosError) {
                 console.log(` Trying additional PayOS status endpoints for order ${orderCode}`);
 
-                // Try different PayOS endpoint variations
+
                 const additionalEndpoints = [
                     `/PayOS/status/${orderCode}`,
                     `/PayOS/payment/${orderCode}`,
@@ -221,7 +221,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             if (payosError || !payosData) {
                 console.log(`  ✗ All PayOS status checks failed for order ${orderCode}:`, payosError?.message)
 
-                // Check if this is a "not found" or "server error" case
+
                 const isOrderNotFound = payosError?.message?.includes('not found') ||
                     payosError?.message?.includes('server error') ||
                     payosError?.message?.includes('may not exist');
@@ -297,19 +297,19 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                     let updateUrl: string;
                     let payload: any;
 
-                    // Use base URL without /api for update payment endpoints (consistent with other services)
+
                     const updateBaseUrl = API_CONFIG.BASE_URL.replace('/api', '');
 
-                    // Determine the correct update endpoint based on payment type
+
                     if (item.toLowerCase().includes("rental")) {
-                        // Rental Fee payments
+
                         updateUrl = `${updateBaseUrl}/UpdatePayment/Booking/RentalPayment`;
                         payload = {
                             bookingId: bookingId,
                             status: newStatus
                         };
                     } else if (item.toLowerCase().includes("additional") || item.toLowerCase().includes("extension")) {
-                        // Additional Fee and Booking Extension payments - use orderCode endpoint
+
                         updateUrl = `${updateBaseUrl}/UpdatePayment/Booking/PaymentOrderCode`;
                         payload = {
                             orderCode: orderCode,
@@ -317,7 +317,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                             method: 'payos'
                         };
                     } else {
-                        // Booking Fee and other payments
+
                         updateUrl = `${updateBaseUrl}/UpdatePayment/Booking/BookingPayment`;
                         payload = {
                             bookingId: bookingId,
@@ -325,8 +325,8 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                         };
                     }
 
-                    console.log(' Updating payment status:', updateUrl);
-                    console.log(' Payload:', JSON.stringify(payload, null, 2));
+                    // console.log(' Updating payment status:', updateUrl);
+                    // console.log(' Payload:', JSON.stringify(payload, null, 2));
 
                     const updateResponse = await fetch(updateUrl, {
                         method: "PATCH",
@@ -356,16 +356,16 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
         }
 
 
-        // Check if ALL payments (including rental fee) are paid for pickup eligibility
+
         const allPaymentsPaid = results.every(r =>
             r.payosStatus === "PAID" ||
             r.originalStatus === "Success" ||
             r.originalStatus === "Paid"
         );
 
-        // Check if booking fees (not rental fees) are paid for confirmation
+
         const bookingFeePaid = results
-            .filter(r => !r.item.toLowerCase().includes("rental")) // Exclude rental fees
+            .filter(r => !r.item.toLowerCase().includes("rental"))
             .every(r =>
                 r.payosStatus === "PAID" ||
                 r.originalStatus === "Success" ||
@@ -384,7 +384,7 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
         console.log(`\n Payment Check Complete - All Paid: ${allPaymentsPaid}, Booking Fee Paid: ${bookingFeePaid}, Any Pending: ${anyPending}, Any Cancelled: ${anyCancelled}`)
 
-        // Update booking status to Confirmed if booking fees are paid (rental fees can be pending)
+
         if (bookingFeePaid && !anyCancelled) {
             console.log("Updating booking status to Confirmed...")
             try {

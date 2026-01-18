@@ -11,12 +11,12 @@ const getAuthToken = async (): Promise<string | null> => {
     }
 }
 
-// Authenticated fetch function for notification requests
+
 async function fetchWithAuth<T>(url: string): Promise<{ data: T | null; error: Error | null }> {
     try {
         console.log(" Making authenticated request to:", url)
 
-        // Get authentication token
+
         const token = await getAuthToken()
         console.log(' Notification: Auth token available:', !!token)
 
@@ -69,34 +69,34 @@ export const notificationService = {
     async getNotifications(userId: string, userRole?: string): Promise<{ data: Notification[] | null; error: Error | null }> {
         const baseUrl = getApiBaseUrl()
 
-        // Use different endpoints based on user role
+
         let notificationUrl: string
 
         if (userRole === 'staff' || userRole === 'admin') {
-            // Staff and admin users get all notifications
+
             notificationUrl = `${baseUrl}/AllNotif`
             console.log(" Staff/Admin user - fetching all notifications")
         } else {
-            // Regular users get user-specific notifications
+
             notificationUrl = `${baseUrl}/UserNotif/${userId}`
             console.log(" Regular user - fetching user-specific notifications")
         }
 
-        console.log(" Base URL:", baseUrl)
-        console.log(" User ID:", userId)
-        console.log(" User Role:", userRole)
-        console.log(" Full notification URL:", notificationUrl)
+        // console.log(" Base URL:", baseUrl)
+        // console.log(" User ID:", userId)
+        // console.log(" User Role:", userRole)
+        // console.log(" Full notification URL:", notificationUrl)
 
-        // Use authenticated fetch since all APIs now require authentication
+
         const result = await fetchWithAuth<Notification[]>(notificationUrl)
 
         if (result.error) {
-            // Check if it's a 404 error (no notifications found)
+
             const errorMessage = result.error.message.toLowerCase()
             const is404 = errorMessage.includes("404") || errorMessage.includes("not found")
 
             if (is404) {
-                // 404 is expected when no notifications exist, return empty array
+
                 console.log(" No notifications found (404), returning empty array")
                 return { data: [], error: null }
             }

@@ -20,7 +20,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
     const exitAnimation = useRef(new Animated.Value(0)).current;
     const brandFadeAnimation = useRef(new Animated.Value(1)).current;
 
-    // Tire burning effect animations
+ 
     const tireSmokeAnimation = useRef(new Animated.Value(0)).current;
     const sparksAnimation = useRef(new Animated.Value(0)).current;
     const burnoutAnimation = useRef(new Animated.Value(0)).current;
@@ -134,39 +134,39 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
             dot3Anim.start();
             smoke.start();
         } else {
-            // Tire burning effect sequence
+           
             const tireBurnSequence = Animated.sequence([
-                // Initial burnout phase
+              
                 Animated.parallel([
-                    // Intense wheel spinning
+                
                     Animated.timing(wheelRotation, {
                         toValue: wheelRotationCount.current + 3,
                         duration: 800,
                         easing: Easing.out(Easing.quad),
                         useNativeDriver: true,
                     }),
-                    // Tire smoke buildup
+                 
                     Animated.timing(tireSmokeAnimation, {
                         toValue: 1,
                         duration: 800,
                         easing: Easing.out(Easing.ease),
                         useNativeDriver: true,
                     }),
-                    // Sparks effect
+                  
                     Animated.timing(sparksAnimation, {
                         toValue: 1,
                         duration: 600,
                         easing: Easing.out(Easing.ease),
                         useNativeDriver: true,
                     }),
-                    // Skid marks appear
+                  
                     Animated.timing(skidMarkAnimation, {
                         toValue: 1,
                         duration: 800,
                         easing: Easing.out(Easing.ease),
                         useNativeDriver: true,
                     }),
-                    // Car vibration effect
+                   
                     Animated.timing(burnoutAnimation, {
                         toValue: 1,
                         duration: 800,
@@ -175,11 +175,9 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
                     }),
                 ]),
 
-                // Brief pause at peak burnout
-
-                // Exit sequence with enhanced effects
+                
                 Animated.parallel([
-                    // Dots fade out
+                   
                     Animated.parallel([
                         Animated.timing(dot1Animation, {
                             toValue: 0,
@@ -198,7 +196,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
                         }),
                     ]),
 
-                    // Car accelerates away
+                  
                     Animated.timing(exitAnimation, {
                         toValue: 1,
                         duration: 1200,
@@ -206,7 +204,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
                         useNativeDriver: true,
                     }),
 
-                    // Wheels spin faster during exit
+                  
                     Animated.timing(wheelRotation, {
                         toValue: wheelRotationCount.current + 8,
                         duration: 1200,
@@ -214,7 +212,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
                         useNativeDriver: true,
                     }),
 
-                    // Tire smoke trails behind
+                 
                     Animated.sequence([
                         Animated.timing(tireSmokeAnimation, {
                             toValue: 0.8,
@@ -230,7 +228,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
                         }),
                     ]),
 
-                    // Sparks fade out
+                  
                     Animated.timing(sparksAnimation, {
                         toValue: 0,
                         duration: 600,
@@ -238,7 +236,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
                         useNativeDriver: true,
                     }),
 
-                    // Regular exhaust smoke
+                  
                     Animated.sequence([
                         Animated.timing(smokeAnimation, {
                             toValue: 1,
@@ -254,7 +252,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
                         }),
                     ]),
 
-                    // Brand fade
+          
                     Animated.timing(brandFadeAnimation, {
                         toValue: 0.1,
                         duration: 400,
@@ -319,7 +317,7 @@ export default function StaffLoadingState({ isComplete, onAnimationComplete }: S
         })
         : pulseAnimation;
 
-    // Tire burning effect interpolations
+  
     const tireSmokeOpacity = tireSmokeAnimation.interpolate({
         inputRange: [0, 0.5, 1],
         outputRange: [0, 1, 0.7],

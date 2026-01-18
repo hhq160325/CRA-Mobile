@@ -27,7 +27,7 @@ export default function FeeItem({
 }: FeeItemProps) {
     const [inputAmount, setInputAmount] = useState(customAmount?.toString() || '');
 
-    // Update input when customAmount changes (from travel logs auto-population)
+
     useEffect(() => {
         if (customAmount !== undefined) {
             setInputAmount(customAmount.toString());
@@ -48,7 +48,7 @@ export default function FeeItem({
                 <TextInput
                     style={[
                         styles.customAmountInput,
-                        fee.id === 'total_charges' && customAmount && customAmount > 0 && styles.customAmountInputDisabled
+                        fee.id === 'total_charges' && customAmount && customAmount > 0 ? styles.customAmountInputDisabled : null
                     ]}
                     value={inputAmount}
                     onChangeText={handleAmountChange}

@@ -1,7 +1,7 @@
 import type { User } from './types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const saveAuthToStorage = async (token: string, user: User, refreshToken?: string): Promise<void> => {
+export const saveAuthToStorage = async (token: string, user: User, refreshToken?: string, rememberMe?: boolean): Promise<void> => {
     try {
         await AsyncStorage.setItem("token", token);
         await AsyncStorage.setItem("user", JSON.stringify(user));
@@ -10,14 +10,60 @@ export const saveAuthToStorage = async (token: string, user: User, refreshToken?
             await AsyncStorage.setItem("refreshToken", refreshToken);
         }
 
+        // Store remember me preference and credentials if enabled
+        if (rememberMe) {
+            await AsyncStorage.setItem("rememberMe", "true");
+            await AsyncStorage.setItem("rememberedEmail", user.email);
+        }
+
         console.log("saveAuthToStorage: saved to AsyncStorage", {
             userId: user.id,
             role: user.role,
             roleId: user.roleId,
             hasRefreshToken: !!refreshToken,
+            rememberMe: !!rememberMe,
         });
     } catch (e) {
         console.error("Failed to save to AsyncStorage:", e);
+        throw e;
+    }
+};
+
+export const saveRememberMeCredentials = async (email: string, password: string): Promise<void> => {
+    try {
+        await AsyncStorage.setItem("rememberMe", "true");
+        await AsyncStorage.setItem("rememberedEmail", email);
+        await AsyncStorage.setItem("rememberedPassword", password);
+        console.log("saveRememberMeCredentials: saved credentials for remember me");
+    } catch (e) {
+        console.error("Failed to save remember me credentials:", e);
+        throw e;
+    }
+};
+
+export const getRememberMeCredentials = async (): Promise<{ email: string; password: string } | null> => {
+    try {
+        const rememberMe = await AsyncStorage.getItem("rememberMe");
+        if (rememberMe === "true") {
+            const email = await AsyncStorage.getItem("rememberedEmail");
+            const password = await AsyncStorage.getItem("rememberedPassword");
+            if (email && password) {
+                return { email, password };
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error("Failed to get remember me credentials:", e);
+        return null;
+    }
+};
+
+export const clearRememberMeCredentials = async (): Promise<void> => {
+    try {
+        await AsyncStorage.multiRemove(["rememberMe", "rememberedEmail", "rememberedPassword"]);
+        console.log("clearRememberMeCredentials: cleared remember me data");
+    } catch (e) {
+        console.error("Failed to clear remember me credentials:", e);
         throw e;
     }
 };
@@ -50,10 +96,17 @@ export const getRefreshTokenFromStorage = async (): Promise<string | null> => {
     }
 };
 
-export const clearAuthFromStorage = async (): Promise<void> => {
+export const clearAuthFromStorage = async (keepRememberMe: boolean = false): Promise<void> => {
     try {
-        await AsyncStorage.multiRemove(["token", "user", "refreshToken"]);
-        console.log("clearAuthFromStorage: User logged out successfully");
+        if (keepRememberMe) {
+
+            await AsyncStorage.multiRemove(["token", "user", "refreshToken"]);
+            console.log("clearAuthFromStorage: Logged out but kept remember me credentials");
+        } else {
+
+            await AsyncStorage.multiRemove(["token", "user", "refreshToken", "rememberMe", "rememberedEmail", "rememberedPassword"]);
+            console.log("clearAuthFromStorage: User logged out completely");
+        }
     } catch (e) {
         console.error("Failed to clear AsyncStorage:", e);
         throw e;

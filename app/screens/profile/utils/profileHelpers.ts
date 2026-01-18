@@ -16,13 +16,12 @@ export const buildSafeUpdateData = (latestData: any, overrides: any = {}) => {
         rating: latestData?.rating || 0,
         roleId: latestData?.roleId || 1,
         isVerified: latestData?.isVerified || false,
-        // IMPORTANT: Preserve the password if it exists in the original data
         password: latestData?.password || undefined,
     };
 
     const mergedData = { ...baseData, ...overrides };
 
-    // Remove truly sensitive fields that should never be updated through this method
+
     const sensitiveFields = [
         'passwordHash',
         'passwordSalt',
@@ -44,7 +43,7 @@ export const buildSafeUpdateData = (latestData: any, overrides: any = {}) => {
         delete mergedData[field];
     });
 
-    // Only remove password-related fields if they're not explicitly being updated
+
     Object.keys(mergedData).forEach(key => {
         if (key.toLowerCase().includes('password') || key.toLowerCase().includes('pass')) {
 
@@ -54,7 +53,7 @@ export const buildSafeUpdateData = (latestData: any, overrides: any = {}) => {
         }
     });
 
-    // Clean up undefined values to avoid sending them to the server
+
     Object.keys(mergedData).forEach(key => {
         if (mergedData[key] === undefined) {
             delete mergedData[key];

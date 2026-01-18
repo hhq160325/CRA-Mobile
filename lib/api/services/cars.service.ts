@@ -3,7 +3,7 @@ import { API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
 import { apiCache, cacheKeys } from "../cache"
 
-// API Response from backend
+
 interface ApiCarResponse {
   id: string
   licensePlate: string
@@ -32,7 +32,7 @@ interface ApiCarResponse {
   imageUrls: string[]
 }
 
-// Rental Rate Response from API
+
 export interface RentalRate {
   dailyRate: number
   hourlyRate: number
@@ -44,7 +44,7 @@ export interface RentalRate {
   carId: string
 }
 
-// App Car model
+
 export interface Car {
   id: string
   name: string
@@ -76,7 +76,7 @@ export interface Car {
 
 
 function mapApiCarToCar(apiCar: ApiCarResponse): Car {
-  // Determine category based on car type/seats
+
   let category = "sedan"
   if (apiCar.seats >= 7) {
     category = "suv"
@@ -84,7 +84,7 @@ function mapApiCarToCar(apiCar: ApiCarResponse): Car {
     category = "sport"
   }
 
-  // Get price from rentalRate if available
+
   const price = apiCar.rentalRate?.dailyRate || 0
 
   return {
@@ -126,7 +126,7 @@ export const carsService = {
     search?: string
   }): Promise<{ data: Car[] | null; error: Error | null }> {
 
-    // Check cache first (only for unfiltered requests)
+
     const cacheKey = cacheKeys.cars();
     if (!filters || Object.keys(filters).length === 0) {
       const cachedData = apiCache.get<Car[]>(cacheKey);
@@ -152,13 +152,13 @@ export const carsService = {
       return { data: null, error: null }
     }
 
-    // Fetch rental rates for each car
+
     const carsWithRates = await Promise.all(
       result.data.map(async (apiCar) => {
-        // Try to get rental rate for this car
+
         const rateResult = await this.getCarRentalRate(apiCar.id)
 
-        // Add rental rate to the car data if available
+
         const carWithRate = {
           ...apiCar,
           rentalRate: rateResult.data || null
@@ -168,12 +168,12 @@ export const carsService = {
       })
     )
 
-    // Cache unfiltered results
+
     if (!filters || Object.keys(filters).length === 0) {
-      apiCache.set(cacheKey, carsWithRates, 3 * 60 * 1000); // 3 minutes
+      apiCache.set(cacheKey, carsWithRates, 3 * 60 * 1000);
     }
 
-    // Apply client-side filters if needed
+
     let filteredData = carsWithRates
     if (filters?.category && filters.category !== "all") {
       filteredData = filteredData.filter(car => car.category === filters.category)
@@ -208,13 +208,13 @@ export const carsService = {
       return { data: null, error: null }
     }
 
-    // Fetch rental rates for each car
+
     const carsWithRates = await Promise.all(
       result.data.map(async (apiCar) => {
-        // Try to get rental rate for this car
+
         const rateResult = await this.getCarRentalRate(apiCar.id)
 
-        // Add rental rate to the car data if available
+
         const carWithRate = {
           ...apiCar,
           rentalRate: rateResult.data || null
@@ -238,10 +238,9 @@ export const carsService = {
       return { data: null, error: null }
     }
 
-    // Fetch rental rate for this car
     const rateResult = await this.getCarRentalRate(id)
 
-    // Add rental rate to the car data if available
+
     const carWithRate = {
       ...result.data,
       rentalRate: rateResult.data || null
@@ -258,13 +257,13 @@ export const carsService = {
       return { data: null, error: result.error }
     }
 
-    // Map API response to app model
+
     const mappedData = result.data?.map(mapApiCarToCar) || null
     return { data: mappedData, error: null }
   },
 
   async getCarRentalRate(carId: string): Promise<{ data: RentalRate | null; error: Error | null }> {
-    // Check cache first
+
     const cacheKey = cacheKeys.carRate(carId);
     const cachedData = apiCache.get<RentalRate>(cacheKey);
     if (cachedData) {
@@ -274,16 +273,16 @@ export const carsService = {
     const result = await apiClient<RentalRate>(API_ENDPOINTS.CAR_RENTAL_RATE(carId), { method: "GET" })
 
     if (result.error) {
-      // Don't log 404 errors as they're expected for cars without rental rates
+
       if (!result.error.message.includes("404") && !result.error.message.includes("not found")) {
         console.error("carsService.getCarRentalRate: unexpected error for car", carId, result.error)
       }
       return { data: null, error: result.error }
     }
 
-    // Cache successful results
+
     if (result.data) {
-      apiCache.set(cacheKey, result.data, 5 * 60 * 1000); // 5 minutes
+      apiCache.set(cacheKey, result.data, 5 * 60 * 1000);
     }
 
     return { data: result.data, error: null }

@@ -2,7 +2,7 @@
 import { API_ENDPOINTS } from "../config"
 import { apiClient } from "../client"
 
-// API Response from backend
+
 interface ApiBookingResponse {
   id: string
   bookingNumber?: string
@@ -21,7 +21,7 @@ interface ApiBookingResponse {
   car?: any
 }
 
-// App Booking model
+
 export interface Booking {
   id: string
   bookingNumber?: string
@@ -48,7 +48,7 @@ export interface Booking {
   addons?: string[]
 }
 
-// Map API response to app Booking model
+
 function mapApiBookingToBooking(apiBooking: ApiBookingResponse): Booking {
 
   let status: "upcoming" | "completed" | "cancelled" = "upcoming"
@@ -59,10 +59,10 @@ function mapApiBookingToBooking(apiBooking: ApiBookingResponse): Booking {
   } else if (apiStatus === "cancelled") {
     status = "cancelled"
   } else if (apiStatus === "confirmed") {
-    // Confirmed bookings are "completed" in the app (payment confirmed)
+
     status = "completed"
   } else {
-    // Default to upcoming for any other status
+
     status = "upcoming"
   }
 
@@ -343,37 +343,37 @@ export const bookingsService = {
   async updateBookingPayment(bookingId: string, status: "paid" | "cancelled"): Promise<{ data: any | null; error: Error | null }> {
     console.log("bookingsService.updateBookingPayment: updating booking payment", { bookingId, status })
 
-    // Try different endpoint variations and HTTP methods
+
     const attempts = [
-      // Attempt 1: POST with body (bookingId in body)
+
       {
         endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT,
         method: "POST",
         body: { bookingId, status },
         description: "POST with bookingId in body"
       },
-      // Attempt 2: PATCH with body
+
       {
         endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT,
         method: "PATCH",
         body: { bookingId, status },
         description: "PATCH with bookingId in body"
       },
-      // Attempt 3: PUT with body
+
       {
         endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT,
         method: "PUT",
         body: { bookingId, status },
         description: "PUT with bookingId in body"
       },
-      // Attempt 4: POST with bookingId in URL
+
       {
         endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT_BY_ID(bookingId),
         method: "POST",
         body: { status },
         description: "POST with bookingId in URL"
       },
-      // Attempt 5: PATCH with bookingId in URL
+
       {
         endpoint: API_ENDPOINTS.UPDATE_BOOKING_PAYMENT_BY_ID(bookingId),
         method: "PATCH",
@@ -390,14 +390,14 @@ export const bookingsService = {
         body: JSON.stringify(attempt.body),
       })
 
-      // If successful, return immediately
+
       if (!result.error) {
         console.log(` Success with ${attempt.description}`)
         console.log("bookingsService.updateBookingPayment: result", { hasError: false, hasData: !!result.data })
         return { data: result.data, error: null }
       }
 
-      // If not 404, it's a different error - return it
+
       if (!result.error.message.includes('404')) {
         console.error(` Failed with ${attempt.description}:`, result.error.message)
         return { data: null, error: result.error }
@@ -406,7 +406,7 @@ export const bookingsService = {
       console.log(`404 with ${attempt.description}, trying next...`)
     }
 
-    // All attempts failed
+
     console.error(" All attempts failed to update booking payment")
     return {
       data: null,

@@ -200,6 +200,7 @@ export const fetchPaymentDetails = async (bookingId: string) => {
                         bookingFeePayment.status === 'Paid' ||
                         bookingFeePayment.status === 'Completed');
 
+                // CRITICAL FIX: Rental fee must exist AND be paid to be considered paid
                 const isRentalFeePaid = rentalFeePayment &&
                     (rentalFeePayment.status === 'Success' ||
                         rentalFeePayment.status === 'Paid' ||
@@ -226,10 +227,11 @@ export const fetchPaymentDetails = async (bookingId: string) => {
                         additionalFeePayment.status === 'Completed');
 
 
+                // CRITICAL: Determine overall status based on EXACT payment flow requirements
                 let overallStatus = 'pending';
 
                 if (!rentalFeePayment) {
-
+                    // Step 1-2: Only booking fee paid, rental payment not yet requested
                     if (isBookingFeePaid) {
                         overallStatus = 'booking_paid';
                         if (__DEV__) console.log(`fetchPaymentDetails: Booking fee paid for ${bookingId} - rental payment needed`);
@@ -238,15 +240,15 @@ export const fetchPaymentDetails = async (bookingId: string) => {
                         if (__DEV__) console.log(`fetchPaymentDetails: No payments found for ${bookingId}`);
                     }
                 } else if (rentalFeePayment && !isRentalFeePaid) {
-
+                    // Step 3: Rental fee payment requested but not yet paid by customer
                     overallStatus = 'rental_pending';
                     if (__DEV__) console.log(`fetchPaymentDetails: Rental fee payment exists but pending for ${bookingId} - customer needs to pay`);
-                } else if (isRentalFeePaid) {
-
+                } else if (rentalFeePayment && isRentalFeePaid) {
+                    // Step 4: Rental fee is paid - ready for pickup
                     overallStatus = 'paid';
                     if (__DEV__) console.log(`fetchPaymentDetails: Rental fee is paid for ${bookingId} - ready for pickup`);
                 } else {
-
+                    // Fallback
                     overallStatus = 'pending';
                     if (__DEV__) console.log(` fetchPaymentDetails: Fallback status for ${bookingId} - pending`);
                 }
@@ -255,13 +257,13 @@ export const fetchPaymentDetails = async (bookingId: string) => {
                     amount: totalAmount,
                     status: overallStatus,
                     hasPaymentRecord: !!(bookingFeePayment || rentalFeePayment || extensionPayment || additionalFeePayment),
-
+                    // CRITICAL: These flags must be accurate for pickup flow
                     isBookingFeePaid,
-                    isRentalFeePaid,
+                    isRentalFeePaid: !!isRentalFeePaid, // Ensure boolean
                     isExtensionPaid,
                     isAdditionalFeePaid,
                     hasExtension: !!extensionPayment,
-
+                    // Payment objects for reference
                     bookingFeePayment,
                     rentalFeePayment,
                     extensionPayment,

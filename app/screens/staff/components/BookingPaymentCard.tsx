@@ -21,6 +21,16 @@ export default function BookingPaymentCard({
     onPayExtension,
     processingExtensionPayment
 }: BookingPaymentCardProps) {
+    // Debug payment status for this booking
+    if (__DEV__) {
+        console.log(`BookingPaymentCard: ${item.bookingNumber || item.id} payment status:`, {
+            isRentalFeePaid: item.paymentDetails?.isRentalFeePaid,
+            isBookingFeePaid: item.paymentDetails?.isBookingFeePaid,
+            hasRentalFeePayment: !!item.paymentDetails?.rentalFeePayment,
+            overallStatus: item.status
+        });
+    }
+
     const statusBadgeStyle = [
         styles.statusBadge,
         item.status === 'successfully'
@@ -155,9 +165,9 @@ export default function BookingPaymentCard({
             )}
 
             <View style={styles.cardFooter}>
-                {/* Show different buttons based on payment status and requirements */}
+                {/* CRITICAL: Show different buttons based on EXACT payment flow requirements */}
                 {!item.paymentDetails?.isRentalFeePaid ? (
-
+                    // Step 1-3: Rental fee not yet paid - show request/complete payment button
                     <Pressable
                         onPress={() => onRequestPayment(item.id)}
                         disabled={processingPayment === item.id}
@@ -171,12 +181,14 @@ export default function BookingPaymentCard({
                             <ActivityIndicator size="small" color={colors.white} />
                         ) : (
                             <Text style={styles.requestPaymentText}>
-                                {item.paymentDetails?.rentalFeePayment ? 'Complete Rental Payment' : 'Request Rental Payment'}
+                                {item.paymentDetails?.rentalFeePayment
+                                    ? 'Complete Rental Payment'
+                                    : 'Request Rental Payment'}
                             </Text>
                         )}
                     </Pressable>
                 ) : (
-
+                    // Step 4: Rental fee is paid - show pickup confirmation button
                     <Pressable
                         onPress={() => onNavigateToPickup(item.id)}
                         style={styles.confirmPickupButton}>

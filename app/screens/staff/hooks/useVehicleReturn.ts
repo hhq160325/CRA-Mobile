@@ -215,6 +215,26 @@ export function useVehicleReturn(bookingId: string) {
     }
   }, [bookingId]);
 
+  const refreshTravelLogs = async () => {
+    if (booking?.carId && booking?.id) {
+      setTravelLogsLoading(true);
+      try {
+        const travelLogsResult = await carTravelLogService.getCarTravelLogsByCarAndBooking(
+          booking.carId,
+          booking.id
+        );
+
+        if (travelLogsResult.data) {
+          setTravelLogs(travelLogsResult.data);
+        }
+      } catch (err) {
+        console.error('Error refreshing travel logs:', err);
+      } finally {
+        setTravelLogsLoading(false);
+      }
+    }
+  };
+
   return {
     booking,
     loading,
@@ -226,5 +246,8 @@ export function useVehicleReturn(bookingId: string) {
     initialDescription: existingCheckOutData?.description || '',
     travelLogs,
     travelLogsLoading,
+    refreshTravelLogs,
+    carId: booking?.carId,
+    bookingId: booking?.id,
   };
 }

@@ -174,4 +174,8 @@ export const API_ENDPOINTS = {
 
   // Car Travel Log
   CAR_TRAVEL_LOG_BY_CAR_AND_BOOKING: (carId: string, bookingId: string) => `/CarTravelLog/ByCarAndBooking?carId=${carId}&bookingId=${bookingId}`,
+  CAR_TRAVEL_LOG_CREATE_RANDOM: "/CarTravelLog/CreateRandom",
+
+  // Toll Booth
+  TOLL_BOOTH_ALL: "/TollBooth/All",
 }

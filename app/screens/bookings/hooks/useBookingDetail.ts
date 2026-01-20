@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { bookingsService, carWalletService } from '../../../../lib/api';
+import { bookingsService, carWalletService, carTravelLogService, type CarTravelLog } from '../../../../lib/api';
 import { paymentService } from '../../../../lib/api/services/payment.service';
 import { useAuth } from '../../../../lib/auth-context';
 
@@ -11,6 +11,8 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
   const [payments, setPayments] = useState<any[]>([]);
   const [bookingFee, setBookingFee] = useState<number>(0);
   const [carWalletBalance, setCarWalletBalance] = useState<number | null>(null);
+  const [travelLogs, setTravelLogs] = useState<CarTravelLog[]>([]);
+  const [travelLogsLoading, setTravelLogsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -167,6 +169,33 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
             console.log('BookingDetail: Booking object keys:', Object.keys(completeBooking));
           }
 
+          // Load travel logs for this booking
+          if (carIdToFetch && actualBookingId) {
+            console.log('BookingDetail: Fetching travel logs for car:', carIdToFetch, 'booking:', actualBookingId);
+            setTravelLogsLoading(true);
+            try {
+              const travelLogsRes = await carTravelLogService.getCarTravelLogsByCarAndBooking(
+                carIdToFetch,
+                actualBookingId
+              );
+              if (mounted && travelLogsRes.data) {
+                console.log('BookingDetail: Travel logs loaded:', travelLogsRes.data.length, 'entries');
+                setTravelLogs(travelLogsRes.data);
+              } else if (travelLogsRes.error) {
+                console.log('BookingDetail: Could not fetch travel logs:', travelLogsRes.error.message);
+              }
+            } catch (err) {
+              console.log('BookingDetail: Error fetching travel logs:', err);
+            } finally {
+              if (mounted) {
+                setTravelLogsLoading(false);
+              }
+            }
+          } else {
+            console.log('BookingDetail: Missing carId or bookingId, skipping travel logs fetch');
+            setTravelLogsLoading(false);
+          }
+
           console.log(
             'BookingDetail: Fetching payments for booking:',
             actualBookingId,
@@ -266,5 +295,5 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
     };
   }, [bookingIdOrNumber, user?.id]);
 
-  return { booking, invoice, payments, bookingFee, carWalletBalance, loading };
+  return { booking, invoice, payments, bookingFee, carWalletBalance, travelLogs, travelLogsLoading, loading };
 }

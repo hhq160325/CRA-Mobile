@@ -77,6 +77,9 @@ export default function VehicleReturnScreen() {
     initialDescription,
     travelLogs,
     travelLogsLoading,
+    refreshTravelLogs,
+    carId,
+    bookingId: currentBookingId,
   } = useVehicleReturn(bookingId);
 
   const [description, setDescription] = useState(initialDescription);
@@ -525,6 +528,9 @@ export default function VehicleReturnScreen() {
           <TravelLogsSection
             travelLogs={travelLogs}
             loading={travelLogsLoading}
+            carId={carId}
+            bookingId={currentBookingId}
+            onTravelLogsUpdated={refreshTravelLogs}
           />
 
           {/* Description Input */}

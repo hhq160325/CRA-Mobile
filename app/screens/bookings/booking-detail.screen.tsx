@@ -18,6 +18,7 @@ import PaymentInfoSection from './components/PaymentInfoSection';
 import FeedbackButton from './components/FeedbackButton';
 import ReportCarButton from './components/ReportCarButton';
 import CarWalletCard from './components/CarWalletCard';
+import TravelLogsSection from './components/TravelLogsSection';
 import { BookingExtensionPayment } from '../../components/BookingExtensionPayment';
 import { AdditionalFeePayment } from '../../components/AdditionalFeePayment';
 
@@ -44,7 +45,7 @@ export default function BookingDetailScreen() {
   const bookingIdentifier = id || bookingNumber;
   const shouldLoadBooking = !!bookingIdentifier && !!user;
 
-  const { booking, invoice, payments, bookingFee, carWalletBalance, loading } = useBookingDetail(
+  const { booking, invoice, payments, bookingFee, carWalletBalance, travelLogs, travelLogsLoading, loading } = useBookingDetail(
     shouldLoadBooking ? bookingIdentifier : '',
     navigation
   );
@@ -161,6 +162,12 @@ export default function BookingDetailScreen() {
           bookingDate={booking.bookingDate}
           payments={payments}
           bookingFee={bookingFee}
+        />
+
+        {/* Travel Logs Section */}
+        <TravelLogsSection
+          travelLogs={travelLogs}
+          loading={travelLogsLoading}
         />
 
         {/* Car Wallet Balance Card */}

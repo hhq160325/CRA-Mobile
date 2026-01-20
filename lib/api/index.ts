@@ -55,7 +55,15 @@ export { ocrService, type DriverLicenseOCRResult, type OCRResponse } from "./ser
 
 export { reportService, type CreateReportData, type ReportResponse, type CreateUserReportData, type UserReportResponse } from "./services/report.service"
 
-export { carTravelLogService, type CarTravelLog } from "./services/carTravelLog.service"
+export {
+    carTravelLogService,
+    getCarTravelLogsByCarAndBooking,
+    getAllTollBooths,
+    createRandomTravelLog,
+    type CarTravelLog,
+    type TollBooth,
+    type CreateTravelLogRequest
+} from "./services/carTravelLog.service"
 
 export { bookingExtensionPaymentService, type BookingPayment, type UpdatePaymentStatusRequest } from "./services/booking-extension-payment.service"
 

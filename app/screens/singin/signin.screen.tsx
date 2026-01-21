@@ -107,12 +107,36 @@ const SignInScreen = () => {
 
     setIsLoading(true);
 
+    // CRITICAL FIX: Clear all cache before login to prevent data contamination
+    try {
+      const { apiCache } = require('../../../lib/api/cache');
+      console.log('🧹 Login attempt - clearing all cache to prevent data contamination');
+      await apiCache.clearAll();
+      console.log('✅ Cache cleared successfully before login');
+    } catch (error) {
+      console.error('❌ Failed to clear cache before login:', error);
+    }
+
     console.log('mobile sign in attempt', email, password, 'rememberMe:', rememberMe);
     try {
       const success = await login(email, password, rememberMe);
 
       console.log('mobile login result success', success);
       if (success) {
+        // CRITICAL FIX: Clear cache again after successful login
+        try {
+          const { apiCache } = require('../../../lib/api/cache');
+          console.log('🧹 Login successful - clearing cache again to ensure fresh session');
+          await apiCache.clearAll();
+          console.log('✅ Cache cleared successfully after login');
+
+          // AGGRESSIVE FIX: Add delay to ensure cache is fully cleared
+          await new Promise(resolve => setTimeout(resolve, 500));
+          console.log('🔄 Login screen: Cache clearing delay completed');
+        } catch (error) {
+          console.error('❌ Failed to clear cache after login:', error);
+        }
+
         await new Promise(resolve => setTimeout(resolve, 200));
 
         const { authService } = require('../../../lib/api');

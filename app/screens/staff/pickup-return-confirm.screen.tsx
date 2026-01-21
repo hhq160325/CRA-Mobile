@@ -141,6 +141,20 @@ export default function PickupReturnConfirmScreen() {
               // console.log(' Pickup confirmed successfully, navigating to StaffScreen');
               setSubmitting(false);
 
+              // CRITICAL FIX: Invalidate cache after pickup confirmation
+              // This ensures that when user returns to StaffScreen, fresh data is loaded
+              try {
+                const { apiCache } = require('../../../lib/api/cache');
+
+                // AGGRESSIVE FIX: Clear all cache after pickup confirmation
+                console.log('🧹 Pickup confirmed - clearing all cache to prevent data mixing');
+                await apiCache.clearAll();
+                console.log('✅ All cache cleared after pickup confirmation');
+
+              } catch (error) {
+                console.error('Failed to clear cache after pickup confirmation:', error);
+              }
+
               Alert.alert('Success', 'Pickup confirmed successfully!', [
                 {
                   text: 'OK',
@@ -165,7 +179,7 @@ export default function PickupReturnConfirmScreen() {
   };
 
   const handleReportUser = () => {
-    // Navigate to report user screen or show report modal
+
     Alert.alert(
       'Report User',
       'This feature allows you to report issues with the customer or vehicle condition.',
@@ -192,7 +206,7 @@ export default function PickupReturnConfirmScreen() {
     );
   };
 
-  // Show full return view if both pickup and return are done
+
   if (!loading && isAlreadyCheckedIn && isAlreadyCheckedOut && existingCheckInData && existingCheckOutData && booking) {
     const pickupDateTime = formatDateTime(booking.pickupTime);
     const dropoffDateTime = formatDateTime(booking.dropoffTime);

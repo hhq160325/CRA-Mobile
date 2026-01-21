@@ -14,29 +14,65 @@ interface PersistentCacheEntry<T> extends CacheEntry<T> {
 
 class APICache {
     private cache: Map<string, CacheEntry<any>> = new Map();
-    private defaultTTL = 5 * 60 * 1000;
-    private persistentTTL = 30 * 60 * 1000;
-    private cacheVersion = 1;
+    private defaultTTL = 5 * 60 * 1000; // 5 minutes
+    private persistentTTL = 30 * 60 * 1000; // 30 minutes
+    private cacheVersion = 2; // Increment this to invalidate all existing cache
 
-
+    // Initialize cache and handle version upgrades
     async initialize(): Promise<void> {
         try {
             const persistentData = await AsyncStorage.getItem('api_cache_persistent');
             if (persistentData) {
                 const parsed = JSON.parse(persistentData);
                 const now = Date.now();
+                let validEntries = 0;
+                let invalidatedEntries = 0;
 
                 for (const [key, entry] of Object.entries(parsed)) {
                     const cacheEntry = entry as PersistentCacheEntry<any>;
 
-                    if (now <= cacheEntry.expiresAt && cacheEntry.version === this.cacheVersion) {
+                    // Check version compatibility and expiration
+                    if (cacheEntry.version === this.cacheVersion && now <= cacheEntry.expiresAt) {
                         this.cache.set(key, cacheEntry);
+                        validEntries++;
+                    } else {
+                        invalidatedEntries++;
                     }
                 }
-                console.log(` Persistent cache loaded: ${this.cache.size} entries`);
+
+                if (invalidatedEntries > 0) {
+                    console.log(`🔄 Cache version upgrade: invalidated ${invalidatedEntries} old entries, kept ${validEntries} valid entries`);
+                    // Clean up persistent storage
+                    await this.cleanupPersistentStorage();
+                } else {
+                    console.log(`✅ Persistent cache loaded: ${validEntries} entries`);
+                }
             }
         } catch (error) {
             console.warn('Failed to load persistent cache:', error);
+            // Clear corrupted cache
+            await AsyncStorage.removeItem('api_cache_persistent');
+        }
+    }
+
+    // Clean up persistent storage to remove old entries
+    private async cleanupPersistentStorage(): Promise<void> {
+        try {
+            const validEntries: Record<string, PersistentCacheEntry<any>> = {};
+
+            for (const [key, entry] of this.cache.entries()) {
+                if (entry.timestamp) {
+                    validEntries[key] = {
+                        ...entry,
+                        version: this.cacheVersion
+                    } as PersistentCacheEntry<any>;
+                }
+            }
+
+            await AsyncStorage.setItem('api_cache_persistent', JSON.stringify(validEntries));
+            console.log(`🧹 Cleaned up persistent storage: ${Object.keys(validEntries).length} valid entries saved`);
+        } catch (error) {
+            console.warn('Failed to cleanup persistent storage:', error);
         }
     }
 
@@ -79,6 +115,12 @@ class APICache {
     }
 
     set<T>(key: string, data: T, ttl?: number): void {
+        // Validate data integrity before caching
+        if (!this.validateEntry(key, data)) {
+            console.warn(`🚨 Cache validation failed for key ${key} - not caching invalid data`);
+            return;
+        }
+
         const now = Date.now();
         const expiresAt = now + (ttl || this.defaultTTL);
 
@@ -95,7 +137,9 @@ class APICache {
             this.saveToPersistent(key, entry);
         }
 
-        // console.log(` Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s)`);
+        if (__DEV__) {
+            console.log(`✅ Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s, validated: ✓)`);
+        }
     }
 
     // Batch set for better performance
@@ -128,16 +172,51 @@ class APICache {
         }
     }
 
+    // Smart invalidation with data integrity checks
     invalidatePattern(pattern: string): void {
         let count = 0;
+        const matchedKeys: string[] = [];
         for (const key of this.cache.keys()) {
             if (key.includes(pattern)) {
                 this.cache.delete(key);
+                matchedKeys.push(key);
                 count++;
             }
         }
         if (count > 0) {
-            // console.log(` Cache INVALIDATED: ${count} entries matching "${pattern}"`);
+            console.log(`🔄 Cache INVALIDATED: ${count} entries matching "${pattern}"`);
+            if (__DEV__ && matchedKeys.length > 0) {
+                console.log(`🔄 Invalidated keys:`, matchedKeys.slice(0, 5));
+            }
+            // Also clean up persistent storage
+            this.cleanupPersistentStorage();
+        } else {
+            console.log(`🔄 Cache INVALIDATION: No entries found matching "${pattern}"`);
+        }
+    }
+
+    // Validate cache data integrity
+    validateEntry<T>(key: string, data: T): boolean {
+        try {
+            // Basic validation for staff booking data
+            if (key.includes('staff:payment:') && data && typeof data === 'object') {
+                const paymentData = data as any;
+                // Check if required payment fields exist
+                return typeof paymentData.isRentalFeePaid === 'boolean' &&
+                    typeof paymentData.isBookingFeePaid === 'boolean';
+            }
+
+            if (key.includes('staff:checkinout:') && data && typeof data === 'object') {
+                const checkInOutData = data as any;
+                // Check if required check-in/out fields exist
+                return typeof checkInOutData.hasCheckIn === 'boolean' &&
+                    typeof checkInOutData.hasCheckOut === 'boolean';
+            }
+
+            return true; // Default to valid for other data types
+        } catch (error) {
+            console.warn(`Cache validation failed for key ${key}:`, error);
+            return false;
         }
     }
 
@@ -145,7 +224,39 @@ class APICache {
         const size = this.cache.size;
         this.cache.clear();
         AsyncStorage.removeItem('api_cache_persistent');
-        // console.log(` Cache CLEARED: ${size} entries removed`);
+        console.log(`🧹 Cache CLEARED: ${size} entries removed, persistent cache deleted`);
+    }
+
+    // Force clear all cache including persistent storage
+    async clearAll(): Promise<void> {
+        const size = this.cache.size;
+        this.cache.clear();
+
+        try {
+            // AGGRESSIVE FIX: Clear all possible cache storage locations
+            await AsyncStorage.removeItem('api_cache_persistent');
+
+            // Also clear any other potential cache keys that might exist
+            const allKeys = await AsyncStorage.getAllKeys();
+            const cacheKeys = allKeys.filter(key =>
+                key.includes('cache') ||
+                key.includes('staff') ||
+                key.includes('booking') ||
+                key.includes('payment') ||
+                key.includes('car:') ||
+                key.includes('user:')
+            );
+
+            if (cacheKeys.length > 0) {
+                console.log(`🧹 AGGRESSIVE CLEAR: Removing ${cacheKeys.length} additional cache keys from AsyncStorage`);
+                await AsyncStorage.multiRemove(cacheKeys);
+                console.log(`✅ AGGRESSIVE CLEAR: Additional cache keys removed:`, cacheKeys.slice(0, 5));
+            }
+
+            console.log(`🧹 ALL CACHE CLEARED: ${size} entries removed, persistent storage cleared, ${cacheKeys.length} additional keys removed`);
+        } catch (error) {
+            console.warn('Failed to clear persistent cache:', error);
+        }
     }
 
     getStats() {
@@ -173,8 +284,8 @@ class APICache {
             }
         }
 
-        if (removed > 0) {
-            // console.log(` Cache CLEANUP: ${removed} expired entries removed`);
+        if (removed > 0 && __DEV__) {
+            console.log(` Cache cleanup: removed ${removed} expired entries`);
         }
     }
 }

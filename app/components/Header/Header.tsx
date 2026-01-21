@@ -47,6 +47,17 @@ export default function Header() {
 
     const handleMenuNavigationWrapper = async (screen: string) => {
         setMenuVisible(false)
+
+        // CRITICAL FIX: Add direct cache clearing for MORENT logo clicks
+        try {
+            const { apiCache } = require('../../../lib/api/cache');
+            console.log(`🧹 MORENT Logo clicked - clearing cache before navigation to ${screen}`);
+            await apiCache.clearAll();
+            console.log(`✅ Cache cleared successfully for MORENT logo click to ${screen}`);
+        } catch (error) {
+            console.error('❌ Failed to clear cache for MORENT logo click:', error);
+        }
+
         await handleMenuNavigation(screen)
     }
 
@@ -79,7 +90,29 @@ export default function Header() {
         <>
             {/* Header Bar */}
             <View style={styles.headerContainer}>
-                <Pressable onPress={() => handleMenuNavigationWrapper("Home")}>
+                <Pressable onPress={async () => {
+                    console.log('🔍 MORENT Logo clicked - starting cache clear and navigation');
+
+                    try {
+                        // CRITICAL FIX: Proper async/await cache clearing
+                        const { apiCache } = require('../../../lib/api/cache');
+                        console.log('🧹 MORENT Logo: Clearing all cache before navigation');
+                        await apiCache.clearAll();
+                        console.log('✅ MORENT Logo: Cache cleared successfully');
+
+                        // Navigate based on user type
+                        const targetScreen = isStaff ? "StaffScreen" : "Home";
+                        console.log(`🚀 MORENT Logo: Navigating to ${targetScreen} for ${isStaff ? 'staff' : 'regular'} user`);
+
+                        await handleMenuNavigationWrapper(targetScreen);
+                        console.log('✅ MORENT Logo: Navigation completed successfully');
+                    } catch (error) {
+                        console.error('❌ MORENT Logo: Process failed:', error);
+                        // Still try to navigate even if cache clear fails
+                        const targetScreen = isStaff ? "StaffScreen" : "Home";
+                        await handleMenuNavigationWrapper(targetScreen);
+                    }
+                }}>
                     <Text style={styles.logo}>MORENT</Text>
                 </Pressable>
 

@@ -21,14 +21,9 @@ export default function BookingPaymentCard({
     onPayExtension,
     processingExtensionPayment
 }: BookingPaymentCardProps) {
-    // Debug payment status for this booking
+    // Simplified debug logging for booking status
     if (__DEV__) {
-        console.log(`BookingPaymentCard: ${item.bookingNumber || item.id} payment status:`, {
-            isRentalFeePaid: item.paymentDetails?.isRentalFeePaid,
-            isBookingFeePaid: item.paymentDetails?.isBookingFeePaid,
-            hasRentalFeePayment: !!item.paymentDetails?.rentalFeePayment,
-            overallStatus: item.status
-        });
+        console.log(`🔍 ${item.bookingNumber || item.id.substring(0, 8)}: Status=${item.status}, RentalPaid=${item.paymentDetails?.isRentalFeePaid}, CheckIn=${item.hasCheckIn}, CheckOut=${item.hasCheckOut}`);
     }
 
     const statusBadgeStyle = [
@@ -165,43 +160,65 @@ export default function BookingPaymentCard({
             )}
 
             <View style={styles.cardFooter}>
-                {/* CRITICAL: Show different buttons based on EXACT payment flow requirements */}
-                {!item.paymentDetails?.isRentalFeePaid ? (
-                    // Step 1-3: Rental fee not yet paid - show request/complete payment button
-                    <Pressable
-                        onPress={() => onRequestPayment(item.id)}
-                        disabled={processingPayment === item.id}
-                        style={[
-                            styles.requestPaymentButton,
-                            processingPayment === item.id
-                                ? styles.requestPaymentButtonDisabled
-                                : styles.requestPaymentButtonActive,
-                        ]}>
-                        {processingPayment === item.id ? (
-                            <ActivityIndicator size="small" color={colors.white} />
-                        ) : (
-                            <Text style={styles.requestPaymentText}>
-                                {item.paymentDetails?.rentalFeePayment
-                                    ? 'Complete Rental Payment'
-                                    : 'Request Rental Payment'}
-                            </Text>
-                        )}
-                    </Pressable>
-                ) : (
-                    // Step 4: Rental fee is paid - show pickup confirmation button
-                    <Pressable
-                        onPress={() => onNavigateToPickup(item.id)}
-                        style={styles.confirmPickupButton}>
-                        <Text style={confirmPickupTextStyle}>
-                            {!item.hasCheckIn
-                                ? '→ Tap to confirm pickup (Rental Fee Paid)'
-                                : item.hasCheckIn && !item.hasCheckOut
-                                    ? '→ Tap to confirm return'
-                                    : '→ View booking details'}
-                        </Text>
-                        <Text style={confirmPickupArrowStyle}>→</Text>
-                    </Pressable>
-                )}
+                {/* CRITICAL FIX: Handle status inconsistencies */}
+                {(() => {
+                    // If status is "successfully" but showing wrong button, force correct logic
+                    if (item.status === 'successfully' && item.hasCheckIn && item.hasCheckOut) {
+                        // Completed booking - should show view details
+                        return (
+                            <Pressable
+                                onPress={() => onNavigateToPickup(item.id)}
+                                style={styles.confirmPickupButton}>
+                                <Text style={[styles.confirmPickupText, styles.confirmPickupTextComplete]}>
+                                    → View booking details
+                                </Text>
+                                <Text style={[styles.confirmPickupArrow, styles.confirmPickupTextComplete]}>→</Text>
+                            </Pressable>
+                        );
+                    }
+
+                    // Original logic for other cases
+                    if (!item.paymentDetails?.isRentalFeePaid) {
+                        // Step 1-3: Rental fee not yet paid - show request/complete payment button
+                        return (
+                            <Pressable
+                                onPress={() => onRequestPayment(item.id)}
+                                disabled={processingPayment === item.id}
+                                style={[
+                                    styles.requestPaymentButton,
+                                    processingPayment === item.id
+                                        ? styles.requestPaymentButtonDisabled
+                                        : styles.requestPaymentButtonActive,
+                                ]}>
+                                {processingPayment === item.id ? (
+                                    <ActivityIndicator size="small" color={colors.white} />
+                                ) : (
+                                    <Text style={styles.requestPaymentText}>
+                                        {item.paymentDetails?.rentalFeePayment
+                                            ? 'Complete Rental Payment'
+                                            : 'Request Rental Payment'}
+                                    </Text>
+                                )}
+                            </Pressable>
+                        );
+                    } else {
+                        // Step 4: Rental fee is paid - show pickup confirmation button
+                        return (
+                            <Pressable
+                                onPress={() => onNavigateToPickup(item.id)}
+                                style={styles.confirmPickupButton}>
+                                <Text style={confirmPickupTextStyle}>
+                                    {!item.hasCheckIn
+                                        ? '→ Tap to confirm pickup (Rental Fee Paid)'
+                                        : item.hasCheckIn && !item.hasCheckOut
+                                            ? '→ Tap to confirm return'
+                                            : '→ View booking details'}
+                                </Text>
+                                <Text style={confirmPickupArrowStyle}>→</Text>
+                            </Pressable>
+                        );
+                    }
+                })()}
             </View>
         </Pressable>
     );

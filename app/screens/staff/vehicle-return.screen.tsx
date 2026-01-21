@@ -216,7 +216,6 @@ export default function VehicleReturnScreen() {
       return;
     }
 
-    // Check extension payment validation
     if (extensionInfo.hasExtension && !extensionInfo.isPaymentCompleted) {
       Alert.alert(
         'Extension Payment Required',
@@ -255,6 +254,19 @@ export default function VehicleReturnScreen() {
               // console.log('Vehicle return successful');
               setSubmitting(false);
               setReturnCompleted(true);
+
+
+              try {
+                const { apiCache } = require('../../../lib/api/cache');
+
+                // AGGRESSIVE FIX: Clear all cache after vehicle return confirmation
+                console.log('🧹 Vehicle return confirmed - clearing all cache to prevent data mixing');
+                await apiCache.clearAll();
+                console.log('✅ All cache cleared after vehicle return confirmation');
+
+              } catch (error) {
+                console.error('Failed to clear cache after vehicle return:', error);
+              }
 
               Alert.alert(
                 'Success',

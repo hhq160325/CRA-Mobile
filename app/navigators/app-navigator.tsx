@@ -1,5 +1,5 @@
 "use client"
-import type React from "react"
+import React from "react"
 import { Animated } from "react-native"
 
 import { NavigationContainer } from "@react-navigation/native"
@@ -242,6 +242,25 @@ const CombinedStack = () => {
     userId: user?.id
   })
 
+  // CRITICAL FIX: Clear cache when authentication state changes
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      const clearCacheForAuthenticatedUser = async () => {
+        try {
+          const { apiCache } = require('../../lib/api/cache');
+          console.log('🧹 CombinedStack: User authenticated - clearing cache for fresh session');
+          await apiCache.clearAll();
+          console.log('✅ CombinedStack: Cache cleared for authenticated user');
+        } catch (error) {
+          console.error('❌ CombinedStack: Failed to clear cache for authenticated user:', error);
+        }
+      };
+
+      // Add delay to ensure user state is fully set
+      setTimeout(clearCacheForAuthenticatedUser, 500);
+    }
+  }, [isAuthenticated, user?.id]);
+
   if (!isAuthenticated) {
     console.log("CombinedStack: User not authenticated, showing AuthStack")
     return (
@@ -407,8 +426,48 @@ const AppStack = () => {
 }
 
 export function AppNavigator(props: NavigationProps) {
+  // COMPREHENSIVE FIX: Clear cache on any navigation state change
+  const handleNavigationStateChange = async (state: any) => {
+    try {
+      const { apiCache } = require('../../lib/api/cache');
+
+      // Get current route name
+      const getCurrentRouteName = (navigationState: any): string => {
+        if (!navigationState || !navigationState.routes) return 'Unknown';
+
+        const route = navigationState.routes[navigationState.index];
+        if (route.state) {
+          return getCurrentRouteName(route.state);
+        }
+        return route.name;
+      };
+
+      const currentRouteName = getCurrentRouteName(state);
+
+      // Clear cache for important navigation events
+      const shouldClearCache = [
+        'Home', 'StaffScreen', 'Bookings', 'Cars', 'Profile',
+        'PaymentHistory', 'Messages', 'ChatHeads'
+      ].includes(currentRouteName);
+
+      if (shouldClearCache) {
+        console.log(`🧹 Navigation State Change to ${currentRouteName} - clearing cache for fresh data`);
+        await apiCache.clearAll();
+        console.log(`✅ Cache cleared for navigation state change to ${currentRouteName}`);
+      } else {
+        console.log(`ℹ️ Navigation to ${currentRouteName} - no cache clearing needed`);
+      }
+    } catch (error) {
+      console.error('❌ Failed to clear cache during navigation state change:', error);
+    }
+  };
+
   return (
-    <NavigationContainer ref={navigationRef as any} {...props}>
+    <NavigationContainer
+      ref={navigationRef as any}
+      onStateChange={handleNavigationStateChange}
+      {...props}
+    >
       <AppStack />
     </NavigationContainer>
   )

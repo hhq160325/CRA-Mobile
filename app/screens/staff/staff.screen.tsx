@@ -112,6 +112,7 @@ export default function StaffScreen() {
     <View style={styles.container}>
       <Header />
 
+      {/* Content */}
       {showLoadingAnimation ? (
         <StaffLoadingState
           isComplete={loadingComplete}

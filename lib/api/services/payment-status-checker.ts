@@ -122,19 +122,33 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             // Skip payments that don't have valid order codes
             if (!orderCode || orderCode === 0 || orderCode === null) {
                 console.log(`    Skipping payment with invalid order code: ${orderCode}`)
+
+                // For rental payments without order codes, they should remain pending
+                // This means the customer hasn't made the rental payment yet
+                let statusForInvalidOrder = "PENDING";
+                if (item.toLowerCase().includes("rental")) {
+                    console.log(`    → Rental payment without order code - customer hasn't paid yet`)
+                    statusForInvalidOrder = "PENDING";
+                } else if (originalStatus === "Success" || originalStatus === "Paid" || originalStatus === "Completed") {
+                    // For non-rental payments, trust the original status if it shows as paid
+                    statusForInvalidOrder = "PAID";
+                } else {
+                    statusForInvalidOrder = "PENDING";
+                }
+
                 results.push({
                     orderCode: orderCode || 0,
                     item,
                     originalStatus,
-                    payosStatus: "INVALID_ORDER_CODE",
+                    payosStatus: statusForInvalidOrder,
                     updated: false
                 })
                 continue
             }
 
-
+            // Special handling for rental payments
             if (item.toLowerCase().includes("rental") && originalStatus === "Pending") {
-                console.log(`    Skipping PayOS check for pending Rental Fee - payment not made yet`)
+                console.log(`    → Rental Fee is pending - customer hasn't made payment yet`)
                 results.push({
                     orderCode,
                     item,
@@ -357,20 +371,40 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
 
 
 
-        const allPaymentsPaid = results.every(r =>
-            r.payosStatus === "PAID" ||
-            r.originalStatus === "Success" ||
-            r.originalStatus === "Paid"
-        );
+        // Calculate payment status more accurately
+        const allPaymentsPaid = results.every(r => {
+            // For rental payments, they must be explicitly paid (not just pending)
+            if (r.item.toLowerCase().includes("rental")) {
+                return r.payosStatus === "PAID" ||
+                    r.originalStatus === "Success" ||
+                    r.originalStatus === "Paid" ||
+                    r.originalStatus === "Completed";
+            }
+            // For non-rental payments (booking fee, etc.)
+            return r.payosStatus === "PAID" ||
+                r.originalStatus === "Success" ||
+                r.originalStatus === "Paid" ||
+                r.originalStatus === "Completed";
+        });
 
-
+        // Booking fee paid calculation (excludes rental payments)
         const bookingFeePaid = results
             .filter(r => !r.item.toLowerCase().includes("rental"))
             .every(r =>
                 r.payosStatus === "PAID" ||
                 r.originalStatus === "Success" ||
-                r.originalStatus === "Paid"
+                r.originalStatus === "Paid" ||
+                r.originalStatus === "Completed"
             );
+
+        // Check for rental payments specifically
+        const rentalPayments = results.filter(r => r.item.toLowerCase().includes("rental"));
+        const rentalFeePaid = rentalPayments.length === 0 || rentalPayments.every(r =>
+            r.payosStatus === "PAID" ||
+            r.originalStatus === "Success" ||
+            r.originalStatus === "Paid" ||
+            r.originalStatus === "Completed"
+        );
 
         const anyPending = results.some(r =>
             r.payosStatus === "PENDING" ||
@@ -382,11 +416,16 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
             r.payosStatus === "EXPIRED"
         );
 
-        console.log(`\n Payment Check Complete - All Paid: ${allPaymentsPaid}, Booking Fee Paid: ${bookingFeePaid}, Any Pending: ${anyPending}, Any Cancelled: ${anyCancelled}`)
+        console.log(`\n Payment Check Complete:`)
+        console.log(`  - All Paid: ${allPaymentsPaid}`)
+        console.log(`  - Booking Fee Paid: ${bookingFeePaid}`)
+        console.log(`  - Rental Fee Paid: ${rentalFeePaid}`)
+        console.log(`  - Any Pending: ${anyPending}`)
+        console.log(`  - Any Cancelled: ${anyCancelled}`)
 
-
+        // Only update booking status based on booking fee, not rental fee
         if (bookingFeePaid && !anyCancelled) {
-            console.log("Updating booking status to Confirmed...")
+            console.log("Updating booking status to Confirmed (booking fee paid, rental fee can remain pending)...")
             try {
                 const updateUrl = `${baseUrl}/Booking/UpdateBooking`
                 console.log(' Updating booking status:', updateUrl)
@@ -401,13 +440,13 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                 })
 
                 if (updateResponse.ok) {
-                    console.log(" Booking status → Confirmed (booking fees paid, rental fees can be pending)")
+                    console.log(" ✅ Booking status → Confirmed (booking fees paid, rental fees can be pending)")
                 } else {
                     const responseText = await updateResponse.text()
-                    console.log(` Booking update failed (${updateResponse.status}):`, responseText)
+                    console.log(` ❌ Booking update failed (${updateResponse.status}):`, responseText)
                 }
             } catch (err) {
-                console.error(" Booking update error:", err)
+                console.error(" ❌ Booking update error:", err)
             }
         } else if (anyCancelled && !bookingFeePaid) {
             console.log(" Updating booking status to Canceled...")
@@ -425,19 +464,19 @@ export async function checkAndUpdatePaymentStatuses(bookingId: string): Promise<
                 })
 
                 if (updateResponse.ok) {
-                    console.log(" Booking status → Canceled")
+                    console.log(" ✅ Booking status → Canceled")
                 } else {
                     const responseText = await updateResponse.text()
-                    console.log(` Booking update failed (${updateResponse.status}):`, responseText)
+                    console.log(` ❌ Booking update failed (${updateResponse.status}):`, responseText)
                 }
             } catch (err) {
-                console.error(" Booking update error:", err)
+                console.error(" ❌ Booking update error:", err)
             }
         }
 
         return {
             results,
-            allPaid: allPaymentsPaid,
+            allPaid: allPaymentsPaid, // This now correctly reflects that rental payments must be explicitly paid
             error: null
         }
     } catch (error) {

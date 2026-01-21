@@ -388,6 +388,23 @@ export default function PayOSWebViewScreen() {
       console.log(' No valid booking ID, skipping booking status updates');
     }
 
+    // CRITICAL FIX: Invalidate payment cache after successful payment
+    // This ensures that when user returns to StaffScreen, fresh payment data is loaded
+    // Add a small delay to ensure backend has processed the payment status update
+    setTimeout(async () => {
+      try {
+        const { apiCache } = require('../../../lib/api/cache');
+
+        // AGGRESSIVE FIX: Clear all cache after payment completion
+        console.log('🧹 Payment completed - clearing all cache to prevent data mixing');
+        await apiCache.clearAll();
+        console.log('✅ All cache cleared after payment completion');
+
+      } catch (error) {
+        console.error('Failed to clear cache after payment:', error);
+      }
+    }, 2000); // 2 second delay to ensure backend processing is complete
+
     console.log(' Navigating to destination...');
     navigateToDestination(true);
   };
@@ -399,6 +416,22 @@ export default function PayOSWebViewScreen() {
     if (bookingId && bookingId !== 'pending') {
       await updateBookingStatus('Canceled');
     }
+
+    // Invalidate payment cache after cancellation to ensure fresh data
+    // Add a small delay to ensure backend has processed the cancellation
+    setTimeout(async () => {
+      try {
+        const { apiCache } = require('../../../lib/api/cache');
+
+        // AGGRESSIVE FIX: Clear all cache after payment cancellation
+        console.log('🧹 Payment cancelled - clearing all cache to prevent data mixing');
+        await apiCache.clearAll();
+        console.log('✅ All cache cleared after payment cancellation');
+
+      } catch (error) {
+        console.error('Failed to clear cache after payment cancellation:', error);
+      }
+    }, 1000); // 1 second delay for cancellation processing
 
     navigateToDestination(false);
 

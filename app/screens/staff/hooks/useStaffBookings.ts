@@ -61,17 +61,10 @@ export function useStaffBookings() {
         let invoiceAmount = paymentDetails.amount;
         let invoiceStatus = paymentDetails.status;
 
-        if (__DEV__) {
-            // console.log(` mapSingleBooking: Processing booking ${booking.id} (${booking.bookingNumber})`);
-            // console.log(` mapSingleBooking: Payment details:`, paymentDetails);
-            // console.log(` mapSingleBooking: Original booking status: ${booking.status}, mapped: ${mappedStatus}`);
-        }
-
         if (invoiceAmount === 0 && booking.totalPrice > 0) {
             invoiceAmount = booking.totalPrice;
         }
 
-       
         if (!paymentDetails.hasPaymentRecord || invoiceStatus === 'no_payment') {
             if (__DEV__) console.log(` mapSingleBooking: No payment record found for ${booking.id} - setting to pending (need to create rental payment)`);
             invoiceStatus = 'pending';
@@ -99,12 +92,8 @@ export function useStaffBookings() {
         }
 
         // Additional status checks for return requirements
-        const canPickup = paymentDetails.isRentalFeePaid;
-        const canReturn = paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid;
-        if (__DEV__) {
-            // console.log(` mapSingleBooking: Action requirements for ${booking.id}: canPickup=${canPickup}, canReturn=${canReturn} (rental paid=${paymentDetails.isRentalFeePaid}, extension paid=${paymentDetails.isExtensionPaid})`);
-            // console.log(` mapSingleBooking: Final status for ${booking.id}: ${mappedStatus}, invoice status: ${invoiceStatus}`);
-        }
+        // const canPickup = paymentDetails.isRentalFeePaid;
+        // const canReturn = paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid;
 
         // Get check-in/out status from cache
         const checkInOutStatus = batchData.checkInOutMap.get(booking.id) || { hasCheckIn: false, hasCheckOut: false };
@@ -117,6 +106,11 @@ export function useStaffBookings() {
             extensionAmount: undefined,
             extensionStatus: undefined
         };
+
+        // Simplified debug logging for booking mapping
+        if (__DEV__) {
+            console.log(`📋 ${booking.bookingNumber || booking.id.substring(0, 8)}: Mapped - Status=${mappedStatus}, RentalPaid=${paymentDetails.isRentalFeePaid}, CheckIn=${checkInOutStatus.hasCheckIn}, CheckOut=${checkInOutStatus.hasCheckOut}`);
+        }
 
         return {
             id: booking.id,
@@ -138,21 +132,88 @@ export function useStaffBookings() {
             extensionAmount: extensionInfo.extensionAmount,
             extensionPaymentStatus: extensionInfo.extensionPaymentStatus,
             isExtensionPaymentCompleted: extensionInfo.isExtensionPaymentCompleted,
-         
+
             paymentDetails: {
                 isBookingFeePaid: paymentDetails.isBookingFeePaid,
                 isRentalFeePaid: paymentDetails.isRentalFeePaid,
                 isExtensionPaid: paymentDetails.isExtensionPaid,
                 isAdditionalFeePaid: paymentDetails.isAdditionalFeePaid,
                 hasExtension: paymentDetails.hasExtension,
-                canPickup: paymentDetails.isRentalFeePaid, 
-                canReturn: paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid, 
+                canPickup: paymentDetails.isRentalFeePaid,
+                canReturn: paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid,
             },
         };
     };
 
-    const fetchBookings = async (forceRefresh = false, page = 1, pageSize = 20) => {
-       
+    // Lighter refresh function that only updates payment status without clearing all data
+    const refreshPaymentStatus = async () => {
+        if (bookings.length === 0) {
+            // No existing data, do full refresh
+            return fetchBookings(true);
+        }
+
+        console.log('🔄 Refreshing payment status for existing bookings...');
+
+        try {
+            const bookingIds = bookings.map(b => b.id);
+            const paymentDetailsMap = await batchFetchPaymentDetails(bookingIds);
+
+            // Update existing bookings with new payment data
+            const updatedBookings = bookings.map(booking => {
+                const paymentDetails = paymentDetailsMap.get(booking.id);
+                if (!paymentDetails) return booking;
+
+                // Update payment-related fields
+                let invoiceStatus = paymentDetails.status;
+                let mappedStatus = booking.status;
+
+                if (paymentDetails.isRentalFeePaid) {
+                    invoiceStatus = 'paid';
+                    mappedStatus = 'successfully';
+                } else if (!paymentDetails.hasPaymentRecord || invoiceStatus === 'no_payment') {
+                    invoiceStatus = 'pending';
+                    mappedStatus = 'pending';
+                }
+
+                return {
+                    ...booking,
+                    invoiceStatus,
+                    status: mappedStatus,
+                    amount: paymentDetails.amount || booking.amount,
+                    paymentDetails: {
+                        isBookingFeePaid: paymentDetails.isBookingFeePaid,
+                        isRentalFeePaid: paymentDetails.isRentalFeePaid,
+                        isExtensionPaid: paymentDetails.isExtensionPaid,
+                        isAdditionalFeePaid: paymentDetails.isAdditionalFeePaid,
+                        hasExtension: paymentDetails.hasExtension,
+                        canPickup: paymentDetails.isRentalFeePaid,
+                        canReturn: paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid,
+                    },
+                };
+            });
+
+            setBookings(updatedBookings);
+            console.log('✅ Payment status refreshed successfully');
+        } catch (error) {
+            console.error('🚨 Failed to refresh payment status:', error);
+            // Don't show error to user, just log it
+        }
+    };
+
+    const fetchBookings = async (forceRefresh = false, page = 1) => {
+
+        // CRITICAL FIX: If force refresh, clear cache immediately to ensure no stale data
+        if (forceRefresh) {
+            try {
+                const { apiCache } = require('../../../../lib/api/cache');
+                console.log('🧹 fetchBookings: Force refresh detected - clearing cache immediately');
+                await apiCache.clearAll();
+                console.log('✅ fetchBookings: Cache cleared for force refresh');
+            } catch (error) {
+                console.error('❌ fetchBookings: Failed to clear cache for force refresh:', error);
+            }
+        }
+
         const now = Date.now();
         const cacheTimeout = 600000;
 
@@ -165,16 +226,16 @@ export function useStaffBookings() {
             return;
         }
 
-    
+
         const shouldShowLoading = bookings.length === 0 || forceRefresh;
 
         if (shouldShowLoading) {
             setLoading(true);
         }
 
-      
+
         if (page === 1 && bookings.length === 0) {
-            const skeletonBookings = Array.from({ length: 10 }, (_, index) => ({ 
+            const skeletonBookings = Array.from({ length: 10 }, (_, index) => ({
                 id: `skeleton-${index}`,
                 bookingNumber: 'Loading...',
                 carId: '',
@@ -207,7 +268,7 @@ export function useStaffBookings() {
                     canPickup: false,
                     canReturn: false,
                 },
-                isLoading: true, 
+                isLoading: true,
             }));
             setBookings(skeletonBookings);
         }
@@ -218,7 +279,6 @@ export function useStaffBookings() {
         }
 
         try {
-            const startTime = Date.now();
             const result = await bookingsService.getAllBookings();
 
             if (result.error) {
@@ -230,12 +290,12 @@ export function useStaffBookings() {
             }
 
             if (result.data) {
-                
+
                 const sortedBookings = result.data.sort((a, b) =>
                     new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
                 );
 
-            
+
                 const recentBookings = sortedBookings.slice(0, 20);
                 setTotalBookingsCount(sortedBookings.length);
                 setShowingRecentOnly(sortedBookings.length > 20);
@@ -245,7 +305,7 @@ export function useStaffBookings() {
                     console.log(` PERFORMANCE: This reduces data processing by ${Math.round((1 - recentBookings.length / sortedBookings.length) * 100)}%`);
                 }
 
-          
+
                 const uniqueCarIds = [...new Set(recentBookings.map(b => b.carId).filter(Boolean))];
                 const uniqueUserIds = [...new Set(recentBookings.map(b => b.userId).filter(Boolean))];
                 const bookingIds = recentBookings.map(b => b.id);
@@ -266,12 +326,12 @@ export function useStaffBookings() {
                     batchFetchCheckInOutStatus(bookingIds),
                 ]);
 
-              
+
                 const extensionInfoMap = new Map();
                 batchFetchExtensionInfo(bookingIds).then(result => {
-              
+
                     if (result.size > 0) {
-                        
+
                         if (__DEV__) {
                             console.log(` Extension info loaded for ${result.size} bookings`);
                         }
@@ -295,14 +355,24 @@ export function useStaffBookings() {
                     extensionInfoMap
                 };
 
-               
+                // CRITICAL DEBUG: Log batch data summary
+                if (__DEV__) {
+                    console.log(` fetchBookings: Batch data summary:`);
+                    console.log(`fetchBookings: Processing ${recentBookings.length} bookings`);
+                    console.log(` fetchBookings: Payment data for ${paymentDetailsMap.size} bookings`);
+                    console.log(` fetchBookings: Check-in/out data for ${checkInOutMap.size} bookings`);
+
+                    // Log first few booking IDs to verify they're correct
+                    const bookingIds = recentBookings.map(b => b.id);
+                    console.log(` fetchBookings: Booking IDs:`, bookingIds.map(id => id.substring(0, 8) + '...'));
+                }
+
+
                 const mappedBookingsPromises = recentBookings.map(booking => mapSingleBooking(booking, batchData));
                 const mappedBookings = await Promise.all(mappedBookingsPromises);
 
-                const endTime = Date.now();
                 if (__DEV__) {
-                    // console.log(` PERFORMANCE: Completed processing ${mappedBookings.length} bookings in ${endTime - startTime}ms`);
-                    // console.log(` PERFORMANCE: Estimated time saved: ${Math.round((sortedBookings.length / 20 - 1) * (endTime - startTime))}ms`);
+                    // console.log(` PERFORMANCE: Completed processing ${mappedBookings.length} bookings`);
                 }
 
                 if (page === 1) {
@@ -311,7 +381,17 @@ export function useStaffBookings() {
                 setLastFetchTime(now);
             }
         } catch (error) {
+            console.error('🚨 fetchBookings error:', error);
             setError(error instanceof Error ? error.message : 'Failed to load bookings');
+
+            // CRITICAL FIX: Don't clear existing bookings on error during refresh
+            // Only clear bookings if this was the initial load (no existing data)
+            if (bookings.length === 0) {
+                console.log('🚨 Initial load failed - no existing data to preserve');
+            } else {
+                console.log('🚨 Refresh failed - preserving existing bookings data');
+                // Keep existing bookings visible, just show error for user awareness
+            }
         }
 
         if (shouldShowLoading) {
@@ -322,47 +402,94 @@ export function useStaffBookings() {
     };
 
     useEffect(() => {
-        fetchBookings();
+        // AGGRESSIVE FIX: Always clear cache on mount to ensure data integrity
+        // This mimics the manual debug button behavior automatically
+        const initializeScreen = async () => {
+            try {
+                const { apiCache } = require('../../../../lib/api/cache');
+
+                console.log('🧹 StaffScreen mounted - starting aggressive cache clearing sequence');
+
+                // CRITICAL FIX: Wait longer to ensure auth-level cache clearing is complete
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                console.log('🔄 Initial delay completed, starting cache clearing');
+
+                // Multiple cache clears with longer delays to ensure complete cleanup
+                await apiCache.clearAll();
+                console.log('✅ First cache clear completed');
+
+                // Longer delay to ensure cache is fully cleared
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                await apiCache.clearAll();
+                console.log('✅ Second cache clear completed');
+
+                // Additional delay before data fetch to ensure cache is completely cleared
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                console.log('🔄 Starting fresh data fetch after complete cache clearing');
+                // Use the same pattern as the manual test button
+                fetchBookings(true); // Force fresh fetch
+                console.log('✅ Fresh data fetch initiated');
+
+            } catch (error) {
+                console.log('⚠️ Cache clear failed, proceeding with fetch:', error);
+                // Still force fresh fetch even if cache clear fails
+                setTimeout(() => {
+                    fetchBookings(true);
+                }, 1000);
+            }
+        };
+
+        initializeScreen();
         setIsInitialLoad(false);
     }, []);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            if (__DEV__) {
-                // console.log('StaffScreen focused - checking refresh need:', {
-                //     hasBookings: bookings.length > 0,
-                //     cacheAge: lastFetchTime ? Math.round((Date.now() - lastFetchTime) / 1000) : 'no-cache',
-                //     isInitialLoad,
-                //     shouldRefresh: shouldRefreshOnFocus()
-                // });
-            }
+            console.log('🔄 StaffScreen focused - forcing aggressive refresh');
 
-            if (shouldRefreshOnFocus()) {
-                fetchBookings();
-            }
+            // AGGRESSIVE FIX: Always clear all cache and force fresh fetch on focus
+            const forceRefresh = async () => {
+                try {
+                    const { apiCache } = require('../../../../lib/api/cache');
+
+                    console.log('🧹 StaffScreen focused - clearing ALL cache aggressively');
+
+                    // Multiple cache clears to ensure complete cleanup - match manual test button
+                    await apiCache.clearAll();
+                    console.log('✅ First cache clear on focus completed');
+
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    await apiCache.clearAll();
+                    console.log('✅ Second cache clear on focus completed');
+
+                    // Force fresh fetch with delay to ensure cache is cleared
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                    console.log('🔄 Forcing fresh data fetch after focus cache clear');
+                    fetchBookings(true);
+
+                } catch (error) {
+                    console.error('❌ Failed to clear cache on focus:', error);
+                    // Still try to fetch fresh data even if cache clear fails
+                    setTimeout(() => {
+                        fetchBookings(true);
+                    }, 1000);
+                }
+            };
+
+            forceRefresh();
         });
 
         return unsubscribe;
-    }, [navigation, bookings.length, lastFetchTime, isInitialLoad]);
-
- 
-    const shouldRefreshOnFocus = () => {
-        if (isInitialLoad || bookings.length === 0) {
-            return true;
-        }
-
-        const now = Date.now();
-        const cacheTimeout = 600000; 
-        const isStale = (now - lastFetchTime) > cacheTimeout;
-
-       
-        return isStale;
-    };
+    }, [navigation]);
 
     const onRefresh = () => {
         setRefreshing(true);
-        setShowingRecentOnly(true); 
-        setIsInitialLoad(false); 
+        setShowingRecentOnly(true);
+        setIsInitialLoad(false);
         fetchBookings(true);
     };
 
@@ -386,12 +513,12 @@ export function useStaffBookings() {
                     new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
                 );
 
-       
+
                 const uniqueCarIds = [...new Set(sortedBookings.map(b => b.carId).filter(Boolean))];
                 const uniqueUserIds = [...new Set(sortedBookings.map(b => b.userId).filter(Boolean))];
                 const bookingIds = sortedBookings.map(b => b.id);
 
-                // Batch fetch all data
+
                 const [
                     carDetailsMap,
                     userDetailsMap,
@@ -436,7 +563,7 @@ export function useStaffBookings() {
             const result = await paymentService.createRentalPayment(bookingId);
 
             if (result.error) {
-               
+
                 if (result.error.message.includes('Payment already exists')) {
                     alert('A payment for this booking already exists. Please complete the existing payment or contact support if you need assistance.');
                 } else {
@@ -447,6 +574,11 @@ export function useStaffBookings() {
             }
 
             if (result.data && result.data.checkoutUrl) {
+                // Invalidate payment cache before navigating to payment
+                const { apiCache } = require('../../../../lib/api/cache');
+                apiCache.invalidatePattern('staff:payment:');
+                console.log(' Invalidated payment cache before payment navigation');
+
                 navigation.navigate('PayOSWebView' as any, {
                     paymentUrl: result.data.checkoutUrl,
                     bookingId: bookingId,
@@ -547,6 +679,7 @@ export function useStaffBookings() {
 
 
         onRefresh,
+        refreshPaymentStatus,
         handleRequestPayment,
         handlePayExtension,
         fetchBookings,

@@ -147,9 +147,9 @@ export default function PickupReturnConfirmScreen() {
                 const { apiCache } = require('../../../lib/api/cache');
 
                 // AGGRESSIVE FIX: Clear all cache after pickup confirmation
-                console.log('🧹 Pickup confirmed - clearing all cache to prevent data mixing');
+                console.log('Pickup confirmed - clearing all cache to prevent data mixing');
                 await apiCache.clearAll();
-                console.log('✅ All cache cleared after pickup confirmation');
+                console.log(' All cache cleared after pickup confirmation');
 
               } catch (error) {
                 console.error('Failed to clear cache after pickup confirmation:', error);

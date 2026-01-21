@@ -260,9 +260,9 @@ export default function VehicleReturnScreen() {
                 const { apiCache } = require('../../../lib/api/cache');
 
                 // AGGRESSIVE FIX: Clear all cache after vehicle return confirmation
-                console.log('🧹 Vehicle return confirmed - clearing all cache to prevent data mixing');
+                console.log(' Vehicle return confirmed - clearing all cache to prevent data mixing');
                 await apiCache.clearAll();
-                console.log('✅ All cache cleared after vehicle return confirmation');
+                console.log(' All cache cleared after vehicle return confirmation');
 
               } catch (error) {
                 console.error('Failed to clear cache after vehicle return:', error);
@@ -427,11 +427,11 @@ export default function VehicleReturnScreen() {
     // CRITICAL FIX: Clear cache before returning to dashboard to ensure fresh data
     try {
       const { apiCache } = require('../../../lib/api/cache');
-      console.log('🧹 Skip Report: Clearing all cache before returning to dashboard');
+      console.log(' Skip Report: Clearing all cache before returning to dashboard');
       await apiCache.clearAll();
-      console.log('✅ Skip Report: Cache cleared successfully');
+      console.log(' Skip Report: Cache cleared successfully');
     } catch (error) {
-      console.error('❌ Skip Report: Failed to clear cache:', error);
+      console.error(' Skip Report: Failed to clear cache:', error);
     }
 
     navigation.reset({

@@ -23,7 +23,7 @@ export default function BookingPaymentCard({
 }: BookingPaymentCardProps) {
     // Simplified debug logging for booking status
     if (__DEV__) {
-        console.log(`🔍 ${item.bookingNumber || item.id.substring(0, 8)}: Status=${item.status}, RentalPaid=${item.paymentDetails?.isRentalFeePaid}, CheckIn=${item.hasCheckIn}, CheckOut=${item.hasCheckOut}`);
+        console.log(` ${item.bookingNumber || item.id.substring(0, 8)}: Status=${item.status}, RentalPaid=${item.paymentDetails?.isRentalFeePaid}, CheckIn=${item.hasCheckIn}, CheckOut=${item.hasCheckOut}`);
     }
 
     const statusBadgeStyle = [

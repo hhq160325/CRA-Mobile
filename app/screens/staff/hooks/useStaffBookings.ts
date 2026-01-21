@@ -44,7 +44,7 @@ export function useStaffBookings() {
         let mappedStatus = mapBookingStatus(booking.status);
         const formattedDate = formatBookingDate(booking.bookingDate);
 
-        // Get car details from cache
+
         let carDetails = batchData.carDetailsMap.get(booking.carId) || {
             carName: 'Unknown Car',
             carBrand: '',
@@ -53,10 +53,10 @@ export function useStaffBookings() {
             carImage: '',
         };
 
-        // Get customer name from cache
+
         const customerName = batchData.userDetailsMap.get(booking.userId) || 'Customer';
 
-        // Get payment details from cache
+
         const paymentDetails = batchData.paymentDetailsMap.get(booking.id) || { amount: 0, status: 'no_payment', hasPaymentRecord: false };
         let invoiceAmount = paymentDetails.amount;
         let invoiceStatus = paymentDetails.status;
@@ -70,35 +70,31 @@ export function useStaffBookings() {
             invoiceStatus = 'pending';
             mappedStatus = 'pending';
         } else if (invoiceStatus === 'booking_paid') {
-            // Booking fee paid but no rental fee payment created yet
+
             if (__DEV__) console.log(` mapSingleBooking: Booking fee paid for ${booking.id} - need to create rental payment`);
             invoiceStatus = 'pending';
             mappedStatus = 'pending';
         } else if (invoiceStatus === 'rental_pending') {
-            // Rental fee payment created but not paid yet
+
             if (__DEV__) console.log(` mapSingleBooking: Rental fee payment pending for ${booking.id} - customer needs to pay`);
             invoiceStatus = 'pending';
             mappedStatus = 'pending';
         } else if (paymentDetails.isRentalFeePaid) {
-            // Rental fee is paid - booking is ready for pickup/return
+
             if (__DEV__) console.log(` mapSingleBooking: Rental fee is paid for ${booking.id} - ready for pickup`);
             invoiceStatus = 'paid';
             mappedStatus = 'successfully';
         } else {
-            // Fallback - need payment
+
             if (__DEV__) console.log(` mapSingleBooking: Fallback status for ${booking.id} - need payment`);
             invoiceStatus = 'pending';
             mappedStatus = 'pending';
         }
 
-        // Additional status checks for return requirements
-        // const canPickup = paymentDetails.isRentalFeePaid;
-        // const canReturn = paymentDetails.isRentalFeePaid && paymentDetails.isExtensionPaid;
 
-        // Get check-in/out status from cache
         const checkInOutStatus = batchData.checkInOutMap.get(booking.id) || { hasCheckIn: false, hasCheckOut: false };
 
-        // Get extension info from cache
+
         const extensionInfo = batchData.extensionInfoMap.get(booking.id) || {
             hasExtension: false,
             extensionDescription: undefined,
@@ -107,9 +103,9 @@ export function useStaffBookings() {
             extensionStatus: undefined
         };
 
-        // Simplified debug logging for booking mapping
+
         if (__DEV__) {
-            console.log(`📋 ${booking.bookingNumber || booking.id.substring(0, 8)}: Mapped - Status=${mappedStatus}, RentalPaid=${paymentDetails.isRentalFeePaid}, CheckIn=${checkInOutStatus.hasCheckIn}, CheckOut=${checkInOutStatus.hasCheckOut}`);
+            console.log(` ${booking.bookingNumber || booking.id.substring(0, 8)}: Mapped - Status=${mappedStatus}, RentalPaid=${paymentDetails.isRentalFeePaid}, CheckIn=${checkInOutStatus.hasCheckIn}, CheckOut=${checkInOutStatus.hasCheckOut}`);
         }
 
         return {
@@ -145,25 +141,25 @@ export function useStaffBookings() {
         };
     };
 
-    // Lighter refresh function that only updates payment status without clearing all data
+
     const refreshPaymentStatus = async () => {
         if (bookings.length === 0) {
-            // No existing data, do full refresh
+
             return fetchBookings(true);
         }
 
-        console.log('🔄 Refreshing payment status for existing bookings...');
+        console.log(' Refreshing payment status for existing bookings...');
 
         try {
             const bookingIds = bookings.map(b => b.id);
             const paymentDetailsMap = await batchFetchPaymentDetails(bookingIds);
 
-            // Update existing bookings with new payment data
+
             const updatedBookings = bookings.map(booking => {
                 const paymentDetails = paymentDetailsMap.get(booking.id);
                 if (!paymentDetails) return booking;
 
-                // Update payment-related fields
+
                 let invoiceStatus = paymentDetails.status;
                 let mappedStatus = booking.status;
 
@@ -193,24 +189,24 @@ export function useStaffBookings() {
             });
 
             setBookings(updatedBookings);
-            console.log('✅ Payment status refreshed successfully');
+            console.log(' Payment status refreshed successfully');
         } catch (error) {
-            console.error('🚨 Failed to refresh payment status:', error);
-            // Don't show error to user, just log it
+            console.error(' Failed to refresh payment status:', error);
+
         }
     };
 
     const fetchBookings = async (forceRefresh = false, page = 1) => {
 
-        // CRITICAL FIX: If force refresh, clear cache immediately to ensure no stale data
+
         if (forceRefresh) {
             try {
                 const { apiCache } = require('../../../../lib/api/cache');
-                console.log('🧹 fetchBookings: Force refresh detected - clearing cache immediately');
+                console.log(' fetchBookings: Force refresh detected - clearing cache immediately');
                 await apiCache.clearAll();
-                console.log('✅ fetchBookings: Cache cleared for force refresh');
+                console.log(' fetchBookings: Cache cleared for force refresh');
             } catch (error) {
-                console.error('❌ fetchBookings: Failed to clear cache for force refresh:', error);
+                console.error(' fetchBookings: Failed to clear cache for force refresh:', error);
             }
         }
 
@@ -346,7 +342,7 @@ export function useStaffBookings() {
                     setLoadingProgress('Processing booking data...');
                 }
 
-                // Create batch data object
+
                 const batchData = {
                     carDetailsMap,
                     userDetailsMap,
@@ -355,7 +351,7 @@ export function useStaffBookings() {
                     extensionInfoMap
                 };
 
-                // CRITICAL DEBUG: Log batch data summary
+
                 if (__DEV__) {
                     console.log(` fetchBookings: Batch data summary:`);
                     console.log(`fetchBookings: Processing ${recentBookings.length} bookings`);
@@ -381,16 +377,14 @@ export function useStaffBookings() {
                 setLastFetchTime(now);
             }
         } catch (error) {
-            console.error('🚨 fetchBookings error:', error);
+            console.error(' fetchBookings error:', error);
             setError(error instanceof Error ? error.message : 'Failed to load bookings');
 
-            // CRITICAL FIX: Don't clear existing bookings on error during refresh
-            // Only clear bookings if this was the initial load (no existing data)
             if (bookings.length === 0) {
-                console.log('🚨 Initial load failed - no existing data to preserve');
+                console.log(' Initial load failed - no existing data to preserve');
             } else {
-                console.log('🚨 Refresh failed - preserving existing bookings data');
-                // Keep existing bookings visible, just show error for user awareness
+                console.log(' Refresh failed - preserving existing bookings data');
+
             }
         }
 
@@ -402,39 +396,36 @@ export function useStaffBookings() {
     };
 
     useEffect(() => {
-        // AGGRESSIVE FIX: Always clear cache on mount to ensure data integrity
-        // This mimics the manual debug button behavior automatically
+
         const initializeScreen = async () => {
             try {
                 const { apiCache } = require('../../../../lib/api/cache');
 
-                console.log('🧹 StaffScreen mounted - starting aggressive cache clearing sequence');
+                console.log(' StaffScreen mounted - starting aggressive cache clearing sequence');
 
-                // CRITICAL FIX: Wait longer to ensure auth-level cache clearing is complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                console.log('🔄 Initial delay completed, starting cache clearing');
+                console.log(' Initial delay completed, starting cache clearing');
 
-                // Multiple cache clears with longer delays to ensure complete cleanup
+
                 await apiCache.clearAll();
-                console.log('✅ First cache clear completed');
+                console.log(' First cache clear completed');
 
-                // Longer delay to ensure cache is fully cleared
+
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
                 await apiCache.clearAll();
-                console.log('✅ Second cache clear completed');
+                console.log(' Second cache clear completed');
 
-                // Additional delay before data fetch to ensure cache is completely cleared
                 await new Promise(resolve => setTimeout(resolve, 800));
 
-                console.log('🔄 Starting fresh data fetch after complete cache clearing');
-                // Use the same pattern as the manual test button
-                fetchBookings(true); // Force fresh fetch
-                console.log('✅ Fresh data fetch initiated');
+                console.log(' Starting fresh data fetch after complete cache clearing');
+
+                fetchBookings(true);
+                console.log('Fresh data fetch initiated');
 
             } catch (error) {
-                console.log('⚠️ Cache clear failed, proceeding with fetch:', error);
-                // Still force fresh fetch even if cache clear fails
+                console.log(' Cache clear failed, proceeding with fetch:', error);
+
                 setTimeout(() => {
                     fetchBookings(true);
                 }, 1000);
@@ -447,33 +438,33 @@ export function useStaffBookings() {
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
-            console.log('🔄 StaffScreen focused - forcing aggressive refresh');
+            console.log(' StaffScreen focused - forcing aggressive refresh');
 
-            // AGGRESSIVE FIX: Always clear all cache and force fresh fetch on focus
+
             const forceRefresh = async () => {
                 try {
                     const { apiCache } = require('../../../../lib/api/cache');
 
-                    console.log('🧹 StaffScreen focused - clearing ALL cache aggressively');
+                    console.log(' StaffScreen focused - clearing ALL cache aggressively');
 
-                    // Multiple cache clears to ensure complete cleanup - match manual test button
+
                     await apiCache.clearAll();
-                    console.log('✅ First cache clear on focus completed');
+                    console.log(' First cache clear on focus completed');
 
                     await new Promise(resolve => setTimeout(resolve, 500));
 
                     await apiCache.clearAll();
-                    console.log('✅ Second cache clear on focus completed');
+                    console.log(' Second cache clear on focus completed');
 
-                    // Force fresh fetch with delay to ensure cache is cleared
+
                     await new Promise(resolve => setTimeout(resolve, 300));
 
-                    console.log('🔄 Forcing fresh data fetch after focus cache clear');
+                    console.log(' Forcing fresh data fetch after focus cache clear');
                     fetchBookings(true);
 
                 } catch (error) {
-                    console.error('❌ Failed to clear cache on focus:', error);
-                    // Still try to fetch fresh data even if cache clear fails
+                    console.error(' Failed to clear cache on focus:', error);
+
                     setTimeout(() => {
                         fetchBookings(true);
                     }, 1000);
@@ -574,7 +565,7 @@ export function useStaffBookings() {
             }
 
             if (result.data && result.data.checkoutUrl) {
-                // Invalidate payment cache before navigating to payment
+
                 const { apiCache } = require('../../../../lib/api/cache');
                 apiCache.invalidatePattern('staff:payment:');
                 console.log(' Invalidated payment cache before payment navigation');

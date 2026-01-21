@@ -41,11 +41,11 @@ class APICache {
                 }
 
                 if (invalidatedEntries > 0) {
-                    console.log(`🔄 Cache version upgrade: invalidated ${invalidatedEntries} old entries, kept ${validEntries} valid entries`);
+                    console.log(` Cache version upgrade: invalidated ${invalidatedEntries} old entries, kept ${validEntries} valid entries`);
                     // Clean up persistent storage
                     await this.cleanupPersistentStorage();
                 } else {
-                    console.log(`✅ Persistent cache loaded: ${validEntries} entries`);
+                    console.log(` Persistent cache loaded: ${validEntries} entries`);
                 }
             }
         } catch (error) {
@@ -70,7 +70,7 @@ class APICache {
             }
 
             await AsyncStorage.setItem('api_cache_persistent', JSON.stringify(validEntries));
-            console.log(`🧹 Cleaned up persistent storage: ${Object.keys(validEntries).length} valid entries saved`);
+            console.log(` Cleaned up persistent storage: ${Object.keys(validEntries).length} valid entries saved`);
         } catch (error) {
             console.warn('Failed to cleanup persistent storage:', error);
         }
@@ -117,7 +117,7 @@ class APICache {
     set<T>(key: string, data: T, ttl?: number): void {
         // Validate data integrity before caching
         if (!this.validateEntry(key, data)) {
-            console.warn(`🚨 Cache validation failed for key ${key} - not caching invalid data`);
+            console.warn(` Cache validation failed for key ${key} - not caching invalid data`);
             return;
         }
 
@@ -138,7 +138,7 @@ class APICache {
         }
 
         if (__DEV__) {
-            console.log(`✅ Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s, validated: ✓)`);
+            console.log(` Cache SET: ${key} (TTL: ${Math.round((ttl || this.defaultTTL) / 1000)}s, validated: ✓)`);
         }
     }
 
@@ -184,14 +184,14 @@ class APICache {
             }
         }
         if (count > 0) {
-            console.log(`🔄 Cache INVALIDATED: ${count} entries matching "${pattern}"`);
+            console.log(` Cache INVALIDATED: ${count} entries matching "${pattern}"`);
             if (__DEV__ && matchedKeys.length > 0) {
-                console.log(`🔄 Invalidated keys:`, matchedKeys.slice(0, 5));
+                console.log(` Invalidated keys:`, matchedKeys.slice(0, 5));
             }
             // Also clean up persistent storage
             this.cleanupPersistentStorage();
         } else {
-            console.log(`🔄 Cache INVALIDATION: No entries found matching "${pattern}"`);
+            console.log(` Cache INVALIDATION: No entries found matching "${pattern}"`);
         }
     }
 
@@ -224,7 +224,7 @@ class APICache {
         const size = this.cache.size;
         this.cache.clear();
         AsyncStorage.removeItem('api_cache_persistent');
-        console.log(`🧹 Cache CLEARED: ${size} entries removed, persistent cache deleted`);
+        console.log(` Cache CLEARED: ${size} entries removed, persistent cache deleted`);
     }
 
     // Force clear all cache including persistent storage
@@ -248,12 +248,12 @@ class APICache {
             );
 
             if (cacheKeys.length > 0) {
-                console.log(`🧹 AGGRESSIVE CLEAR: Removing ${cacheKeys.length} additional cache keys from AsyncStorage`);
+                console.log(` AGGRESSIVE CLEAR: Removing ${cacheKeys.length} additional cache keys from AsyncStorage`);
                 await AsyncStorage.multiRemove(cacheKeys);
-                console.log(`✅ AGGRESSIVE CLEAR: Additional cache keys removed:`, cacheKeys.slice(0, 5));
+                console.log(` AGGRESSIVE CLEAR: Additional cache keys removed:`, cacheKeys.slice(0, 5));
             }
 
-            console.log(`🧹 ALL CACHE CLEARED: ${size} entries removed, persistent storage cleared, ${cacheKeys.length} additional keys removed`);
+            console.log(` ALL CACHE CLEARED: ${size} entries removed, persistent storage cleared, ${cacheKeys.length} additional keys removed`);
         } catch (error) {
             console.warn('Failed to clear persistent cache:', error);
         }

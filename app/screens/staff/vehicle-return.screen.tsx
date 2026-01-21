@@ -423,7 +423,17 @@ export default function VehicleReturnScreen() {
     }
   };
 
-  const handleSkipReport = () => {
+  const handleSkipReport = async () => {
+    // CRITICAL FIX: Clear cache before returning to dashboard to ensure fresh data
+    try {
+      const { apiCache } = require('../../../lib/api/cache');
+      console.log('🧹 Skip Report: Clearing all cache before returning to dashboard');
+      await apiCache.clearAll();
+      console.log('✅ Skip Report: Cache cleared successfully');
+    } catch (error) {
+      console.error('❌ Skip Report: Failed to clear cache:', error);
+    }
+
     navigation.reset({
       index: 0,
       routes: [{ name: 'staffStack' as any }],

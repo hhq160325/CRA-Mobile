@@ -27,9 +27,6 @@ export function usePaymentHistory() {
             const paymentsUrl = `${baseUrl}/Booking/${booking.id}/Payments`;
             const token = await getAuthToken();
 
-            // console.log(' Fetching payments for booking:', booking.id);
-            // console.log(' Auth token available:', !!token);
-
             const response = await fetch(paymentsUrl, {
                 method: 'GET',
                 headers: {
@@ -39,60 +36,46 @@ export function usePaymentHistory() {
                 },
             });
 
-            console.log(' Payment fetch response status:', response.status);
-
             if (response.ok) {
                 const paymentsData = await response.json();
-                console.log('Payment data received:', paymentsData);
 
                 if (Array.isArray(paymentsData) && paymentsData.length > 0) {
+                    const sortedPayments = paymentsData.sort((a: PaymentItem, b: PaymentItem) =>
+                        new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
+                    );
 
-                    // console.log(' All payments for user booking:', paymentsData.length);
-
-                    if (paymentsData.length > 0) {
-
-                        const sortedPayments = paymentsData.sort((a: PaymentItem, b: PaymentItem) =>
-                            new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
-                        );
-
-                        // console.log(' Payment items found:', sortedPayments.map(p => ({
-                        //     item: p.item,
-                        //     amount: p.paidAmount,
-                        //     status: p.status,
-                        //     hasUserId: !!p.userId
-                        // })));
-
-                        return {
-                            bookingId: booking.id,
-                            bookingNumber: booking.bookingNumber,
-                            carName: booking.carName,
-                            payments: sortedPayments,
-                        };
-                    }
-                } else {
-                    console.log(' No payment data found for booking:', booking.id);
+                    return {
+                        bookingId: booking.id,
+                        bookingNumber: booking.bookingNumber,
+                        carName: booking.carName,
+                        payments: sortedPayments,
+                    };
                 }
             } else {
                 const errorText = await response.text();
-                console.error(' Payment fetch failed:', response.status, errorText);
+                console.error('Payment fetch failed:', response.status, errorText);
             }
         } catch (err) {
-            console.error(' Error fetching booking payments:', err);
+            console.error('Error fetching booking payments:', err);
         }
 
         return null;
     };
 
-    const fetchPaymentHistory = async () => {
+    const fetchPaymentHistory = async (isRefresh = false) => {
         if (!user?.id) {
             setLoading(false);
             return;
         }
 
-        setLoading(true);
+        if (!isRefresh) {
+            setLoading(true);
+        }
         setError(null);
 
         try {
+            // Step 1: Get bookings first (fast)
+            console.log('PaymentHistory: Loading bookings...');
             const bookingsResult = await bookingsService.getBookings(user.id);
 
             if (bookingsResult.error || !bookingsResult.data) {
@@ -101,78 +84,157 @@ export function usePaymentHistory() {
                 return;
             }
 
-            // Update payment statuses for all bookings before fetching payment data
-            console.log(' Updating payment statuses for all bookings...');
-            const statusUpdatePromises = bookingsResult.data.map(async (booking) => {
-                try {
-                    await checkAndUpdatePaymentStatuses(booking.id);
-                    console.log(` Updated payment statuses for booking ${booking.bookingNumber}`);
-                } catch (error) {
-                    console.warn(` Failed to update payment statuses for booking ${booking.bookingNumber}:`, error);
-                }
-            });
+            console.log(`PaymentHistory: Found ${bookingsResult.data.length} bookings`);
 
-            // Wait for all status updates to complete
-            await Promise.allSettled(statusUpdatePromises);
-            console.log(' Payment status updates completed');
+            // Step 2: Load payment data in parallel (much faster)
+            console.log('PaymentHistory: Loading payments in parallel...');
+            const paymentsPromises = bookingsResult.data.map(booking =>
+                fetchBookingPayments(booking).catch(err => {
+                    console.warn(`Failed to load payments for booking ${booking.id}:`, err);
+                    return null;
+                })
+            );
 
-            const paymentsPromises = bookingsResult.data.map(fetchBookingPayments);
+            // Execute all payment fetches in parallel
             const results = await Promise.all(paymentsPromises);
             const validResults = results.filter(r => r !== null) as BookingPayments[];
 
-
+            // Step 3: Sort and display data immediately
             const sortedResults = validResults
                 .map(booking => ({
                     ...booking,
-
                     payments: booking.payments.sort((a, b) =>
                         new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
                     ),
-
                     mostRecentPaymentDate: booking.payments.reduce((latest, payment) => {
                         const paymentDate = new Date(payment.createDate).getTime();
                         return paymentDate > latest ? paymentDate : latest;
                     }, 0)
                 }))
-
                 .sort((a, b) => (b.mostRecentPaymentDate || 0) - (a.mostRecentPaymentDate || 0));
 
-            // console.log(' Payment History: Sorted results:', {
-            //     totalBookings: sortedResults.length,
-            //     firstBooking: sortedResults[0] ? {
-            //         carName: sortedResults[0].carName,
-            //         mostRecentDate: new Date(sortedResults[0].mostRecentPaymentDate || 0).toISOString(),
-            //         paymentsCount: sortedResults[0].payments.length
-            //     } : null
-            // });
+            console.log(`PaymentHistory: Loaded ${sortedResults.length} bookings with payments`);
 
+            // ✅ Show data immediately
             setBookingPayments(sortedResults);
             setFilteredBookingPayments(sortedResults);
+            setLoading(false);
+
+            // Step 4: Update payment statuses in background (non-blocking)
+            if (sortedResults.length > 0) {
+                updatePaymentStatusesInBackground(bookingsResult.data, isRefresh);
+            }
+
         } catch (err) {
             console.error('Error loading payment history:', err);
             setError('An error occurred while loading payment history');
-        } finally {
             setLoading(false);
+        } finally {
             setRefreshing(false);
         }
     };
 
+    // Background function for payment status updates
+    const updatePaymentStatusesInBackground = async (bookings: any[], showAlert = false) => {
+        console.log('PaymentHistory: Updating payment statuses in background...');
 
-    useEffect(() => {
-        if (!searchQuery || searchQuery.trim() === '') {
-            setFilteredBookingPayments(bookingPayments);
-            return;
+        try {
+            let totalUpdated = 0;
+
+            // Update statuses in batches to avoid overwhelming the server
+            const batchSize = 5;
+            for (let i = 0; i < bookings.length; i += batchSize) {
+                const batch = bookings.slice(i, i + batchSize);
+
+                const batchPromises = batch.map(async (booking) => {
+                    try {
+                        const result = await checkAndUpdatePaymentStatuses(booking.id);
+                        const updatedCount = result.results.filter(r => r.updated).length;
+                        totalUpdated += updatedCount;
+                        return updatedCount > 0;
+                    } catch (error) {
+                        console.warn(`Failed to update payment statuses for booking ${booking.bookingNumber}:`, error);
+                        return false;
+                    }
+                });
+
+                await Promise.allSettled(batchPromises);
+
+                // Small delay between batches to prevent server overload
+                if (i + batchSize < bookings.length) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+
+            // If any statuses were updated, refresh the payment data
+            if (totalUpdated > 0) {
+                console.log(`PaymentHistory: ${totalUpdated} payment statuses updated, refreshing data...`);
+
+                // Reload payment data silently
+                const paymentsPromises = bookings.map(booking =>
+                    fetchBookingPayments(booking).catch(() => null)
+                );
+                const results = await Promise.all(paymentsPromises);
+                const validResults = results.filter(r => r !== null) as BookingPayments[];
+
+                const sortedResults = validResults
+                    .map(booking => ({
+                        ...booking,
+                        payments: booking.payments.sort((a, b) =>
+                            new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
+                        ),
+                        mostRecentPaymentDate: booking.payments.reduce((latest, payment) => {
+                            const paymentDate = new Date(payment.createDate).getTime();
+                            return paymentDate > latest ? paymentDate : latest;
+                        }, 0)
+                    }))
+                    .sort((a, b) => (b.mostRecentPaymentDate || 0) - (a.mostRecentPaymentDate || 0));
+
+                setBookingPayments(sortedResults);
+                setFilteredBookingPayments(prev => {
+                    // Preserve search results if user is searching
+                    if (searchQuery.trim()) {
+                        return filterBookingsByQuery(sortedResults, searchQuery);
+                    }
+                    return sortedResults;
+                });
+
+                if (showAlert) {
+                    Alert.alert(
+                        'Payment Statuses Updated',
+                        `${totalUpdated} payment status(es) have been updated successfully.`,
+                        [{ text: 'OK' }]
+                    );
+                }
+            } else if (showAlert) {
+                Alert.alert(
+                    'Payment Statuses Up to Date',
+                    'All payment statuses are already current.',
+                    [{ text: 'OK' }]
+                );
+            }
+
+        } catch (error) {
+            console.error('Error updating payment statuses in background:', error);
+            if (showAlert) {
+                Alert.alert(
+                    'Update Failed',
+                    'Failed to update payment statuses. Please try again.',
+                    [{ text: 'OK' }]
+                );
+            }
         }
+    };
 
-        const normalizedQuery = searchQuery.toLowerCase().trim();
+    // Helper function for filtering
+    const filterBookingsByQuery = (bookings: BookingPayments[], query: string) => {
+        const normalizedQuery = query.toLowerCase().trim();
 
-        const filtered = bookingPayments
+        return bookings
             .map(booking => {
-
                 const bookingMatches =
                     booking.carName.toLowerCase().includes(normalizedQuery) ||
                     (booking.bookingNumber && booking.bookingNumber.toLowerCase().includes(normalizedQuery));
-
 
                 const matchingPayments = booking.payments.filter(payment =>
                     payment.item.toLowerCase().includes(normalizedQuery) ||
@@ -181,11 +243,9 @@ export function usePaymentHistory() {
                     payment.status.toLowerCase().includes(normalizedQuery)
                 );
 
-
                 if (bookingMatches || matchingPayments.length > 0) {
                     return {
                         ...booking,
-
                         payments: bookingMatches ? booking.payments : matchingPayments
                     };
                 }
@@ -193,13 +253,16 @@ export function usePaymentHistory() {
                 return null;
             })
             .filter(booking => booking !== null) as BookingPayments[];
+    };
 
-        // console.log(' Payment Search: Filtered results:', {
-        //     query: searchQuery,
-        //     originalCount: bookingPayments.length,
-        //     filteredCount: filtered.length
-        // });
+    // Search effect
+    useEffect(() => {
+        if (!searchQuery || searchQuery.trim() === '') {
+            setFilteredBookingPayments(bookingPayments);
+            return;
+        }
 
+        const filtered = filterBookingsByQuery(bookingPayments, searchQuery);
         setFilteredBookingPayments(filtered);
     }, [searchQuery, bookingPayments]);
 
@@ -209,7 +272,7 @@ export function usePaymentHistory() {
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchPaymentHistory();
+        fetchPaymentHistory(true);
     };
 
     const refreshPaymentStatuses = async () => {
@@ -217,50 +280,14 @@ export function usePaymentHistory() {
 
         try {
             setRefreshing(true);
-            console.log(' Manual payment status refresh triggered...');
+            console.log('Manual payment status refresh triggered...');
 
             const bookingsResult = await bookingsService.getBookings(user.id);
             if (bookingsResult.data) {
-                // Update payment statuses for all user bookings
-                let totalUpdated = 0;
-                const statusUpdatePromises = bookingsResult.data.map(async (booking) => {
-                    try {
-                        const result = await checkAndUpdatePaymentStatuses(booking.id);
-                        const updatedCount = result.results.filter(r => r.updated).length;
-                        totalUpdated += updatedCount;
-                        console.log(` Refreshed payment statuses for booking ${booking.bookingNumber}:`, {
-                            allPaid: result.allPaid,
-                            updatedCount
-                        });
-                        return result;
-                    } catch (error) {
-                        console.warn(` Failed to refresh payment statuses for booking ${booking.bookingNumber}:`, error);
-                        return null;
-                    }
-                });
-
-                await Promise.allSettled(statusUpdatePromises);
-
-                // Reload payment data after status updates
-                await fetchPaymentHistory();
-
-                // Show feedback to user
-                if (totalUpdated > 0) {
-                    Alert.alert(
-                        'Payment Statuses Updated',
-                        `${totalUpdated} payment status(es) have been updated successfully.`,
-                        [{ text: 'OK' }]
-                    );
-                } else {
-                    Alert.alert(
-                        'Payment Statuses Up to Date',
-                        'All payment statuses are already current.',
-                        [{ text: 'OK' }]
-                    );
-                }
+                await updatePaymentStatusesInBackground(bookingsResult.data, true);
             }
         } catch (error) {
-            console.error(' Error refreshing payment statuses:', error);
+            console.error('Error refreshing payment statuses:', error);
             Alert.alert(
                 'Refresh Failed',
                 'Failed to refresh payment statuses. Please try again.',
@@ -285,7 +312,6 @@ export function usePaymentHistory() {
     };
 
     return {
-
         bookingPayments,
         filteredBookingPayments,
         searchQuery,
@@ -294,8 +320,6 @@ export function usePaymentHistory() {
         refreshing,
         error,
         expandedBookings,
-
-
         onRefresh,
         refreshPaymentStatuses,
         toggleExpanded,

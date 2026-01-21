@@ -18,18 +18,8 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
   useEffect(() => {
     let mounted = true;
 
-    async function load() {
-      // console.log(' BookingDetail: Starting load process');
-      // console.log(' BookingDetail: Booking ID or Number:', bookingIdOrNumber);
-      // console.log(' BookingDetail: Current user:', {
-      //   id: user?.id,
-      //   role: user?.role,
-      //   roleId: user?.roleId,
-      //   hasUser: !!user
-      // });
-
+    async function loadBookingData() {
       if (!user || !bookingIdOrNumber) {
-        // console.log(' BookingDetail: No authenticated user or booking identifier, skipping load');
         setLoading(false);
         return;
       }
@@ -37,256 +27,154 @@ export function useBookingDetail(bookingIdOrNumber: string, navigation: any) {
       setLoading(true);
 
       try {
-        let res;
-
-
+        // Step 1: Load basic booking data first (fastest)
         const isBookingNumber = bookingIdOrNumber.toUpperCase().startsWith('BK');
 
+        let res;
         if (isBookingNumber) {
-          // console.log(' BookingDetail: Calling getBookingByNumber...');
           res = await bookingsService.getBookingByNumber(bookingIdOrNumber);
         } else {
-          // console.log(' BookingDetail: Calling getBookingById...');
           res = await bookingsService.getBookingById(bookingIdOrNumber);
         }
-        console.log('BookingDetail: API response:', {
-          hasData: !!res.data,
-          hasError: !!res.error,
-          errorMessage: res.error?.message,
-          bookingData: res.data ? {
-            id: res.data.id,
-            userId: res.data.userId,
-            bookingNumber: res.data.bookingNumber,
-            carName: res.data.carName,
-            status: res.data.status
-          } : null
-        });
 
-        if (!mounted) {
-          // console.log(' BookingDetail: Component unmounted, stopping');
+        if (!mounted) return;
+
+        if (res.error) {
+          console.error('BookingDetail: Error loading booking:', res.error);
+          Alert.alert('Error', 'Failed to load booking details. Please try again.');
+          setLoading(false);
           return;
         }
 
-        if (res.error) {
-          console.error(' BookingDetail: Error loading booking:', res.error);
+        if (!res.data) {
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: Set basic booking data immediately (show UI faster)
+        let completeBooking = res.data;
+
+        // Permission check
+        const isStaff = user?.role === 'staff' || user?.roleId === 1002;
+        const isOwner = completeBooking.userId === user?.id;
+
+        if (!isStaff && !isOwner) {
           Alert.alert(
-            'Error',
-            'Failed to load booking details. Please try again.',
+            'Access Denied',
+            "You don't have permission to view this booking.",
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
           );
           setLoading(false);
           return;
         }
 
-        if (res.data) {
+        // Set booking data immediately - UI can show basic info
+        setBooking(completeBooking);
+        setLoading(false); // ✅ Show UI immediately with basic data
 
-          let completeBooking = res.data;
+        // Step 3: Load additional data in parallel (non-blocking)
+        const carId = completeBooking.carId;
+        const bookingId = completeBooking.id;
 
-          if (res.data.bookingNumber) {
-            try {
-              // console.log(' BookingDetail: Fetching complete booking data for:', res.data.bookingNumber);
-              const detailedRes = await bookingsService.getBookingByNumber(res.data.bookingNumber);
-              // console.log(' BookingDetail: Detailed booking response:', {
-              //   hasData: !!detailedRes.data,
-              //   hasError: !!detailedRes.error,
-              //   hasCar: !!detailedRes.data?.car,
-              //   hasUser: !!detailedRes.data?.user,
-              //   userId: detailedRes.data?.user?.id
-              // });
+        if (carId && bookingId) {
+          // Run all secondary API calls in parallel
+          const secondaryDataPromises = [
+            // Car wallet
+            carWalletService.getCarWallet(carId).catch(err => {
+              console.log('BookingDetail: Car wallet error:', err);
+              return { data: null, error: err };
+            }),
 
-              if (detailedRes.data) {
+            // Payments
+            paymentService.getBookingPayments(bookingId).catch(err => {
+              console.log('BookingDetail: Payments error:', err);
+              return { data: null, error: err };
+            })
+          ];
 
-                completeBooking = {
-                  ...res.data,
-                  userId: detailedRes.data.user?.id || res.data.userId,
-                  carName: detailedRes.data.car ? `${detailedRes.data.car.manufacturer} ${detailedRes.data.car.model}` : res.data.carName,
-                  carImage: detailedRes.data.car?.imageUrls?.[0] || res.data.carImage,
-                  carDetails: detailedRes.data.car,
-                  userDetails: detailedRes.data.user
-                };
-                // console.log(' BookingDetail: Enhanced booking with complete data:', {
-                //   userId: completeBooking.userId,
-                //   carName: completeBooking.carName
-                // });
-              }
-            } catch (err) {
-              console.log(' BookingDetail: Could not fetch detailed booking, using basic data:', err);
-            }
+          // Execute parallel calls
+          const [walletRes, paymentsRes] = await Promise.all(secondaryDataPromises);
+
+          if (!mounted) return;
+
+          // Update car wallet
+          if (walletRes.data) {
+            setCarWalletBalance(walletRes.data.balance);
           }
 
-          console.log(' BookingDetail: Checking permissions with complete data...');
-          const isStaff = user?.role === 'staff' || user?.roleId === 1002;
-          const isOwner = completeBooking.userId === user?.id;
+          // Update payments
+          if (paymentsRes.data) {
+            setPayments(paymentsRes.data);
 
-          // console.log(' BookingDetail: Permission check:', {
-          //   isStaff,
-          //   isOwner,
-          //   bookingUserId: completeBooking.userId,
-          //   currentUserId: user?.id,
-          //   userRole: user?.role,
-          //   userRoleId: user?.roleId
-          // });
-
-          if (!isStaff && !isOwner) {
-            console.log(' BookingDetail: Access denied - booking belongs to different user');
-            Alert.alert(
-              'Access Denied',
-              "You don't have permission to view this booking.",
-              [{ text: 'OK', onPress: () => navigation.goBack() }],
+            const bookingFeePayment = paymentsRes.data.find(
+              (payment: any) => payment.item === 'Booking Fee'
             );
-            setLoading(false);
-            return;
-          }
-
-          // console.log(' BookingDetail: Permission granted, setting booking data');
-          // console.log(' BookingDetail: Complete booking carId:', completeBooking.carId);
-          setBooking(completeBooking);
-
-
-          const actualBookingId = completeBooking.id;
-
-
-          const carIdToFetch = completeBooking.carId;
-          console.log('BookingDetail: About to fetch car wallet for carId:', carIdToFetch, 'Type:', typeof carIdToFetch);
-
-          if (carIdToFetch) {
-            console.log('BookingDetail: Fetching car wallet balance for car:', carIdToFetch);
-            try {
-              const walletRes = await carWalletService.getCarWallet(carIdToFetch);
-              console.log('BookingDetail: Car wallet API response:', walletRes);
-              if (mounted && walletRes.data) {
-                console.log('BookingDetail: Car wallet balance loaded:', walletRes.data.balance);
-                setCarWalletBalance(walletRes.data.balance);
-              } else if (walletRes.error) {
-                console.log('BookingDetail: Could not fetch car wallet balance:', walletRes.error.message);
-                console.error('BookingDetail: Full error:', walletRes.error);
-              }
-            } catch (err) {
-              console.log('BookingDetail: Error fetching car wallet balance:', err);
-              console.error('BookingDetail: Full error object:', err);
+            if (bookingFeePayment) {
+              setBookingFee(bookingFeePayment.paidAmount);
             }
-          } else {
-            console.log('BookingDetail: No carId found in booking, skipping wallet fetch');
-            console.log('BookingDetail: Booking object keys:', Object.keys(completeBooking));
+
+            // Check payment statuses in background (non-blocking)
+            checkPaymentStatusesInBackground(bookingId, mounted);
           }
 
-          // Load travel logs for this booking
-          if (carIdToFetch && actualBookingId) {
-            console.log('BookingDetail: Fetching travel logs for car:', carIdToFetch, 'booking:', actualBookingId);
-            setTravelLogsLoading(true);
-            try {
-              const travelLogsRes = await carTravelLogService.getCarTravelLogsByCarAndBooking(
-                carIdToFetch,
-                actualBookingId
-              );
-              if (mounted && travelLogsRes.data) {
-                console.log('BookingDetail: Travel logs loaded:', travelLogsRes.data.length, 'entries');
-                setTravelLogs(travelLogsRes.data);
-              } else if (travelLogsRes.error) {
-                console.log('BookingDetail: Could not fetch travel logs:', travelLogsRes.error.message);
-              }
-            } catch (err) {
-              console.log('BookingDetail: Error fetching travel logs:', err);
-            } finally {
-              if (mounted) {
-                setTravelLogsLoading(false);
-              }
-            }
-          } else {
-            console.log('BookingDetail: Missing carId or bookingId, skipping travel logs fetch');
-            setTravelLogsLoading(false);
-          }
-
-          console.log(
-            'BookingDetail: Fetching payments for booking:',
-            actualBookingId,
-          );
-          try {
-            const paymentsRes = await paymentService.getBookingPayments(
-              actualBookingId,
-            );
-            if (mounted && paymentsRes.data) {
-              console.log(
-                'BookingDetail: Payments loaded successfully:',
-                paymentsRes.data,
-              );
-              setPayments(paymentsRes.data);
-
-              // Check and update payment statuses to ensure they're current
-              console.log('BookingDetail: Checking and updating payment statuses...');
-              try {
-                const { checkAndUpdatePaymentStatuses } = await import('../../../../lib/api/services/payment-status-checker');
-                const statusUpdateResult = await checkAndUpdatePaymentStatuses(actualBookingId);
-
-                if (statusUpdateResult.results.some(r => r.updated)) {
-                  console.log('BookingDetail: Payment statuses were updated, refetching payments...');
-                  // Refetch payments after status update
-                  const updatedPaymentsRes = await paymentService.getBookingPayments(actualBookingId);
-                  if (updatedPaymentsRes.data) {
-                    console.log('BookingDetail: Updated payments loaded:', updatedPaymentsRes.data);
-                    setPayments(updatedPaymentsRes.data);
-
-                    // Update booking fee with latest data
-                    const updatedBookingFeePayment = updatedPaymentsRes.data.find(
-                      (payment: any) => payment.item === 'Booking Fee'
-                    );
-                    if (updatedBookingFeePayment) {
-                      console.log('BookingDetail: Updated booking fee found:', updatedBookingFeePayment.paidAmount, 'Status:', updatedBookingFeePayment.status);
-                      setBookingFee(updatedBookingFeePayment.paidAmount);
-                    }
-                  }
-                } else {
-                  console.log('BookingDetail: No payment status updates needed');
-                }
-              } catch (statusError) {
-                console.log('BookingDetail: Error updating payment statuses:', statusError);
-              }
-
-              // Set booking fee from current data (fallback if status update fails)
-              const bookingFeePayment = paymentsRes.data.find(
-                (payment: any) => payment.item === 'Booking Fee'
-              );
-              if (bookingFeePayment) {
-                console.log(
-                  'BookingDetail: Booking fee found:',
-                  bookingFeePayment.paidAmount,
-                  'Status:',
-                  bookingFeePayment.status
-                );
-                setBookingFee(bookingFeePayment.paidAmount);
-              }
-            }
-          } catch (err) {
-            console.log('BookingDetail: Error fetching payments:', err);
-          }
-
-
-          if (res.data.invoiceId) {
-            console.log('BookingDetail: Invoice ID found in booking data:', res.data.invoiceId, '(reference only)');
-          }
+          // Load travel logs in background (non-blocking)
+          loadTravelLogsInBackground(carId, bookingId, mounted);
         }
+
       } catch (err) {
         console.error('BookingDetail: Unexpected error:', err);
         if (mounted) {
-          Alert.alert(
-            'Error',
-            'An unexpected error occurred. Please try again.',
-          );
-        }
-      } finally {
-        if (mounted) {
+          Alert.alert('Error', 'An unexpected error occurred. Please try again.');
           setLoading(false);
         }
       }
     }
 
+    // Background function for travel logs
+    async function loadTravelLogsInBackground(carId: string, bookingId: string, isMounted: boolean) {
+      setTravelLogsLoading(true);
+      try {
+        const travelLogsRes = await carTravelLogService.getCarTravelLogsByCarAndBooking(carId, bookingId);
+        if (isMounted && travelLogsRes.data) {
+          setTravelLogs(travelLogsRes.data);
+        }
+      } catch (err) {
+        console.log('BookingDetail: Travel logs error:', err);
+      } finally {
+        if (isMounted) {
+          setTravelLogsLoading(false);
+        }
+      }
+    }
+
+    // Background function for payment status updates
+    async function checkPaymentStatusesInBackground(bookingId: string, isMounted: boolean) {
+      try {
+        const { checkAndUpdatePaymentStatuses } = await import('../../../../lib/api/services/payment-status-checker');
+        const statusUpdateResult = await checkAndUpdatePaymentStatuses(bookingId);
+
+        if (statusUpdateResult.results.some(r => r.updated)) {
+          // Refetch payments if statuses were updated
+          const updatedPaymentsRes = await paymentService.getBookingPayments(bookingId);
+          if (isMounted && updatedPaymentsRes.data) {
+            setPayments(updatedPaymentsRes.data);
+
+            const updatedBookingFeePayment = updatedPaymentsRes.data.find(
+              (payment: any) => payment.item === 'Booking Fee'
+            );
+            if (updatedBookingFeePayment) {
+              setBookingFee(updatedBookingFeePayment.paidAmount);
+            }
+          }
+        }
+      } catch (statusError) {
+        console.log('BookingDetail: Payment status check error:', statusError);
+      }
+    }
+
     if (bookingIdOrNumber && bookingIdOrNumber.trim() && user) {
-      load();
+      loadBookingData();
     } else {
-      console.error('BookingDetail: No booking identifier provided or no authenticated user', {
-        hasBookingId: !!bookingIdOrNumber,
-        bookingIdValue: bookingIdOrNumber,
-        hasUser: !!user
-      });
       setLoading(false);
     }
 

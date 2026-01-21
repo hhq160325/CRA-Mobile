@@ -11,14 +11,15 @@ export function useHeaderNavigation() {
     const handleLogout = async () => {
         Alert.alert(
             "Logout",
-            "You want to continue logging out?",
+            "Log out of your account?",
             [
                 {
                     text: "Cancel",
                     style: "cancel"
                 },
                 {
-                    text: "Next",
+                    text: "Logout",
+                    style: "destructive",
                     onPress: async () => {
                         await logout(true)
                         navigation.reset({
